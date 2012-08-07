@@ -15,4 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+add_subdirectory(util)
+#add_subdirectory(queue)
+#add_subdirectory(gui)
 add_subdirectory(firestr)
