@@ -14,16 +14,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#ifndef FIRESTR_DBC_H
+#define FIRESTR_DBC_H
 
 #include <iostream>
-#include <string>
-#include <boost/scoped_ptr.hpp>
 
-#include "util/dbc.hpp"
-
-int main(int argc, char **argv)
+namespace fire 
 {
-    std::cout << "hello firestr" << std::endl;
-
-    fire::util::raise("test");
+    namespace util 
+    {
+        void raise(const char * msg);
+    }
 }
+
+#endif

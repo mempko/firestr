@@ -1,3 +1,4 @@
+
 /*
  * Copyright (C) 2012  Maxim Noah Khailo
  *
@@ -14,16 +15,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-#include <iostream>
-#include <string>
-#include <boost/scoped_ptr.hpp>
-
 #include "util/dbc.hpp"
 
-int main(int argc, char **argv)
+namespace fire 
 {
-    std::cout << "hello firestr" << std::endl;
-
-    fire::util::raise("test");
+    namespace util 
+    {
+        void raise(const char * msg) 
+        {
+            std::cerr << "failed: " << msg << std::endl;
+            exit(1);
+        }
+    }
 }

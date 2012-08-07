@@ -20,15 +20,5 @@ include_directories(..)
 
 file(GLOB src *.cpp)
 
-add_executable(
-    firestr
+add_library(fire_util STATIC
     ${src})
-
-target_link_libraries(
-    firestr
-    fire_util
-    ${Boost_LIBRARIES})
-
-add_dependencies(
-    firestr 
-    fire_util)
