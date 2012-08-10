@@ -17,12 +17,13 @@
 
 #include <iostream>
 #include <string>
-#include <boost/scoped_ptr.hpp>
+#include <functional>
 
 #include "util/dbc.hpp"
 
 int main(int argc, char **argv)
 {
+
     std::cout << "hello firestr" << std::endl;
 
     int a = 3;
