@@ -19,14 +19,27 @@
 #include <string>
 #include <functional>
 
+#include "queue/queue.hpp"
 #include "util/dbc.hpp"
+
+namespace fq = fire::queue;
 
 int main(int argc, char **argv)
 {
 
     std::cout << "hello firestr" << std::endl;
 
-    int a = 3;
-    REQUIRE_BETWEEN(a, 5, 10);
+    fq::queue<int> q;
+
+    int a;
+    CHECK_FALSE(q.pop(a));
+
+    q.push(8);
+
+    CHECK(q.pop(a));
+    CHECK_EQUAL(a, 8);
+
+    //should fail
+    q.pop();
 
 }
