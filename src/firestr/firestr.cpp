@@ -25,5 +25,7 @@ int main(int argc, char **argv)
 {
     std::cout << "hello firestr" << std::endl;
 
-    fire::util::raise("test");
+    int a = 3;
+    REQUIRE_BETWEEN(a, 5, 10);
+
 }
