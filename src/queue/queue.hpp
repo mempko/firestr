@@ -27,11 +27,33 @@ namespace fire
 {
     namespace queue 
     {
+        struct has_size 
+        {
+            virtual size_t size() const = 0;
+            virtual bool empty() const = 0;
+        };
+
         template<class t>
-        class queue
+        struct in_queue 
+        {
+            virtual bool pop(t& v) = 0;
+            virtual t pop() = 0;
+        };
+
+        template<class t>
+        struct out_queue 
+        {
+            virtual void push(const t& v) = 0; 
+        };
+
+        template<class t>
+        class queue : 
+            public in_queue<t>, 
+            public out_queue<t>,
+            public has_size
         {
             public:
-                void push(const t& v) 
+                virtual void push(const t& v) 
                 {
                     std::lock_guard<std::mutex> lock(_m);
                     _q.push_back(v);
@@ -39,7 +61,7 @@ namespace fire
                     ENSURE_GREATER(_q.size(), 0);
                 }
 
-                bool pop(t& v)
+                virtual bool pop(t& v)
                 {
                     std::lock_guard<std::mutex> lock(_m);
                     if(_q.empty()) return false;
@@ -50,7 +72,7 @@ namespace fire
                     return true;
                 }
 
-                t pop()
+                virtual t pop()
                 {
                     std::lock_guard<std::mutex> lock(_m);
                     REQUIRE_FALSE(empty());
@@ -61,8 +83,8 @@ namespace fire
                     return v;
                 }
 
-                size_t size() const { return _q.size();}
-                bool empty() const { return _q.empty();}
+                virtual size_t size() const { return _q.size();}
+                virtual bool empty() const { return _q.empty();}
 
             private:
                 std::deque<t> _q;
