@@ -27,12 +27,18 @@ namespace fire
             exit(1);
         }
 
-        void raise1( const char * file, const int line, const char * dbc, const char * expr)
+        void raise1( 
+                const char * file,
+                const char * func,
+                const int line,
+                const char * dbc,
+                const char * expr)
         {
             std::stringstream s;
             s << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
             s << "!! " << dbc << " failed" << std::endl;
             s << "!! expr: " << expr << std::endl;
+            s << "!! func: " << func << std::endl;
             s << "!! file: " << file << " (" << line << ")" << std::endl;
             s << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
             raise(s.str().c_str());
