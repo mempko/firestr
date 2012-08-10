@@ -97,6 +97,12 @@ namespace fire
 #define ENSURE(exp) R_CHECK(F_E, exp)
 #define INVARIANT(exp) R_CHECK(F_I, exp)
 
+#define R_CHECK_FALSE(dbc, exp) F_R1(dbc, ((exp) == false))
+#define CHECK_FALSE(exp) R_CHECK_FALSE(F_C, exp)
+#define REQUIRE_FALSE(exp) R_CHECK_FALSE(F_R, exp)
+#define ENSURE_FALSE(exp) R_CHECK_FALSE(F_E, exp)
+#define INVARIANT_FALSE(exp) R_CHECK_FALSE(F_I, exp)
+
 #define R_EQUAL(dbc, a, b) F_R2(dbc, (a == b), a, b)
 #define CHECK_EQUAL(a, b) R_EQUAL(F_C, a, b)
 #define REQUIRE_EQUAL(a, b) R_EQUAL(F_R, a, b)
