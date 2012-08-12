@@ -29,20 +29,8 @@ QT4_WRAP_UI(moc_forms ${forms})
 QT4_ADD_RESOURCES(moc_resources ${resources})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-add_executable(
-    firestr
+add_library(fire_gui STATIC
     ${src}
     ${moc_headers}
     ${moc_forms}
     ${moc_resources})
-
-target_link_libraries(
-    firestr
-    fire_gui
-    fire_util
-    ${Boost_LIBRARIES}
-    ${QT_LIBRARIES})
-
-add_dependencies(
-    firestr 
-    fire_util)

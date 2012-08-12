@@ -15,17 +15,34 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <QApplication>
+#ifndef FIRESTR_MAINWIN_H
+#define FIRESTR_MAINWIN_H
 
-#include "gui/mainwin.hpp"
+#include <QMainWindow>
 
-namespace fg = fire::gui;
-
-int main(int argc, char *argv[])
+namespace fire
 {
-    QApplication a{argc, argv};
-    fg::main_window w;
-    w.show();
+    namespace gui
+    {
+        class main_window : public QMainWindow
+        {
+            Q_OBJECT
+            public:
+                main_window();
 
-    return a.exec();
+            private slots:
+                void about();
+
+            private:
+                void create_actions();
+                void create_menus();
+
+            private:
+                QMenu *_main_menu;
+                QAction *_close_action;
+                QAction *_about_action;
+        };
+    }
 }
+
+#endif

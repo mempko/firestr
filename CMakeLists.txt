@@ -22,8 +22,13 @@ ADD_DEFINITIONS(-std=c++0x)
 
 #setup boost
 set(Boost_USE_STATIC_LIBS on)
-find_package(Boost 1.46)
+find_package(Boost 1.46 REQUIRED)
 link_directories(${Boost_LIBRARY_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})
+
+#setup QT
+find_package(Qt4 REQUIRED)
+include(${QT_USE_FILE})
+add_definitions(${QT_DEFINITIONS})
 
 add_subdirectory(src)
