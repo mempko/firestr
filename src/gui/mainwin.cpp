@@ -14,11 +14,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <sstream>
+
 #include <QtGui>
 
 #include "util/dbc.hpp"
 
 #include "gui/mainwin.hpp"
+#include "gui/message.hpp"
+#include "gui/textmessage.hpp"
 
 namespace fire
 {
@@ -27,9 +31,13 @@ namespace fire
         main_window::main_window() :
             _about_action(0),
             _close_action(0),
-            _main_menu(0)
+            _main_menu(0),
+            _root(0),
+            _layout(0),
+            _messages(0)
         {
             create_actions();
+            create_main();
             create_menus();
 
             INVARIANT(_main_menu);
@@ -37,14 +45,39 @@ namespace fire
             INVARIANT(_close_action);
         }
 
+        void main_window::create_main()
+        {
+            REQUIRE_FALSE(_root);
+            REQUIRE_FALSE(_layout);
+            REQUIRE_FALSE(_messages);
+            
+            //setup main
+            _root = new QWidget{this};
+            _layout = new QVBoxLayout{_root};
+
+            //setup message list
+            _messages = new message_list;
+            _layout->addWidget(_messages);
+
+            //setup base
+            setWindowTitle(tr("Firestr"));
+            setCentralWidget(_root);
+
+            ENSURE(_root);
+            ENSURE(_layout);
+            ENSURE(_messages);
+        }
+
         void main_window::create_menus()
         {
             REQUIRE_FALSE(_main_menu);
             REQUIRE(_about_action);
             REQUIRE(_close_action);
+            REQUIRE(_test_action);
 
             _main_menu = new QMenu(tr("&Main"), this);
             _main_menu->addAction(_about_action);
+            _main_menu->addAction(_test_action);
             _main_menu->addSeparator();
             _main_menu->addAction(_close_action);
 
@@ -64,9 +97,14 @@ namespace fire
             _close_action = new QAction(tr("&Exit"), this);
             connect(_close_action, SIGNAL(triggered()), this, SLOT(close()));
 
+            _test_action = new QAction(tr("&Test"), this);
+            connect(_test_action, SIGNAL(triggered()), this, SLOT(test()));
+
             ENSURE(_about_action);
             ENSURE(_close_action);
+            ENSURE(_test_action);
         }
+
 
         void main_window::about()
         {
@@ -78,6 +116,19 @@ namespace fire
                     "This is not a chat program, but a way for programs to chat.<br> "
                     "This is not a way to share code, but a way to share running software.</p> "
                     "<p>This program is created by <b>Maxim Noah Khailo</b> and is liscensed as GPLv3</p>"));
+        }
+
+        void main_window::test()
+        {
+            INVARIANT(_messages);
+
+            for(int i = 0; i < 10; i++)
+            {
+                std::stringstream m;
+                m << "Test Message: " << i;
+                text_message* t = new text_message{m.str()};
+                _messages->add(t);
+            }
         }
     }
 }

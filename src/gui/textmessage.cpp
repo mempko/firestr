@@ -15,44 +15,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef FIRESTR_MAINWIN_H
-#define FIRESTR_MAINWIN_H
+#include <QtGui>
 
-#include <QMainWindow>
-
-#include "gui/messagelist.hpp"
+#include "gui/textmessage.hpp"
+#include "util/dbc.hpp"
 
 namespace fire
 {
     namespace gui
     {
-        class main_window : public QMainWindow
+        text_message::text_message(const std::string& t)
         {
-            Q_OBJECT
-            public:
-                main_window();
+            INVARIANT(root());
+            INVARIANT(layout());
 
-            private slots:
-                void about();
-                void test();
+            _text = new QLabel{t.c_str()};
+            layout()->addWidget(_text);
 
-            private:
-                void create_actions();
-                void create_main();
-                void create_menus();
-
-            private:
-                QMenu *_main_menu;
-                QAction *_close_action;
-                QAction *_about_action;
-                QAction *_test_action;
-
-                QWidget* _root;
-                QVBoxLayout* _layout;
-
-                message_list* _messages;
-        };
+            INVARIANT(_text);
+        }
     }
 }
-
-#endif
