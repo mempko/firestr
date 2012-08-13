@@ -15,44 +15,37 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef FIRESTR_MAINWIN_H
-#define FIRESTR_MAINWIN_H
+#ifndef FIRESTR_GUI_MESSAGE_H
+#define FIRESTR_GUI_MESSAGE_H
 
-#include <QMainWindow>
-
-#include "gui/messagelist.hpp"
+#include <QScrollArea>
+#include <QGridLayout>
 
 namespace fire
 {
     namespace gui
     {
-        class main_window : public QMainWindow
+        class message : public QScrollArea
         {
             Q_OBJECT
             public:
-                main_window();
+                message();
+                virtual ~message();
 
-            private slots:
-                void about();
-                void test();
+            protected:
+                const QWidget* root() const;
+                QWidget* root() ;
+
+                const QGridLayout* layout() const; 
+                QGridLayout* layout(); 
 
             private:
-                void create_actions();
-                void create_main();
-                void create_menus();
-
-            private:
-                QMenu *_main_menu;
-                QAction *_close_action;
-                QAction *_about_action;
-                QAction *_test_action;
-
                 QWidget* _root;
-                QVBoxLayout* _layout;
-
-                message_list* _messages;
+                QGridLayout* _layout;
         };
     }
+
 }
 
 #endif
+
