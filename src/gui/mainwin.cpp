@@ -23,6 +23,7 @@
 #include "gui/mainwin.hpp"
 #include "gui/message.hpp"
 #include "gui/textmessage.hpp"
+#include "util/mencode.hpp"
 
 namespace fire
 {
@@ -126,6 +127,22 @@ namespace fire
             {
                 std::stringstream m;
                 m << "Test Message: " << i;
+                text_message* t = new text_message{m.str()};
+                _messages->add(t);
+            }
+
+            {
+                util::dict d;
+                d["a"] = 3;
+                d["b"] = "hi";
+
+                int c = d["a"];
+                std::string e = d["b"];
+
+                d["b"] = "ho";
+
+                std::stringstream m;
+                m << "a: " << d["a"].as_int() << " b: " << d["b"].as_string() << " c: " << c << " e: " << e;
                 text_message* t = new text_message{m.str()};
                 _messages->add(t);
             }
