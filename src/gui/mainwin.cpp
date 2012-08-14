@@ -142,7 +142,7 @@ namespace fire
                 d["b"] = "ho";
 
                 std::stringstream m;
-                m << "a: " << d["a"].as_int() << " b: " << d["b"].as_string() << " c: " << c << " e: " << e;
+                m << "encoded: `" << d << "'";
                 text_message* t = new text_message{m.str()};
                 _messages->add(t);
             }

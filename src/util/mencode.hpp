@@ -24,6 +24,7 @@
 #include <boost/any.hpp>
 
 #include "util/bytes.hpp"
+#include "util/dbc.hpp"
 
 namespace fire
 {
@@ -87,7 +88,17 @@ namespace fire
         class value_holder
         {
             public:
-                value_holder(boost::any& v) : _v(v) {}
+                value_holder(boost::any& v) : 
+                    _v(&v), _const(false) 
+                {
+                    INVARIANT(_v);
+                }
+
+                value_holder(const boost::any& v) : 
+                    _v(const_cast<boost::any*>(&v)), _const(true)
+                {
+                    INVARIANT(_v);
+                }
 
             public:
                 operator int() { return as_int();}
@@ -99,25 +110,39 @@ namespace fire
                 operator array() { return as_array();}
 
             public:
-                void operator=(int v) { _v = v;}
-                void operator=(size_t v) { _v = v;}
-                void operator=(double v) { _v = v;}
-                void operator=(const std::string& v) { _v = to_bytes(v);}
-                void operator=(const bytes& v) { _v = v;}
-                void operator=(const dict& v) { _v = v;}
-                void operator=(const array& v) { _v = v;}
-            public:
+                void operator=(int v) { CHECK_FALSE(_const); *_v = v;}
+                void operator=(size_t v) { CHECK_FALSE(_const); *_v = v;}
+                void operator=(double v) { CHECK_FALSE(_const); *_v = v;}
+                void operator=(const std::string& v) { CHECK_FALSE(_const); *_v = to_bytes(v);}
+                void operator=(const bytes& v) { CHECK_FALSE(_const); *_v = v;}
+                void operator=(const dict& v) { CHECK_FALSE(_const); *_v = v;}
+                void operator=(const array& v) { CHECK_FALSE(_const); *_v = v;}
 
-                int as_int() const { return boost::any_cast<int>(_v); }
-                size_t as_size() const { return boost::any_cast<size_t>(_v); }
-                double as_double() const { return boost::any_cast<double>(_v); }
-                std::string as_string() const { return to_str(boost::any_cast<const bytes&>(_v)); }
-                const bytes& as_bytes() const { return boost::any_cast<const bytes&>(_v); }
-                const dict& as_dict() const { return boost::any_cast<const dict&>(_v); }
-                const array& as_array() const { return boost::any_cast<const array&>(_v); }
+            public:
+                int as_int() const { return boost::any_cast<int>(*_v); }
+                size_t as_size() const { return boost::any_cast<size_t>(*_v); }
+                double as_double() const { return boost::any_cast<double>(*_v); }
+                std::string as_string() const { return to_str(boost::any_cast<const bytes&>(*_v)); }
+                const bytes& as_bytes() const { return boost::any_cast<const bytes&>(*_v); }
+                const dict& as_dict() const { return boost::any_cast<const dict&>(*_v); }
+                const array& as_array() const { return boost::any_cast<const array&>(*_v); }
+                
+            public:
+                bool is_int() const { return _v->type() == typeid(int);}
+                bool is_size() const { return _v->type() == typeid(size_t);}
+                bool is_double() const { return _v->type() == typeid(double);}
+                bool is_bytes() const { return _v->type() == typeid(bytes);}
+                bool is_dict() const { return _v->type() == typeid(dict);}
+                bool is_array() const { return _v->type() == typeid(array);}
+
             private:
-                value& _v;
+                value* _v;
+                bool _const;
         };
+
+        std::ostream& operator<<(std::ostream&, const dict&);
+        std::ostream& operator<<(std::ostream&, const array&);
+        std::ostream& operator<<(std::ostream&, const value_holder&);
     }
 }
 
