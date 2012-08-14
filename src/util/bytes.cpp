@@ -14,22 +14,21 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef FIRESTR_QUEUE_H
-#define FIRESTR_QUEUE_H
-
-#include <vector>
-#include <string>
+#include "util/bytes.hpp"
 
 namespace fire 
 {
     namespace util 
     {
-        typedef std::vector<char> bytes;
-        typedef std::vector<unsigned char> ubytes;
+        bytes to_bytes(const std::string& s)
+        {
+            return bytes(s.begin(), s.end());
+        }
 
-        bytes to_bytes(const std::string&);
-        std::string to_str(const bytes&);
+        std::string to_str(const bytes& b)
+        {
+            return std::string(&b[0], b.size());
+        }
     }
 }
 
-#endif
