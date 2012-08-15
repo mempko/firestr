@@ -17,6 +17,7 @@
 
 #include "util/mencode.hpp"
 
+#include <stdexcept>
 #include <boost/lexical_cast.hpp>
 
 namespace fire
@@ -57,6 +58,7 @@ namespace fire
         void array::add(const bytes& v) { _a.push_back(v); }
         void array::add(const dict& v) { _a.push_back(v); }
         void array::add(const array& v) { _a.push_back(v); }
+        void array::add(const value_holder& v) { _a.push_back(v.as_value()); }
 
         bool is_int(const value& v) { return v.type() == typeid(int);}
         bool is_size(const value& v) { return v.type() == typeid(size_t);}
@@ -100,8 +102,7 @@ namespace fire
 
         void encode(std::ostream& o, const array& v)
         {
-            o << 'd';
-            encode(o, v.size());
+            o << 'a';
             for(const auto& e : v) encode(o, e);
             o << ';';
         }
@@ -138,6 +139,179 @@ namespace fire
         {
             encode(o, v);
             return o;
+        }
+
+        void check(std::istream& i)
+        {
+            if(i.good()) return;
+            std::stringstream e;
+            e << "unexpected end of stream at byte " << e.tellg();
+            throw std::runtime_error(e.str()); 
+        }
+
+        std::string get_until(std::istream& i, char e)
+        {
+            std::string s;
+            s.reserve(64);
+
+            int c = i.get();
+            while(c != e && i.good())
+            {
+                s.push_back(c);
+                c = i.get();
+            }
+            check(i);
+            CHECK_EQUAL(c, e);
+
+            return s;
+        }
+
+        template<typename t>
+            t dec(std::istream& i, const std::string& type, char b, char e)
+            {
+                int c = i.get();
+                if(!i.good()) t();
+                if(c != b)
+                {
+                    std::stringstream e;
+                    e << "expected " << type << " at byte " << e.tellg();
+                    throw std::runtime_error(e.str()); 
+                }
+
+                std::string sv = get_until(i, e);
+                return lexical_cast<t>(sv);
+            }
+
+        int decode_int(std::istream& i) 
+        { 
+            return dec<int>(i, "int", 'i', ';'); 
+        }
+
+        size_t decode_size(std::istream& i)
+        {
+            return dec<size_t>(i, "size", 's', ';');
+        }
+
+        double decode_double(std::istream& i)
+        {
+            return dec<double>(i, "real", 'r', ';');
+        }
+
+        bytes decode_bytes(std::istream& i)
+        {
+            bytes b;
+            int c = i.get();
+            if(!i.good()) return b;
+
+            if(c < '0' || c > '9')
+            {
+                std::stringstream e;
+                e << "expected byte string at byte " << e.tellg();
+                throw std::runtime_error(e.str()); 
+            }
+
+            std::string ss;
+            ss.push_back(c);
+            ss.append(get_until(i, ':'));
+            size_t size = lexical_cast<size_t>(ss);
+
+            b.resize(size);
+            i.read(&b[0], size);
+
+            return b;
+        }
+
+        dict decode_dict(std::istream& i);
+        array decode_array(std::istream& i);
+        value decode_value(std::istream& i)
+        {
+            value v;
+
+            int c = i.peek();
+            if(!i.good()) return v;
+
+            if(c == 'i') v = decode_int(i);
+            else if(c == 's') v = decode_size(i);
+            else if(c == 'r') v = decode_double(i);
+            else if(c == 'd') v = decode_dict(i);
+            else if(c == 'a') v = decode_array(i);
+            else if(c >= '0' && c <= '9') v = decode_bytes(i);
+            else 
+            {
+                std::stringstream e;
+                e << "unexpected value type `" << c << "' at byte " << i.tellg();
+                throw std::runtime_error(e.str());
+            }
+            return v;
+        }
+
+        dict decode_dict(std::istream& i)
+        {
+            dict d;
+            int c = i.get();
+            if(!i.good()) return d;
+
+            if(c != 'd') 
+            {
+                std::stringstream e;
+                e << "expected dictionary at byte " << e.tellg();
+                throw std::runtime_error(e.str());
+            }
+
+            while(c != ';' && i.good())
+            {
+                std::string key = to_str(decode_bytes(i));
+                d[key] = value_holder(decode_value(i));
+                c = i.peek();
+            }
+            c = i.get();
+            check(i);
+            CHECK_EQUAL(c, ';');
+
+            return d;
+        }
+
+        array decode_array(std::istream& i)
+        {
+            array a;
+            int c = i.get();
+            if(!i.good()) return a;
+
+            if(c != 'a') 
+            {
+                std::stringstream e;
+                e << "expected array at byte " << e.tellg();
+                throw std::runtime_error(e.str());
+            }
+
+            while(c != ';' && i.good())
+            {
+                a.add(value_holder(decode_value(i)));
+                c = i.peek();
+            }
+            c = i.get();
+            check(i);
+            CHECK_EQUAL(c, ';');
+
+            return a;
+        }
+
+        std::istream& operator>>(std::istream& i, dict& v)
+        {
+            v = decode_dict(i);
+            return i;
+        }
+
+        std::istream& operator>>(std::istream& i, array& v)
+        {
+            v = decode_array(i);
+            return i;
+        }
+        
+        std::istream& operator>>(std::istream& i, value_holder& v)
+        {
+            v = value_holder(decode_value(i));
+            return i;
         }
     }
 }

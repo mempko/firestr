@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <sstream>
+#include <stdexcept>
 
 #include <QtGui>
 
@@ -131,19 +132,37 @@ namespace fire
                 _messages->add(t);
             }
 
+            try
             {
                 util::dict d;
                 d["a"] = 3;
-                d["b"] = "hi";
-
-                int c = d["a"];
-                std::string e = d["b"];
-
                 d["b"] = "ho";
 
+                util::array f;
+                f.add("orange");
+                f.add("apple");
+
+                d["fruit"] = f;
+
                 std::stringstream m;
-                m << "encoded: `" << d << "'";
+                m << d;
+
                 text_message* t = new text_message{m.str()};
+                _messages->add(t);
+
+                util::dict d2;
+                m >> d2;
+
+                std::stringstream m2;
+                m2 << d2;
+
+                text_message* t2 = new text_message{m2.str()};
+                _messages->add(t2);
+
+            }
+            catch(std::exception& e)
+            {
+                text_message* t = new text_message{e.what()};
                 _messages->add(t);
             }
         }
