@@ -25,6 +25,7 @@
 #include "gui/message.hpp"
 #include "gui/textmessage.hpp"
 #include "util/mencode.hpp"
+#include "network/message_queue.hpp"
 
 namespace fire
 {
@@ -124,7 +125,9 @@ namespace fire
         {
             INVARIANT(_messages);
 
-            for(int i = 0; i < 10; i++)
+            network::create_message_queue("zmq,http://localhost:8080,o,c,test=first");
+
+            for(int i = 0; i < 3; i++)
             {
                 std::stringstream m;
                 m << "Test Message: " << i;

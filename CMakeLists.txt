@@ -31,4 +31,6 @@ find_package(Qt4 REQUIRED)
 include(${QT_USE_FILE})
 add_definitions(${QT_DEFINITIONS})
 
+#setup ZeroMq
+
 add_subdirectory(src)

@@ -24,6 +24,7 @@ namespace fg = fire::gui;
 int main(int argc, char *argv[])
 {
     QApplication a{argc, argv};
+
     fg::main_window w;
     w.show();
 
