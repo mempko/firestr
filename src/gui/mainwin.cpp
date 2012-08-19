@@ -125,8 +125,7 @@ namespace fire
         {
             INVARIANT(_messages);
 
-            network::create_message_queue("zmq,http://localhost:8080,o,c,test=first");
-
+            //test text message
             for(int i = 0; i < 3; i++)
             {
                 std::stringstream m;
@@ -137,6 +136,7 @@ namespace fire
 
             try
             {
+                //test dict
                 util::dict d;
                 d["a"] = 3;
                 d["b"] = "ho";
@@ -162,6 +162,22 @@ namespace fire
                 text_message* t2 = new text_message{m2.str()};
                 _messages->add(t2);
 
+                //test message queue
+                network::message_queue_ptr q1 = network::create_message_queue("zmq,tcp://127.0.0.1:8080,bnd,psh");
+                CHECK(q1);
+
+                network::message_queue_ptr q2 = network::create_message_queue("zmq,tcp://127.0.0.1:8080,con,pul");
+                CHECK(q2);
+
+                std::string hi = "hi";
+                q1->send(hi);
+                text_message* t3 = new text_message{"sent: " + hi};
+                _messages->add(t3);
+
+                std::string hi2;
+                q2->recieve(hi2);
+                text_message* t4 = new text_message{"got: " + hi2};
+                _messages->add(t4);
             }
             catch(std::exception& e)
             {

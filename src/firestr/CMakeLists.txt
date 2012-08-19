@@ -42,7 +42,8 @@ target_link_libraries(
     fire_network
     fire_util
     ${Boost_LIBRARIES}
-    ${QT_LIBRARIES})
+    ${QT_LIBRARIES}
+    ${ZMQ_LIBS})
 
 add_dependencies(
     firestr 

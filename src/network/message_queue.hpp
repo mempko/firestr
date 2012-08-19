@@ -33,8 +33,24 @@ namespace fire
         class message_queue
         {
             public:
+                bool send(const std::string& s)
+                {
+                    return send(util::to_bytes(s));
+                }
+
+                bool recieve(std::string& s)
+                {
+                    util::bytes b;
+                    if(recieve(b)) 
+                    {
+                        s = util::to_str(b);
+                        return true;
+                    }
+                    return false;
+                }
+                
                 virtual bool send(const util::bytes&) = 0;
-                virtual bool receive(util::bytes&) = 0;
+                virtual bool recieve(util::bytes&) = 0;
         };
 
         typedef std::shared_ptr<message_queue> message_queue_ptr;
