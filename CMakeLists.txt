@@ -32,5 +32,6 @@ include(${QT_USE_FILE})
 add_definitions(${QT_DEFINITIONS})
 
 #setup ZeroMq
+set(ZMQ_LIBS libzmq.a)
 
 add_subdirectory(src)
