@@ -17,6 +17,5 @@
 
 add_subdirectory(util)
 add_subdirectory(network)
-#add_subdirectory(queue)
 add_subdirectory(gui)
 add_subdirectory(firestr)
