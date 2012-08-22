@@ -313,5 +313,21 @@ namespace fire
             v = value_holder(decode_value(i));
             return i;
         }
+
+    }
+}
+
+namespace std
+{
+    std::ostream& operator<<(std::ostream& o, const fire::util::bytes& v)
+    {
+        fire::util::encode(o, v);
+        return o;
+    }
+
+    std::istream& operator>>(std::istream& i, fire::util::bytes& v)
+    {
+        v = fire::util::value_holder(fire::util::decode_value(i)).as_bytes();
+        return i;
     }
 }
