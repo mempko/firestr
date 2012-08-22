@@ -14,8 +14,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef FIRESTR_QUEUE_H
-#define FIRESTR_QUEUE_H
+#ifndef FIRESTR_UTIL_QUEUE_H
+#define FIRESTR_UTIL_QUEUE_H
 
 #include <deque>
 #include <thread>
@@ -25,7 +25,7 @@
 
 namespace fire 
 {
-    namespace queue 
+    namespace util 
     {
         struct has_size 
         {
