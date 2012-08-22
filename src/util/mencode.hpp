@@ -165,5 +165,10 @@ namespace fire
     }
 }
 
+namespace std
+{
+    std::ostream& operator<<(std::ostream&, const fire::util::bytes&);
+    std::istream& operator>>(std::istream&, fire::util::bytes&);
+}
 
 #endif
