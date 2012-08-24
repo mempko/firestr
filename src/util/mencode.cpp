@@ -17,6 +17,7 @@
 
 #include "util/mencode.hpp"
 
+#include <algorithm>
 #include <stdexcept>
 #include <boost/lexical_cast.hpp>
 
@@ -26,9 +27,73 @@ namespace fire
     {
         using boost::lexical_cast;
 
-        value_holder dict::operator[](const std::string& k)
+        value::value() : _v{} {}
+        value::value(int v) : _v{v} {}
+        value::value(size_t v) : _v{v} {}
+        value::value(double v) : _v{v} {}
+        value::value(const std::string& v) : _v{to_bytes(v)} {}
+        value::value(const char* v) : _v{to_bytes(v)} {}
+        value::value(const bytes& v) : _v{v} {}
+        value::value(const dict& v) : _v{v} {}
+        value::value(const array& v) : _v{v} {}
+        value::value(const value& o) : _v{o._v} {}
+
+        value::operator int() { return as_int();}
+        value::operator size_t() { return as_size();}
+        value::operator double() { return as_double();}
+        value::operator std::string() { return as_string();}
+        value::operator bytes() { return as_bytes();}
+        value::operator dict() { return as_dict();}
+        value::operator array() { return as_array();}
+
+        value& value::operator=(int v) { _v = v; return *this;}
+        value& value::operator=(size_t v) { _v = v; return *this;}
+        value& value::operator=(double v) { _v = v; return *this;}
+        value& value::operator=(const std::string& v) { _v = to_bytes(v); return *this;}
+        value& value::operator=(const char* v) { _v = to_bytes(v); return *this;}
+        value& value::operator=(const bytes& v) { _v = v; return *this;}
+        value& value::operator=(const dict& v) { _v = v; return *this;}
+        value& value::operator=(const array& v) { _v = v; return *this;}
+        value& value::operator=(const value& o) 
+        { 
+            if(&o == this) return *this;
+            _v = o._v; 
+            return *this;
+        }
+
+        int value::as_int() const { return boost::any_cast<int>(_v); }
+        size_t value::as_size() const { return boost::any_cast<size_t>(_v); }
+        double value::as_double() const { return boost::any_cast<double>(_v); }
+        std::string value::as_string() const { return to_str(boost::any_cast<const bytes&>(_v)); }
+        const bytes& value::as_bytes() const { return boost::any_cast<const bytes&>(_v); }
+        const dict& value::as_dict() const { return boost::any_cast<const dict&>(_v); }
+        const array& value::as_array() const { return boost::any_cast<const array&>(_v); }
+                
+        bool value::is_int() const { return _v.type() == typeid(int);}
+        bool value::is_size() const { return _v.type() == typeid(size_t);}
+        bool value::is_double() const { return _v.type() == typeid(double);}
+        bool value::is_bytes() const { return _v.type() == typeid(bytes);}
+        bool value::is_dict() const { return _v.type() == typeid(dict);}
+        bool value::is_array() const { return _v.type() == typeid(array);}
+
+        dict::dict() : _m{} {}
+        dict::dict(std::initializer_list<kv> s)
         {
-            return value_holder(_m[k]);
+            for(auto v : s) _m[v.first] = v.second; 
+
+            ENSURE_LESS_EQUAL(_m.size(), s.size());
+        }
+
+        value& dict::operator[](const std::string& k)
+        {
+            return _m[k];
+        }
+
+        const value& dict::operator[] (const std::string& k) const
+        {
+            auto p = _m.find(k);
+            REQUIRE_FALSE(p == _m.end());
+            return p->second;
         }
 
         size_t dict::size() const { return _m.size(); }
@@ -40,33 +105,36 @@ namespace fire
 
         dict::const_iterator dict::begin() const { return _m.begin(); }
         dict::const_iterator dict::end() const { return _m.end(); }
+        dict::iterator dict::begin() { return _m.begin(); }
+        dict::iterator dict::end() { return _m.end(); }
 
-        value_holder array::operator[](size_t i)
+        array::array() : _a{} {}
+        array::array(std::initializer_list<value> s)
         {
-            return value_holder(_a[i]);
+            _a.resize(s.size());
+            std::copy(s.begin(), s.end(), _a.begin());
+
+            ENSURE_EQUAL(_a.size(), s.size());
+        }
+
+        value& array::operator[](size_t i)
+        {
+            return _a[i];
+        }
+
+        const value& array::operator[] (size_t i) const
+        {
+            return _a[i];
         }
 
         size_t array::size() const { return _a.size(); }
 
         array::const_iterator array::begin() const { return _a.begin(); }
         array::const_iterator array::end() const { return _a.end(); }
+        array::iterator array::begin() { return _a.begin(); }
+        array::iterator array::end() { return _a.end(); }
 
-        void array::add(int v) { _a.push_back(v); }
-        void array::add(size_t v) { _a.push_back(v); }
-        void array::add(double v) { _a.push_back(v); }
-        void array::add(const std::string& v) { _a.push_back(to_bytes(v)); }
-        void array::add(const bytes& v) { _a.push_back(v); }
-        void array::add(const dict& v) { _a.push_back(v); }
-        void array::add(const array& v) { _a.push_back(v); }
-        void array::add(const value_holder& v) { _a.push_back(v.as_value()); }
-
-        bool is_int(const value& v) { return v.type() == typeid(int);}
-        bool is_size(const value& v) { return v.type() == typeid(size_t);}
-        bool is_double(const value& v) { return v.type() == typeid(double);}
-        bool is_bytes(const value& v) { return v.type() == typeid(bytes);}
-        bool is_dict(const value& v) { return v.type() == typeid(dict);}
-        bool is_array(const value& v) { return v.type() == typeid(array);}
-
+        void array::add(const value& v) { _a.push_back(v); }
 
         template <typename t>
         void enc(std::ostream& o, char s, char e, const t& v)
@@ -107,7 +175,7 @@ namespace fire
             o << ';';
         }
 
-        void encode(std::ostream& o, const value_holder& v)
+        void encode(std::ostream& o, const value& v)
         {
             if(v.is_int()) encode(o, v.as_int());
             else if(v.is_size()) encode(o, v.as_size());
@@ -116,11 +184,6 @@ namespace fire
             else if(v.is_dict()) encode(o, v.as_dict());
             else if(v.is_array()) encode(o, v.as_array());
             else CHECK(false && "missed case");
-        }
-
-        void encode(std::ostream& o, const value& v)
-        {
-            encode(o, value_holder(v));
         }
 
         std::ostream& operator<<(std::ostream& o, const dict& v)
@@ -135,7 +198,7 @@ namespace fire
             return o;
         }
 
-        std::ostream& operator<<(std::ostream& o, const value_holder& v)
+        std::ostream& operator<<(std::ostream& o, const value& v)
         {
             encode(o, v);
             return o;
@@ -146,7 +209,7 @@ namespace fire
             if(i.good()) return;
             std::stringstream e;
             e << "unexpected end of stream at byte " << e.tellg();
-            throw std::runtime_error(e.str()); 
+            throw std::runtime_error{e.str()}; 
         }
 
         std::string get_until(std::istream& i, char e)
@@ -160,6 +223,7 @@ namespace fire
                 s.push_back(c);
                 c = i.get();
             }
+
             check(i);
             CHECK_EQUAL(c, e);
 
@@ -170,12 +234,13 @@ namespace fire
             t dec(std::istream& i, const std::string& type, char b, char e)
             {
                 int c = i.get();
-                if(!i.good()) t();
+                if(!i.good()) t{};
+
                 if(c != b)
                 {
                     std::stringstream e;
                     e << "expected " << type << " at byte " << e.tellg();
-                    throw std::runtime_error(e.str()); 
+                    throw std::runtime_error{e.str()}; 
                 }
 
                 std::string sv = get_until(i, e);
@@ -207,7 +272,7 @@ namespace fire
             {
                 std::stringstream e;
                 e << "expected byte string at byte " << e.tellg();
-                throw std::runtime_error(e.str()); 
+                throw std::runtime_error{e.str()}; 
             }
 
             std::string ss;
@@ -240,7 +305,7 @@ namespace fire
             {
                 std::stringstream e;
                 e << "unexpected value type `" << c << "' at byte " << i.tellg();
-                throw std::runtime_error(e.str());
+                throw std::runtime_error{e.str()};
             }
             return v;
         }
@@ -255,13 +320,13 @@ namespace fire
             {
                 std::stringstream e;
                 e << "expected dictionary at byte " << e.tellg();
-                throw std::runtime_error(e.str());
+                throw std::runtime_error{e.str()};
             }
 
             while(c != ';' && i.good())
             {
                 std::string key = to_str(decode_bytes(i));
-                d[key] = value_holder(decode_value(i));
+                d[key] = decode_value(i);
                 c = i.peek();
             }
             c = i.get();
@@ -281,14 +346,15 @@ namespace fire
             {
                 std::stringstream e;
                 e << "expected array at byte " << e.tellg();
-                throw std::runtime_error(e.str());
+                throw std::runtime_error{e.str()};
             }
 
             while(c != ';' && i.good())
             {
-                a.add(value_holder(decode_value(i)));
+                a.add(decode_value(i));
                 c = i.peek();
             }
+
             c = i.get();
             check(i);
             CHECK_EQUAL(c, ';');
@@ -308,12 +374,11 @@ namespace fire
             return i;
         }
         
-        std::istream& operator>>(std::istream& i, value_holder& v)
+        std::istream& operator>>(std::istream& i, value& v)
         {
-            v = value_holder(decode_value(i));
+            v = decode_value(i);
             return i;
         }
-
     }
 }
 
@@ -327,7 +392,7 @@ namespace std
 
     std::istream& operator>>(std::istream& i, fire::util::bytes& v)
     {
-        v = fire::util::value_holder(fire::util::decode_value(i)).as_bytes();
+        v = fire::util::decode_value(i).as_bytes();
         return i;
     }
 }
