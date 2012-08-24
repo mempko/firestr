@@ -26,7 +26,10 @@
 #include "gui/textmessage.hpp"
 #include "util/mencode.hpp"
 #include "network/message_queue.hpp"
+#include "message/postoffice.hpp"
 
+namespace m = fire::message;
+                
 namespace fire
 {
     namespace gui
@@ -136,65 +139,46 @@ namespace fire
 
             try
             {
-                //test dict
-                util::dict d;
-                d["a"] = 3;
-                d["b"] = "ho";
+                m::post_office_ptr p1{new m::post_office};
+                p1->address("p1");
 
-                util::array f;
-                f.add("orange");
-                f.add("apple");
+                m::mailbox_ptr m1{new m::mailbox{"m1"}};
+                m::mailbox_ptr m2{new m::mailbox{"m2"}};
 
-                d["fruit"] = f;
+                p1->add(m1);
 
-                std::stringstream m;
-                m << d;
+                m::post_office_ptr p2{new m::post_office};
+                p2->address("p2");
+                p1->add(p2);
+                p2->add(m2);
 
-                text_message* t = new text_message{m.str()};
-                _messages->add(t);
+                m::message hi;
+                hi.meta.to = {"p1", "m1"};
 
-                util::dict d2;
-                m >> d2;
+                m2->push_outbox(hi);
 
-                std::stringstream m2;
-                m2 << d2;
+                m::message hic;
+                while(!m1->pop_inbox(hic));
 
-                text_message* t2 = new text_message{m2.str()};
+                std::stringstream s1;
+                s1 << hic;
+
+                text_message* t1 = new text_message{s1.str()};
+                _messages->add(t1);
+
+                m::message hi2;
+                hi2.meta.to = hic.meta.from;
+                m1->push_outbox(hi2);
+
+                m::message hi2c;
+                while(!m2->pop_inbox(hi2c));
+
+                std::stringstream s2;
+                s2 << hi2c;
+
+                text_message* t2 = new text_message{s2.str()};
                 _messages->add(t2);
 
-                //test message queue
-                network::message_queue_ptr q1 = network::create_message_queue("zmq,tcp://127.0.0.1:8080,bnd,psh");
-                CHECK(q1);
-
-                network::message_queue_ptr q2 = network::create_message_queue("zmq,tcp://127.0.0.1:8080,con,pul");
-                CHECK(q2);
-
-                std::string hi = "hi";
-                q1->send(hi);
-                text_message* t3 = new text_message{"sent: " + hi};
-                _messages->add(t3);
-
-                std::string hi2;
-                q2->recieve(hi2);
-                text_message* t4 = new text_message{"got: " + hi2};
-                _messages->add(t4);
-
-                namespace u = util;
-                u::dict d5{
-                    {"ooh", 
-                            u::array{
-                                34, 
-                                "hi", 
-                                u::array{ 1,2,2 }, 
-                                u::dict{{"test",45}}}
-                    },
-                    {"moop", 34}
-                }; 
-                std::stringstream m5;
-                m5 << d5;
-
-                text_message* t5 = new text_message{m5.str()};
-                _messages->add(t5);
             }
             catch(std::exception& e)
             {

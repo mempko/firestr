@@ -36,7 +36,14 @@ namespace fire
             //we encode it into a byte string so we can 
             //skip quickly
             std::stringstream ms;
-            ms << meta.extra;
+
+            util::array to;
+            for(auto s: meta.to) to.add(s);
+
+            util::array from;
+            for(auto s: meta.from) from.add(s);
+
+            ms << to << from << meta.extra;
             util::bytes mb = util::to_bytes(ms.str());
             o << mb;
 
@@ -60,12 +67,30 @@ namespace fire
             util::bytes mb;
             i >> mb;
             std::stringstream ms(util::to_str(mb));
-            ms >> meta.extra; 
+            util::array to;
+            util::array from;
+            ms >> to >> from >> meta.extra; 
+
+            for(auto s : to) meta.to.push_back(s.as_string());
+            for(auto s : from) meta.from.push_back(s.as_string());
 
             //read data
             i >> m.data;
 
             return i;
         }
+
     }
+}
+
+namespace std
+{
+        std::ostream& operator<<(std::ostream& o, fire::message::address a)
+        {
+            o << a.front();
+            a.pop_front();
+            for(auto p : a) o << ':' << p;
+
+            return o;
+        }
 }

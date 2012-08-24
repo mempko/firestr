@@ -19,6 +19,7 @@
 
 #include <string>
 #include <iostream>
+#include <deque>
 
 #include "util/mencode.hpp"
 #include "util/bytes.hpp"
@@ -27,9 +28,12 @@ namespace fire
 {
     namespace message
     {
+        typedef std::deque<std::string> address;
         struct metadata
         {
             std::string type;
+            address to;
+            address from;
             util::dict extra;
         };
 
@@ -43,5 +47,11 @@ namespace fire
         std::istream& operator>>(std::istream&, message&);
 
     }
+
+}
+
+namespace std
+{
+    std::ostream& operator<<(std::ostream&, fire::message::address);
 }
 #endif 

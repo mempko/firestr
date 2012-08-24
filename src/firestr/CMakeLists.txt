@@ -39,6 +39,7 @@ add_executable(
 target_link_libraries(
     firestr
     fire_gui
+    fire_message
     fire_network
     fire_util
     ${Boost_LIBRARIES}
