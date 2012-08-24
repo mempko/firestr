@@ -178,6 +178,23 @@ namespace fire
                 q2->recieve(hi2);
                 text_message* t4 = new text_message{"got: " + hi2};
                 _messages->add(t4);
+
+                namespace u = util;
+                u::dict d5{
+                    {"ooh", 
+                            u::array{
+                                34, 
+                                "hi", 
+                                u::array{ 1,2,2 }, 
+                                u::dict{{"test",45}}}
+                    },
+                    {"moop", 34}
+                }; 
+                std::stringstream m5;
+                m5 << d5;
+
+                text_message* t5 = new text_message{m5.str()};
+                _messages->add(t5);
             }
             catch(std::exception& e)
             {

@@ -20,6 +20,7 @@
 
 #include <map>
 #include <iostream>
+#include <initializer_list>
 
 #include <boost/any.hpp>
 
@@ -30,26 +31,91 @@ namespace fire
 {
     namespace util
     {
-        typedef boost::any value;
+        class dict;
+        class array;
 
-        class value_holder;
+        class value
+        {
+            public:
+                value();
+                value(int v);
+                value(size_t v);
+                value(double v);
+                value(const std::string& v);
+                value(const char* v);
+                value(const bytes& v);
+                value(const dict& v);
+                value(const array& v);
+                value(const value& o);
+
+            public:
+                operator int();
+                operator size_t();
+                operator double();
+                operator std::string();
+                operator bytes();
+                operator dict();
+                operator array();
+
+            public:
+                value& operator=(int v);
+                value& operator=(size_t v);
+                value& operator=(double v);
+                value& operator=(const std::string& v);
+                value& operator=(const char* v);
+                value& operator=(const bytes& v);
+                value& operator=(const dict& v);
+                value& operator=(const array& v);
+                value& operator=(const value& o);
+
+            public:
+                int as_int() const;
+                size_t as_size() const;
+                double as_double() const;
+                std::string as_string() const;
+                const bytes& as_bytes() const;
+                const dict& as_dict() const;
+                const array& as_array() const;
+                
+            public:
+                bool is_int() const;
+                bool is_size() const;
+                bool is_double() const;
+                bool is_bytes() const;
+                bool is_dict() const;
+                bool is_array() const;
+
+            private:
+                boost::any _v;
+        };
+
+        typedef std::pair<std::string, value> kv;
 
         class dict
         {
             private:
                 typedef std::map<std::string, value> value_map;
+        
+            public:
+                dict();
+                dict(std::initializer_list<kv>);
 
             public:
                 typedef value_map::const_iterator const_iterator;
+                typedef value_map::iterator iterator;
                 
             public:
-                value_holder operator[](const std::string& k);
+                value& operator[](const std::string& k);
+                const value& operator[] (const std::string& k) const;
+
                 size_t size() const;
                 bool has(const std::string& k) const; 
 
             public:
-                value_map::const_iterator begin() const;
-                value_map::const_iterator end() const;
+                const_iterator begin() const;
+                const_iterator end() const;
+                iterator begin();
+                iterator end();
 
             private:
                 value_map _m;
@@ -62,106 +128,37 @@ namespace fire
 
             public:
                 typedef value_array::const_iterator const_iterator;
+                typedef value_array::iterator iterator;
 
             public:
-                void add(int);
-                void add(size_t);
-                void add(double);
-                void add(const std::string&);
-                void add(const bytes&);
-                void add(const dict&);
-                void add(const array&);
-                void add(const value_holder&);
+                array();
+                array(std::initializer_list<value>);
 
             public:
-                value_holder operator[](size_t);
+                void add(const value&);
+
+            public:
+                value& operator[](size_t);
+                const value& operator[] (size_t) const;
                 size_t size() const;
 
             public:
                 const_iterator begin() const;
                 const_iterator end() const;
+                iterator begin();
+                iterator end();
 
             private:
                 value_array _a;
         };
 
-
-        class value_holder
-        {
-            public:
-                value_holder(boost::any& v) : 
-                    _v(&v), _const(false) 
-                {
-                    INVARIANT(_v);
-                }
-
-                value_holder(const boost::any& v) : 
-                    _v(const_cast<boost::any*>(&v)), _const(true)
-                {
-                    INVARIANT(_v);
-                }
-
-                value_holder(const value_holder& o) : 
-                    _v(const_cast<boost::any*>(o._v)), _const(o._const)
-                {
-                    INVARIANT(_v);
-                }
-
-            public:
-                operator int() { return as_int();}
-                operator size_t() { return as_size();}
-                operator double() { return as_double();}
-                operator std::string() { return as_string();}
-                operator bytes() { return as_bytes();}
-                operator dict() { return as_dict();}
-                operator array() { return as_array();}
-
-            public:
-                value_holder& operator=(int v) { CHECK_FALSE(_const); *_v = v; return *this;}
-                value_holder& operator=(size_t v) { CHECK_FALSE(_const); *_v = v; return *this;}
-                value_holder& operator=(double v) { CHECK_FALSE(_const); *_v = v; return *this;}
-                value_holder& operator=(const std::string& v) { CHECK_FALSE(_const); *_v = to_bytes(v); return *this;}
-                value_holder& operator=(const bytes& v) { CHECK_FALSE(_const); *_v = v; return *this;}
-                value_holder& operator=(const dict& v) { CHECK_FALSE(_const); *_v = v; return *this;}
-                value_holder& operator=(const array& v) { CHECK_FALSE(_const); *_v = v; return *this;}
-                value_holder& operator=(const value_holder& v) 
-                { 
-                    REQUIRE(v._v);
-                    CHECK_FALSE(_const); 
-                    *_v = *v._v; 
-                    return *this;
-                }
-
-            public:
-                int as_int() const { return boost::any_cast<int>(*_v); }
-                size_t as_size() const { return boost::any_cast<size_t>(*_v); }
-                double as_double() const { return boost::any_cast<double>(*_v); }
-                std::string as_string() const { return to_str(boost::any_cast<const bytes&>(*_v)); }
-                const bytes& as_bytes() const { return boost::any_cast<const bytes&>(*_v); }
-                const dict& as_dict() const { return boost::any_cast<const dict&>(*_v); }
-                const array& as_array() const { return boost::any_cast<const array&>(*_v); }
-                const value& as_value() const { return *_v; }
-                
-            public:
-                bool is_int() const { return _v->type() == typeid(int);}
-                bool is_size() const { return _v->type() == typeid(size_t);}
-                bool is_double() const { return _v->type() == typeid(double);}
-                bool is_bytes() const { return _v->type() == typeid(bytes);}
-                bool is_dict() const { return _v->type() == typeid(dict);}
-                bool is_array() const { return _v->type() == typeid(array);}
-
-            private:
-                value* _v;
-                bool _const;
-        };
-
         std::ostream& operator<<(std::ostream&, const dict&);
         std::ostream& operator<<(std::ostream&, const array&);
-        std::ostream& operator<<(std::ostream&, const value_holder&);
+        std::ostream& operator<<(std::ostream&, const value&);
 
         std::istream& operator>>(std::istream&, dict&);
         std::istream& operator>>(std::istream&, array&);
-        std::istream& operator>>(std::istream&, value_holder&);
+        std::istream& operator>>(std::istream&, value&);
     }
 }
 
