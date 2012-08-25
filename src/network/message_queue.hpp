@@ -59,6 +59,15 @@ namespace fire
         message_queue_ptr create_message_queue(
                 const std::string& queue_address, 
                 const queue_options& default_options = queue_options());
+
+        enum message_type {zeromq};
+        struct address_components
+        {
+            std::string queue_address; 
+            message_type type;
+            std::string location;
+            queue_options options;
+        };
     }
 }
 
