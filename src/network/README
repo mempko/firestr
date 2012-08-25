@@ -1,0 +1,23 @@
+
+===================================================================
+network library
+===================================================================
+
+Implements code to send bits and blips over the network.
+The general design is that there is a factory function which
+returns a new message_queue object that implements the 
+message_queue interface.
+
+Currently only Zeromq is supported at the moment.
+
+===================================================================
+file summary
+===================================================================
+
+message_queue - Main interface for creating a network queue.
+                Contains the message_queue interface and factory 
+                function.
+
+zeromq_queue  - Implements the message_queue interface with a zeromq
+                backend.
+

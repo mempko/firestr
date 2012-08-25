@@ -1,0 +1,29 @@
+
+===================================================================
+util library
+===================================================================
+
+This is a place to put misc code that everything needs.
+
+===================================================================
+dependencies
+===================================================================
+
+boost
+
+===================================================================
+file summary
+===================================================================
+
+dbc     - Implements some Design By Contract constructs. 
+
+bytes   - Deals with bytes and converting from bytes to strings, etc
+
+queue   - Implements a thread safe queue.
+
+string  - Utilities dealing with string handling.
+
+mencode - Implements a library to serialize data structures into 
+          mencode (max encode). This is inspired by bencode used
+          by BitTorrent. All messages are encoded in this format.
+

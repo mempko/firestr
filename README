@@ -19,7 +19,7 @@ Organization
 ===================================================================
 
 This is the reference implementation of the protocol. It uses QT for
-the GUI and Zeromq as the message backend. Currently the applications
+the GUI and Zeromq as the message back-end. Currently the applications
 are written in Lua, but other bindings will be provided in the future. 
 
 The main directory is src. Each subdirectory is a library and
