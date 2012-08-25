@@ -32,15 +32,13 @@ namespace fire
             REQUIRE(o);
             while(!o->_done)
             {
+                bool sent = false;
+
                 for(auto p : o->_boxes)
                 {
                     auto wp = p.second;
                     auto sp = wp.lock();
-                    if(!sp) 
-                    {
-                        util::sleep_thread(THREAD_SLEEP);
-                        continue;
-                    }
+                    if(!sp) continue;
 
                     message m;
                     if(!sp->pop_outbox(m)) continue;
@@ -50,7 +48,10 @@ namespace fire
                     CHECK_EQUAL(m.meta.from.size(), 1);
                     std::cerr << o->_address << " sending from: " << sp->address() << " to: " << m.meta.to << std::endl;
                     o->send(m);
+                    sent = true;
                 }
+
+                if(!sent) util::sleep_thread(THREAD_SLEEP);
             }
         }
          

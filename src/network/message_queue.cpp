@@ -68,10 +68,11 @@ namespace fire
             c.queue_address = queue_address;
             c.type = determine_type(s[0]);
             c.location = s[1];
+            c.options = defaults;
+
             if(s.size() > 2) 
             {
                 auto overrides = parse_options(strings(s.begin() + 2, s.end()));
-                c.options = defaults;
                 c.options.insert(overrides.begin(), overrides.end());
             }
 
