@@ -27,8 +27,10 @@
 #include "util/mencode.hpp"
 #include "network/message_queue.hpp"
 #include "message/master_post.hpp"
+#include "util/bytes.hpp"
 
 namespace m = fire::message;
+namespace u = fire::util;
                 
 namespace fire
 {
@@ -72,14 +74,16 @@ namespace fire
             REQUIRE_FALSE(_root);
             REQUIRE_FALSE(_layout);
             REQUIRE_FALSE(_messages);
+            REQUIRE(_master);
             
             //setup main
             _root = new QWidget{this};
             _layout = new QVBoxLayout{_root};
 
             //setup message list
-            _messages = new message_list;
+            _messages = new message_list{"main"};
             _layout->addWidget(_messages);
+            _master->add(_messages->mail());
 
             //setup base
             setWindowTitle(tr("Firestr"));
@@ -194,6 +198,11 @@ namespace fire
 
                 text_message* t2 = new text_message{s2.str()};
                 _messages->add(t2);
+
+                m::message hi3;
+                hi3.meta.to = {"main"};
+                hi3.data = u::to_bytes("this is only a test");
+                _master->send(hi3);
 
             }
             catch(std::exception& e)

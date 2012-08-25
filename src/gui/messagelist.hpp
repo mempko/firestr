@@ -21,6 +21,7 @@
 #include <QScrollArea>
 
 #include "gui/message.hpp"
+#include "message/mailbox.hpp"
 
 namespace fire
 {
@@ -30,17 +31,25 @@ namespace fire
         {
             Q_OBJECT
             public:
-                message_list();
+                message_list(const std::string& name);
+
+            public:
+                const fire::message::mailbox_ptr mail() const;
+                fire::message::mailbox_ptr mail();
+
 
             public slots:
                 void clear(); 
                 void add(message* m);
+                void check_mail(); 
                 void scroll_to_bottom(int min, int max);
 
             private:
+                const std::string _name;
                 QWidget* _root;
                 QVBoxLayout* _layout; 
                 QScrollBar* _scrollbar;
+                fire::message::mailbox_ptr _mail;
         };
     }
 }
