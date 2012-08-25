@@ -21,6 +21,7 @@
 #include <QMainWindow>
 
 #include "gui/messagelist.hpp"
+#include "message/postoffice.hpp"
 
 namespace fire
 {
@@ -30,13 +31,18 @@ namespace fire
         {
             Q_OBJECT
             public:
-                main_window();
+                main_window(
+                        const std::string& host, 
+                        const std::string& port);
 
             private slots:
                 void about();
                 void test();
 
             private:
+                void setup_post(
+                        const std::string& host, 
+                        const std::string& port);
                 void create_actions();
                 void create_main();
                 void create_menus();
@@ -51,6 +57,7 @@ namespace fire
                 QVBoxLayout* _layout;
 
                 message_list* _messages;
+                fire::message::post_office_ptr _master;
         };
     }
 }

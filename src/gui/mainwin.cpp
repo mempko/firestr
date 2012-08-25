@@ -26,7 +26,7 @@
 #include "gui/textmessage.hpp"
 #include "util/mencode.hpp"
 #include "network/message_queue.hpp"
-#include "message/postoffice.hpp"
+#include "message/master_post.hpp"
 
 namespace m = fire::message;
                 
@@ -34,7 +34,11 @@ namespace fire
 {
     namespace gui
     {
-        main_window::main_window() :
+        namespace m = fire::message;
+
+        main_window::main_window(
+                        const std::string& host, 
+                        const std::string& port) :
             _about_action(0),
             _close_action(0),
             _main_menu(0),
@@ -42,6 +46,7 @@ namespace fire
             _layout(0),
             _messages(0)
         {
+            setup_post(host, port);
             create_actions();
             create_main();
             create_menus();
@@ -49,6 +54,17 @@ namespace fire
             INVARIANT(_main_menu);
             INVARIANT(_about_action);
             INVARIANT(_close_action);
+        }
+
+        void main_window::setup_post(
+                        const std::string& host, 
+                        const std::string& port)
+        {
+            REQUIRE(!_master);
+
+            _master.reset(new m::master_post_office{host, port});
+
+            INVARIANT(_master);
         }
 
         void main_window::create_main()

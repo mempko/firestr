@@ -19,13 +19,55 @@
 
 #include "gui/mainwin.hpp"
 
+#include <string>
+
+#include <boost/asio/ip/host_name.hpp>
+#include <boost/program_options.hpp>
+
+namespace po = boost::program_options;
+namespace ip = boost::asio::ip;
 namespace fg = fire::gui;
+
+po::options_description create_descriptions()
+{
+    po::options_description d{"Options"};
+
+    const std::string host = ip::host_name();
+    const std::string port = "6060";
+
+    d.add_options()
+        ("help", "prints help")
+        ("host", po::value<std::string>()->default_value(host), "host/ip of this machine") 
+        ("port", po::value<std::string>()->default_value(port), "port this machine will recieve messages on");
+
+    return d;
+}
+
+po::variables_map parse_options(int argc, char* argv[], po::options_description& desc)
+{
+    po::variables_map v;
+    po::store(po::parse_command_line(argc, argv, desc), v);
+    po::notify(v);
+
+    return v;
+}
 
 int main(int argc, char *argv[])
 {
+    po::options_description desc = create_descriptions();
+    po::variables_map vm = parse_options(argc, argv, desc);
+    if(vm.count("help"))
+    {
+        std::cout << desc << std::endl;
+        return 1;
+    }
+
     QApplication a{argc, argv};
 
-    fg::main_window w;
+    const std::string host = vm["host"].as<std::string>();
+    const std::string port = vm["port"].as<std::string>();
+
+    fg::main_window w(host, port);
     w.show();
 
     return a.exec();

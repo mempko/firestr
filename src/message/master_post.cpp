@@ -70,14 +70,18 @@ namespace fire
                 const std::string& in_host,
                 const std::string& in_port)
         {
+            //setup outside address
             _address = "zmq,tcp://" + in_host + ":" + in_port;
+
+            //here we use the magic * 
+            const std::string address = "zmq,tcp://*:" + in_port;
 
             n::queue_options qo = { 
                 {"pul", "1"}, 
                 {"bnd", "1"},
                 {"block", "0"}};
 
-            _in = n::create_message_queue(_address, qo);
+            _in = n::create_message_queue(address, qo);
             _in_thread.reset(new std::thread{in_thread, this});
 
             ENSURE(_in);
