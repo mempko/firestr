@@ -1,0 +1,52 @@
+
+===================================================================
+Project Overview 
+===================================================================
+
+The project is layed out as libraries and executables. All of the 
+executables start with `fire', where `firestr' is the main one.
+
+Each subdirectory has it's own CMakeLists file and README.
+
+
+===================================================================
+Dependency Graph 
+===================================================================
+        
+                        -----------------
+            ------------|     util      |-----
+            |           -----------------    |
+            |             |        |         |
+    -----------------     |        |         |
+    |    network    |     |        |         |
+    -----------------     |        |         |
+                |         |        |         |
+            -----------------      |         |
+            |     message   |      |         |
+            -----------------      |         |
+                          |        |         |
+                    -----------------        |
+                    |     gui       |        |
+                    -----------------        |
+                                   |         |
+                                   |         |
+                                /---------------\
+                                |     firestr   |
+                                \---------------/
+
+
+===================================================================
+Component Summary 
+===================================================================
+
+util    - Place to put things that everything else depends on
+
+network - Code dealing with send bits and blips over the network
+
+message - Code for sending messages between components and over network
+
+gui     - Various widgets which can be combined into an application
+
+firestr - Main Application
+
+
