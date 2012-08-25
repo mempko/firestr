@@ -22,6 +22,11 @@ namespace fire
 {
     namespace message
     {
+        namespace
+        {
+            const double THREAD_SLEEP = 10; //in milliseconds 
+        }
+
         void send_thread(post_office* o)
         {
             REQUIRE(o);
@@ -31,7 +36,11 @@ namespace fire
                 {
                     auto wp = p.second;
                     auto sp = wp.lock();
-                    if(!sp) continue;
+                    if(!sp) 
+                    {
+                        util::sleep_thread(THREAD_SLEEP);
+                        continue;
+                    }
 
                     message m;
                     if(!sp->pop_outbox(m)) continue;
@@ -97,48 +106,52 @@ namespace fire
             //route to child post
             if(meta.to.size() > 1)
             {
-                for(auto p : _offices)
-                {
-                    auto wp = p.second;
-                    auto sp = wp.lock();
-                    if(!sp) continue;
+                {std::lock_guard<std::mutex> lock(_post_m);
 
-                    auto to = meta.to.front();
-                    if(to != p.first) continue;
+                    for(auto p : _offices)
+                    {
+                        auto wp = p.second;
+                        auto sp = wp.lock();
+                        if(!sp) continue;
 
-                    message cp = m;
-                    cp.meta.to.pop_front();
-                    cp.meta.from.push_front(_address);
+                        auto to = meta.to.front();
+                        if(to != p.first) continue;
 
-                    if(sp->send(cp)) return true;
+                        message cp = m;
+                        cp.meta.to.pop_front();
+                        cp.meta.from.push_front(_address);
+
+                        if(sp->send(cp)) return true;
+                    }
                 }
 
-                //if no parent, 
-                //try to send message to outside world
-                if(!_parent) return send_outside(m);
-
-                //otherwise send to parent.
                 //the post office address is added here
                 //to the from so that the recieve can send message
                 //back to sender
                 m.meta.from.push_front(_address);
-                return _parent->send(m);
+
+                //send to parent.
+                //otherwise, try to send message to outside world
+                return _parent ? _parent->send(m) : send_outside(m);
             }
 
             //route to mailbox
             CHECK_EQUAL(meta.to.size(), 1);
 
-            for(auto p : _boxes)
-            {
-                auto wb = p.second;
-                auto sb = wb.lock();
-                if(!sb) continue;
+            {std::lock_guard<std::mutex> lock(_box_m);
 
-                auto to = meta.to.front();
-                if(to != p.first) continue;
+                for(auto p : _boxes)
+                {
+                    auto wb = p.second;
+                    auto sb = wb.lock();
+                    if(!sb) continue;
 
-                sb->push_inbox(m);
-                return true;
+                    auto to = meta.to.front();
+                    if(to != p.first) continue;
+
+                    sb->push_inbox(m);
+                    return true;
+                }
             }
 
             //could not send message
@@ -147,6 +160,8 @@ namespace fire
 
         bool post_office::add(mailbox_wptr p)
         {
+            std::lock_guard<std::mutex> lock(_box_m);
+
             auto sp = p.lock();
             if(!sp) return false;
 
@@ -160,14 +175,18 @@ namespace fire
 
         void post_office::remove_mailbox(const std::string& n)
         {
+            std::lock_guard<std::mutex> lock(_box_m);
             _boxes.erase(n);
         }
 
         bool post_office::add(post_office_wptr p)
         {
+            std::lock_guard<std::mutex> lock(_post_m);
+
             auto sp = p.lock();
             if(!sp) return false;
 
+            REQUIRE_NOT_EQUAL(sp.get(), this);
             REQUIRE_FALSE(sp->address().empty());
             REQUIRE_FALSE(_offices.count(sp->address()));
 
@@ -179,6 +198,7 @@ namespace fire
 
         void post_office::remove_post_office(const std::string& n)
         {
+            std::lock_guard<std::mutex> lock(_post_m);
             _offices.erase(n);
         }
 
@@ -195,15 +215,14 @@ namespace fire
         void post_office::parent(post_office* p) 
         { 
             REQUIRE(p);
+            REQUIRE_NOT_EQUAL(p, this);
             _parent = p;
         }
         
-        bool post_office::send_outside(const message& m)
+        bool post_office::send_outside(const message&)
         {
-            std::cerr <<"TODO: send_outside" << std::endl;
-            std::cerr << "to: " << m.meta.to << std::endl;
-            std::cerr << "from: " << m.meta.from << std::endl;
-            std::cerr << "\t" << m << std::endl;
+            //subclasses need to implement this
+            return false;
         }
     }
 }

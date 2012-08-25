@@ -23,6 +23,7 @@
 #include <thread>
 
 #include "message/mailbox.hpp"
+#include "util/thread.hpp"
 
 namespace fire
 {
@@ -38,7 +39,7 @@ namespace fire
             public:
                 post_office();
                 post_office(const std::string&);
-                ~post_office();
+                virtual ~post_office();
 
             public:
                 const std::string& address() const;
@@ -60,10 +61,10 @@ namespace fire
                 const post_office* parent() const;
                 void parent(post_office*); 
 
-            private:
-                bool send_outside(const message&);
+            protected:
+                virtual bool send_outside(const message&);
 
-            private:
+            protected:
                 typedef std::map<std::string, mailbox_wptr> mailboxes;
                 typedef std::map<std::string, post_office_wptr> post_offices;
 
@@ -71,10 +72,12 @@ namespace fire
                 mailboxes _boxes;
                 post_offices _offices;
                 post_office* _parent;
-                thread_uptr _send_thread;
+                util::thread_uptr _send_thread;
                 bool _done;
+                std::mutex _box_m;
+                std::mutex _post_m;
 
-            private:
+            protected:
                 friend void send_thread(post_office*);
         };
     }
