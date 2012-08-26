@@ -34,4 +34,10 @@ add_definitions(${QT_DEFINITIONS})
 #setup ZeroMq
 set(ZMQ_LIBS libzmq.a)
 
+if(APPLE)
+    add_definitions(-D_GLIBCXX_USE_NANOSLEEP)
+    link_directories(/usr/local/lib)
+    include_directories(/usr/local/include)
+endif()
+
 add_subdirectory(src)

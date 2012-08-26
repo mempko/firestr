@@ -120,7 +120,7 @@ namespace fire
             }
         }
 
-        zmq_queue::zmq_queue(const zmq_params& p) : _p{p}
+        zmq_queue::zmq_queue(const zmq_params& p) : _p(p)
         {
             _c.reset(new zmq::context_t{p.threads});
             _s = create_socket(p, *_c);
