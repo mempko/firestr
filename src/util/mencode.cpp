@@ -271,7 +271,7 @@ namespace fire
             if(c < '0' || c > '9')
             {
                 std::stringstream e;
-                e << "expected byte string at byte " << e.tellg();
+                e << "expected byte string at byte " << e.tellg() << " but got `" << char(c) << "'";
                 throw std::runtime_error{e.str()}; 
             }
 
@@ -279,6 +279,7 @@ namespace fire
             ss.push_back(c);
             ss.append(get_until(i, ':'));
             size_t size = lexical_cast<size_t>(ss);
+            if(size == 0) return b;
 
             b.resize(size);
             i.read(&b[0], size);
@@ -323,6 +324,8 @@ namespace fire
                 throw std::runtime_error{e.str()};
             }
 
+            c = i.peek();
+
             while(c != ';' && i.good())
             {
                 std::string key = to_str(decode_bytes(i));
@@ -348,6 +351,8 @@ namespace fire
                 e << "expected array at byte " << e.tellg();
                 throw std::runtime_error{e.str()};
             }
+
+            c = i.peek();
 
             while(c != ';' && i.good())
             {
