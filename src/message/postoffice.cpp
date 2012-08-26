@@ -46,7 +46,7 @@ namespace fire
                     m.meta.from.push_front(sp->address());
 
                     CHECK_EQUAL(m.meta.from.size(), 1);
-                    std::cerr << o->_address << " sending from: " << sp->address() << " to: " << m.meta.to << std::endl;
+
                     o->send(m);
                     sent = true;
                 }

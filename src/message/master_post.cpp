@@ -53,6 +53,9 @@ namespace fire
                 message m;
                 s >> m;
 
+                //pop off master address
+                m.meta.to.pop_front();
+
                 //send message to interal component
                 o->send(m);
             }
