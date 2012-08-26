@@ -30,14 +30,14 @@ QT4_ADD_RESOURCES(moc_resources ${resources})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 add_executable(
-    firestr
+    firetest
     ${src}
     ${moc_headers}
     ${moc_forms}
     ${moc_resources})
 
 target_link_libraries(
-    firestr
+    firetest
     fire_gui
     fire_message
     fire_network
@@ -47,7 +47,7 @@ target_link_libraries(
     ${ZMQ_LIBS})
 
 add_dependencies(
-    firestr 
+    firetest 
     fire_gui
     fire_message
     fire_network
