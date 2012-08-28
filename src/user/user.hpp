@@ -74,6 +74,8 @@ namespace fire
                         const users& c) :
                     _info{i}, _contacts{c} {}
 
+                local_user(const std::string& name); 
+
             public:
                 const user_info& info() const { return _info;}
                 const users& contacts() const { return _contacts;}

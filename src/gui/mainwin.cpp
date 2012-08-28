@@ -67,10 +67,9 @@ namespace fire
             _user = user::load_user(_home);
             if(!_user)
             {
-                user::user_info info(_master->address(), "nameless", "1234");
-                user::users contacts;
+                _user.reset(new user::local_user{"nameless"});
+                CHECK(_user);
 
-                _user.reset(new user::local_user{info, contacts});
                 user::save_user(_home, _user);
             }
 
