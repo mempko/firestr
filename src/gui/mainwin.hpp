@@ -37,7 +37,6 @@ namespace fire
 
             private slots:
                 void about();
-                void test();
 
             private:
                 void setup_post(
@@ -51,7 +50,6 @@ namespace fire
                 QMenu *_main_menu;
                 QAction *_close_action;
                 QAction *_about_action;
-                QAction *_test_action;
 
                 QWidget* _root;
                 QVBoxLayout* _layout;

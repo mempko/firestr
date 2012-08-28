@@ -102,7 +102,6 @@ namespace fire
 
             _main_menu = new QMenu(tr("&Main"), this);
             _main_menu->addAction(_about_action);
-            _main_menu->addAction(_test_action);
             _main_menu->addSeparator();
             _main_menu->addAction(_close_action);
 
@@ -122,14 +121,9 @@ namespace fire
             _close_action = new QAction(tr("&Exit"), this);
             connect(_close_action, SIGNAL(triggered()), this, SLOT(close()));
 
-            _test_action = new QAction(tr("&Test"), this);
-            connect(_test_action, SIGNAL(triggered()), this, SLOT(test()));
-
             ENSURE(_about_action);
             ENSURE(_close_action);
-            ENSURE(_test_action);
         }
-
 
         void main_window::about()
         {
@@ -141,74 +135,6 @@ namespace fire
                     "This is not a chat program, but a way for programs to chat.<br> "
                     "This is not a way to share code, but a way to share running software.</p> "
                     "<p>This program is created by <b>Maxim Noah Khailo</b> and is liscensed as GPLv3</p>"));
-        }
-
-        void main_window::test()
-        {
-            INVARIANT(_messages);
-
-            //test text message
-            for(int i = 0; i < 3; i++)
-            {
-                std::stringstream m;
-                m << "Test Message: " << i;
-                text_message* t = new text_message{m.str()};
-                _messages->add(t);
-            }
-
-            try
-            {
-                m::post_office_ptr p1{new m::post_office};
-                p1->address("p1");
-
-                m::mailbox_ptr m1{new m::mailbox{"m1"}};
-                m::mailbox_ptr m2{new m::mailbox{"m2"}};
-
-                p1->add(m1);
-
-                m::post_office_ptr p2{new m::post_office};
-                p2->address("p2");
-                p1->add(p2);
-                p2->add(m2);
-
-                m::message hi;
-                hi.meta.to = {"p1", "m1"};
-
-                m2->push_outbox(hi);
-
-                m::message hic;
-                while(!m1->pop_inbox(hic));
-
-                std::stringstream s1;
-                s1 << hic;
-
-                text_message* t1 = new text_message{s1.str()};
-                _messages->add(t1);
-
-                m::message hi2;
-                hi2.meta.to = hic.meta.from;
-                m1->push_outbox(hi2);
-
-                m::message hi2c;
-                while(!m2->pop_inbox(hi2c));
-
-                std::stringstream s2;
-                s2 << hi2c;
-
-                text_message* t2 = new text_message{s2.str()};
-                _messages->add(t2);
-
-                m::message hi3;
-                hi3.meta.to = {"main"};
-                hi3.data = u::to_bytes("this is only a test");
-                _master->send(hi3);
-
-            }
-            catch(std::exception& e)
-            {
-                text_message* t = new text_message{e.what()};
-                _messages->add(t);
-            }
         }
     }
 }
