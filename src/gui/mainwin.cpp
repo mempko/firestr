@@ -40,15 +40,18 @@ namespace fire
 
         main_window::main_window(
                         const std::string& host, 
-                        const std::string& port) :
+                        const std::string& port,
+                        const std::string& home) :
             _about_action(0),
             _close_action(0),
             _main_menu(0),
             _root(0),
             _layout(0),
-            _messages(0)
+            _messages(0),
+            _home(home)
         {
             setup_post(host, port);
+            setup_user();
             create_actions();
             create_main();
             create_menus();
@@ -56,6 +59,22 @@ namespace fire
             INVARIANT(_main_menu);
             INVARIANT(_about_action);
             INVARIANT(_close_action);
+        }
+
+        void main_window::setup_user()
+        {
+            REQUIRE(_master);
+            _user = user::load_user(_home);
+            if(!_user)
+            {
+                user::user_info info(_master->address(), "nameless", "1234");
+                user::users contacts;
+
+                _user.reset(new user::local_user{info, contacts});
+                user::save_user(_home, _user);
+            }
+
+            ENSURE(_user);
         }
 
         void main_window::setup_post(

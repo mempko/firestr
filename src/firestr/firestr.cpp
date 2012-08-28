@@ -20,6 +20,7 @@
 #include "gui/mainwin.hpp"
 
 #include <string>
+#include <cstdlib>
 
 #include <boost/asio/ip/host_name.hpp>
 #include <boost/program_options.hpp>
@@ -34,11 +35,15 @@ po::options_description create_descriptions()
 
     const std::string host = ip::host_name();
     const std::string port = "6060";
+    std::string user = std::getenv("HOME");
+    if(user.empty()) user = ".";
+    const std::string home = user + "/.firestr";
 
     d.add_options()
         ("help", "prints help")
         ("host", po::value<std::string>()->default_value(host), "host/ip of this machine") 
-        ("port", po::value<std::string>()->default_value(port), "port this machine will recieve messages on");
+        ("port", po::value<std::string>()->default_value(port), "port this machine will recieve messages on")
+        ("home", po::value<std::string>()->default_value(home), "configuration directory");
 
     return d;
 }
@@ -66,8 +71,9 @@ int main(int argc, char *argv[])
 
     const std::string host = vm["host"].as<std::string>();
     const std::string port = vm["port"].as<std::string>();
+    const std::string home = vm["home"].as<std::string>();
 
-    fg::main_window w(host, port);
+    fg::main_window w(host, port, home);
     w.show();
 
     return a.exec();

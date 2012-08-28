@@ -128,10 +128,8 @@ namespace fire
             return l.string();
         }
 
-        local_user_ptr load_local_user(const std::string& home_dir)
+        local_user_ptr load_user(const std::string& home_dir)
         {
-            create_home_directory(home_dir);
-
             std::string local_user_file = get_local_user_file(home_dir);
             std::string local_contacts_file = get_local_contacts_file(home_dir);
 
@@ -154,7 +152,7 @@ namespace fire
             return lu;
         }
 
-        void save_local_user(const std::string& home_dir, local_user_ptr lu)
+        void save_user(const std::string& home_dir, local_user_ptr lu)
         {
             REQUIRE(lu);
 

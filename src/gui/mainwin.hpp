@@ -22,6 +22,7 @@
 
 #include "gui/messagelist.hpp"
 #include "message/postoffice.hpp"
+#include "user/user.hpp"
 
 namespace fire
 {
@@ -33,12 +34,14 @@ namespace fire
             public:
                 main_window(
                         const std::string& host, 
-                        const std::string& port);
+                        const std::string& port,
+                        const std::string& home);
 
             private slots:
                 void about();
 
             private:
+                void setup_user();
                 void setup_post(
                         const std::string& host, 
                         const std::string& port);
@@ -56,6 +59,8 @@ namespace fire
 
                 message_list* _messages;
                 fire::message::post_office_ptr _master;
+                user::local_user_ptr _user;
+                std::string _home;
         };
     }
 }
