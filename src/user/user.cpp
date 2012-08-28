@@ -17,6 +17,7 @@
 
 #include "user/user.hpp"
 #include "util/mencode.hpp"
+#include "util/uuid.hpp"
 #include "util/dbc.hpp"
 
 #include <fstream>
@@ -173,5 +174,17 @@ namespace fire
             
             contacts_out << lu->contacts();
         }
+
+        local_user::local_user(const std::string& name) : 
+            _info{"local", name, util::uuid()}, _contacts{}
+        {
+            REQUIRE_FALSE(name.empty());
+
+            INVARIANT_EQUAL(_info.address(), "local");
+            INVARIANT_FALSE(_info.name().empty());
+            INVARIANT_FALSE(_info.id().empty());
+            ENSURE(_contacts.empty());
+        }
+
     }
 }
