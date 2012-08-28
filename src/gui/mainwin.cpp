@@ -99,7 +99,6 @@ namespace fire
             REQUIRE_FALSE(_main_menu);
             REQUIRE(_about_action);
             REQUIRE(_close_action);
-            REQUIRE(_test_action);
 
             _main_menu = new QMenu(tr("&Main"), this);
             _main_menu->addAction(_about_action);

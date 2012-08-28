@@ -19,38 +19,7 @@ include_directories(.)
 include_directories(..)
 
 file(GLOB src *.cpp)
-file(GLOB headers *.hpp)
-file(GLOB forms *.ui)
-file(GLOB resources *.qrc)
 
-#qt specific
-QT4_WRAP_CPP(moc_headers ${headers})
-QT4_WRAP_UI(moc_forms ${forms})
-QT4_ADD_RESOURCES(moc_resources ${resources})
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
+add_library(fire_user STATIC
+    ${src})
 
-add_executable(
-    firestr
-    ${src}
-    ${moc_headers}
-    ${moc_forms}
-    ${moc_resources})
-
-target_link_libraries(
-    firestr
-    fire_gui
-    fire_user
-    fire_message
-    fire_network
-    fire_util
-    ${Boost_LIBRARIES}
-    ${QT_LIBRARIES}
-    ${ZMQ_LIBS})
-
-add_dependencies(
-    firestr 
-    fire_gui
-    fire_user
-    fire_message
-    fire_network
-    fire_util)
