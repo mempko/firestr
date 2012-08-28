@@ -122,23 +122,31 @@ namespace fire
             return l.string();
         }
 
+        std::string get_local_contacts_file(const bf::path& home_dir)
+        {
+            bf::path l = home_dir / "contacts";
+            return l.string();
+        }
+
         local_user_ptr load_local_user(const std::string& home_dir)
         {
             create_home_directory(home_dir);
 
             std::string local_user_file = get_local_user_file(home_dir);
+            std::string local_contacts_file = get_local_contacts_file(home_dir);
 
-            std::ifstream in(local_user_file.c_str());
-            if(!in.good()) return {};
-
-            u::dict d;
-            in >> d; 
+            std::ifstream info_in(local_user_file.c_str());
+            if(!info_in.good()) return {};
 
             user_info info;
-            users contacts;
+            info_in >> info; 
 
-            convert(d["info"], info);
-            convert(d["contacts"], contacts);
+            users contacts;
+            std::ifstream contacts_in(local_contacts_file.c_str());
+            if(contacts_in.good()) 
+            {
+                contacts_in >> contacts;
+            }
 
             local_user_ptr lu{new local_user{info, contacts}};
 
@@ -153,16 +161,19 @@ namespace fire
             create_home_directory(home_dir);
 
             std::string local_user_file = get_local_user_file(home_dir);
+            std::string local_contacts_file = get_local_contacts_file(home_dir);
 
-            std::ofstream out(local_user_file.c_str());
-            if(!out.good()) 
+            std::ofstream info_out(local_user_file.c_str());
+            if(!info_out.good()) 
                 throw std::runtime_error{"unable to save `" + local_user_file + "'"};
 
-            u::dict d;
-            d["info"] = convert(lu->info());
-            d["contacts"] = convert(lu->contacts());
+            info_out << lu->info();
 
-            out << d;
+            std::ofstream contacts_out(local_contacts_file.c_str());
+            if(!contacts_out.good()) 
+                throw std::runtime_error{"unable to save `" + local_contacts_file + "'"};
+            
+            contacts_out << lu->contacts();
         }
     }
 }
