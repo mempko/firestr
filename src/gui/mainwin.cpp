@@ -22,6 +22,7 @@
 #include "util/dbc.hpp"
 
 #include "gui/mainwin.hpp"
+#include "gui/contactlist.hpp"
 #include "gui/message.hpp"
 #include "gui/textmessage.hpp"
 #include "gui/util.hpp"
@@ -137,13 +138,18 @@ namespace fire
             REQUIRE_FALSE(_main_menu);
             REQUIRE(_about_action);
             REQUIRE(_close_action);
+            REQUIRE(_contact_list_action);
 
-            _main_menu = new QMenu(tr("&Main"), this);
+            _main_menu = new QMenu{tr("&Main"), this};
             _main_menu->addAction(_about_action);
             _main_menu->addSeparator();
             _main_menu->addAction(_close_action);
 
+            _contact_menu = new QMenu{tr("&Contacts"), this};
+            _contact_menu->addAction(_contact_list_action);
+
             menuBar()->addMenu(_main_menu);
+            menuBar()->addMenu(_contact_menu);
 
             ENSURE(_main_menu);
         }
@@ -153,14 +159,26 @@ namespace fire
             REQUIRE_FALSE(_about_action);
             REQUIRE_FALSE(_close_action);
 
-            _about_action = new QAction(tr("&About"), this);
+            _about_action = new QAction{tr("&About"), this};
             connect(_about_action, SIGNAL(triggered()), this, SLOT(about()));
 
-            _close_action = new QAction(tr("&Exit"), this);
+            _close_action = new QAction{tr("&Exit"), this};
             connect(_close_action, SIGNAL(triggered()), this, SLOT(close()));
+
+            _contact_list_action = new QAction{tr("&Contacts"), this};
+            connect(_contact_list_action, SIGNAL(triggered()), this, SLOT(show_contact_list()));
 
             ENSURE(_about_action);
             ENSURE(_close_action);
+            ENSURE(_contact_list_action);
+        }
+
+        void main_window::show_contact_list()
+        {
+            ENSURE(_user);
+
+            contact_list cl{"contacts", _user->contacts()};
+            cl.exec();
         }
 
         void main_window::about()
