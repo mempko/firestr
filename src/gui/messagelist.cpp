@@ -18,7 +18,7 @@ namespace fire
         }
 
         message_list::message_list(const std::string& name) :
-            list{name},
+            _name{name},
             _mail{new m::mailbox{name}}
         {
             //setup scrollbar

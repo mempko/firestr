@@ -29,14 +29,13 @@ namespace fire
         {
             Q_OBJECT
             public:
-                list(const std::string& name);
+                list();
 
             public slots:
                 virtual void add(QWidget*);
                 virtual void clear();
 
             protected:
-                const std::string _name;
                 QWidget* _root;
                 QVBoxLayout* _layout; 
         };
