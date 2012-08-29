@@ -59,8 +59,8 @@ po::variables_map parse_options(int argc, char* argv[], po::options_description&
 
 int main(int argc, char *argv[])
 {
-    po::options_description desc = create_descriptions();
-    po::variables_map vm = parse_options(argc, argv, desc);
+    auto desc = create_descriptions();
+    auto vm = parse_options(argc, argv, desc);
     if(vm.count("help"))
     {
         std::cout << desc << std::endl;
@@ -69,11 +69,15 @@ int main(int argc, char *argv[])
 
     QApplication a{argc, argv};
 
-    const std::string host = vm["host"].as<std::string>();
-    const std::string port = vm["port"].as<std::string>();
-    const std::string home = vm["home"].as<std::string>();
+    auto host = vm["host"].as<std::string>();
+    auto port = vm["port"].as<std::string>();
+    auto home = vm["home"].as<std::string>();
 
-    fg::main_window w(host, port, home);
+    auto user = fg::setup_user(home);
+    if(!user) return 0;
+
+    fg::main_window w{host, port, home, user};
+
     w.show();
 
     return a.exec();

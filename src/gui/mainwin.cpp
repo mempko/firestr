@@ -24,6 +24,7 @@
 #include "gui/mainwin.hpp"
 #include "gui/message.hpp"
 #include "gui/textmessage.hpp"
+#include "gui/util.hpp"
 #include "util/mencode.hpp"
 #include "network/message_queue.hpp"
 #include "message/master_post.hpp"
@@ -41,39 +42,56 @@ namespace fire
         main_window::main_window(
                         const std::string& host, 
                         const std::string& port,
-                        const std::string& home) :
+                        const std::string& home, 
+                        user::local_user_ptr user) :
             _about_action(0),
             _close_action(0),
             _main_menu(0),
             _root(0),
             _layout(0),
             _messages(0),
-            _home(home)
+            _home(home),
+            _user(user)
         {
+            REQUIRE(user);
+
             setup_post(host, port);
-            setup_user();
             create_actions();
             create_main();
             create_menus();
 
+            INVARIANT(_user);
+            INVARIANT(_master);
             INVARIANT(_main_menu);
             INVARIANT(_about_action);
             INVARIANT(_close_action);
         }
 
-        void main_window::setup_user()
+        user::local_user_ptr make_new_user(const std::string& home)
         {
-            REQUIRE(_master);
-            _user = user::load_user(_home);
-            if(!_user)
-            {
-                _user.reset(new user::local_user{"nameless"});
-                CHECK(_user);
+            bool ok = false;
+            std::string name = "me";
 
-                user::save_user(_home, _user);
-            }
+            QString r = QInputDialog::getText(
+                    0, 
+                    "Welcome!",
+                    "Select User Name:",
+                    QLineEdit::Normal, name.c_str(), &ok);
 
-            ENSURE(_user);
+            if(ok && !r.isEmpty()) name = convert(r);
+            else return {};
+
+            user::local_user_ptr user{new user::local_user{name}};
+            user::save_user(home, user);
+
+            ENSURE(user);
+            return user;
+        }
+
+        user::local_user_ptr setup_user(const std::string& home)
+        {
+            auto user = user::load_user(home);
+            return user ? user : make_new_user(home);
         }
 
         void main_window::setup_post(
@@ -93,6 +111,7 @@ namespace fire
             REQUIRE_FALSE(_layout);
             REQUIRE_FALSE(_messages);
             REQUIRE(_master);
+            REQUIRE(_user);
             
             //setup main
             _root = new QWidget{this};
@@ -103,8 +122,9 @@ namespace fire
             _layout->addWidget(_messages);
             _master->add(_messages->mail());
 
+            std::string title = "Firestr - " + _user->info().name();
             //setup base
-            setWindowTitle(tr("Firestr"));
+            setWindowTitle(tr(title.c_str()));
             setCentralWidget(_root);
 
             ENSURE(_root);

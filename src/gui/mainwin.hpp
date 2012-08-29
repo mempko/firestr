@@ -28,6 +28,8 @@ namespace fire
 {
     namespace gui
     {
+        user::local_user_ptr setup_user(const std::string& home);
+
         class main_window : public QMainWindow
         {
             Q_OBJECT
@@ -35,19 +37,20 @@ namespace fire
                 main_window(
                         const std::string& host, 
                         const std::string& port,
-                        const std::string& home);
+                        const std::string& home,
+                        user::local_user_ptr user);
 
             private slots:
                 void about();
 
             private:
-                void setup_user();
                 void setup_post(
                         const std::string& host, 
                         const std::string& port);
                 void create_actions();
                 void create_main();
                 void create_menus();
+                void make_new_user();
 
             private:
                 QMenu *_main_menu;
