@@ -42,6 +42,7 @@ namespace fire
 
             private slots:
                 void about();
+                void show_contact_list();
 
             private:
                 void setup_post(
@@ -54,8 +55,10 @@ namespace fire
 
             private:
                 QMenu *_main_menu;
+                QMenu *_contact_menu;
                 QAction *_close_action;
                 QAction *_about_action;
+                QAction *_contact_list_action;
 
                 QWidget* _root;
                 QVBoxLayout* _layout;
