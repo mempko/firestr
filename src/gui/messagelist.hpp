@@ -47,6 +47,7 @@ namespace fire
             private:
                 QScrollBar* _scrollbar;
                 fire::message::mailbox_ptr _mail;
+                std::string _name;
         };
     }
 }

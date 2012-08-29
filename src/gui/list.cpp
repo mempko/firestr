@@ -10,8 +10,7 @@ namespace fire
 {
     namespace gui
     {
-        list::list(const std::string& name) :
-            _name{name}
+        list::list()
         {
             //setup root
             _root = new QWidget;
