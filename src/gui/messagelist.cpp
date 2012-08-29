@@ -18,23 +18,12 @@ namespace fire
         }
 
         message_list::message_list(const std::string& name) :
-            _name{name},
+            list{name},
             _mail{new m::mailbox{name}}
         {
-            //setup root
-            _root = new QWidget;
-            _root->setFocusPolicy(Qt::WheelFocus);
-
-            //setup layout
-            _layout = new QVBoxLayout{_root};
-
             //setup scrollbar
             _scrollbar = verticalScrollBar();
             QObject::connect(_scrollbar, SIGNAL(rangeChanged(int, int)), this, SLOT(scroll_to_bottom(int, int)));
-
-            //setup base
-            setWidgetResizable(true);
-            setWidget(_root);
 
             //setup message timer
             QTimer *t = new QTimer(this);
@@ -47,29 +36,12 @@ namespace fire
             INVARIANT(_mail);
         }
 
-        void message_list::clear() 
-        {
-            INVARIANT(_layout);
-
-            QLayoutItem *c = 0;
-            while((c = _layout->takeAt(0)) != 0)
-            {
-                CHECK(c);
-                CHECK(c->widget());
-
-                delete c->widget();
-                delete c;
-            } 
-
-            ENSURE_EQUAL(_layout->count(), 0);
-        }
-
         void message_list::add(message* m)
         {
             REQUIRE(m);
             INVARIANT(_layout);
 
-            _layout->addWidget(m);
+            list::add(m);
         }
 
         void message_list::scroll_to_bottom(int min, int max)
