@@ -50,13 +50,13 @@ namespace fire
                 value(const value& o);
 
             public:
-                operator int();
-                operator size_t();
-                operator double();
-                operator std::string();
-                operator bytes();
-                operator dict();
-                operator array();
+                operator int() const;
+                operator size_t() const;
+                operator double() const;
+                operator std::string() const;
+                operator bytes() const;
+                operator dict() const;
+                operator array() const;
 
             public:
                 value& operator=(int v);

@@ -16,6 +16,7 @@
  */
 
 #include "user/userservice.hpp"
+#include "util/uuid.hpp"
 #include "util/dbc.hpp"
 
 #include <stdexcept>
@@ -40,11 +41,13 @@ namespace fire
         struct req_rejected 
         {
             std::string address;
+            std::string key;
         };
 
         struct req_confirmed
         {
             std::string to;
+            std::string key;
             user_info_ptr from;
         };
 
@@ -55,7 +58,10 @@ namespace fire
             m::message m;
             m.meta.type = ADD_REQUEST;
             m.meta.to = {r.to, SERVICE_ADDRESS};
+            m.meta.extra["key"] = r.key;
             m.data = u::encode(*r.from);
+
+            return m;
         }
 
         void convert(const m::message& m, add_request& r)
@@ -69,6 +75,7 @@ namespace fire
             u::decode(m.data, *r.from);
             r.from->address(from);
             r.to = "";
+            r.key = m.meta.extra["key"].as_string();
 
             ENSURE(r.from);
         }
@@ -80,7 +87,10 @@ namespace fire
             m::message m;
             m.meta.type = REQUEST_CONFIRMED;
             m.meta.to = {r.to, SERVICE_ADDRESS};
+            m.meta.extra["key"] = r.key;
             m.data = u::encode(*r.from);
+
+            return m;
         }
 
         void convert(const m::message& m, req_confirmed& r)
@@ -94,6 +104,7 @@ namespace fire
             u::decode(m.data, *r.from);
             r.from->address(from);
             r.to = "";
+            r.key = m.meta.extra["key"].as_string();
 
             ENSURE(r.from);
         }
@@ -102,7 +113,10 @@ namespace fire
         {
             m::message m;
             m.meta.type = REQUEST_REJECTED;
+            m.meta.extra["key"] = r.key;
             m.meta.to = {r.address, SERVICE_ADDRESS}; 
+
+            return m;
         }
 
         void convert(const m::message& m, req_rejected& r)
@@ -110,6 +124,7 @@ namespace fire
             REQUIRE_EQUAL(m.meta.type, REQUEST_REJECTED);
             REQUIRE_GREATER(m.meta.from.size(), 1);
 
+            r.key = m.meta.extra["key"].as_string();
             r.address = m.meta.from.front();
         }
 
@@ -140,7 +155,7 @@ namespace fire
                     //otherwise add to pending requests
 
                     auto f = s->_user->contact_by_id(r.from->id());
-                    if(f) s->send_confirmation(f->id());
+                    if(f) s->send_confirmation(f->id(), r.key);
                     else 
                     {
                         u::mutex_scoped_lock l(s->_mutex);
@@ -154,14 +169,17 @@ namespace fire
 
                     CHECK(r.from);
 
-                    if(s->_sent_requests.count(r.from->address()))
+                    if(s->_sent_requests.count(r.key))
+                    {
+                        s->_sent_requests.erase(r.key);
                         s->confirm_user(r.from);
+                    }
                 }
                 else if(m.meta.type == REQUEST_REJECTED)
                 {
                     req_rejected r;
                     convert(m, r);
-                    s->_sent_requests.erase(r.address);
+                    s->_sent_requests.erase(r.key);
                 }
                 else
                 {
@@ -179,7 +197,8 @@ namespace fire
         }
 
         user_service::user_service(const std::string& home) :
-            _home{home}
+            _home{home},
+            _done{false}
         {
             REQUIRE_FALSE(home.empty());
 
@@ -230,15 +249,12 @@ namespace fire
             INVARIANT(_mail);
             REQUIRE(contact);
 
-            //remove from sent request list
-            _sent_requests.erase(contact->address());
-
             //add user
             _user->add_contact(contact);
             save_user(_home, *_user);
         }
 
-        add_requests user_service::pending_requests() const
+        const add_requests& user_service::pending_requests() const
         {
             return _pending_requests;
         }
@@ -251,38 +267,42 @@ namespace fire
             INVARIANT(_mail);
 
             std::string ex = m::external_address(address);
+            std::string key = u::uuid();
 
             user_info_ptr self{new user_info{_user->info()}};
-            add_request r{ex, self};
+            add_request r{ex, key, self};
 
-            _sent_requests.insert(ex);
+            _sent_requests.insert(key);
             _mail->push_outbox(convert(r));
         }
 
-        void user_service::send_confirmation(const std::string& id)
+        void user_service::send_confirmation(const std::string& id, std::string key)
         {
             u::mutex_scoped_lock l(_mutex);
 
             INVARIANT(_user);
             INVARIANT(_mail);
 
-            auto p = _pending_requests.find(id);
-            if(p != _pending_requests.end())
+            if(key.empty())
             {
+                auto p = _pending_requests.find(id);
+                CHECK(p != _pending_requests.end());
                 CHECK(p->second.from);
 
                 _user->add_contact(p->second.from);
                 save_user(_home, *_user);
 
-                _pending_requests.erase(id);
+                key = p->second.key;
             }
 
             user_info_ptr user = _user->contact_by_id(id);
             CHECK(user);
 
             user_info_ptr self{new user_info{_user->info()}};
-            req_confirmed r{user->address(), self};
+            req_confirmed r{user->address(), key, self};
+
             _mail->push_outbox(convert(r));
+            _pending_requests.erase(id);
         }
 
         void user_service::send_rejection(const std::string& id)
@@ -294,13 +314,15 @@ namespace fire
 
             //get user who wanted to be added
             auto p = _pending_requests.find(id);
+            CHECK(p != _pending_requests.end());
             auto user = p->second.from;
+            auto key = p->second.key;
 
             //remove request
             if(p != _pending_requests.end())
                 _pending_requests.erase(id);
 
-            req_rejected r{user->address()};
+            req_rejected r{user->address(), key};
             _mail->push_outbox(convert(r));
         }
 

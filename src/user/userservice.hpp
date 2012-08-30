@@ -35,6 +35,7 @@ namespace fire
         struct add_request
         {
             std::string to;
+            std::string key;
             user_info_ptr from;
         };
 
@@ -56,10 +57,10 @@ namespace fire
 
             public:
                 void attempt_to_add_user(const std::string& address);
-                void send_confirmation(const std::string& id);
+                void send_confirmation(const std::string& id, std::string key = "");
                 void send_rejection(const std::string& id);
 
-                add_requests pending_requests() const;
+                const add_requests& pending_requests() const;
 
             private:
                 void confirm_user(user_info_ptr contact);

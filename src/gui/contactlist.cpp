@@ -35,22 +35,6 @@ namespace fire
             const size_t TIMER_SLEEP = 200;//in milliseconds
         }
 
-        class user_info : public QWidget
-        {
-            public:
-                user_info(user::user_info_ptr, user::user_service_ptr);
-
-            public slots:
-                void accept();
-                void reject();
-
-            private:
-                user::user_info_ptr _contact;
-                user::user_service_ptr _service;
-                QPushButton* _accept;
-                QPushButton* _reject;
-        };
-
         user_info::user_info(user::user_info_ptr p, user::user_service_ptr s) :
             _contact{p},
             _service{s}
@@ -64,8 +48,6 @@ namespace fire
             layout->addWidget( new QLabel{p->name().c_str()}, 0,1);
             layout->addWidget( new QLabel{"Address:"}, 1,0);
             layout->addWidget( new QLabel{p->address().c_str()}, 1,1);
-            layout->addWidget( new QLabel{"Id:"}, 2,0);
-            layout->addWidget( new QLabel{p->id().c_str()}, 2,1);
 
             if(_service)
             {
@@ -127,7 +109,7 @@ namespace fire
 
             //create add button
             QPushButton* add_new = new QPushButton("add");
-            layout->addWidget(add_new, 0,0); 
+            layout->addWidget(add_new, 1,0); 
 
             connect(add_new, SIGNAL(clicked()), this, SLOT(new_contact()));
 
@@ -135,6 +117,8 @@ namespace fire
             QTimer *t = new QTimer(this);
             connect(t, SIGNAL(timeout()), this, SLOT(update()));
             t->start(TIMER_SLEEP);
+
+            setWindowTitle(tr(title.c_str()));
 
             INVARIANT(_list);
         }
@@ -150,15 +134,19 @@ namespace fire
                 _list->add(new user_info{u, 0});
 
             auto pending = _service->pending_requests();
-            _prev_requests = pending.size();
 
             for(auto r : pending)
                 _list->add(new user_info{r.second.from, _service});
+
+            _prev_requests = pending.size();
+            _prev_contacts = _service->user().contacts().size();
         }
 
 
         void contact_list::new_contact()
         {
+            INVARIANT(_service);
+
             bool ok = false;
             std::string address = "<host>:<ip>";
 
@@ -171,15 +159,18 @@ namespace fire
             if(ok && !r.isEmpty()) address = convert(r);
             else return;
 
-            std::cerr << "TODO: send add request to `" << address << "'" << std::endl;
+            _service->attempt_to_add_user(address);
         }
 
         void contact_list::update()
         {
-            auto pending = _service->pending_requests();
-            if(pending.size() != _prev_requests)
-                update_contacts();
-            _prev_requests = pending.size();
+            size_t pending_requests = _service->pending_requests().size();
+            size_t contacts = _service->user().contacts().size();
+            if(pending_requests == _prev_requests && contacts == _prev_contacts) return;
+
+            update_contacts();
+            _prev_requests = pending_requests;
+            _prev_contacts = contacts;
         }
     }
 }
