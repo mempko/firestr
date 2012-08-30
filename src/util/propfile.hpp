@@ -14,22 +14,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef FIRESTR_UTIL_THREAD_H
-#define FIRESTR_UTIL_THREAD_H
 
-#include <thread>
-#include <memory>
+#ifndef FIRESTR_UTIL_PROPFILE_H
+#define FIRESTR_UTIL_PROPFILE_H
+
+#include "util/string.hpp"
+
+#include <map>
+#include <string>
 
 namespace fire
 {
     namespace util
     {
-        typedef std::unique_ptr<std::thread> thread_uptr;
-        typedef std::lock_guard<std::mutex> mutex_scoped_lock;
-
-        void sleep_thread(size_t milliseconds);
-
+        typedef std::map<std::string, std::string> properties;
+        
     }
 }
-
-#endif

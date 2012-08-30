@@ -69,20 +69,22 @@ namespace fire
         class local_user
         {
             public:
-                local_user(
-                        const user_info& i,
-                        const users& c) :
-                    _info{i}, _contacts{c} {}
-
+                local_user(const user_info& i, const users& c);
                 local_user(const std::string& name); 
 
             public:
                 const user_info& info() const { return _info;}
                 const users& contacts() const { return _contacts;}
+                void contacts(const users&);
+
+            public:
+                user_info_ptr contact_by_id(const std::string& id);
+                bool add_contact(user_info_ptr contact);
 
             private:
                 user_info _info;
                 users _contacts;
+                user_map _by_id;
         };
 
         typedef std::shared_ptr<local_user> local_user_ptr;
@@ -90,7 +92,11 @@ namespace fire
 
         //load and save local user info to disk
         local_user_ptr load_user(const std::string& home_dir);
-        void save_user(const std::string& home_dir, local_user_ptr);
+        void save_user(const std::string& home_dir, const local_user&);
+
+        //serialization functions
+        std::ostream& operator<<(std::ostream& out, const user_info& u);
+        std::istream& operator>>(std::istream& in, user_info& u);
     }
 }
 

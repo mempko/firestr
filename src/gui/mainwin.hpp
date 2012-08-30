@@ -22,7 +22,7 @@
 
 #include "gui/messagelist.hpp"
 #include "message/postoffice.hpp"
-#include "user/user.hpp"
+#include "user/userservice.hpp"
 
 namespace fire
 {
@@ -49,9 +49,10 @@ namespace fire
                         const std::string& host, 
                         const std::string& port);
                 void create_actions();
-                void create_main();
+                void create_main(const std::string& user_name);
                 void create_menus();
                 void make_new_user();
+                void setup_services();
 
             private:
                 QMenu *_main_menu;
@@ -66,6 +67,7 @@ namespace fire
                 message_list* _messages;
                 fire::message::post_office_ptr _master;
                 user::local_user_ptr _user;
+                user::user_service_ptr _user_service;
                 std::string _home;
         };
     }

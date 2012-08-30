@@ -51,17 +51,16 @@ namespace fire
             _root(0),
             _layout(0),
             _messages(0),
-            _home(home),
-            _user(user)
+            _home(home)
         {
             REQUIRE(user);
 
             setup_post(host, port);
             create_actions();
-            create_main();
+            create_main(user->info().name());
             create_menus();
+            setup_services();
 
-            INVARIANT(_user);
             INVARIANT(_master);
             INVARIANT(_main_menu);
             INVARIANT(_about_action);
@@ -83,7 +82,7 @@ namespace fire
             else return {};
 
             user::local_user_ptr user{new user::local_user{name}};
-            user::save_user(home, user);
+            user::save_user(home, *user);
 
             ENSURE(user);
             return user;
@@ -106,13 +105,12 @@ namespace fire
             INVARIANT(_master);
         }
 
-        void main_window::create_main()
+        void main_window::create_main(const std::string& user_name)
         {
             REQUIRE_FALSE(_root);
             REQUIRE_FALSE(_layout);
             REQUIRE_FALSE(_messages);
             REQUIRE(_master);
-            REQUIRE(_user);
             
             //setup main
             _root = new QWidget{this};
@@ -123,7 +121,7 @@ namespace fire
             _layout->addWidget(_messages);
             _master->add(_messages->mail());
 
-            std::string title = "Firestr - " + _user->info().name();
+            std::string title = "Firestr - " + user_name;
             //setup base
             setWindowTitle(tr(title.c_str()));
             setCentralWidget(_root);
@@ -173,11 +171,20 @@ namespace fire
             ENSURE(_contact_list_action);
         }
 
+        void main_window::setup_services()
+        {
+            REQUIRE_FALSE(_user_service);
+            REQUIRE(_master);
+
+            _user_service.reset(new user::user_service{_home});
+            _master->add(_user_service->mail());
+        }
+
         void main_window::show_contact_list()
         {
-            ENSURE(_user);
+            ENSURE(_user_service);
 
-            contact_list cl{"contacts", _user->contacts()};
+            contact_list cl{"contacts", _user_service};
             cl.exec();
         }
 
