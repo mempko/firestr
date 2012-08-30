@@ -46,6 +46,10 @@ namespace fire
         std::ostream& operator<<(std::ostream&, const message&);
         std::istream& operator>>(std::istream&, message&);
 
+        //constructs zmq message address
+        std::string external_address(const std::string& host, const std::string& port);
+        std::string external_address(const std::string& host_port);
+
     }
 
 }

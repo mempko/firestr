@@ -161,7 +161,7 @@ namespace fire
             try
             {
                 std::string to = _to->text().toUtf8().constData();
-                std::string to_address = "zmq,tcp://" + to;
+                std::string to_address = m::external_address(to);
                 std::string text = _message_edit->text().toUtf8().constData();
 
                 m::message m;

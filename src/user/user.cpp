@@ -153,10 +153,8 @@ namespace fire
             return lu;
         }
 
-        void save_user(const std::string& home_dir, local_user_ptr lu)
+        void save_user(const std::string& home_dir, const local_user& lu)
         {
-            REQUIRE(lu);
-
             create_home_directory(home_dir);
 
             std::string local_user_file = get_local_user_file(home_dir);
@@ -166,17 +164,24 @@ namespace fire
             if(!info_out.good()) 
                 throw std::runtime_error{"unable to save `" + local_user_file + "'"};
 
-            info_out << lu->info();
+            info_out << lu.info();
 
             std::ofstream contacts_out(local_contacts_file.c_str());
             if(!contacts_out.good()) 
                 throw std::runtime_error{"unable to save `" + local_contacts_file + "'"};
             
-            contacts_out << lu->contacts();
+            contacts_out << lu.contacts();
+        }
+
+        local_user::local_user(const user_info& i, const users& c) : _info{i}
+        {
+            contacts(c);
         }
 
         local_user::local_user(const std::string& name) : 
-            _info{"local", name, util::uuid()}, _contacts{}
+            _info{"local", name, util::uuid()}, 
+            _contacts{},
+            _by_id{}
         {
             REQUIRE_FALSE(name.empty());
 
@@ -186,5 +191,36 @@ namespace fire
             ENSURE(_contacts.empty());
         }
 
+        void local_user::contacts(const users& users)
+        {
+            _contacts = users;
+            _by_id.clear();
+            for(auto u : _contacts)
+            {
+                CHECK(u);
+                _by_id[u->id()] = u;
+            }
+
+            REQUIRE_EQUAL(_contacts.size(), _by_id.size());
+        }
+
+        user_info_ptr local_user::contact_by_id(const std::string& id)
+        {
+            auto p = _by_id.find(id);
+            return p != _by_id.end() ? p->second : 0; 
+        }
+
+        bool local_user::add_contact(user_info_ptr contact)
+        {
+            REQUIRE(contact);
+
+            if(_by_id.count(contact->id())) return false;
+
+            _contacts.push_back(contact);
+            _by_id[contact->id()] = contact;
+
+            ENSURE_EQUAL(_contacts.size(), _by_id.size());
+            return true;
+        }
     }
 }

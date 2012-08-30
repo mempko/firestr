@@ -14,21 +14,37 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef FIRESTR_UTIL_THREAD_H
-#define FIRESTR_UTIL_THREAD_H
 
-#include <thread>
-#include <memory>
+#ifndef FIRESTR_GUI_CONTACT_LIST_H
+#define FIRESTR_GUI_CONTACT_LIST_H
+
+#include "gui/list.hpp"
+#include "user/user.hpp"
+#include "user/userservice.hpp"
+
+#include <QDialog>
 
 namespace fire
 {
-    namespace util
+    namespace gui
     {
-        typedef std::unique_ptr<std::thread> thread_uptr;
-        typedef std::lock_guard<std::mutex> mutex_scoped_lock;
+        class contact_list : public QDialog
+        {
+            Q_OBJECT
+            public:
+                contact_list(const std::string& title, user::user_service_ptr);
+            public slots:
+                void new_contact();
+                void update();
 
-        void sleep_thread(size_t milliseconds);
+            protected:
+                void update_contacts();
+            protected:
+                list* _list;
+                user::user_service_ptr _service;
 
+                size_t _prev_requests;
+        };
     }
 }
 

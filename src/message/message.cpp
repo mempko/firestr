@@ -80,6 +80,15 @@ namespace fire
             return i;
         }
 
+        std::string external_address(const std::string& host, const std::string& port)
+        {
+            return "zmq,tcp://" + host + ":" + port;
+        }
+
+        std::string external_address(const std::string& host_port)
+        {
+            return "zmq,tcp://" + host_port;
+        }
     }
 }
 

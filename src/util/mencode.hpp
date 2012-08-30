@@ -20,6 +20,7 @@
 
 #include <map>
 #include <iostream>
+#include <sstream>
 #include <initializer_list>
 
 #include <boost/any.hpp>
@@ -159,6 +160,21 @@ namespace fire
         std::istream& operator>>(std::istream&, dict&);
         std::istream& operator>>(std::istream&, array&);
         std::istream& operator>>(std::istream&, value&);
+
+        template <typename type> 
+            bytes encode(const type& v)
+            {
+                std::stringstream s;
+                s << v;
+                return to_bytes(s.str());
+            }
+
+        template <typename type> 
+            void decode(const bytes& b, type& v)
+            {
+                std::stringstream s{to_str(b)};
+                s >> v;
+            }
     }
 }
 
