@@ -82,7 +82,7 @@ namespace fire
 
 
 #define F_STR(E) #E
-#define F_R1(dbc, exp) if(!exp) { fire::util::raise1( __FILE__, __FUNCTION__, __LINE__, dbc, F_STR(exp)); } 
+#define F_R1(dbc, exp) if(!(exp)) { fire::util::raise1( __FILE__, __FUNCTION__, __LINE__, dbc, F_STR(exp)); } 
 #define F_R2(dbc, exp, a, b) if(!(exp)) { fire::util::raise2( __FILE__, __FUNCTION__, __LINE__, dbc, F_STR(exp), F_STR(a), a, F_STR(b), b); } 
 #define F_R3(dbc, exp, a, b, c) if(!(exp)) { fire::util::raise3( __FILE__, __FUNCTION__, __LINE__, dbc, F_STR(exp), F_STR(a), a, F_STR(b), b, F_STR(c), c); } 
 

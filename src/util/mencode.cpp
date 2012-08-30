@@ -38,13 +38,13 @@ namespace fire
         value::value(const array& v) : _v{v} {}
         value::value(const value& o) : _v{o._v} {}
 
-        value::operator int() { return as_int();}
-        value::operator size_t() { return as_size();}
-        value::operator double() { return as_double();}
-        value::operator std::string() { return as_string();}
-        value::operator bytes() { return as_bytes();}
-        value::operator dict() { return as_dict();}
-        value::operator array() { return as_array();}
+        value::operator int() const { return as_int();}
+        value::operator size_t() const { return as_size();}
+        value::operator double() const { return as_double();}
+        value::operator std::string() const { return as_string();}
+        value::operator bytes() const { return as_bytes();}
+        value::operator dict() const { return as_dict();}
+        value::operator array() const { return as_array();}
 
         value& value::operator=(int v) { _v = v; return *this;}
         value& value::operator=(size_t v) { _v = v; return *this;}

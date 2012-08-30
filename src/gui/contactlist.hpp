@@ -23,11 +23,29 @@
 #include "user/userservice.hpp"
 
 #include <QDialog>
+#include <QPushButton>
 
 namespace fire
 {
     namespace gui
     {
+        class user_info : public QWidget
+        {
+            Q_OBJECT
+            public:
+                user_info(user::user_info_ptr, user::user_service_ptr);
+
+            public slots:
+                void accept();
+                void reject();
+
+            private:
+                user::user_info_ptr _contact;
+                user::user_service_ptr _service;
+                QPushButton* _accept;
+                QPushButton* _reject;
+        };
+
         class contact_list : public QDialog
         {
             Q_OBJECT
@@ -44,6 +62,7 @@ namespace fire
                 user::user_service_ptr _service;
 
                 size_t _prev_requests;
+                size_t _prev_contacts;
         };
     }
 }
