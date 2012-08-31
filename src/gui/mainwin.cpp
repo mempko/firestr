@@ -33,6 +33,7 @@
 
 namespace m = fire::message;
 namespace u = fire::util;
+namespace s = fire::session;
                 
 namespace fire
 {
@@ -43,8 +44,7 @@ namespace fire
         main_window::main_window(
                         const std::string& host, 
                         const std::string& port,
-                        const std::string& home, 
-                        user::local_user_ptr user) :
+                        const std::string& home) :
             _about_action(0),
             _close_action(0),
             _main_menu(0),
@@ -53,12 +53,10 @@ namespace fire
             _messages(0),
             _home(home)
         {
-            REQUIRE(user);
-
             setup_post(host, port);
             setup_services();
             create_actions();
-            create_main(user->info().name());
+            create_main();
             create_menus();
 
             INVARIANT(_master);
@@ -105,7 +103,7 @@ namespace fire
             INVARIANT(_master);
         }
 
-        void main_window::create_main(const std::string& user_name)
+        void main_window::create_main()
         {
             REQUIRE_FALSE(_root);
             REQUIRE_FALSE(_layout);
@@ -118,11 +116,12 @@ namespace fire
             _layout = new QVBoxLayout{_root};
 
             //setup message list
-            _messages = new message_list{"main", _user_service};
+            _session.reset(new s::session{"main_session", _user_service});
+            _messages = new message_list{_session};
             _layout->addWidget(_messages);
-            _master->add(_messages->mail());
+            _master->add(_messages->session()->mail());
 
-            std::string title = "Firestr - " + user_name;
+            std::string title = "Firestr - " + _user_service->user().info().name();
             //setup base
             setWindowTitle(tr(title.c_str()));
             setCentralWidget(_root);
@@ -202,8 +201,9 @@ namespace fire
         void main_window::make_test_message()
         {
             INVARIANT(_messages);
+            INVARIANT(_messages->session());
 
-            auto* t = new test_message{_messages->sender()};
+            auto* t = new test_message{_messages->session()->sender()};
             _messages->add(t);
         }
 

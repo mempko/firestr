@@ -57,6 +57,12 @@ po::variables_map parse_options(int argc, char* argv[], po::options_description&
     return v;
 }
 
+bool user_setup(const std::string& home)
+{
+    auto user = fg::setup_user(home);
+    return user != nullptr;
+}
+
 int main(int argc, char *argv[])
 {
     auto desc = create_descriptions();
@@ -73,10 +79,9 @@ int main(int argc, char *argv[])
     auto port = vm["port"].as<std::string>();
     auto home = vm["home"].as<std::string>();
 
-    auto user = fg::setup_user(home);
-    if(!user) return 0;
+    if(!user_setup(home)) return 0;
 
-    fg::main_window w{host, port, home, user};
+    fg::main_window w{host, port, home};
 
     w.show();
 

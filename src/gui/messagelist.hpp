@@ -22,9 +22,7 @@
 
 #include "gui/list.hpp"
 #include "gui/message.hpp"
-#include "user/userservice.hpp"
-#include "messages/sender.hpp"
-#include "message/mailbox.hpp"
+#include "session/session.hpp"
 
 namespace fire
 {
@@ -34,12 +32,10 @@ namespace fire
         {
             Q_OBJECT
             public:
-                message_list(const std::string& name, user::user_service_ptr);
+                message_list(session::session_ptr);
 
             public:
-                const fire::message::mailbox_ptr mail() const;
-                fire::message::mailbox_ptr mail();
-                messages::sender_ptr sender();
+                session::session_ptr session();
 
             public slots:
                 void add(message* m);
@@ -48,10 +44,7 @@ namespace fire
 
             private:
                 QScrollBar* _scrollbar;
-                fire::message::mailbox_ptr _mail;
-                std::string _name;
-                user::user_service_ptr _user_service;
-                messages::sender_ptr _sender;
+                session::session_ptr _session;
         };
     }
 }
