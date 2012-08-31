@@ -15,30 +15,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef FIRESTR_GUI_TEXT_MESSAGE_H
-#define FIRESTR_GUI_TEXT_MESSAGE_H
+#include <QtGui>
 
-#include <string>
-
-#include <QLabel>
-
-#include "gui/message.hpp"
+#include "gui/unknown_message.hpp"
+#include "util/dbc.hpp"
 
 namespace fire
 {
     namespace gui
     {
-        class text_message : public message
+        unknown_message::unknown_message(const std::string& t)
         {
-            Q_OBJECT
+            INVARIANT(root());
+            INVARIANT(layout());
 
-            public:
-                text_message(const std::string&);
+            _text = new QLabel{t.c_str()};
+            layout()->addWidget(_text);
 
-            private:
-                QLabel* _text;
-        };
+            INVARIANT(_text);
+        }
     }
 }
-
-#endif

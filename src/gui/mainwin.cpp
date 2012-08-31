@@ -24,7 +24,6 @@
 #include "gui/mainwin.hpp"
 #include "gui/contactlist.hpp"
 #include "gui/message.hpp"
-#include "gui/textmessage.hpp"
 #include "gui/test_message.hpp"
 #include "gui/util.hpp"
 #include "util/mencode.hpp"

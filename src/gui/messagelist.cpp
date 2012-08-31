@@ -1,7 +1,7 @@
 #include <QtGui>
 
 #include "gui/messagelist.hpp"
-#include "gui/textmessage.hpp"
+#include "gui/unknown_message.hpp"
 #include "gui/test_message.hpp"
 #include "util/dbc.hpp"
 
@@ -90,16 +90,14 @@ namespace fire
                 //TODO: use factory class to create gui from messages
                 if(m.meta.type == ms::TEST_MESSAGE)
                 {
-                    test_message* t = new test_message{m, _sender};
-                    add(t);
+                    add(new test_message{m, _sender});
                 }
                 else
                 {
                     std::stringstream s;
                     s << m;
 
-                    text_message* t = new text_message{s.str()};
-                    add(t);
+                    add(new unknown_message{s.str()});
                 }
             }
         }

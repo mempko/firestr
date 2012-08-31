@@ -1,7 +1,6 @@
 #include <QtGui>
 
 #include "gui/list.hpp"
-#include "gui/textmessage.hpp"
 #include "util/dbc.hpp"
 
 #include <sstream>
