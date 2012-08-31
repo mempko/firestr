@@ -32,7 +32,7 @@ namespace fire
             QObject::connect(_scrollbar, SIGNAL(rangeChanged(int, int)), this, SLOT(scroll_to_bottom(int, int)));
 
             //setup message timer
-            QTimer *t = new QTimer(this);
+            auto *t = new QTimer(this);
             connect(t, SIGNAL(timeout()), this, SLOT(check_mail()));
             t->start(TIMER_SLEEP);
 

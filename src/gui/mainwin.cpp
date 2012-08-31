@@ -73,7 +73,7 @@ namespace fire
             bool ok = false;
             std::string name = "me";
 
-            QString r = QInputDialog::getText(
+            auto r = QInputDialog::getText(
                     0, 
                     "Welcome!",
                     "Select User Name:",
@@ -204,7 +204,7 @@ namespace fire
         {
             INVARIANT(_messages);
 
-            test_message* t = new test_message{_messages->sender()};
+            auto* t = new test_message{_messages->sender()};
             _messages->add(t);
         }
 
