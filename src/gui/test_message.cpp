@@ -26,6 +26,11 @@ namespace fire
 {
     namespace gui
     {
+        namespace
+        {
+            const size_t PADDING = 20;
+        }
+
         test_message::test_message(ms::sender_ptr sender) :
             _m{},
             _sender{sender}
@@ -35,6 +40,8 @@ namespace fire
             INVARIANT(layout());
 
             init_send();
+
+            setMinimumHeight(layout()->sizeHint().height() + PADDING);
 
             INVARIANT(_sender);
         }
@@ -47,6 +54,8 @@ namespace fire
             INVARIANT(layout());
 
             init_reply();
+
+            setMinimumHeight(layout()->sizeHint().height() + PADDING);
 
             INVARIANT(_sender);
         }
@@ -68,8 +77,10 @@ namespace fire
 
             //send button
             _send = new QPushButton{"send"};
-            connect(_send, SIGNAL(clicked()), this, SLOT(send_message()));
             layout()->addWidget(_send, 1, 1);
+            
+            connect(_etext, SIGNAL(returnPressed()), this, SLOT(send_message()));
+            connect(_send, SIGNAL(clicked()), this, SLOT(send_message()));
 
             INVARIANT(_users);
             INVARIANT(_etext);
@@ -99,8 +110,10 @@ namespace fire
 
             //reply button
             _reply = new QPushButton{"reply"};
-            connect(_reply, SIGNAL(clicked()), this, SLOT(send_reply()));
             layout()->addWidget(_reply, 2,1);
+
+            connect(_etext, SIGNAL(returnPressed()), this, SLOT(send_reply()));
+            connect(_reply, SIGNAL(clicked()), this, SLOT(send_reply()));
 
             INVARIANT(_etext);
             INVARIANT(_reply);
