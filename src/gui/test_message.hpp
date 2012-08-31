@@ -15,45 +15,48 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef FIRESTR_GUI_MESSAGELIST_H
-#define FIRESTR_GUI_MESSAGELIST_H
+#ifndef FIRESTR_GUI_TEST_MESSAGE_H
+#define FIRESTR_GUI_TEST_MESSAGE_H
 
-#include <QScrollArea>
-
-#include "gui/list.hpp"
+#include "messages/test_message.hpp"
 #include "gui/message.hpp"
-#include "user/userservice.hpp"
 #include "messages/sender.hpp"
-#include "message/mailbox.hpp"
+
+#include <QLabel>
+#include <QLineEdit>
+#include <QPushButton>
+#include <QComboBox>
 
 namespace fire
 {
     namespace gui
     {
-        class message_list : public list
+        class test_message : public message
         {
             Q_OBJECT
             public:
-                message_list(const std::string& name, user::user_service_ptr);
-
-            public:
-                const fire::message::mailbox_ptr mail() const;
-                fire::message::mailbox_ptr mail();
-                messages::sender_ptr sender();
+                test_message(messages::sender_ptr);
+                test_message(const messages::test_message&, messages::sender_ptr);
 
             public slots:
-                void add(message* m);
-                void check_mail(); 
-                void scroll_to_bottom(int min, int max);
+                void send_message();
+                void send_reply();
 
             private:
-                QScrollBar* _scrollbar;
-                fire::message::mailbox_ptr _mail;
-                std::string _name;
-                user::user_service_ptr _user_service;
+                void init_send();
+                void init_reply();
+
+            private:
+                messages::test_message _m;
                 messages::sender_ptr _sender;
+                QLineEdit* _etext;
+                QComboBox* _users;
+                QPushButton* _send;
+                QPushButton* _reply;
         };
     }
+
 }
 
 #endif
+

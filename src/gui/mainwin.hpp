@@ -22,6 +22,7 @@
 
 #include "gui/messagelist.hpp"
 #include "message/postoffice.hpp"
+#include "messages/sender.hpp"
 #include "user/userservice.hpp"
 
 namespace fire
@@ -43,6 +44,7 @@ namespace fire
             private slots:
                 void about();
                 void show_contact_list();
+                void make_test_message();
 
             private:
                 void setup_post(
@@ -60,6 +62,8 @@ namespace fire
                 QAction *_close_action;
                 QAction *_about_action;
                 QAction *_contact_list_action;
+                QMenu *_test_menu;
+                QAction *_test_message_action;
 
                 QWidget* _root;
                 QVBoxLayout* _layout;
@@ -68,6 +72,7 @@ namespace fire
                 fire::message::post_office_ptr _master;
                 user::local_user_ptr _user;
                 user::user_service_ptr _user_service;
+                messages::sender_ptr _sender;
                 std::string _home;
         };
     }

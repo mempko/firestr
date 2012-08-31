@@ -2,11 +2,14 @@
 
 #include "gui/messagelist.hpp"
 #include "gui/textmessage.hpp"
+#include "gui/test_message.hpp"
 #include "util/dbc.hpp"
 
 #include <sstream>
 
 namespace m = fire::message;
+namespace ms = fire::messages;
+namespace us = fire::user;
 
 namespace fire
 {
@@ -17,10 +20,13 @@ namespace fire
             const size_t TIMER_SLEEP = 100;//in milliseconds
         }
 
-        message_list::message_list(const std::string& name) :
+        message_list::message_list(const std::string& name, us::user_service_ptr service) :
+            _user_service{service},
             _name{name},
             _mail{new m::mailbox{name}}
         {
+            REQUIRE(service);
+
             //setup scrollbar
             _scrollbar = verticalScrollBar();
             QObject::connect(_scrollbar, SIGNAL(rangeChanged(int, int)), this, SLOT(scroll_to_bottom(int, int)));
@@ -30,10 +36,14 @@ namespace fire
             connect(t, SIGNAL(timeout()), this, SLOT(check_mail()));
             t->start(TIMER_SLEEP);
 
+            _sender.reset(new ms::sender{_user_service, _mail});
+
             INVARIANT(_root);
             INVARIANT(_layout);
             INVARIANT(_scrollbar);
             INVARIANT(_mail);
+            INVARIANT(_user_service);
+            INVARIANT(_sender);
         }
 
         void message_list::add(message* m)
@@ -63,6 +73,12 @@ namespace fire
             return _mail;
         }
 
+        messages::sender_ptr message_list::sender()
+        {
+            ENSURE(_sender);
+            return _sender;
+        }
+
         void message_list::check_mail() 
         {
             INVARIANT(_mail);
@@ -72,11 +88,19 @@ namespace fire
             {
                 //for now show encoded message
                 //TODO: use factory class to create gui from messages
-                std::stringstream s;
-                s << m;
+                if(m.meta.type == ms::TEST_MESSAGE)
+                {
+                    test_message* t = new test_message{m, _sender};
+                    add(t);
+                }
+                else
+                {
+                    std::stringstream s;
+                    s << m;
 
-                text_message* t = new text_message{s.str()};
-                add(t);
+                    text_message* t = new text_message{s.str()};
+                    add(t);
+                }
             }
         }
     }

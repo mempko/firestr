@@ -18,7 +18,7 @@
 add_subdirectory(util)
 add_subdirectory(network)
 add_subdirectory(message)
+add_subdirectory(messages)
 add_subdirectory(user)
 add_subdirectory(gui)
 add_subdirectory(firestr)
-add_subdirectory(firetest)
