@@ -41,7 +41,7 @@ namespace fire
         {
             REQUIRE(p)
 
-            QGridLayout* layout = new QGridLayout{this};
+            auto* layout = new QGridLayout{this};
             setLayout(layout);
 
             layout->addWidget( new QLabel{"Name:"}, 0,0);
@@ -98,7 +98,7 @@ namespace fire
         {
             REQUIRE(service);
             
-            QGridLayout* layout = new QGridLayout{this};
+            auto* layout = new QGridLayout{this};
             setLayout(layout);
 
             //create list
@@ -108,13 +108,13 @@ namespace fire
             update_contacts();
 
             //create add button
-            QPushButton* add_new = new QPushButton("add");
+            auto* add_new = new QPushButton("add");
             layout->addWidget(add_new, 1,0); 
 
             connect(add_new, SIGNAL(clicked()), this, SLOT(new_contact()));
 
             //setup updated timer
-            QTimer *t = new QTimer(this);
+            auto *t = new QTimer(this);
             connect(t, SIGNAL(timeout()), this, SLOT(update()));
             t->start(TIMER_SLEEP);
 

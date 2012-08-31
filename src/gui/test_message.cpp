@@ -98,10 +98,10 @@ namespace fire
             std::string user_name = contact ? contact->name() : "spy";
             user_name = "<b>" + user_name + "</b>";
             
-            QLabel* user = new QLabel{user_name.c_str()};
+            auto* user = new QLabel{user_name.c_str()};
             layout()->addWidget(user, 0,0);
 
-            QLabel* text = new QLabel{_m.text().c_str()};
+            auto* text = new QLabel{_m.text().c_str()};
             layout()->addWidget(text, 1,0, 1,1);
 
             //text edit
