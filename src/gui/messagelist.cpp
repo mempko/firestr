@@ -10,6 +10,7 @@
 namespace m = fire::message;
 namespace ms = fire::messages;
 namespace us = fire::user;
+namespace s = fire::session;
 
 namespace fire
 {
@@ -20,12 +21,10 @@ namespace fire
             const size_t TIMER_SLEEP = 100;//in milliseconds
         }
 
-        message_list::message_list(const std::string& name, us::user_service_ptr service) :
-            _user_service{service},
-            _name{name},
-            _mail{new m::mailbox{name}}
+        message_list::message_list(s::session_ptr session) :
+            _session{session}
         {
-            REQUIRE(service);
+            REQUIRE(session);
 
             //setup scrollbar
             _scrollbar = verticalScrollBar();
@@ -36,14 +35,10 @@ namespace fire
             connect(t, SIGNAL(timeout()), this, SLOT(check_mail()));
             t->start(TIMER_SLEEP);
 
-            _sender.reset(new ms::sender{_user_service, _mail});
-
             INVARIANT(_root);
             INVARIANT(_layout);
             INVARIANT(_scrollbar);
-            INVARIANT(_mail);
-            INVARIANT(_user_service);
-            INVARIANT(_sender);
+            INVARIANT(_session);
         }
 
         void message_list::add(message* m)
@@ -61,36 +56,25 @@ namespace fire
             _scrollbar->setValue(max);
         }
 
-        const m::mailbox_ptr message_list::mail() const
+        s::session_ptr message_list::session()
         {
-            ENSURE(_mail);
-            return _mail;
-        }
-
-        m::mailbox_ptr message_list::mail()
-        {
-            ENSURE(_mail);
-            return _mail;
-        }
-
-        messages::sender_ptr message_list::sender()
-        {
-            ENSURE(_sender);
-            return _sender;
+            ENSURE(_session);
+            return _session;
         }
 
         void message_list::check_mail() 
         {
-            INVARIANT(_mail);
+            INVARIANT(_session);
+            INVARIANT(_session->mail());
 
             m::message m;
-            while(_mail->pop_inbox(m))
+            while(_session->mail()->pop_inbox(m))
             {
                 //for now show encoded message
                 //TODO: use factory class to create gui from messages
                 if(m.meta.type == ms::TEST_MESSAGE)
                 {
-                    add(new test_message{m, _sender});
+                    add(new test_message{m, _session->sender()});
                 }
                 else
                 {

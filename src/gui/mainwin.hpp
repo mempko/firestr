@@ -22,8 +22,8 @@
 
 #include "gui/messagelist.hpp"
 #include "message/postoffice.hpp"
-#include "messages/sender.hpp"
 #include "user/userservice.hpp"
+#include "session/session.hpp"
 
 namespace fire
 {
@@ -38,8 +38,7 @@ namespace fire
                 main_window(
                         const std::string& host, 
                         const std::string& port,
-                        const std::string& home,
-                        user::local_user_ptr user);
+                        const std::string& home);
 
             private slots:
                 void about();
@@ -51,7 +50,7 @@ namespace fire
                         const std::string& host, 
                         const std::string& port);
                 void create_actions();
-                void create_main(const std::string& user_name);
+                void create_main();
                 void create_menus();
                 void make_new_user();
                 void setup_services();
@@ -70,9 +69,8 @@ namespace fire
 
                 message_list* _messages;
                 fire::message::post_office_ptr _master;
-                user::local_user_ptr _user;
                 user::user_service_ptr _user_service;
-                messages::sender_ptr _sender;
+                session::session_ptr _session;
                 std::string _home;
         };
     }
