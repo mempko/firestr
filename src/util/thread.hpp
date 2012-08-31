@@ -18,6 +18,7 @@
 #define FIRESTR_UTIL_THREAD_H
 
 #include <thread>
+#include <mutex>
 #include <memory>
 
 namespace fire
