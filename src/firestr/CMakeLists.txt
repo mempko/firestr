@@ -39,6 +39,7 @@ add_executable(
 target_link_libraries(
     firestr
     fire_gui
+    fire_messages
     fire_user
     fire_message
     fire_network
@@ -50,6 +51,7 @@ target_link_libraries(
 add_dependencies(
     firestr 
     fire_gui
+    fire_messages
     fire_user
     fire_message
     fire_network

@@ -25,6 +25,7 @@
 #include "gui/contactlist.hpp"
 #include "gui/message.hpp"
 #include "gui/textmessage.hpp"
+#include "gui/test_message.hpp"
 #include "gui/util.hpp"
 #include "util/mencode.hpp"
 #include "network/message_queue.hpp"
@@ -56,10 +57,10 @@ namespace fire
             REQUIRE(user);
 
             setup_post(host, port);
+            setup_services();
             create_actions();
             create_main(user->info().name());
             create_menus();
-            setup_services();
 
             INVARIANT(_master);
             INVARIANT(_main_menu);
@@ -111,13 +112,14 @@ namespace fire
             REQUIRE_FALSE(_layout);
             REQUIRE_FALSE(_messages);
             REQUIRE(_master);
+            REQUIRE(_user_service);
             
             //setup main
             _root = new QWidget{this};
             _layout = new QVBoxLayout{_root};
 
             //setup message list
-            _messages = new message_list{"main"};
+            _messages = new message_list{"main", _user_service};
             _layout->addWidget(_messages);
             _master->add(_messages->mail());
 
@@ -137,6 +139,7 @@ namespace fire
             REQUIRE(_about_action);
             REQUIRE(_close_action);
             REQUIRE(_contact_list_action);
+            REQUIRE(_test_message_action);
 
             _main_menu = new QMenu{tr("&Main"), this};
             _main_menu->addAction(_about_action);
@@ -146,10 +149,16 @@ namespace fire
             _contact_menu = new QMenu{tr("&Contacts"), this};
             _contact_menu->addAction(_contact_list_action);
 
+            _test_menu = new QMenu{tr("&Test"), this};
+            _test_menu->addAction(_test_message_action);
+
             menuBar()->addMenu(_main_menu);
             menuBar()->addMenu(_contact_menu);
+            menuBar()->addMenu(_test_menu);
 
             ENSURE(_main_menu);
+            ENSURE(_contact_menu);
+            ENSURE(_test_menu);
         }
         
         void main_window::create_actions()
@@ -165,6 +174,9 @@ namespace fire
 
             _contact_list_action = new QAction{tr("&Contacts"), this};
             connect(_contact_list_action, SIGNAL(triggered()), this, SLOT(show_contact_list()));
+
+            _test_message_action = new QAction{tr("&Test Message"), this};
+            connect(_test_message_action, SIGNAL(triggered()), this, SLOT(make_test_message()));
 
             ENSURE(_about_action);
             ENSURE(_close_action);
@@ -186,6 +198,14 @@ namespace fire
 
             contact_list cl{"contacts", _user_service};
             cl.exec();
+        }
+
+        void main_window::make_test_message()
+        {
+            INVARIANT(_messages);
+
+            test_message* t = new test_message{_messages->sender()};
+            _messages->add(t);
         }
 
         void main_window::about()
