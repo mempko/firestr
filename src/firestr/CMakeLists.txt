@@ -42,6 +42,7 @@ target_link_libraries(
     fire_session
     fire_messages
     fire_user
+    fire_service
     fire_message
     fire_network
     fire_util

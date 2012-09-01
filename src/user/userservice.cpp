@@ -24,6 +24,7 @@
 
 namespace m = fire::message;
 namespace u = fire::util;
+namespace s = fire::service;
 
 namespace fire
 {
@@ -31,11 +32,10 @@ namespace fire
     {
         namespace
         {
-            const std::string SERVICE_ADDRESS = "uservice";
+            const std::string SERVICE_ADDRESS = "user_service";
             const std::string ADD_REQUEST = "add_user_request";
             const std::string REQUEST_CONFIRMED = "add_user_confirmed";
             const std::string REQUEST_REJECTED = "add_user_rejected";
-            const double THREAD_SLEEP = 200; //in milliseconds 
         }
 
         struct req_rejected 
@@ -128,105 +128,63 @@ namespace fire
             r.address = m.meta.from.front();
         }
 
-        void user_service_thread(user_service* s)
-        {
-            REQUIRE(s);
-            REQUIRE(s->_mail);
-            REQUIRE(s->_user);
-
-            while(!s->_done)
-            try
-            {
-                m::message m;
-                if(!s->_mail->pop_inbox(m))
-                {
-                    u::sleep_thread(THREAD_SLEEP);
-                    continue;
-                }
-
-                if(m.meta.type == ADD_REQUEST)
-                {
-                    add_request r;
-                    convert(m, r);
-
-                    CHECK(r.from);
-
-                    //if contact already exists send confirmation
-                    //otherwise add to pending requests
-
-                    auto f = s->_user->contact_by_id(r.from->id());
-                    if(f) s->send_confirmation(f->id(), r.key);
-                    else 
-                    {
-                        u::mutex_scoped_lock l(s->_mutex);
-                        s->_pending_requests[r.from->id()] = r;
-                    }
-                }
-                else if(m.meta.type == REQUEST_CONFIRMED)
-                {
-                    req_confirmed r;
-                    convert(m, r);
-
-                    CHECK(r.from);
-
-                    if(s->_sent_requests.count(r.key))
-                    {
-                        s->_sent_requests.erase(r.key);
-                        s->confirm_user(r.from);
-                    }
-                }
-                else if(m.meta.type == REQUEST_REJECTED)
-                {
-                    req_rejected r;
-                    convert(m, r);
-                    s->_sent_requests.erase(r.key);
-                }
-                else
-                {
-                    throw std::runtime_error{"unsuported message type `" + m.meta.type +"'"};
-                }
-            }
-            catch(std::exception& e)
-            {
-                std::cerr << "Error recieving message for mailbox " << s->_mail->address() << ". " << e.what() << std::endl;
-            }
-            catch(...)
-            {
-                std::cerr << "Unknown error recieving message for mailbox " << s->_mail->address() << std::endl;
-            }
-        }
-
         user_service::user_service(const std::string& home) :
-            _home{home},
-            _done{false}
+            s::service{SERVICE_ADDRESS},
+            _home{home}
         {
             REQUIRE_FALSE(home.empty());
 
             _user = load_user(home); 
             if(!_user) throw std::runtime_error{"no user found at `" + home + "'"};
 
-            _mail.reset(new m::mailbox{SERVICE_ADDRESS});
-
-            //start user thread
-            _thread.reset(new std::thread{user_service_thread, this});
-
             INVARIANT(_user);
-            INVARIANT(_mail);
-            INVARIANT(_thread);
+            INVARIANT(mail());
         }
 
-        user_service::~user_service()
+        void user_service::message_recieved(const message::message& m)
         {
-            INVARIANT(_thread);
+            if(m.meta.type == ADD_REQUEST)
+            {
+                add_request r;
+                convert(m, r);
 
-            _done = true;
-            _thread->join();
-        }
+                CHECK(r.from);
 
-        message::mailbox_ptr user_service::mail()
-        {
-            ENSURE(_mail);
-            return _mail;
+                //if contact already exists send confirmation
+                //otherwise add to pending requests
+
+                auto f = _user->contact_by_id(r.from->id());
+                if(f) send_confirmation(f->id(), r.key);
+                else 
+                {
+                    u::mutex_scoped_lock l(_mutex);
+                    _pending_requests[r.from->id()] = r;
+                }
+            }
+            else if(m.meta.type == REQUEST_CONFIRMED)
+            {
+                req_confirmed r;
+                convert(m, r);
+
+                CHECK(r.from);
+
+                if(_sent_requests.count(r.key))
+                {
+                    _sent_requests.erase(r.key);
+                    confirm_user(r.from);
+                }
+            }
+            else if(m.meta.type == REQUEST_REJECTED)
+            {
+                req_rejected r;
+                convert(m, r);
+                _sent_requests.erase(r.key);
+            }
+            else
+            {
+                throw std::runtime_error{"unsuported message type `" + m.meta.type +"'"};
+            }
+
         }
 
         local_user& user_service::user()
@@ -246,7 +204,7 @@ namespace fire
             u::mutex_scoped_lock l(_mutex);
 
             INVARIANT(_user);
-            INVARIANT(_mail);
+            INVARIANT(mail());
             REQUIRE(contact);
 
             //add user
@@ -264,7 +222,7 @@ namespace fire
             u::mutex_scoped_lock l(_mutex);
 
             INVARIANT(_user);
-            INVARIANT(_mail);
+            INVARIANT(mail());
 
             std::string ex = m::external_address(address);
             std::string key = u::uuid();
@@ -273,7 +231,7 @@ namespace fire
             add_request r{ex, key, self};
 
             _sent_requests.insert(key);
-            _mail->push_outbox(convert(r));
+            mail()->push_outbox(convert(r));
         }
 
         void user_service::send_confirmation(const std::string& id, std::string key)
@@ -281,7 +239,7 @@ namespace fire
             u::mutex_scoped_lock l(_mutex);
 
             INVARIANT(_user);
-            INVARIANT(_mail);
+            INVARIANT(mail());
 
             if(key.empty())
             {
@@ -301,7 +259,7 @@ namespace fire
             user_info_ptr self{new user_info{_user->info()}};
             req_confirmed r{user->address(), key, self};
 
-            _mail->push_outbox(convert(r));
+            mail()->push_outbox(convert(r));
             _pending_requests.erase(id);
         }
 
@@ -310,7 +268,7 @@ namespace fire
             u::mutex_scoped_lock l(_mutex);
 
             INVARIANT(_user);
-            INVARIANT(_mail);
+            INVARIANT(mail());
 
             //get user who wanted to be added
             auto p = _pending_requests.find(id);
@@ -323,8 +281,7 @@ namespace fire
                 _pending_requests.erase(id);
 
             req_rejected r{user->address(), key};
-            _mail->push_outbox(convert(r));
+            mail()->push_outbox(convert(r));
         }
-
     }
 }
