@@ -19,8 +19,7 @@
 #define FIRESTR_USER_USER_SERVICE_H
 
 #include "user/user.hpp"
-#include "message/message.hpp"
-#include "message/mailbox.hpp"
+#include "service/service.hpp"
 #include "util/thread.hpp"
 
 #include <map>
@@ -42,18 +41,14 @@ namespace fire
         typedef std::map<std::string, add_request> add_requests;
         typedef std::set<std::string> sent_requests;
 
-        class user_service
+        class user_service : public service::service
         {
             public:
                 user_service(const std::string& home);
-                ~user_service();
 
             public:
                 local_user& user();
                 const local_user& user() const;
-
-            public:
-                message::mailbox_ptr mail();
 
             public:
                 void attempt_to_add_user(const std::string& address);
@@ -61,6 +56,9 @@ namespace fire
                 void send_rejection(const std::string& id);
 
                 const add_requests& pending_requests() const;
+
+            protected:
+                virtual void message_recieved(const message::message&);
 
             private:
                 void confirm_user(user_info_ptr contact);
@@ -71,14 +69,8 @@ namespace fire
 
             private:
                 local_user_ptr _user;
-                message::mailbox_ptr _mail;
                 std::string _home;
-                bool _done;
-                util::thread_uptr _thread;
                 std::mutex _mutex;
-
-            private:
-                friend void user_service_thread(user_service*);
         };
 
         typedef std::shared_ptr<user_service> user_service_ptr;
