@@ -120,7 +120,6 @@ namespace fire
             //setup message list
             auto session = _session_service->create_session("test_session", _user_service->user().contacts());
             CHECK(session);
-
             _messages = new message_list{session};
             _layout->addWidget(_messages);
 
@@ -193,6 +192,7 @@ namespace fire
             _master->add(_user_service->mail());
 
             _session_service.reset(new s::session_service{_master, _user_service});
+            _master->add(_session_service->mail());
 
             ENSURE(_user_service);
             ENSURE(_session_service);
