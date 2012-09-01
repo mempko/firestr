@@ -32,11 +32,13 @@ namespace fire
             public:
                 sender(user::user_service_ptr, message::mailbox_ptr);
             public:
+
                 /**
                  * Send a message to the recipient
                  * @param to Id of user
                  */
                 bool send(const std::string& to, message::message);
+
             public:
                 user::user_service_ptr user_service();
 

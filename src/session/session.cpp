@@ -56,6 +56,16 @@ namespace fire
             INVARIANT(_sender);
         }
 
+        const user::users& session::contacts() const
+        {
+            return _contacts;
+        }
+
+        user::users& session::contacts() 
+        {
+            return _contacts;
+        }
+
         const std::string& session::id() const
         {
             ENSURE_FALSE(_id.empty());
