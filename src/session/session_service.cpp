@@ -90,10 +90,10 @@ namespace fire
                 new_session s;
                 convert(m, s);
 
-                us::users contacts;
                 auto c = _user_service->user().contact_by_id(s.from_id);
                 if(!c) return;
 
+                us::users contacts;
                 contacts.push_back(c);
                 create_session(s.session_id, contacts);
             }
