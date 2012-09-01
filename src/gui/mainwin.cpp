@@ -33,6 +33,7 @@
 
 namespace m = fire::message;
 namespace u = fire::util;
+namespace us = fire::user;
 namespace s = fire::session;
                 
 namespace fire
@@ -65,7 +66,7 @@ namespace fire
             INVARIANT(_close_action);
         }
 
-        user::local_user_ptr make_new_user(const std::string& home)
+        us::local_user_ptr make_new_user(const std::string& home)
         {
             bool ok = false;
             std::string name = "me";
@@ -79,16 +80,16 @@ namespace fire
             if(ok && !r.isEmpty()) name = convert(r);
             else return {};
 
-            user::local_user_ptr user{new user::local_user{name}};
-            user::save_user(home, *user);
+            us::local_user_ptr user{new us::local_user{name}};
+            us::save_user(home, *user);
 
             ENSURE(user);
             return user;
         }
 
-        user::local_user_ptr setup_user(const std::string& home)
+        us::local_user_ptr setup_user(const std::string& home)
         {
-            auto user = user::load_user(home);
+            auto user = us::load_user(home);
             return user ? user : make_new_user(home);
         }
 
@@ -110,16 +111,18 @@ namespace fire
             REQUIRE_FALSE(_messages);
             REQUIRE(_master);
             REQUIRE(_user_service);
+            REQUIRE(_session_service);
             
             //setup main
             _root = new QWidget{this};
             _layout = new QVBoxLayout{_root};
 
             //setup message list
-            _session.reset(new s::session{"main_session", _user_service});
-            _messages = new message_list{_session};
+            auto session = _session_service->create_session("test_session", _user_service->user().contacts());
+            CHECK(session);
+
+            _messages = new message_list{session};
             _layout->addWidget(_messages);
-            _master->add(_messages->session()->mail());
 
             std::string title = "Firestr - " + _user_service->user().info().name();
             //setup base
@@ -186,8 +189,13 @@ namespace fire
             REQUIRE_FALSE(_user_service);
             REQUIRE(_master);
 
-            _user_service.reset(new user::user_service{_home});
+            _user_service.reset(new us::user_service{_home});
             _master->add(_user_service->mail());
+
+            _session_service.reset(new s::session_service{_master, _user_service});
+
+            ENSURE(_user_service);
+            ENSURE(_session_service);
         }
 
         void main_window::show_contact_list()

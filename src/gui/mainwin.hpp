@@ -24,6 +24,7 @@
 #include "message/postoffice.hpp"
 #include "user/userservice.hpp"
 #include "session/session.hpp"
+#include "session/session_service.hpp"
 
 namespace fire
 {
@@ -70,7 +71,7 @@ namespace fire
                 message_list* _messages;
                 fire::message::post_office_ptr _master;
                 user::user_service_ptr _user_service;
-                session::session_ptr _session;
+                session::session_service_ptr _session_service;
                 std::string _home;
         };
     }
