@@ -20,7 +20,7 @@
 
 #include <QMainWindow>
 
-#include "gui/messagelist.hpp"
+#include "gui/session.hpp"
 #include "message/postoffice.hpp"
 #include "user/userservice.hpp"
 #include "session/session.hpp"
@@ -45,6 +45,7 @@ namespace fire
                 void about();
                 void show_contact_list();
                 void make_test_message();
+                void closeEvent(QCloseEvent*);
 
             private:
                 void setup_post(
@@ -55,6 +56,8 @@ namespace fire
                 void create_menus();
                 void make_new_user();
                 void setup_services();
+                void save_state();
+                void restore_state();
 
             private:
                 QMenu *_main_menu;
@@ -64,11 +67,12 @@ namespace fire
                 QAction *_contact_list_action;
                 QMenu *_test_menu;
                 QAction *_test_message_action;
+                QTabWidget* _sessions;
 
                 QWidget* _root;
                 QVBoxLayout* _layout;
 
-                message_list* _messages;
+                session_widget* _session;
                 fire::message::post_office_ptr _master;
                 user::user_service_ptr _user_service;
                 session::session_service_ptr _session_service;
