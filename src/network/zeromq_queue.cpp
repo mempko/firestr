@@ -16,6 +16,7 @@
  */
 
 #include "network/zeromq_queue.hpp"
+#include "util/thread.hpp"
 
 #include <stdexcept>
 #include <sstream>
@@ -23,6 +24,7 @@
 #include <boost/lexical_cast.hpp>
 
 using boost::lexical_cast;
+namespace u = fire::util;
 
 namespace fire
 {
@@ -132,10 +134,10 @@ namespace fire
 
         zmq_queue::~zmq_queue()
         {
-            //thread_sleep(_p.wait)
+            u::sleep_thread(_p.wait);
         }
 
-        bool zmq_queue::send(const util::bytes& b)
+        bool zmq_queue::send(const u::bytes& b)
         {
             REQUIRE_FALSE(b.empty());
             INVARIANT(_s);
@@ -145,12 +147,12 @@ namespace fire
                 if(timedout(ZMQ_POLLOUT)) return false;
 
             zmq::message_t m(b.size());
-            std::copy(b.begin(), b.end(), reinterpret_cast<util::byte*>(m.data()));
+            std::copy(b.begin(), b.end(), reinterpret_cast<u::byte*>(m.data()));
 
             return _s->send(m, _p.block ? 0 : ZMQ_NOBLOCK);
         }
 
-        bool zmq_queue::recieve(util::bytes& b)
+        bool zmq_queue::recieve(u::bytes& b)
         {
             INVARIANT(_s);
             INVARIANT(_c);
@@ -163,8 +165,8 @@ namespace fire
 
             b.resize(m.size());
             std::copy(
-                    reinterpret_cast<util::byte*>(m.data()), 
-                    reinterpret_cast<util::byte*>(m.data()) + m.size(), 
+                    reinterpret_cast<u::byte*>(m.data()), 
+                    reinterpret_cast<u::byte*>(m.data()) + m.size(), 
                     b.begin());
 
             ENSURE_EQUAL(b.size(), m.size());
