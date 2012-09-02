@@ -27,6 +27,8 @@ namespace fire
 {
     namespace message
     {
+        typedef util::queue<message> queue;
+
         class mailbox
         {
             public:
@@ -46,11 +48,10 @@ namespace fire
                 bool pop_outbox(message&);
 
             private:
-                typedef util::queue<message> message_queue;
 
                 std::string _address;
-                message_queue _in;
-                message_queue _out;
+                queue _in;
+                queue _out;
         };
 
         typedef std::shared_ptr<mailbox> mailbox_ptr;

@@ -48,6 +48,7 @@ namespace fire
                     continue;
                 }
 
+
                 //parse message
                 std::stringstream s(u::to_str(data));
                 message m;
@@ -69,6 +70,64 @@ namespace fire
             }
         }
 
+        void out_thread(master_post_office* o)
+        {
+            REQUIRE(o);
+
+            std::string last_address;
+
+            while(!o->_done)
+            try
+            {
+                message m;
+                if(!o->_out.pop(m))
+                {
+                    u::sleep_thread(THREAD_SLEEP);
+                    continue;
+                }
+
+                REQUIRE_GREATER_EQUAL(m.meta.from.size(), 1);
+                REQUIRE_GREATER_EQUAL(m.meta.to.size(), 1);
+
+                const std::string outside_queue_address = m.meta.to.front();
+                last_address = outside_queue_address;
+
+                auto c = o->_connections.find(outside_queue_address);
+
+                n::message_queue_ptr out;
+                if(c == o->_connections.end())
+                {
+                    n::queue_options qo = { 
+                        {"psh", "1"}, 
+                        {"con", "1"},
+                        {"block", "0"}};
+
+                    out = n::create_message_queue(outside_queue_address, qo);
+                    o->_connections[outside_queue_address] = out;
+                }
+                else
+                {
+                    out = c->second;
+                }
+
+                CHECK(out);
+
+                std::stringstream s;
+                s << m;
+                u::bytes data = u::to_bytes(s.str());
+
+                out->send(data);
+            }
+            catch(std::exception& e)
+            {
+                std::cerr << "error sending message to " << last_address << ": " << e.what() << std::endl;
+            }
+            catch(...)
+            {
+                std::cerr << "error sending message to " << last_address << ": unknown error." << std::endl;
+            }
+        }
+
         master_post_office::master_post_office(
                 const std::string& in_host,
                 const std::string& in_port)
@@ -86,56 +145,28 @@ namespace fire
 
             _in = n::create_message_queue(address, qo);
             _in_thread.reset(new std::thread{in_thread, this});
+            _out_thread.reset(new std::thread{out_thread, this});
 
             ENSURE(_in);
             ENSURE(_in_thread);
+            ENSURE(_out_thread);
             ENSURE_FALSE(_address.empty());
         }
 
         master_post_office::~master_post_office()
         {
-            INVARIANT(_in);
+            INVARIANT(_in_thread);
+            INVARIANT(_out_thread);
 
             _done = true;
             _in_thread->join();
+            _out_thread->join();
         }
 
         bool master_post_office::send_outside(const message& m)
         {
-            REQUIRE_GREATER_EQUAL(m.meta.from.size(), 1);
-            REQUIRE_GREATER_EQUAL(m.meta.to.size(), 1);
-
-            const std::string outside_queue_address = m.meta.to.front();
-
-            n::queue_options qo = { 
-                {"psh", "1"}, 
-                {"con", "1"},
-                {"block", "0"}};
-
-            try
-            {
-                n::message_queue_ptr out = 
-                    n::create_message_queue(
-                        outside_queue_address, qo);
-
-                CHECK(out);
-
-                std::stringstream s;
-                s << m;
-                u::bytes data = u::to_bytes(s.str());
-
-                return out->send(data);
-            }
-            catch(std::exception& e)
-            {
-                std::cerr << "error sending message: " << e.what() << std::endl;
-            }
-            catch(...)
-            {
-                std::cerr << "error sending message: unknown error." << std::endl;
-            }
-
-            return false;
+            _out.push(m);
+            return true;
         }
     }
 }
