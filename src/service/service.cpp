@@ -29,7 +29,7 @@ namespace fire
     {
         namespace
         {
-            const double THREAD_SLEEP = 100; //in milliseconds 
+            const double THREAD_SLEEP = 10; //in milliseconds 
         }
 
         void service_thread(service* s)
