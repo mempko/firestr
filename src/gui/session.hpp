@@ -15,35 +15,34 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef FIRESTR_GUI_MESSAGELIST_H
-#define FIRESTR_GUI_MESSAGELIST_H
+#ifndef FIRESTR_GUI_SESSION_H
+#define FIRESTR_GUI_SESSION_H
 
-#include <QScrollArea>
-
-#include "gui/list.hpp"
-#include "gui/message.hpp"
 #include "session/session.hpp"
+#include "gui/messagelist.hpp"
+
+#include <QWidget>
+#include <QGridLayout>
 
 namespace fire
 {
     namespace gui
     {
-        class message_list : public list
+        class session_widget : public QWidget
         {
             Q_OBJECT
             public:
-                message_list(session::session_ptr);
+                session_widget(session::session_ptr);
 
             public:
                 session::session_ptr session();
 
             public slots:
                 void add(message*);
-                void check_mail(); 
-                void scroll_to_bottom(int min, int max);
 
             private:
-                QScrollBar* _scrollbar;
+                QGridLayout* _layout;
+                message_list* _messages;
                 session::session_ptr _session;
         };
     }

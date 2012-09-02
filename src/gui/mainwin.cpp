@@ -25,6 +25,7 @@
 #include "gui/contactlist.hpp"
 #include "gui/message.hpp"
 #include "gui/test_message.hpp"
+#include "gui/session.hpp"
 #include "gui/util.hpp"
 #include "util/mencode.hpp"
 #include "network/message_queue.hpp"
@@ -51,7 +52,8 @@ namespace fire
             _main_menu(0),
             _root(0),
             _layout(0),
-            _messages(0),
+            _session(0),
+            _sessions(0),
             _home(home)
         {
             setup_post(host, port);
@@ -59,11 +61,29 @@ namespace fire
             create_actions();
             create_main();
             create_menus();
+            restore_state();
 
             INVARIANT(_master);
             INVARIANT(_main_menu);
-            INVARIANT(_about_action);
-            INVARIANT(_close_action);
+        }
+        void main_window::save_state()
+        {
+            QSettings settings("mempko", "firestr");
+            settings.setValue("main_window/geometry", saveGeometry());
+            settings.setValue("main_window/state", saveState());
+        }
+
+        void main_window::restore_state()
+        {
+            QSettings settings("mempko", "firestr");
+            restoreGeometry(settings.value("main_window/geometry").toByteArray());
+            restoreState(settings.value("main_window/state").toByteArray());
+        }
+
+        void main_window::closeEvent(QCloseEvent *event)
+        {
+            save_state();
+            QMainWindow::closeEvent(event);
         }
 
         us::local_user_ptr make_new_user(const std::string& home)
@@ -108,7 +128,8 @@ namespace fire
         {
             REQUIRE_FALSE(_root);
             REQUIRE_FALSE(_layout);
-            REQUIRE_FALSE(_messages);
+            REQUIRE_FALSE(_session);
+            REQUIRE_FALSE(_sessions);
             REQUIRE(_master);
             REQUIRE(_user_service);
             REQUIRE(_session_service);
@@ -120,8 +141,13 @@ namespace fire
             //setup message list
             auto session = _session_service->create_session("test_session", _user_service->user().contacts());
             CHECK(session);
-            _messages = new message_list{session};
-            _layout->addWidget(_messages);
+            _session = new session_widget{session};
+                
+            //create the sessions widget
+            _sessions = new QTabWidget;
+            _sessions->addTab(_session, session->mail()->address().c_str());
+
+            _layout->addWidget(_sessions);
 
             std::string title = "Firestr - " + _user_service->user().info().name();
             //setup base
@@ -130,7 +156,8 @@ namespace fire
 
             ENSURE(_root);
             ENSURE(_layout);
-            ENSURE(_messages);
+            ENSURE(_session);
+            ENSURE(_sessions);
         }
 
         void main_window::create_menus()
@@ -208,11 +235,11 @@ namespace fire
 
         void main_window::make_test_message()
         {
-            INVARIANT(_messages);
-            INVARIANT(_messages->session());
+            INVARIANT(_session);
+            INVARIANT(_session->session());
 
-            auto* t = new test_message{_messages->session()->sender()};
-            _messages->add(t);
+            auto* t = new test_message{_session->session()->sender()};
+            _session->add(t);
         }
 
         void main_window::about()
