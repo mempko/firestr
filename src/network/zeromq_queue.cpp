@@ -74,7 +74,7 @@ namespace fire
             p.mode = determine_connection_mode(o);
             p.uri = c.location;
             p.threads = get_opt(o, "threads", 5);
-            p.block = get_opt(o, "block", true);
+            p.block = get_opt(o, "block", 1);
             p.timeout = to_microseconds(get_opt(o, "timeout", 0.0));
             p.wait = get_opt(o, "wait", 0.0);
             p.linger = get_opt(o, "linger", -1);

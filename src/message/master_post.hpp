@@ -17,16 +17,19 @@
 #ifndef FIRESTR_MESSAGE_MASERT_POSTOFFICE_H
 #define FIRESTR_MESSAGE_MASERT_POSTOFFICE_H
 
-#include <thread>
 
 #include "message/postoffice.hpp"
 #include "network/message_queue.hpp"
 #include "util/thread.hpp"
 
+#include <memory>
+#include <map>
+
 namespace fire
 {
     namespace message
     {
+
         class master_post_office : public post_office
         {
             public:
@@ -41,9 +44,18 @@ namespace fire
             private:
                 network::message_queue_ptr _in;
                 util::thread_uptr _in_thread;
+                util::thread_uptr _out_thread;
+                queue _out;
+
+            private:
+                typedef std::map<std::string, network::message_queue_ptr> connection_map;
+
+                connection_map _connections;
+                std::mutex _cache_mutex;
 
             private:
                 friend void in_thread(master_post_office* o);
+                friend void out_thread(master_post_office* o);
         };
 
     }
