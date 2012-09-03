@@ -28,6 +28,7 @@ namespace fire
         namespace 
         {
             const size_t TIMER_SLEEP = 200;//in milliseconds
+            const size_t CW_WIDTH = 50;//in milliseconds
         }
 
         session_widget::session_widget(
@@ -50,15 +51,21 @@ namespace fire
             connect(_add_contact, SIGNAL(clicked()), this, SLOT(add_contact()));
             _contacts = new contact_list{_session_service->user_service(), _session->contacts()};
 
-           
-            _layout->addWidget(_contact_select, 0,0);
-            _layout->addWidget(_add_contact, 0, 1);
-            _layout->addWidget(_contacts, 1, 0, 1, 2);
-            _layout->addWidget(_messages, 2, 0, 1, 2);
+            auto* cw = new QWidget;
+            auto* cl = new QGridLayout;
+            cw->setLayout(cl);
+            cl->addWidget(_contact_select, 0,0);
+            cl->addWidget(_add_contact, 0, 1);
+            cl->addWidget(_contacts, 1, 0, 1, 2);
+            cw->resize(CW_WIDTH, cw->height());
 
-            _layout->setRowStretch(0, 0);
-            _layout->setRowStretch(1, 0);
-            _layout->setRowStretch(2, 2);
+            _splitter = new QSplitter{Qt::Horizontal};
+            _splitter->addWidget(cw);
+            _splitter->addWidget(_messages);
+            _splitter->setStretchFactor(0, 0);
+            _splitter->setStretchFactor(1, 2);
+           
+            _layout->addWidget(_splitter);
 
             setLayout(_layout);
             _layout->setContentsMargins(0,0,0,0);
