@@ -144,7 +144,7 @@ namespace fire
             if(sp != _sessions.end())
             {
                 auto session = sp->second;
-                for(auto u : contacts)
+                for(auto u : contacts.list())
                 {
                     CHECK(u);
                     add_contact_to_session(u, session);
@@ -165,7 +165,7 @@ namespace fire
             ns.session_id = id; 
 
             auto m = convert(ns);
-            for(auto u : contacts)
+            for(auto u : contacts.list())
             {
                 CHECK(u);
                 s->contacts().add(u);
@@ -222,7 +222,7 @@ namespace fire
             //get current contacts in the session.
             //these will be sent to the contact 
             contact_ids ids;
-            for(auto c : s->contacts()) 
+            for(auto c : s->contacts().list()) 
             {
                 CHECK(c);
                 ids.insert(c->id());
@@ -233,7 +233,7 @@ namespace fire
             ns.session_id = s->id(); 
             ns.ids = ids;
 
-            for(auto c : s->contacts())
+            for(auto c : s->contacts().list())
             {
                 CHECK(c);
                 _sender->send(c->id(), convert(ns));

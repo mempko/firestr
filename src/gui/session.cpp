@@ -89,7 +89,7 @@ namespace fire
             INVARIANT(_add_contact);
 
             _contact_select->clear();
-            for(auto p : _session_service->user_service()->user().contacts())
+            for(auto p : _session_service->user_service()->user().contacts().list())
             {
                 CHECK(p);
                 if(_session->contacts().by_id(p->id())) continue;

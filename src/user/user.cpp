@@ -204,15 +204,25 @@ namespace fire
             ENSURE_LESS_EQUAL(_list.size(), cs.size());
         }
 
+        contact_list::contact_list(const contact_list& o)
+        {
+            u::mutex_scoped_lock l(o._mutex);
+            _list = o._list;
+            _map = o._map;
+        }
+
         contact_list::contact_list() : _list{}, _map{} {}
 
-        const users& contact_list::list() const
+        users contact_list::list() const
         {
+            u::mutex_scoped_lock l(_mutex);
             return _list;
         }
 
         bool contact_list::add(user_info_ptr c)
         {
+            u::mutex_scoped_lock l(_mutex);
+
             REQUIRE(c);
             if(_map.count(c->id())) return false;
 
@@ -228,6 +238,8 @@ namespace fire
 
         bool contact_list::remove(user_info_ptr c)
         {
+            u::mutex_scoped_lock l(_mutex);
+
             REQUIRE(c);
 
             auto i = _map.find(c->id());
@@ -242,43 +254,30 @@ namespace fire
 
         user_info_ptr contact_list::by_id(const std::string& id)
         {
+            u::mutex_scoped_lock l(_mutex);
+
             auto p = _map.find(id);
             return p != _map.end() ? _list[p->second] : 0; 
         }
 
-        contact_list::iterator contact_list::begin()
-        {
-            return _list.begin();
-        }
-
-        contact_list::iterator contact_list::end()
-        {
-            return _list.end();
-        }
-
-        contact_list::const_iterator contact_list::begin() const
-        {
-            return _list.begin();
-        }
-
-        contact_list::const_iterator contact_list::end() const
-        {
-            return _list.end();
-        }
-
         bool contact_list::empty() const
         {
+            u::mutex_scoped_lock l(_mutex);
             return _list.empty();
         }
 
         size_t contact_list::size() const
         {
+            u::mutex_scoped_lock l(_mutex);
+
             INVARIANT_EQUAL(_list.size(), _map.size());
             return _list.size();
         }
 
         void contact_list::clear()
         {
+            u::mutex_scoped_lock l(_mutex);
+
             _list.clear();
             _map.clear();
 
