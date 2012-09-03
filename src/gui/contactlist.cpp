@@ -35,21 +35,34 @@ namespace fire
             const size_t TIMER_SLEEP = 200;//in milliseconds
         }
 
-        user_info::user_info(user::user_info_ptr p, user::user_service_ptr s) :
+        user_info::user_info(
+                user::user_info_ptr p, 
+                user::user_service_ptr s,
+                bool accept_reject,
+                bool compact) :
             _contact{p},
             _service{s}
         {
             REQUIRE(p)
+            REQUIRE(s)
 
             auto* layout = new QGridLayout{this};
             setLayout(layout);
 
-            layout->addWidget( new QLabel{"Name:"}, 0,0);
-            layout->addWidget( new QLabel{p->name().c_str()}, 0,1);
-            layout->addWidget( new QLabel{"Address:"}, 1,0);
-            layout->addWidget( new QLabel{p->address().c_str()}, 1,1);
+            if(compact)
+            {
+                layout->addWidget( new QLabel{p->name().c_str()}, 0,0);
+                layout->addWidget( new QLabel{p->address().c_str()}, 0,1);
+            }
+            else
+            {
+                layout->addWidget( new QLabel{"Name:"}, 0,0);
+                layout->addWidget( new QLabel{p->name().c_str()}, 0,1);
+                layout->addWidget( new QLabel{"Address:"}, 1,0);
+                layout->addWidget( new QLabel{p->address().c_str()}, 1,1);
+            }
 
-            if(_service)
+            if(accept_reject)
             {
                 //create add button
                 _accept = new QPushButton("accept");
@@ -60,6 +73,7 @@ namespace fire
                 connect(_accept, SIGNAL(clicked()), this, SLOT(accept()));
                 connect(_reject, SIGNAL(clicked()), this, SLOT(reject()));
             }
+            layout->setContentsMargins(2,2,2,2);
             ENSURE(_contact);
         }
 
@@ -93,7 +107,7 @@ namespace fire
             _accept->hide();
         }
 
-        contact_list::contact_list(const std::string& title, user::user_service_ptr service) :
+        contact_list_dialog::contact_list_dialog(const std::string& title, user::user_service_ptr service) :
             _service{service}
         {
             REQUIRE(service);
@@ -123,7 +137,7 @@ namespace fire
             INVARIANT(_list);
         }
 
-        void contact_list::update_contacts()
+        void contact_list_dialog::update_contacts()
         {
             INVARIANT(_list);
             INVARIANT(_service);
@@ -131,19 +145,18 @@ namespace fire
             _list->clear();
 
             for(auto u : _service->user().contacts())
-                _list->add(new user_info{u, 0});
+                _list->add(new user_info{u, _service, false, true});
 
             auto pending = _service->pending_requests();
 
             for(auto r : pending)
-                _list->add(new user_info{r.second.from, _service});
+                _list->add(new user_info{r.second.from, _service, true});
 
             _prev_requests = pending.size();
             _prev_contacts = _service->user().contacts().size();
         }
 
-
-        void contact_list::new_contact()
+        void contact_list_dialog::new_contact()
         {
             INVARIANT(_service);
 
@@ -162,7 +175,7 @@ namespace fire
             _service->attempt_to_add_user(address);
         }
 
-        void contact_list::update()
+        void contact_list_dialog::update()
         {
             size_t pending_requests = _service->pending_requests().size();
             size_t contacts = _service->user().contacts().size();
@@ -171,6 +184,42 @@ namespace fire
             update_contacts();
             _prev_requests = pending_requests;
             _prev_contacts = contacts;
+        }
+
+        contact_list::contact_list(user::user_service_ptr service, const user::contact_list& contacts) :
+            _service{service}
+        {
+            REQUIRE(service);
+            for(auto u : contacts)
+            {
+                CHECK(u);
+                add_contact(u);
+            }
+
+            INVARIANT(_service);
+        }
+
+        void contact_list::add_contact(user::user_info_ptr u)
+        {
+            REQUIRE(u);
+            INVARIANT(_service);
+            if(_contacts.by_id(u->id())) return;
+
+            add(new user_info{u, _service, false, true});
+            _contacts.add(u);
+        }
+
+        void contact_list::update(const user::contact_list& contacts)
+        {
+            clear();
+            _contacts.clear();
+            for(auto c : contacts)
+            {
+                CHECK(c);
+                add_contact(c);
+            }
+
+            ENSURE_LESS_EQUAL(_contacts.size(), contacts.size());
         }
     }
 }

@@ -20,7 +20,7 @@
 
 #include "messages/test_message.hpp"
 #include "gui/message.hpp"
-#include "messages/sender.hpp"
+#include "session/session.hpp"
 
 #include <QLabel>
 #include <QLineEdit>
@@ -35,8 +35,8 @@ namespace fire
         {
             Q_OBJECT
             public:
-                test_message(messages::sender_ptr);
-                test_message(const messages::test_message&, messages::sender_ptr);
+                test_message(session::session_ptr);
+                test_message(const messages::test_message&, session::session_ptr);
 
             public slots:
                 void send_message();
@@ -48,9 +48,8 @@ namespace fire
 
             private:
                 messages::test_message _m;
-                messages::sender_ptr _sender;
+                session::session_ptr _session;
                 QLineEdit* _etext;
-                QComboBox* _users;
                 QPushButton* _send;
                 QPushButton* _reply;
         };

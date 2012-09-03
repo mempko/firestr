@@ -37,10 +37,25 @@ namespace fire
             const std::string NEW_SESSION = "new_session";
         }
 
+        typedef std::set<std::string> contact_ids;
+
+        u::array convert(const contact_ids& ids)
+        {
+            u::array a;
+            for(auto id : ids) a.add(id);
+            return a;
+        }
+
+        void convert(const u::array& a, contact_ids& ids)
+        {
+            for(auto v : a) ids.insert(v.as_string());
+        }
+
         struct new_session
         {
             std::string from_id;
             std::string session_id;
+            contact_ids ids;
         };
 
         m::message convert(const new_session& s)
@@ -49,7 +64,8 @@ namespace fire
 
             m::message m;
             m.meta.type = NEW_SESSION;
-            m.data = u::to_bytes(s.session_id);
+            m.meta.extra["session_id"] = s.session_id;
+            m.data = u::encode(convert(s.ids));
 
             return m;
         }
@@ -59,7 +75,10 @@ namespace fire
             REQUIRE_EQUAL(m.meta.type, NEW_SESSION);
 
             s.from_id = m.meta.extra["from_id"].as_string();
-            s.session_id = u::to_str(m.data);
+            s.session_id = m.meta.extra["session_id"].as_string();
+            u::array a;
+            u::decode(m.data, a);
+            convert(a, s.ids);
         }
 
         session_service::session_service(
@@ -90,11 +109,22 @@ namespace fire
                 new_session s;
                 convert(m, s);
 
-                auto c = _user_service->user().contact_by_id(s.from_id);
+                auto c = _user_service->user().contacts().by_id(s.from_id);
                 if(!c) return;
 
                 us::users contacts;
                 contacts.push_back(c);
+
+                //also get other contacts in the session and add them
+                //only if the user knows them
+                for(auto id : s.ids)
+                {
+                    auto oc = _user_service->user().contacts().by_id(id);
+                    if(!oc) continue;
+
+                    contacts.push_back(oc);
+                }
+
                 create_session(s.session_id, contacts);
             }
             else
@@ -103,14 +133,24 @@ namespace fire
             }
         }
 
-        session_ptr session_service::create_session(const std::string& id, const user::users& users)
+        session_ptr session_service::create_session(const std::string& id, const user::contact_list& contacts)
         {
             INVARIANT(_post);
             INVARIANT(_user_service);
             INVARIANT(_sender);
 
-            //session already exists, abort
-            if(_sessions.count(id)) return nullptr;
+            //session already exists, add to existing session
+            auto sp = _sessions.find(id);
+            if(sp != _sessions.end())
+            {
+                for(auto u : contacts)
+                {
+                    CHECK(u);
+                    sp->second->contacts().add(u);
+                }
+
+                return sp->second;
+            }
 
             //create new session
             session_ptr s{new session{id, _user_service}};
@@ -124,10 +164,10 @@ namespace fire
             ns.session_id = id; 
 
             auto m = convert(ns);
-            for(auto u : users)
+            for(auto u : contacts)
             {
                 CHECK(u);
-                s->contacts().push_back(u);
+                s->contacts().add(u);
                 _sender->send(u->id(), m);
             }
 
@@ -141,10 +181,10 @@ namespace fire
             return create_session(id, nobody);
         }
 
-        session_ptr session_service::create_session(user::users& users)
+        session_ptr session_service::create_session(user::contact_list& contacts)
         {
             std::string id = u::uuid();
-            auto sp = create_session(id, users);
+            auto sp = create_session(id, contacts);
 
             ENSURE(sp);
             return sp;
@@ -152,7 +192,7 @@ namespace fire
 
         session_ptr session_service::create_session()
         {
-            us::users nobody;
+            us::contact_list nobody;
             auto sp =  create_session(nobody);
 
             ENSURE(sp);
@@ -163,6 +203,40 @@ namespace fire
         {
             auto s = _sessions.find(id);
             return s != _sessions.end() ? s->second : nullptr;
+        }
+
+        void session_service::add_contact_to_session( 
+                const user::user_info_ptr contact, 
+                session_ptr s)
+        {
+            REQUIRE(contact);
+            REQUIRE(s);
+            INVARIANT(_sender);
+
+            if(s->contacts().by_id(contact->id())) return;
+
+            //add contact to session
+            s->contacts().add(contact);
+
+            //get current contacts in the session.
+            //these will be sent to the contact 
+            contact_ids ids;
+            for(auto c : s->contacts()) 
+            {
+                CHECK(c);
+                ids.insert(c->id());
+            }
+
+            //send request to all contacts in session
+            new_session ns;
+            ns.session_id = s->id(); 
+            ns.ids = ids;
+
+            for(auto c : s->contacts())
+            {
+                CHECK(c);
+                _sender->send(c->id(), convert(ns));
+            }
         }
 
         bool session_service::add_contact_to_session(
@@ -176,16 +250,14 @@ namespace fire
             auto s = session_by_id(session_id);
             if(!s) return false;
 
-            //add contact to session
-            s->contacts().push_back(contact);
-
-            //send request to all users in session
-            new_session ns;
-            ns.session_id = s->id(); 
-
-            _sender->send(contact->id(), convert(ns));
-
+            add_contact_to_session(contact, s);
             return true;
+        }
+
+        user::user_service_ptr session_service::user_service()
+        {
+            ENSURE(_user_service);
+            return _user_service;
         }
     }
 }

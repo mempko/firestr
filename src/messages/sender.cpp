@@ -38,7 +38,7 @@ namespace fire
             INVARIANT(_service);
             INVARIANT(_mail);
 
-            auto contact = _service->user().contact_by_id(to);
+            auto contact = _service->user().contacts().by_id(to);
             if(!contact) return false;
 
             auto my_id = _service->user().info().id();

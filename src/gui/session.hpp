@@ -19,10 +19,13 @@
 #define FIRESTR_GUI_SESSION_H
 
 #include "session/session.hpp"
+#include "session/session_service.hpp"
 #include "gui/messagelist.hpp"
+#include "gui/contactlist.hpp"
 
 #include <QWidget>
 #include <QGridLayout>
+#include <QComboBox>
 
 namespace fire
 {
@@ -32,18 +35,26 @@ namespace fire
         {
             Q_OBJECT
             public:
-                session_widget(session::session_ptr);
+                session_widget(session::session_service_ptr, session::session_ptr);
 
             public:
                 session::session_ptr session();
 
             public slots:
                 void add(message*);
+                void add_contact();
+                void update_contacts();
+                void update();
 
             private:
                 QGridLayout* _layout;
+                QComboBox* _contact_select;
+                QPushButton* _add_contact;
                 message_list* _messages;
+                contact_list* _contacts;
+                size_t _prev_contacts;
                 session::session_ptr _session;
+                session::session_service_ptr _session_service;
         };
     }
 }

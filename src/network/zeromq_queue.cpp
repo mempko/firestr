@@ -79,7 +79,7 @@ namespace fire
             p.block = get_opt(o, "block", 1);
             p.timeout = to_microseconds(get_opt(o, "timeout", 0.0));
             p.wait = get_opt(o, "wait", 0.0);
-            p.linger = get_opt(o, "linger", -1);
+            p.linger = get_opt(o, "linger", 0);
             p.hwm = get_opt<boost::uint64_t>(o, "hwm", 0);
 
             return p;
@@ -134,7 +134,7 @@ namespace fire
 
         zmq_queue::~zmq_queue()
         {
-            u::sleep_thread(_p.wait);
+           if(_p.wait > 0) u::sleep_thread(_p.wait);
         }
 
         bool zmq_queue::send(const u::bytes& b)

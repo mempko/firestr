@@ -39,8 +39,8 @@ namespace fire
 
             public:
                 session_ptr create_session(const std::string& id);
-                session_ptr create_session(const std::string& id, const user::users&);
-                session_ptr create_session(user::users&);
+                session_ptr create_session(const std::string& id, const user::contact_list&);
+                session_ptr create_session(user::contact_list&);
                 session_ptr create_session();
 
             public:
@@ -48,6 +48,12 @@ namespace fire
                 bool add_contact_to_session( 
                         const user::user_info_ptr contact, 
                         const std::string& session_id);
+
+                void add_contact_to_session( 
+                        const user::user_info_ptr contact, 
+                        session_ptr session);
+            public:
+                user::user_service_ptr user_service();
 
             protected:
                 virtual void message_recieved(const message::message&);

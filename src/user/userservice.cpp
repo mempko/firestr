@@ -153,7 +153,7 @@ namespace fire
                 //if contact already exists send confirmation
                 //otherwise add to pending requests
 
-                auto f = _user->contact_by_id(r.from->id());
+                auto f = _user->contacts().by_id(r.from->id());
                 if(f) send_confirmation(f->id(), r.key);
                 else 
                 {
@@ -208,7 +208,7 @@ namespace fire
             REQUIRE(contact);
 
             //add user
-            _user->add_contact(contact);
+            _user->contacts().add(contact);
             save_user(_home, *_user);
         }
 
@@ -247,13 +247,13 @@ namespace fire
                 CHECK(p != _pending_requests.end());
                 CHECK(p->second.from);
 
-                _user->add_contact(p->second.from);
+                _user->contacts().add(p->second.from);
                 save_user(_home, *_user);
 
                 key = p->second.key;
             }
 
-            user_info_ptr user = _user->contact_by_id(id);
+            user_info_ptr user = _user->contacts().by_id(id);
             CHECK(user);
 
             user_info_ptr self{new user_info{_user->info()}};
