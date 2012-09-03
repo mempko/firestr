@@ -44,11 +44,11 @@ namespace fire
             _layout = new QGridLayout;
 
             _contact_select = new QComboBox;
-            for(auto p : _session_service->user_service()->user().contacts())
-                _contact_select->addItem(p->name().c_str(), p->id().c_str());
-
             _add_contact = new QPushButton{"add"};
             connect(_add_contact, SIGNAL(clicked()), this, SLOT(add_contact()));
+
+            update_contact_select();
+
             _contacts = new contact_list{_session_service->user_service(), _session->contacts()};
 
             auto* cw = new QWidget;
@@ -80,6 +80,28 @@ namespace fire
             INVARIANT(_messages);
             INVARIANT(_layout);
         }
+        
+        void session_widget::update_contact_select()
+        {
+            INVARIANT(_contact_select);
+            INVARIANT(_session_service);
+            INVARIANT(_session);
+            INVARIANT(_add_contact);
+
+            _contact_select->clear();
+            for(auto p : _session_service->user_service()->user().contacts())
+            {
+                CHECK(p);
+                if(_session->contacts().by_id(p->id())) continue;
+
+                _contact_select->addItem(p->name().c_str(), p->id().c_str());
+            }
+
+            bool enabled = _contact_select->count() > 0;
+
+            _contact_select->setEnabled(enabled);
+            _add_contact->setEnabled(enabled);
+        }
 
         void session_widget::add(message* m)
         {
@@ -108,6 +130,8 @@ namespace fire
 
             _session_service->add_contact_to_session(contact, _session);
             _contacts->add_contact(contact);
+
+            update_contact_select();
         }
 
         void session_widget::update()
@@ -123,6 +147,7 @@ namespace fire
         void session_widget::update_contacts()
         {
             _contacts->update(_session->contacts());
+            update_contact_select();
         }
 
     }

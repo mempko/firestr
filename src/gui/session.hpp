@@ -45,6 +45,7 @@ namespace fire
                 void add(message*);
                 void add_contact();
                 void update_contacts();
+                void update_contact_select();
                 void update();
 
             private:
