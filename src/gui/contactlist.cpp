@@ -161,7 +161,7 @@ namespace fire
             INVARIANT(_service);
 
             bool ok = false;
-            std::string address = "<host>:<ip>";
+            std::string address = "<host>:6060";
 
             QString r = QInputDialog::getText(
                     0, 
