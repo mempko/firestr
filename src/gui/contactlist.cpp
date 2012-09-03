@@ -144,7 +144,7 @@ namespace fire
 
             _list->clear();
 
-            for(auto u : _service->user().contacts())
+            for(auto u : _service->user().contacts().list())
                 _list->add(new user_info{u, _service, false, true});
 
             auto pending = _service->pending_requests();
@@ -190,7 +190,7 @@ namespace fire
             _service{service}
         {
             REQUIRE(service);
-            for(auto u : contacts)
+            for(auto u : contacts.list())
             {
                 CHECK(u);
                 add_contact(u);
@@ -213,7 +213,7 @@ namespace fire
         {
             clear();
             _contacts.clear();
-            for(auto c : contacts)
+            for(auto c : contacts.list())
             {
                 CHECK(c);
                 add_contact(c);

@@ -23,6 +23,7 @@
 #include <map>
 #include <vector>
 
+#include "util/thread.hpp"
 #include "util/dbc.hpp"
 
 namespace fire
@@ -70,21 +71,16 @@ namespace fire
         {
             public:
                 contact_list(const users&);
+                contact_list(const contact_list&);
                 contact_list();
+
             public:
-                const users& list() const;
+                users list() const;
                 bool add(user_info_ptr);
                 bool remove(user_info_ptr);
                 user_info_ptr by_id(const std::string& id);
                 
             public:
-                typedef users::iterator iterator;
-                typedef users::const_iterator const_iterator;
-
-                iterator begin();
-                iterator end();
-                const_iterator begin() const;
-                const_iterator end() const;
                 bool empty() const;
                 size_t size() const;
                 void clear();
@@ -92,6 +88,7 @@ namespace fire
             private:
                 users _list;
                 user_map _map;
+                mutable std::mutex _mutex;
         };
 
         class local_user

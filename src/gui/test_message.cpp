@@ -138,7 +138,7 @@ namespace fire
 
             ms::test_message tm(text);
 
-            for(auto c : _session->contacts())
+            for(auto c : _session->contacts().list())
             {
                 CHECK(c);
                 _session->sender()->send(c->id(), tm); 
@@ -161,7 +161,7 @@ namespace fire
             auto text = convert(_etext->text());
             ms::test_message tm(text);
 
-            for(auto c : _session->contacts())
+            for(auto c : _session->contacts().list())
             {
                 CHECK(c);
                 _session->sender()->send(c->id(), tm); 
