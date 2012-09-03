@@ -21,6 +21,7 @@
 
 namespace ms = fire::messages;
 namespace us = fire::user;
+namespace s = fire::session;
 
 namespace fire
 {
@@ -31,11 +32,11 @@ namespace fire
             const size_t PADDING = 20;
         }
 
-        test_message::test_message(ms::sender_ptr sender) :
+        test_message::test_message(s::session_ptr session) :
             _m{},
-            _sender{sender}
+            _session{session}
         {
-            REQUIRE(sender);
+            REQUIRE(session);
             INVARIANT(root());
             INVARIANT(layout());
 
@@ -43,13 +44,14 @@ namespace fire
 
             setMinimumHeight(layout()->sizeHint().height() + PADDING);
 
-            INVARIANT(_sender);
+            INVARIANT(_session);
         }
-        test_message::test_message(const ms::test_message& m, ms::sender_ptr sender) : 
+
+        test_message::test_message(const ms::test_message& m, s::session_ptr session) : 
             _m{m},
-            _sender{sender}
+            _session{session}
         {
-            REQUIRE(sender);
+            REQUIRE(session);
             INVARIANT(root());
             INVARIANT(layout());
 
@@ -57,7 +59,7 @@ namespace fire
 
             setMinimumHeight(layout()->sizeHint().height() + PADDING);
 
-            INVARIANT(_sender);
+            INVARIANT(_session);
         }
 
         void test_message::init_send() 
@@ -65,11 +67,16 @@ namespace fire
             INVARIANT(root());
             INVARIANT(layout());
 
-            //user select
-            _users = new QComboBox;
-            for(auto p : _sender->user_service()->user().contacts())
-                _users->addItem(p->name().c_str(), p->id().c_str());
-            layout()->addWidget(_users, 0, 0);
+            auto contacts = _session->contacts();
+            if(contacts.empty())
+            {
+                auto l = new QLabel{"no contacts select in session"};
+                auto s = new QPushButton{"send"};
+                s->setEnabled(false);
+                layout()->addWidget(l, 0, 0);
+                layout()->addWidget(s, 0, 1);
+                return;
+            }
 
             //text edit
             _etext = new QLineEdit;
@@ -82,7 +89,6 @@ namespace fire
             connect(_etext, SIGNAL(returnPressed()), this, SLOT(send_message()));
             connect(_send, SIGNAL(clicked()), this, SLOT(send_message()));
 
-            INVARIANT(_users);
             INVARIANT(_etext);
             INVARIANT(_send);
         }
@@ -93,7 +99,7 @@ namespace fire
             INVARIANT(layout());
 
             //message
-            auto contact = _sender->user_service()->user().contact_by_id(_m.from_id());
+            auto contact = _session->contacts().by_id(_m.from_id());
 
             std::string user_name = contact ? contact->name() : "spy";
             user_name = "<b>" + user_name + "</b>";
@@ -121,35 +127,32 @@ namespace fire
 
         void test_message::send_message()
         {
-            INVARIANT(_sender);
-            INVARIANT(_users);
             INVARIANT(_etext);
             INVARIANT(_send);
+            INVARIANT(_session);
 
-            size_t i = _users->currentIndex();
-            auto id = convert(_users->itemData(i).toString());
-
-            auto contact = _sender->user_service()->user().contact_by_id(id);
-            if(!contact) return;
-
-            _users->setEnabled(false);
             _etext->setEnabled(false);
             _send->hide();
 
             auto text = convert(_etext->text());
 
             ms::test_message tm(text);
-            _sender->send(id, tm); 
+
+            for(auto c : _session->contacts())
+            {
+                CHECK(c);
+                _session->sender()->send(c->id(), tm); 
+            }
         }
 
         void test_message::send_reply()
         {
-            INVARIANT(_sender);
             INVARIANT(_etext);
             INVARIANT(_reply);
+            INVARIANT(_session);
 
             auto id = _m.from_id();
-            auto contact = _sender->user_service()->user().contact_by_id(id);
+            auto contact = _session->contacts().by_id(id);
             if(!contact) return;
 
             _etext->setEnabled(false);
@@ -157,7 +160,12 @@ namespace fire
 
             auto text = convert(_etext->text());
             ms::test_message tm(text);
-            _sender->send(id, tm); 
+
+            for(auto c : _session->contacts())
+            {
+                CHECK(c);
+                _session->sender()->send(c->id(), tm); 
+            }
         }
     }
 }

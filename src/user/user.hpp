@@ -64,27 +64,50 @@ namespace fire
         typedef std::shared_ptr<user_info> user_info_ptr;
         typedef std::weak_ptr<user_info> user_info_wptr;
         typedef std::vector<user_info_ptr> users;
-        typedef std::map<std::string, user_info_ptr> user_map;
+        typedef std::map<std::string, size_t> user_map;
+
+        class contact_list
+        {
+            public:
+                contact_list(const users&);
+                contact_list();
+            public:
+                const users& list() const;
+                bool add(user_info_ptr);
+                bool remove(user_info_ptr);
+                user_info_ptr by_id(const std::string& id);
+                
+            public:
+                typedef users::iterator iterator;
+                typedef users::const_iterator const_iterator;
+
+                iterator begin();
+                iterator end();
+                const_iterator begin() const;
+                const_iterator end() const;
+                bool empty() const;
+                size_t size() const;
+                void clear();
+
+            private:
+                users _list;
+                user_map _map;
+        };
 
         class local_user
         {
             public:
-                local_user(const user_info& i, const users& c);
+                local_user(const user_info& i, const contact_list& c);
                 local_user(const std::string& name); 
 
             public:
                 const user_info& info() const { return _info;}
-                const users& contacts() const { return _contacts;}
-                void contacts(const users&);
-
-            public:
-                user_info_ptr contact_by_id(const std::string& id);
-                bool add_contact(user_info_ptr contact);
+                const contact_list& contacts() const { return _contacts;}
+                contact_list& contacts() { return _contacts;}
 
             private:
                 user_info _info;
-                users _contacts;
-                user_map _by_id;
+                contact_list _contacts;
         };
 
         typedef std::shared_ptr<local_user> local_user_ptr;

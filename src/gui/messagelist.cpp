@@ -74,7 +74,7 @@ namespace fire
                 //TODO: use factory class to create gui from messages
                 if(m.meta.type == ms::TEST_MESSAGE)
                 {
-                    add(new test_message{m, _session->sender()});
+                    add(new test_message{m, _session});
                 }
                 else
                 {

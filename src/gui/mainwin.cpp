@@ -139,9 +139,9 @@ namespace fire
             _layout = new QVBoxLayout{_root};
 
             //setup message list
-            auto session = _session_service->create_session("test_session", _user_service->user().contacts());
+            auto session = _session_service->create_session("test_session");
             CHECK(session);
-            _session = new session_widget{session};
+            _session = new session_widget{_session_service, session};
                 
             //create the sessions widget
             _sessions = new QTabWidget;
@@ -229,7 +229,7 @@ namespace fire
         {
             ENSURE(_user_service);
 
-            contact_list cl{"contacts", _user_service};
+            contact_list_dialog cl{"contacts", _user_service};
             cl.exec();
         }
 
@@ -238,7 +238,7 @@ namespace fire
             INVARIANT(_session);
             INVARIANT(_session->session());
 
-            auto* t = new test_message{_session->session()->sender()};
+            auto* t = new test_message{_session->session()};
             _session->add(t);
         }
 

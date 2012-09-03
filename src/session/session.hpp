@@ -38,8 +38,8 @@ namespace fire
                 session(const std::string id, user::user_service_ptr);
 
             public:
-                const user::users& contacts() const;
-                user::users& contacts(); 
+                const user::contact_list& contacts() const;
+                user::contact_list& contacts(); 
 
             public:
                 const std::string& id() const;
@@ -47,6 +47,7 @@ namespace fire
             public:
                 message::mailbox_ptr mail();
                 messages::sender_ptr sender();
+                user::user_service_ptr user_service();
 
             private:
                 void init();
@@ -56,7 +57,7 @@ namespace fire
                 message::mailbox_ptr _mail;
                 user::user_service_ptr _user_service;
                 messages::sender_ptr _sender;
-                user::users _contacts;
+                user::contact_list _contacts;
         };
 
         typedef std::shared_ptr<session> session_ptr;

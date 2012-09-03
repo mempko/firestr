@@ -56,12 +56,12 @@ namespace fire
             INVARIANT(_sender);
         }
 
-        const user::users& session::contacts() const
+        const user::contact_list& session::contacts() const
         {
             return _contacts;
         }
 
-        user::users& session::contacts() 
+        user::contact_list& session::contacts() 
         {
             return _contacts;
         }
@@ -82,6 +82,12 @@ namespace fire
         {
             ENSURE(_sender);
             return _sender;
+        }
+
+        user::user_service_ptr session::user_service()
+        {
+            ENSURE(_user_service);
+            return _user_service;
         }
     }
 }

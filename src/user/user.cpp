@@ -140,13 +140,14 @@ namespace fire
             user_info info;
             info_in >> info; 
 
-            users contacts;
+            users us;
             std::ifstream contacts_in(local_contacts_file.c_str());
             if(contacts_in.good()) 
             {
-                contacts_in >> contacts;
+                contacts_in >> us;
             }
 
+            contact_list contacts{us};
             local_user_ptr lu{new local_user{info, contacts}};
 
             ENSURE(lu);
@@ -170,18 +171,18 @@ namespace fire
             if(!contacts_out.good()) 
                 throw std::runtime_error{"unable to save `" + local_contacts_file + "'"};
             
-            contacts_out << lu.contacts();
+            contacts_out << lu.contacts().list();
         }
 
-        local_user::local_user(const user_info& i, const users& c) : _info{i}
+        local_user::local_user(const user_info& i, const contact_list& c) : 
+            _info{i},
+            _contacts{c}
         {
-            contacts(c);
         }
 
         local_user::local_user(const std::string& name) : 
             _info{"local", name, util::uuid()}, 
-            _contacts{},
-            _by_id{}
+            _contacts{}
         {
             REQUIRE_FALSE(name.empty());
 
@@ -191,36 +192,98 @@ namespace fire
             ENSURE(_contacts.empty());
         }
 
-        void local_user::contacts(const users& users)
+        contact_list::contact_list(const users& cs)
         {
-            _contacts = users;
-            _by_id.clear();
-            for(auto u : _contacts)
+            for(auto c : cs)
             {
-                CHECK(u);
-                _by_id[u->id()] = u;
+                CHECK(c);
+                add(c);
             }
 
-            REQUIRE_EQUAL(_contacts.size(), _by_id.size());
+            ENSURE_EQUAL(_list.size(), _map.size());
+            ENSURE_LESS_EQUAL(_list.size(), cs.size());
         }
 
-        user_info_ptr local_user::contact_by_id(const std::string& id)
+        contact_list::contact_list() : _list{}, _map{} {}
+
+        const users& contact_list::list() const
         {
-            auto p = _by_id.find(id);
-            return p != _by_id.end() ? p->second : 0; 
+            return _list;
         }
 
-        bool local_user::add_contact(user_info_ptr contact)
+        bool contact_list::add(user_info_ptr c)
         {
-            REQUIRE(contact);
+            REQUIRE(c);
+            if(_map.count(c->id())) return false;
 
-            if(_by_id.count(contact->id())) return false;
+            _list.push_back(c);
+            _map[c->id()] = _list.size() - 1;
 
-            _contacts.push_back(contact);
-            _by_id[contact->id()] = contact;
+            ENSURE_FALSE(_list.empty());
+            ENSURE_EQUAL(_list.back(), c);
+            ENSURE_EQUAL(_list[_map[c->id()]].get(), c.get());
 
-            ENSURE_EQUAL(_contacts.size(), _by_id.size());
             return true;
+        }
+
+        bool contact_list::remove(user_info_ptr c)
+        {
+            REQUIRE(c);
+
+            auto i = _map.find(c->id());
+            if(i == _map.end()) return false;
+            
+            _list.erase(_list.begin() + i->second);
+            _map.erase(i);
+
+            ENSURE_EQUAL(_map.count(c->id()), 0);
+            return true;
+        }
+
+        user_info_ptr contact_list::by_id(const std::string& id)
+        {
+            auto p = _map.find(id);
+            return p != _map.end() ? _list[p->second] : 0; 
+        }
+
+        contact_list::iterator contact_list::begin()
+        {
+            return _list.begin();
+        }
+
+        contact_list::iterator contact_list::end()
+        {
+            return _list.end();
+        }
+
+        contact_list::const_iterator contact_list::begin() const
+        {
+            return _list.begin();
+        }
+
+        contact_list::const_iterator contact_list::end() const
+        {
+            return _list.end();
+        }
+
+        bool contact_list::empty() const
+        {
+            return _list.empty();
+        }
+
+        size_t contact_list::size() const
+        {
+            INVARIANT_EQUAL(_list.size(), _map.size());
+            return _list.size();
+        }
+
+        void contact_list::clear()
+        {
+            _list.clear();
+            _map.clear();
+
+            ENSURE(_list.empty());
+            ENSURE(_map.empty());
         }
     }
 }
