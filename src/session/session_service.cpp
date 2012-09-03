@@ -143,10 +143,11 @@ namespace fire
             auto sp = _sessions.find(id);
             if(sp != _sessions.end())
             {
+                auto session = sp->second;
                 for(auto u : contacts)
                 {
                     CHECK(u);
-                    sp->second->contacts().add(u);
+                    add_contact_to_session(u, session);
                 }
 
                 return sp->second;
