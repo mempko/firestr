@@ -26,6 +26,7 @@
 #include <QWidget>
 #include <QGridLayout>
 #include <QComboBox>
+#include <QSplitter>
 
 namespace fire
 {
@@ -50,6 +51,7 @@ namespace fire
                 QGridLayout* _layout;
                 QComboBox* _contact_select;
                 QPushButton* _add_contact;
+                QSplitter* _splitter;
                 message_list* _messages;
                 contact_list* _contacts;
                 size_t _prev_contacts;
