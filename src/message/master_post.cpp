@@ -141,6 +141,7 @@ namespace fire
             n::queue_options qo = { 
                 {"pul", "1"}, 
                 {"bnd", "1"},
+                {"threads", "5"},
                 {"block", "0"}};
 
             _in = n::create_message_queue(address, qo);
