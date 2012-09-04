@@ -252,7 +252,7 @@ namespace fire
             return true;
         }
 
-        user_info_ptr contact_list::by_id(const std::string& id)
+        user_info_ptr contact_list::by_id(const std::string& id) const
         {
             u::mutex_scoped_lock l(_mutex);
 

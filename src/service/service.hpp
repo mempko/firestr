@@ -40,6 +40,7 @@ namespace fire
 
             protected:
                 virtual void message_recieved(const message::message&) = 0;
+                bool done() const;
 
             private:
                 std::string _address;

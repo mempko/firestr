@@ -39,6 +39,7 @@ namespace fire
                 main_window(
                         const std::string& host, 
                         const std::string& port,
+                        const std::string& ping,
                         const std::string& home);
 
             private slots:
@@ -55,7 +56,7 @@ namespace fire
                 void create_main();
                 void create_menus();
                 void make_new_user();
-                void setup_services();
+                void setup_services(const std::string& ping);
                 void save_state();
                 void restore_state();
 

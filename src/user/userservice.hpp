@@ -20,7 +20,9 @@
 
 #include "user/user.hpp"
 #include "service/service.hpp"
+#include "network/message_queue.hpp"
 #include "util/thread.hpp"
+
 
 #include <map>
 #include <set>
@@ -44,24 +46,29 @@ namespace fire
         class user_service : public service::service
         {
             public:
-                user_service(const std::string& home);
+                user_service(
+                        const std::string& home,
+                        const std::string& ping_port);
+                virtual ~user_service();
 
             public:
                 local_user& user();
                 const local_user& user() const;
 
             public:
-                void attempt_to_add_user(const std::string& address);
+                void attempt_to_add_contact(const std::string& address);
                 void send_confirmation(const std::string& id, std::string key = "");
                 void send_rejection(const std::string& id);
-
                 const add_requests& pending_requests() const;
+
+            public:
+                bool contact_available(const std::string& id) const;
 
             protected:
                 virtual void message_recieved(const message::message&);
 
             private:
-                void confirm_user(user_info_ptr contact);
+                void confirm_contact(user_info_ptr contact);
 
             private:
                 sent_requests _sent_requests;
@@ -69,8 +76,29 @@ namespace fire
 
             private:
                 local_user_ptr _user;
+
                 std::string _home;
                 std::mutex _mutex;
+            private:
+                //ping specific 
+                typedef std::map<std::string, size_t> last_ping_map;
+                typedef std::map<std::string, network::message_queue_ptr> ping_connection_map;
+                void init_ping();
+                void send_ping_port_requests();
+                void init_ping_connection(const std::string& from_id, const std::string& ping_address);
+                void send_ping_address(user::user_info_ptr);
+                void send_ping(char t);
+
+                std::string _ping_port;
+                network::message_queue_ptr _ping_queue;
+                util::thread_uptr _ping_thread;
+                last_ping_map _last_ping;
+                ping_connection_map _ping_connection;
+                std::mutex _ping_mutex;
+                bool _done;
+
+            private:
+                friend void ping_thread(user_service*);
         };
 
         typedef std::shared_ptr<user_service> user_service_ptr;

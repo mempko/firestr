@@ -19,6 +19,8 @@
 #define FIRESTR_UTIL_STRING_H
 
 #include <string>
+#include <vector>
+#include <set>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/tokenizer.hpp>
@@ -45,6 +47,9 @@ namespace fire
                 ENSURE_FALSE(result.empty());
                 return result;
             }
+
+        typedef std::vector<std::string> string_vect;
+        typedef std::set<std::string> string_set;
     }
 
 }

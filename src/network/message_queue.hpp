@@ -68,6 +68,10 @@ namespace fire
             std::string location;
             queue_options options;
         };
+
+        address_components parse_address(
+                const std::string& queue_address, 
+                const queue_options& defaults = queue_options());
     }
 }
 

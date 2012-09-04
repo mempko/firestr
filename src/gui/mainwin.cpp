@@ -46,6 +46,7 @@ namespace fire
         main_window::main_window(
                         const std::string& host, 
                         const std::string& port,
+                        const std::string& ping,
                         const std::string& home) :
             _about_action(0),
             _close_action(0),
@@ -57,7 +58,7 @@ namespace fire
             _home(home)
         {
             setup_post(host, port);
-            setup_services();
+            setup_services(ping);
             create_actions();
             create_main();
             create_menus();
@@ -210,12 +211,12 @@ namespace fire
             ENSURE(_contact_list_action);
         }
 
-        void main_window::setup_services()
+        void main_window::setup_services(const std::string& ping)
         {
             REQUIRE_FALSE(_user_service);
             REQUIRE(_master);
 
-            _user_service.reset(new us::user_service{_home});
+            _user_service.reset(new us::user_service{_home, ping});
             _master->add(_user_service->mail());
 
             _session_service.reset(new s::session_service{_master, _user_service});
