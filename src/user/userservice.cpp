@@ -40,9 +40,9 @@ namespace fire
             const std::string REQUEST_CONFIRMED = "add_user_confirmed";
             const std::string REQUEST_REJECTED = "add_user_rejected";
             const std::string PING_REQUEST = "ping_request";
-            const size_t QUIT_SLEEP = 100; //half a second
+            const size_t QUIT_SLEEP = 100; //in milliseconds
             const size_t PING_THREAD_SLEEP = 500; //half a second
-            const size_t PING_TICKS = 4; //2 seconds
+            const size_t PING_TICKS = 10; //5 seconds
             const size_t PING_THRESH = 3*PING_TICKS; 
             const char CONNECTED = 'c';
             const char DISCONNECTED = 'd';
