@@ -36,24 +36,31 @@ namespace m = fire::message;
 namespace u = fire::util;
 namespace us = fire::user;
 namespace s = fire::session;
-                
+
 namespace fire
 {
     namespace gui
     {
-        namespace m = fire::message;
+
+        namespace
+        {
+            const std::string GUI_MAIL = "gui";
+            const size_t TIMER_SLEEP = 100; //in milliseconds
+        }
 
         main_window::main_window(
-                        const std::string& host, 
-                        const std::string& port,
-                        const std::string& ping,
-                        const std::string& home) :
+                const std::string& host, 
+                const std::string& port,
+                const std::string& ping,
+                const std::string& home) :
+            _mail(0),
+            _master(0),
             _about_action(0),
             _close_action(0),
+            _create_session_action(0),
             _main_menu(0),
             _root(0),
             _layout(0),
-            _session(0),
             _sessions(0),
             _home(home)
         {
@@ -63,10 +70,12 @@ namespace fire
             create_main();
             create_menus();
             restore_state();
+            setup_timers();
 
             INVARIANT(_master);
             INVARIANT(_main_menu);
         }
+
         void main_window::save_state()
         {
             QSettings settings("mempko", "firestr");
@@ -115,38 +124,39 @@ namespace fire
         }
 
         void main_window::setup_post(
-                        const std::string& host, 
-                        const std::string& port)
+                const std::string& host, 
+                const std::string& port)
         {
             REQUIRE(!_master);
 
+            //create post office to handle incoming and outgoing messages
             _master.reset(new m::master_post_office{host, port});
 
+            //create mailbox just for gui specific messages.
+            //This mailbox is not connected to a post as only internally accessible
+            _mail.reset(new m::mailbox{GUI_MAIL});
             INVARIANT(_master);
+            INVARIANT(_mail);
         }
 
         void main_window::create_main()
         {
             REQUIRE_FALSE(_root);
             REQUIRE_FALSE(_layout);
-            REQUIRE_FALSE(_session);
             REQUIRE_FALSE(_sessions);
             REQUIRE(_master);
             REQUIRE(_user_service);
             REQUIRE(_session_service);
-            
+
             //setup main
             _root = new QWidget{this};
             _layout = new QVBoxLayout{_root};
 
             //setup message list
             auto session = _session_service->create_session("test_session");
-            CHECK(session);
-            _session = new session_widget{_session_service, session};
-                
+
             //create the sessions widget
             _sessions = new QTabWidget;
-            _sessions->addTab(_session, session->mail()->address().c_str());
 
             _layout->addWidget(_sessions);
 
@@ -157,7 +167,6 @@ namespace fire
 
             ENSURE(_root);
             ENSURE(_layout);
-            ENSURE(_session);
             ENSURE(_sessions);
         }
 
@@ -168,6 +177,7 @@ namespace fire
             REQUIRE(_close_action);
             REQUIRE(_contact_list_action);
             REQUIRE(_test_message_action);
+            REQUIRE(_create_session_action);
 
             _main_menu = new QMenu{tr("&Main"), this};
             _main_menu->addAction(_about_action);
@@ -177,22 +187,36 @@ namespace fire
             _contact_menu = new QMenu{tr("&Contacts"), this};
             _contact_menu->addAction(_contact_list_action);
 
+            _session_menu = new QMenu{tr("&Session"), this};
+            _session_menu->addAction(_create_session_action);
+
             _test_menu = new QMenu{tr("&Test"), this};
             _test_menu->addAction(_test_message_action);
 
             menuBar()->addMenu(_main_menu);
             menuBar()->addMenu(_contact_menu);
+            menuBar()->addMenu(_session_menu);
             menuBar()->addMenu(_test_menu);
 
             ENSURE(_main_menu);
             ENSURE(_contact_menu);
             ENSURE(_test_menu);
         }
-        
+
+        void main_window::setup_timers()
+        {
+            //setup message timer
+            //to get gui messages
+            auto *t = new QTimer(this);
+            connect(t, SIGNAL(timeout()), this, SLOT(check_mail()));
+            t->start(TIMER_SLEEP);
+        }
+
         void main_window::create_actions()
         {
             REQUIRE_FALSE(_about_action);
             REQUIRE_FALSE(_close_action);
+            REQUIRE_FALSE(_create_session_action);
 
             _about_action = new QAction{tr("&About"), this};
             connect(_about_action, SIGNAL(triggered()), this, SLOT(about()));
@@ -206,20 +230,25 @@ namespace fire
             _test_message_action = new QAction{tr("&Test Message"), this};
             connect(_test_message_action, SIGNAL(triggered()), this, SLOT(make_test_message()));
 
+            _create_session_action = new QAction{tr("&Create"), this};
+            connect(_create_session_action, SIGNAL(triggered()), this, SLOT(create_session()));
+
             ENSURE(_about_action);
             ENSURE(_close_action);
             ENSURE(_contact_list_action);
+            ENSURE(_create_session_action);
         }
 
         void main_window::setup_services(const std::string& ping)
         {
             REQUIRE_FALSE(_user_service);
             REQUIRE(_master);
+            REQUIRE(_mail);
 
             _user_service.reset(new us::user_service{_home, ping});
             _master->add(_user_service->mail());
 
-            _session_service.reset(new s::session_service{_master, _user_service});
+            _session_service.reset(new s::session_service{_master, _user_service, _mail});
             _master->add(_session_service->mail());
 
             ENSURE(_user_service);
@@ -236,23 +265,75 @@ namespace fire
 
         void main_window::make_test_message()
         {
-            INVARIANT(_session);
-            INVARIANT(_session->session());
+            INVARIANT(_sessions);
 
-            auto* t = new test_message{_session->session()};
-            _session->add(t);
+            auto s = dynamic_cast<session_widget*>(_sessions->currentWidget());
+            if(!s) return;
+
+            auto* t = new test_message{s->session()};
+            s->add(t);
         }
 
         void main_window::about()
         {
             QMessageBox::about(this, tr("About Firestr"),
-                tr("<p><b>Firestr</b> allows you to communicate with people via multimedia "
-                    "applications. Write, close, modify, and send people programs which "
-                    "communicate with each other automatically, in a distributed way.</p>"
-                    "<p>This is not the web, but it is on the internet.<br> "
-                    "This is not a chat program, but a way for programs to chat.<br> "
-                    "This is not a way to share code, but a way to share running software.</p> "
-                    "<p>This program is created by <b>Maxim Noah Khailo</b> and is liscensed as GPLv3</p>"));
+                    tr("<p><b>Firestr</b> allows you to communicate with people via multimedia "
+                        "applications. Write, close, modify, and send people programs which "
+                        "communicate with each other automatically, in a distributed way.</p>"
+                        "<p>This is not the web, but it is on the internet.<br> "
+                        "This is not a chat program, but a way for programs to chat.<br> "
+                        "This is not a way to share code, but a way to share running software.</p> "
+                        "<p>This program is created by <b>Maxim Noah Khailo</b> and is liscensed as GPLv3</p>"));
+        }
+
+        void main_window::check_mail()
+        {
+            INVARIANT(_mail);
+
+            m::message m;
+            while(_mail->pop_inbox(m))
+            try
+            {
+                if(m.meta.type == s::NEW_SESSION_EVENT)
+                {
+                    s::new_session_event r;
+                    convert(m, r);
+
+                    new_session(r.session_id);
+                }
+                else
+                {
+                    throw std::runtime_error(m.meta.type + " is an unknown message type.");
+                }
+            }
+            catch(std::exception& e)
+            {
+                std::cerr << "Error recieving message in `" << _mail->address() << "'. " << e.what() << std::endl;
+            }
+            catch(...)
+            {
+                std::cerr << "Unexpected error recieving message in `" << _mail->address() << "'" << std::endl;
+            }
+        }
+        
+        void main_window::create_session()
+        {
+            REQUIRE(_session_service);
+            _session_service->create_session();
+        }
+
+        void main_window::new_session(const std::string& id)
+        {
+            REQUIRE(_session_service);
+            REQUIRE(_sessions);
+
+            auto s = _session_service->session_by_id(id);
+            if(!s) return;
+
+            auto sw = new session_widget{_session_service, s};
+
+            //create the sessions widget
+            _sessions->addTab(sw, s->mail()->address().c_str());
         }
     }
 }
