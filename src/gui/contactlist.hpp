@@ -27,6 +27,7 @@
 
 #include <QDialog>
 #include <QPushButton>
+#include <QLabel>
 
 namespace fire
 {
@@ -40,31 +41,38 @@ namespace fire
                         user::user_info_ptr, 
                         user::user_service_ptr,
                         bool accept_reject = false,
-                        bool compact = false);
+                        bool compact = false,
+                        bool auto_update = false);
 
             public slots:
                 void accept();
                 void reject();
+                void update();
 
             private:
                 user::user_info_ptr _contact;
                 user::user_service_ptr _service;
                 QPushButton* _accept;
                 QPushButton* _reject;
+                QLabel* _online;
         };
+        typedef std::vector<user_info*> user_info_ptrs;
 
         class contact_list : public list
         {
             Q_OBJECT
             public:
                 contact_list(user::user_service_ptr, const user::contact_list&);
+
             public slots:
                 void add_contact(user::user_info_ptr);
                 void update(const user::contact_list&);
+                void update_status();
 
             protected:
                 user::user_service_ptr _service;
                 user::contact_list _contacts;
+                user_info_ptrs _contact_widgets;
         };
 
         class contact_list_dialog : public QDialog
@@ -72,12 +80,14 @@ namespace fire
             Q_OBJECT
             public:
                 contact_list_dialog(const std::string& title, user::user_service_ptr);
+
             public slots:
                 void new_contact();
                 void update();
 
             protected:
                 void update_contacts();
+
             protected:
                 list* _list;
                 user::user_service_ptr _service;

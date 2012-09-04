@@ -1,2 +1,2 @@
 Handle case where a user disconnects, and reconnects again. If a message is recieved from an unkown session, then create the session
-and add the contacts
+and add the contacts?
