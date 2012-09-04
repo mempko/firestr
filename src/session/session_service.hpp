@@ -21,6 +21,7 @@
 #include "session/session.hpp"
 #include "service/service.hpp"
 #include "message/postoffice.hpp"
+#include "message/mailbox.hpp"
 #include "messages/sender.hpp"
 
 #include <map>
@@ -35,7 +36,8 @@ namespace fire
             public:
                 session_service(
                         message::post_office_ptr,
-                        user::user_service_ptr);
+                        user::user_service_ptr,
+                        message::mailbox_ptr event = nullptr);
 
             public:
                 session_ptr create_session(const std::string& id);
@@ -59,14 +61,28 @@ namespace fire
                 virtual void message_recieved(const message::message&);
 
             private:
+                void fire_new_session_event(const std::string id);
+
+            private:
                 message::post_office_ptr _post;
                 user::user_service_ptr _user_service;
                 messages::sender_ptr _sender;
                 session_map _sessions;
+                message::mailbox_ptr _event;
+
         };
 
         typedef std::shared_ptr<session_service> session_service_ptr;
         typedef std::weak_ptr<session_service> session_servie_wptr;
+
+        //events
+        extern const std::string NEW_SESSION_EVENT;
+        struct new_session_event
+        {
+            std::string session_id;
+        };
+        message::message convert(const new_session_event&);
+        void convert(const message::message&, new_session_event&);
     }
 }
 

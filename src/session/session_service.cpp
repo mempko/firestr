@@ -83,10 +83,12 @@ namespace fire
 
         session_service::session_service(
                 message::post_office_ptr post,
-                user::user_service_ptr user_service) :
+                user::user_service_ptr user_service,
+                message::mailbox_ptr event) :
             s::service{SERVICE_ADDRESS},
             _post{post},
-            _user_service{user_service}
+            _user_service{user_service},
+            _event{event}
         {
             REQUIRE(post);
             REQUIRE(user_service);
@@ -171,6 +173,9 @@ namespace fire
                 s->contacts().add(u);
                 _sender->send(u->id(), m);
             }
+
+            //done creating session, fire event
+            fire_new_session_event(id);
 
             ENSURE(session_by_id(id));
             return s;
@@ -259,6 +264,30 @@ namespace fire
         {
             ENSURE(_user_service);
             return _user_service;
+        }
+
+        const std::string NEW_SESSION_EVENT = "new_session";
+
+        m::message convert(const new_session_event& s)
+        {
+            m::message m;
+            m.meta.type = NEW_SESSION;
+            m.data = u::to_bytes(s.session_id);
+            return m;
+        }
+
+        void convert(const m::message& m, new_session_event& s)
+        {
+            REQUIRE_EQUAL(m.meta.type, NEW_SESSION_EVENT);
+            s.session_id = u::to_str(m.data);
+        }
+
+        void session_service::fire_new_session_event(const std::string id)
+        {
+            if(!_event) return;
+
+            new_session_event e{id};
+            _event->push_inbox(convert(e));
         }
     }
 }

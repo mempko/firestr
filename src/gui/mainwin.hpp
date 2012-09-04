@@ -47,6 +47,8 @@ namespace fire
                 void show_contact_list();
                 void make_test_message();
                 void closeEvent(QCloseEvent*);
+                void check_mail();
+                void create_session();
 
             private:
                 void setup_post(
@@ -59,6 +61,12 @@ namespace fire
                 void setup_services(const std::string& ping);
                 void save_state();
                 void restore_state();
+                void setup_timers();
+
+            private:
+                //gui message handlers
+
+                void new_session(const std::string& id);
 
             private:
                 QMenu *_main_menu;
@@ -66,15 +74,18 @@ namespace fire
                 QAction *_close_action;
                 QAction *_about_action;
                 QAction *_contact_list_action;
+                QMenu *_session_menu;
+                QAction *_create_session_action;
                 QMenu *_test_menu;
                 QAction *_test_message_action;
+
                 QTabWidget* _sessions;
 
                 QWidget* _root;
                 QVBoxLayout* _layout;
 
-                session_widget* _session;
                 fire::message::post_office_ptr _master;
+                fire::message::mailbox_ptr _mail;
                 user::user_service_ptr _user_service;
                 session::session_service_ptr _session_service;
                 std::string _home;
