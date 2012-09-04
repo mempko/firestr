@@ -33,13 +33,24 @@ namespace fire
         namespace
         {
             const size_t TIMER_SLEEP = 200;//in milliseconds
+            const size_t STATUS_SLEEP = 2000;//in milliseconds
+        }
+
+        std::string online_text(
+                user::user_info_ptr c, 
+                user::user_service_ptr s)
+        {
+            REQUIRE(c);
+            REQUIRE(s);
+            return s->contact_available(c->id()) ? "online" : "offline";
         }
 
         user_info::user_info(
                 user::user_info_ptr p, 
                 user::user_service_ptr s,
                 bool accept_reject,
-                bool compact) :
+                bool compact,
+                bool auto_update) :
             _contact{p},
             _service{s}
         {
@@ -52,7 +63,11 @@ namespace fire
             if(compact)
             {
                 layout->addWidget( new QLabel{p->name().c_str()}, 0,0);
-                layout->addWidget( new QLabel{p->address().c_str()}, 0,1);
+                if(!accept_reject)
+                {
+                    _online = new QLabel{online_text(p, _service).c_str()};
+                    layout->addWidget(_online, 0,1);
+                }
             }
             else
             {
@@ -60,6 +75,11 @@ namespace fire
                 layout->addWidget( new QLabel{p->name().c_str()}, 0,1);
                 layout->addWidget( new QLabel{"Address:"}, 1,0);
                 layout->addWidget( new QLabel{p->address().c_str()}, 1,1);
+                if(!accept_reject)
+                {
+                    _online = new QLabel{online_text(p, _service).c_str()};
+                    layout->addWidget(_online, 2,0);
+                }
             }
 
             if(accept_reject)
@@ -73,8 +93,26 @@ namespace fire
                 connect(_accept, SIGNAL(clicked()), this, SLOT(accept()));
                 connect(_reject, SIGNAL(clicked()), this, SLOT(reject()));
             }
+            else
+            {
+                if(auto_update)
+                {
+                    auto *t = new QTimer(this);
+                    connect(t, SIGNAL(timeout()), this, SLOT(update()));
+                    t->start(STATUS_SLEEP);
+                }
+            }
             layout->setContentsMargins(2,2,2,2);
             ENSURE(_contact);
+        }
+
+        void user_info::update()
+        {
+            INVARIANT(_service);
+            INVARIANT(_contact);
+            INVARIANT(_online);
+
+            _online->setText(online_text(_contact, _service).c_str());
         }
 
         void user_info::accept()
@@ -145,7 +183,7 @@ namespace fire
             _list->clear();
 
             for(auto u : _service->user().contacts().list())
-                _list->add(new user_info{u, _service, false, true});
+                _list->add(new user_info{u, _service, false, true, true});
 
             auto pending = _service->pending_requests();
 
@@ -172,14 +210,15 @@ namespace fire
             if(ok && !r.isEmpty()) address = convert(r);
             else return;
 
-            _service->attempt_to_add_user(address);
+            _service->attempt_to_add_contact(address);
         }
 
         void contact_list_dialog::update()
         {
             size_t pending_requests = _service->pending_requests().size();
             size_t contacts = _service->user().contacts().size();
-            if(pending_requests == _prev_requests && contacts == _prev_contacts) return;
+            if(pending_requests == _prev_requests && contacts == _prev_contacts) 
+                return;
 
             update_contacts();
             _prev_requests = pending_requests;
@@ -196,6 +235,10 @@ namespace fire
                 add_contact(u);
             }
 
+            auto *t = new QTimer(this);
+            connect(t, SIGNAL(timeout()), this, SLOT(update_status()));
+            t->start(STATUS_SLEEP);
+
             INVARIANT(_service);
         }
 
@@ -205,13 +248,16 @@ namespace fire
             INVARIANT(_service);
             if(_contacts.by_id(u->id())) return;
 
-            add(new user_info{u, _service, false, true});
+            auto ui = new user_info{u, _service, false, true};
+            add(ui);
             _contacts.add(u);
+            _contact_widgets.push_back(ui);
         }
 
         void contact_list::update(const user::contact_list& contacts)
         {
             clear();
+            _contact_widgets.clear();
             _contacts.clear();
             for(auto c : contacts.list())
             {
@@ -220,6 +266,15 @@ namespace fire
             }
 
             ENSURE_LESS_EQUAL(_contacts.size(), contacts.size());
+        }
+
+        void contact_list::update_status()
+        {
+            for(auto p : _contact_widgets)
+            {
+                CHECK(p);
+                p->update();
+            }
         }
     }
 }
