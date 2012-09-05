@@ -60,10 +60,10 @@ namespace fire
             cw->resize(CW_WIDTH, cw->height());
 
             _splitter = new QSplitter{Qt::Horizontal};
-            _splitter->addWidget(cw);
             _splitter->addWidget(_messages);
-            _splitter->setStretchFactor(0, 0);
-            _splitter->setStretchFactor(1, 2);
+            _splitter->addWidget(cw);
+            _splitter->setStretchFactor(0, 1);
+            _splitter->setStretchFactor(1, 0);
            
             _layout->addWidget(_splitter);
 
