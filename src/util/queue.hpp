@@ -75,7 +75,7 @@ namespace fire
                 virtual t pop()
                 {
                     std::lock_guard<std::mutex> lock(_m);
-                    REQUIRE_FALSE(empty());
+                    REQUIRE_FALSE(_q.empty());
 
                     t v = std::move(_q.front());
                     _q.pop_front();
@@ -83,12 +83,20 @@ namespace fire
                     return v;
                 }
 
-                virtual size_t size() const { return _q.size();}
-                virtual bool empty() const { return _q.empty();}
+                virtual size_t size() const 
+                { 
+                    std::lock_guard<std::mutex> lock(_m);
+                    return _q.size();
+                }
+                virtual bool empty() const 
+                { 
+                    std::lock_guard<std::mutex> lock(_m);
+                    return _q.empty();
+                }
 
             private:
                 std::deque<t> _q;
-                std::mutex _m;
+                mutable std::mutex _m;
         };
     }
 }
