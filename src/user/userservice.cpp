@@ -53,6 +53,7 @@ namespace fire
             std::string to;
             std::string from_id;
             std::string port;
+            int send_back;
         };
 
         m::message convert(const ping_request& r)
@@ -61,6 +62,7 @@ namespace fire
             m.meta.type = PING_REQUEST;
             m.meta.to = {r.to, SERVICE_ADDRESS};
             m.meta.extra["from_id"] = r.from_id;
+            m.meta.extra["send_back"] = r.send_back;
             m.data = u::to_bytes(r.port);
 
             return m;
@@ -71,6 +73,7 @@ namespace fire
             REQUIRE_EQUAL(m.meta.type, PING_REQUEST);
             REQUIRE_GREATER(m.meta.from.size(), 1);
             r.from_id = m.meta.extra["from_id"].as_string();
+            r.send_back = m.meta.extra["send_back"];
             r.port = u::to_str(m.data);
         }
 
@@ -240,13 +243,17 @@ namespace fire
                 ping_request r;
                 convert(m, r);
 
-                {
-                    u::mutex_scoped_lock l(_ping_mutex);
-                    if(_ping_connection.count(r.from_id)) return;
-                }
-
                 auto c = _user->contacts().by_id(r.from_id);
                 if(!c) return;
+
+                {
+                    u::mutex_scoped_lock l(_ping_mutex);
+                    if(_ping_connection.count(r.from_id)) 
+                    {
+                        if(r.send_back) send_ping_address(c, false);
+                        return;
+                    }
+                }
 
                 std::string ping_address; 
                 if(!construct_ping_address(ping_address, c, r)) return;
@@ -478,12 +485,12 @@ namespace fire
             ENSURE(_ping_connection[from_id]);
         }
 
-        void user_service::send_ping_address(us::user_info_ptr c)
+        void user_service::send_ping_address(us::user_info_ptr c, bool send_back)
         {
             INVARIANT(_user);
             INVARIANT(mail());
 
-            ping_request a{c->address(), _user->info().id(), _ping_port};
+            ping_request a{c->address(), _user->info().id(), _ping_port, send_back};
             mail()->push_outbox(convert(a));
         }
     }

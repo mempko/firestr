@@ -86,7 +86,7 @@ namespace fire
                 void init_ping();
                 void send_ping_port_requests();
                 void init_ping_connection(const std::string& from_id, const std::string& ping_address);
-                void send_ping_address(user::user_info_ptr);
+                void send_ping_address(user::user_info_ptr, bool send_back = true);
                 void send_ping(char t);
 
                 std::string _ping_port;
