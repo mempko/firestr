@@ -41,6 +41,9 @@ namespace fire
             public:
                 session::session_ptr session();
 
+                void name(const QString&);
+                QString name() const;
+
             public slots:
                 void add(message*);
                 void add_contact();
@@ -53,6 +56,7 @@ namespace fire
                 QComboBox* _contact_select;
                 QPushButton* _add_contact;
                 QSplitter* _splitter;
+                QString _name;
                 message_list* _messages;
                 contact_list* _contacts;
                 size_t _prev_contacts;

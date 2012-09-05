@@ -145,7 +145,10 @@ namespace fire
             _accept->hide();
         }
 
-        contact_list_dialog::contact_list_dialog(const std::string& title, user::user_service_ptr service) :
+        contact_list_dialog::contact_list_dialog(
+                const std::string& title, 
+                user::user_service_ptr service,
+                bool add_on_start) :
             _service{service}
         {
             REQUIRE(service);
@@ -172,6 +175,7 @@ namespace fire
 
             setWindowTitle(tr(title.c_str()));
 
+            if(add_on_start) new_contact();
             INVARIANT(_list);
         }
 

@@ -79,7 +79,10 @@ namespace fire
         {
             Q_OBJECT
             public:
-                contact_list_dialog(const std::string& title, user::user_service_ptr);
+                contact_list_dialog(
+                        const std::string& title, 
+                        user::user_service_ptr, 
+                        bool add_on_start = false);
 
             public slots:
                 void new_contact();

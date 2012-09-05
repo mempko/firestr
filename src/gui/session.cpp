@@ -150,6 +150,15 @@ namespace fire
             update_contact_select();
         }
 
+        void session_widget::name(const QString& s)
+        {
+            _name = s;
+        }
+
+        QString session_widget::name() const
+        {
+            return _name;
+        }
     }
 }
 
