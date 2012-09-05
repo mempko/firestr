@@ -45,10 +45,12 @@ namespace fire
             private slots:
                 void about();
                 void show_contact_list();
+                void show_contact_list_start();
                 void make_test_message();
                 void closeEvent(QCloseEvent*);
                 void check_mail();
                 void create_session();
+                void rename_session();
 
             private:
                 void setup_post(
@@ -62,6 +64,7 @@ namespace fire
                 void save_state();
                 void restore_state();
                 void setup_timers();
+                void create_start_screen();
 
             private:
                 //gui message handlers
@@ -76,14 +79,17 @@ namespace fire
                 QAction *_contact_list_action;
                 QMenu *_session_menu;
                 QAction *_create_session_action;
+                QAction *_rename_session_action;
                 QMenu *_test_menu;
                 QAction *_test_message_action;
 
                 QTabWidget* _sessions;
+                QWidget* _start_screen;
 
                 QWidget* _root;
                 QVBoxLayout* _layout;
 
+            private:
                 fire::message::post_office_ptr _master;
                 fire::message::mailbox_ptr _mail;
                 user::user_service_ptr _user_service;
