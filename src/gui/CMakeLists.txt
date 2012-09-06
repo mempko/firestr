@@ -18,10 +18,10 @@
 include_directories(.)
 include_directories(..)
 
-file(GLOB src *.cpp)
-file(GLOB headers *.hpp)
-file(GLOB forms *.ui)
-file(GLOB resources *.qrc)
+file(GLOB src *.cpp app/*.cpp)
+file(GLOB headers *.hpp app/*.hpp)
+file(GLOB forms *.ui app/*.ui)
+file(GLOB resources *.qrc app/*.qrc)
 
 #qt specific
 QT4_WRAP_CPP(moc_headers ${headers})

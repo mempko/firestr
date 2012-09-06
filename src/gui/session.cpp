@@ -21,6 +21,9 @@
 
 #include <QtGui>
 
+namespace s = fire::session;
+namespace m = fire::message;
+
 namespace fire
 {
     namespace gui
@@ -32,8 +35,8 @@ namespace fire
         }
 
         session_widget::session_widget(
-                session::session_service_ptr session_service,
-                session::session_ptr session) :
+                s::session_service_ptr session_service,
+                s::session_ptr session) :
             _session_service{session_service},
             _session{session},
             _messages{new message_list{session}}
@@ -109,7 +112,7 @@ namespace fire
             _messages->add(m);
         }
 
-        session::session_ptr session_widget::session()
+        s::session_ptr session_widget::session()
         {
             ENSURE(_session);
             return _session;

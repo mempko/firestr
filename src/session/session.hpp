@@ -21,6 +21,7 @@
 #include "user/user.hpp"
 #include "user/userservice.hpp"
 
+#include "message/postoffice.hpp"
 #include "message/mailbox.hpp"
 #include "messages/sender.hpp"
 
@@ -34,8 +35,8 @@ namespace fire
         class session 
         {
             public:
-                session(user::user_service_ptr);
-                session(const std::string id, user::user_service_ptr);
+                session(user::user_service_ptr, message::post_office_wptr);
+                session(const std::string id, user::user_service_ptr, message::post_office_wptr);
 
             public:
                 const user::contact_list& contacts() const;
@@ -45,6 +46,7 @@ namespace fire
                 const std::string& id() const;
 
             public:
+                message::post_office_wptr parent_post();
                 message::mailbox_ptr mail();
                 messages::sender_ptr sender();
                 user::user_service_ptr user_service();
@@ -54,6 +56,7 @@ namespace fire
 
             private:
                 std::string _id;
+                message::post_office_wptr _parent_post;
                 message::mailbox_ptr _mail;
                 user::user_service_ptr _user_service;
                 messages::sender_ptr _sender;

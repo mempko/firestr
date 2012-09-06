@@ -46,7 +46,7 @@ namespace fire
                 void about();
                 void show_contact_list();
                 void show_contact_list_start();
-                void make_test_message();
+                void make_chat_sample();
                 void closeEvent(QCloseEvent*);
                 void check_mail();
                 void create_session();
@@ -80,8 +80,8 @@ namespace fire
                 QMenu *_session_menu;
                 QAction *_create_session_action;
                 QAction *_rename_session_action;
-                QMenu *_test_menu;
-                QAction *_test_message_action;
+                QMenu *_app_menu;
+                QAction *_chat_sample_action;
 
                 QTabWidget* _sessions;
                 QWidget* _start_screen;

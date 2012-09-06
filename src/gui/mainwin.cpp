@@ -14,28 +14,35 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "gui/mainwin.hpp"
+
+#include "gui/app/chat_sample.hpp"
+
+#include "gui/contactlist.hpp"
+#include "gui/message.hpp"
+#include "gui/session.hpp"
+#include "gui/util.hpp"
+
+#include "network/message_queue.hpp"
+
+#include "message/master_post.hpp"
+#include "messages/new_app.hpp"
+
+#include "util/mencode.hpp"
+#include "util/bytes.hpp"
+#include "util/dbc.hpp"
+
 #include <sstream>
 #include <stdexcept>
 
 #include <QtGui>
 
-#include "util/dbc.hpp"
-
-#include "gui/mainwin.hpp"
-#include "gui/contactlist.hpp"
-#include "gui/message.hpp"
-#include "gui/test_message.hpp"
-#include "gui/session.hpp"
-#include "gui/util.hpp"
-#include "util/mencode.hpp"
-#include "network/message_queue.hpp"
-#include "message/master_post.hpp"
-#include "util/bytes.hpp"
-
 namespace m = fire::message;
+namespace ms = fire::messages;
 namespace u = fire::util;
 namespace us = fire::user;
 namespace s = fire::session;
+namespace a = fire::gui::app;
 
 namespace fire
 {
@@ -226,7 +233,7 @@ namespace fire
             REQUIRE(_about_action);
             REQUIRE(_close_action);
             REQUIRE(_contact_list_action);
-            REQUIRE(_test_message_action);
+            REQUIRE(_chat_sample_action);
             REQUIRE(_create_session_action);
 
             _main_menu = new QMenu{tr("&Main"), this};
@@ -241,17 +248,17 @@ namespace fire
             _session_menu->addAction(_create_session_action);
             _session_menu->addAction(_rename_session_action);
 
-            _test_menu = new QMenu{tr("&Test"), this};
-            _test_menu->addAction(_test_message_action);
+            _app_menu = new QMenu{tr("&App"), this};
+            _app_menu->addAction(_chat_sample_action);
 
             menuBar()->addMenu(_main_menu);
             menuBar()->addMenu(_contact_menu);
             menuBar()->addMenu(_session_menu);
-            menuBar()->addMenu(_test_menu);
+            menuBar()->addMenu(_app_menu);
 
             ENSURE(_main_menu);
             ENSURE(_contact_menu);
-            ENSURE(_test_menu);
+            ENSURE(_app_menu);
         }
 
         void main_window::setup_timers()
@@ -279,8 +286,8 @@ namespace fire
             _contact_list_action = new QAction{tr("&Contacts"), this};
             connect(_contact_list_action, SIGNAL(triggered()), this, SLOT(show_contact_list()));
 
-            _test_message_action = new QAction{tr("&Test Message"), this};
-            connect(_test_message_action, SIGNAL(triggered()), this, SLOT(make_test_message()));
+            _chat_sample_action = new QAction{tr("&Chat Sample"), this};
+            connect(_chat_sample_action, SIGNAL(triggered()), this, SLOT(make_chat_sample()));
 
             _create_session_action = new QAction{tr("&Create"), this};
             connect(_create_session_action, SIGNAL(triggered()), this, SLOT(create_session()));
@@ -327,15 +334,29 @@ namespace fire
             cl.exec();
         }
 
-        void main_window::make_test_message()
+        void main_window::make_chat_sample()
         {
             INVARIANT(_sessions);
 
             auto s = dynamic_cast<session_widget*>(_sessions->currentWidget());
             if(!s) return;
 
-            auto* t = new test_message{s->session()};
+            //create chat sample
+            auto t = new a::chat_sample{s->session()};
             s->add(t);
+
+            //add to master post so it can recieve messages
+            //from outside world
+            _master->add(t->mail());
+
+            //send new app message to contacts in session
+            ms::new_app n{t->id(), t->type()}; 
+
+            for(auto c : s->session()->contacts().list())
+            {
+                CHECK(c);
+                s->session()->sender()->send(c->id(), n); 
+            }
         }
 
         void main_window::about()
@@ -424,8 +445,13 @@ namespace fire
 
             auto sw = new session_widget{_session_service, s};
 
+            std::string name = convert(NEW_SESSION_NAME);
+
+            //make default name to be firt person in contact list
+            if(!s->contacts().empty()) name = s->contacts().list()[0]->name();
+
             //create the sessions widget
-            _sessions->addTab(sw, NEW_SESSION_NAME);
+            _sessions->addTab(sw, name.c_str());
 
             ENSURE(_sessions->isVisible());
         }

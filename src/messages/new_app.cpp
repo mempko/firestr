@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "messages/test_message.hpp"
+#include "messages/new_app.hpp"
 #include "util/dbc.hpp"
 
 namespace m = fire::message;
@@ -24,39 +24,46 @@ namespace fire
 {
     namespace messages
     {
-        const std::string TEST_MESSAGE = "test";
+        const std::string NEW_APP = "new_app";
 
-        test_message::test_message() : _text{}, _from_id{} { }
-
-        test_message::test_message(const std::string& text) :
-            _text{text},
+        new_app::new_app(
+                const std::string& id,
+                const std::string& type) :
+            _id{id},
+            _type{type},
             _from_id{}
         {
         }
 
-        test_message::test_message(const m::message& m)
+        new_app::new_app(const m::message& m)
         {
-            REQUIRE_EQUAL(m.meta.type, TEST_MESSAGE);
+            REQUIRE_EQUAL(m.meta.type, NEW_APP);
 
-            _text = u::to_str(m.data);
+            _id = m.meta.extra["app_id"].as_string();
+            _type = m.meta.extra["app_type"].as_string();
             _from_id = m.meta.extra["from_id"].as_string();
         }
 
-        test_message::operator message::message() const
+        new_app::operator message::message() const
         {
             m::message m;
-            m.meta.type = TEST_MESSAGE;
-            m.meta.extra["id"] = _from_id;
-            m.data = u::to_bytes(_text);
+            m.meta.type = NEW_APP;
+            m.meta.extra["app_id"] = _id;
+            m.meta.extra["app_type"] = _type;
             return m;
         }
 
-        const std::string& test_message::text() const
+        const std::string& new_app::id() const
         {
-            return _text;
+            return _id;
         }
 
-        const std::string& test_message::from_id() const
+        const std::string& new_app::type() const
+        {
+            return _type;
+        }
+
+        const std::string& new_app::from_id() const
         {
             return _from_id;
         }

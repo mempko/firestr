@@ -18,10 +18,10 @@
 #ifndef FIRESTR_GUI_SESSION_H
 #define FIRESTR_GUI_SESSION_H
 
-#include "session/session.hpp"
-#include "session/session_service.hpp"
 #include "gui/messagelist.hpp"
 #include "gui/contactlist.hpp"
+#include "session/session.hpp"
+#include "session/session_service.hpp"
 
 #include <QWidget>
 #include <QGridLayout>
@@ -36,7 +36,9 @@ namespace fire
         {
             Q_OBJECT
             public:
-                session_widget(session::session_service_ptr, session::session_ptr);
+                session_widget(
+                        session::session_service_ptr, 
+                        session::session_ptr);
 
             public:
                 session::session_ptr session();

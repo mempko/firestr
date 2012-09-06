@@ -23,6 +23,7 @@
 #include "gui/list.hpp"
 #include "gui/message.hpp"
 #include "session/session.hpp"
+#include "messages/new_app.hpp"
 
 namespace fire
 {
@@ -41,6 +42,9 @@ namespace fire
                 void add(message*);
                 void check_mail(); 
                 void scroll_to_bottom(int min, int max);
+
+            private:
+                void add_new_app(const messages::new_app&); 
 
             private:
                 QScrollBar* _scrollbar;
