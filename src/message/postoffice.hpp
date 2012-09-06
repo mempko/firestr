@@ -50,10 +50,12 @@ namespace fire
 
             public:
                 bool add(mailbox_wptr);
+                bool has(mailbox_wptr) const;
                 void remove_mailbox(const std::string&);
 
             public:
                 bool add(post_office_wptr);
+                bool has(post_office_wptr) const;
                 void remove_post_office(const std::string&);
 
             public:
@@ -74,8 +76,8 @@ namespace fire
                 post_office* _parent;
                 util::thread_uptr _send_thread;
                 bool _done;
-                std::mutex _box_m;
-                std::mutex _post_m;
+                mutable std::mutex _box_m;
+                mutable std::mutex _post_m;
 
             protected:
                 friend void send_thread(post_office*);
