@@ -19,6 +19,7 @@
 #include "util/dbc.hpp"
 
 #include <boost/uuid/uuid_io.hpp>
+#include <boost/uuid/uuid_generators.hpp>
 #include <boost/lexical_cast.hpp>
 namespace fire
 {
@@ -26,7 +27,7 @@ namespace fire
     {
         std::string uuid()
         {
-            boost::uuids::uuid id;
+            boost::uuids::uuid id = boost::uuids::random_generator()();
             const std::string r = boost::lexical_cast<std::string>(id);
 
             ENSURE_FALSE(r.empty());
