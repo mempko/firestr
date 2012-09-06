@@ -156,7 +156,7 @@ namespace fire
             }
 
             //create new session
-            session_ptr s{new session{id, _user_service}};
+            session_ptr s{new session{id, _user_service, _post}};
             _sessions[id] = s;
 
             //add new session to post office

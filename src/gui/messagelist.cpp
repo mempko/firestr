@@ -2,7 +2,7 @@
 
 #include "gui/messagelist.hpp"
 #include "gui/unknown_message.hpp"
-#include "gui/test_message.hpp"
+#include "gui/app/chat_sample.hpp"
 #include "util/dbc.hpp"
 
 #include <sstream>
@@ -11,6 +11,7 @@ namespace m = fire::message;
 namespace ms = fire::messages;
 namespace us = fire::user;
 namespace s = fire::session;
+namespace a = fire::gui::app;
 
 namespace fire
 {
@@ -62,6 +63,25 @@ namespace fire
             return _session;
         }
 
+        void message_list::add_new_app(const ms::new_app& n) 
+        {
+            INVARIANT(_session);
+
+            if(n.type() == a::CHAT_SAMPLE)
+            {
+                if(auto post = _session->parent_post().lock())
+                {
+                    auto c = new a::chat_sample{n.id(), _session};
+                    add(c);
+                    post->add(c->mail());
+                }
+            }
+            else
+            {
+                add(new unknown_message{"unknown app type `" + n.type() + "'"});
+            }
+        }
+
         void message_list::check_mail() 
         {
             INVARIANT(_session);
@@ -72,9 +92,9 @@ namespace fire
             {
                 //for now show encoded message
                 //TODO: use factory class to create gui from messages
-                if(m.meta.type == ms::TEST_MESSAGE)
+                if(m.meta.type == ms::NEW_APP)
                 {
-                    add(new test_message{m, _session});
+                    add_new_app(m);
                 }
                 else
                 {

@@ -174,6 +174,16 @@ namespace fire
             return true;
         }
 
+        bool post_office::has(mailbox_wptr p) const
+        {
+            std::lock_guard<std::mutex> lock(_box_m);
+
+            auto sp = p.lock();
+            if(!sp) return false;
+
+            return _boxes.count(sp->address()) > 0;
+        }
+
         void post_office::remove_mailbox(const std::string& n)
         {
             std::lock_guard<std::mutex> lock(_box_m);
@@ -195,6 +205,16 @@ namespace fire
             _offices[sp->address()] = p;
 
             return true;
+        }
+
+        bool post_office::has(post_office_wptr p) const
+        {
+            std::lock_guard<std::mutex> lock(_post_m);
+
+            auto sp = p.lock();
+            if(!sp) return false;
+
+            return _offices.count(sp->address()) > 0;
         }
 
         void post_office::remove_post_office(const std::string& n)

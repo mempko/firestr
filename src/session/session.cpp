@@ -29,16 +29,23 @@ namespace fire
 {
     namespace session
     {
-        session::session(us::user_service_ptr s) :
+        session::session(
+                us::user_service_ptr s,
+                m::post_office_wptr pp) :
             _id{u::uuid()},
-            _user_service{s}
+            _user_service{s},
+            _parent_post{pp}
         {
             init();
         }
 
-        session::session(const std::string id, us::user_service_ptr s) :
+        session::session(
+                const std::string id, 
+                us::user_service_ptr s,
+                m::post_office_wptr pp) :
             _id{id},
-            _user_service{s}
+            _user_service{s},
+            _parent_post{pp}
         {
             init();
         }
@@ -52,7 +59,6 @@ namespace fire
             _sender.reset(new ms::sender{_user_service, _mail});
 
             INVARIANT(_mail);
-            INVARIANT(_user_service);
             INVARIANT(_sender);
         }
 
@@ -70,6 +76,11 @@ namespace fire
         {
             ENSURE_FALSE(_id.empty());
             return _id;
+        }
+
+        m::post_office_wptr session::parent_post()
+        {
+            return _parent_post;
         }
 
         m::mailbox_ptr session::mail()

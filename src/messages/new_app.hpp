@@ -14,10 +14,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef FIRESTR_MESSAGES_TEST_MESSAGE_H
-#define FIRESTR_MESSAGES_TEST_MESSAGE_H
+#ifndef FIRESTR_MESSAGES_NEW_APP_H
+#define FIRESTR_MESSAGES_NEW_APP_H
 
-#include "messages/sender.hpp"
+#include "message/message.hpp"
 
 #include <string>
 
@@ -25,21 +25,23 @@ namespace fire
 {
     namespace messages
     {
-        extern const std::string TEST_MESSAGE;
+        extern const std::string NEW_APP;
 
-        class test_message
+        class new_app
         {
             public:
-                test_message();
-                test_message(const std::string& text);
-                test_message(const message::message&);
+                new_app();
+                new_app(const std::string& id, const std::string& type);
+                new_app(const message::message&);
                 operator message::message() const;
             public:
-                const std::string& text() const;
+                const std::string& id() const;
+                const std::string& type() const;
                 const std::string& from_id() const;
 
             private:
-                std::string _text;
+                std::string _id;
+                std::string _type;
                 std::string _from_id;
         };
     }
