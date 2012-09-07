@@ -17,6 +17,7 @@
 #include "gui/mainwin.hpp"
 
 #include "gui/app/chat_sample.hpp"
+#include "gui/app/script_sample.hpp"
 
 #include "gui/contactlist.hpp"
 #include "gui/message.hpp"
@@ -255,6 +256,7 @@ namespace fire
             REQUIRE(_close_action);
             REQUIRE(_contact_list_action);
             REQUIRE(_chat_sample_action);
+            REQUIRE(_script_sample_action);
             REQUIRE(_create_session_action);
 
             _main_menu = new QMenu{tr("&Main"), this};
@@ -271,6 +273,7 @@ namespace fire
 
             _app_menu = new QMenu{tr("&App"), this};
             _app_menu->addAction(_chat_sample_action);
+            _app_menu->addAction(_script_sample_action);
 
             menuBar()->addMenu(_main_menu);
             menuBar()->addMenu(_contact_menu);
@@ -309,6 +312,9 @@ namespace fire
 
             _chat_sample_action = new QAction{tr("&Chat Sample"), this};
             connect(_chat_sample_action, SIGNAL(triggered()), this, SLOT(make_chat_sample()));
+
+            _script_sample_action = new QAction{tr("&Script Sample"), this};
+            connect(_script_sample_action, SIGNAL(triggered()), this, SLOT(make_script_sample()));
 
             _create_session_action = new QAction{tr("&Create"), this};
             connect(_create_session_action, SIGNAL(triggered()), this, SLOT(create_session()));
@@ -364,6 +370,31 @@ namespace fire
 
             //create chat sample
             auto t = new a::chat_sample{s->session()};
+            s->add(t);
+
+            //add to master post so it can recieve messages
+            //from outside world
+            _master->add(t->mail());
+
+            //send new app message to contacts in session
+            ms::new_app n{t->id(), t->type()}; 
+
+            for(auto c : s->session()->contacts().list())
+            {
+                CHECK(c);
+                s->session()->sender()->send(c->id(), n); 
+            }
+        }
+
+        void main_window::make_script_sample()
+        {
+            INVARIANT(_sessions);
+
+            auto s = dynamic_cast<session_widget*>(_sessions->currentWidget());
+            if(!s) return;
+
+            //create chat sample
+            auto t = new a::script_sample{s->session()};
             s->add(t);
 
             //add to master post so it can recieve messages
