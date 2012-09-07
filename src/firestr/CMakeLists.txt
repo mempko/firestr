@@ -46,6 +46,7 @@ target_link_libraries(
     fire_message
     fire_network
     fire_util
+    fire_slb
     ${Boost_LIBRARIES}
     ${QT_LIBRARIES}
     ${ZMQ_LIBS})
@@ -58,4 +59,5 @@ add_dependencies(
     fire_user
     fire_message
     fire_network
-    fire_util)
+    fire_util
+    fire_slb)
