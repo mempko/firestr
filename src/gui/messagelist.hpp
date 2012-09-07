@@ -40,6 +40,7 @@ namespace fire
 
             public slots:
                 void add(message*);
+                void add(QWidget*);
                 void check_mail(); 
                 void scroll_to_bottom(int min, int max);
 

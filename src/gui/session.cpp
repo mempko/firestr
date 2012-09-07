@@ -23,6 +23,7 @@
 
 namespace s = fire::session;
 namespace m = fire::message;
+namespace us = fire::user;
 
 namespace fire
 {
@@ -90,13 +91,17 @@ namespace fire
             INVARIANT(_session_service);
             INVARIANT(_session);
             INVARIANT(_add_contact);
+            INVARIANT(_session_service->user_service());
 
             _contact_select->clear();
             for(auto p : _session_service->user_service()->user().contacts().list())
             {
                 CHECK(p);
+                //skip contact already in session
                 if(_session->contacts().by_id(p->id())) continue;
 
+                //skip contact which is disconnected
+                if(!_session_service->user_service()->contact_available(p->id())) continue;
                 _contact_select->addItem(p->name().c_str(), p->id().c_str());
             }
 
@@ -108,14 +113,40 @@ namespace fire
 
         void session_widget::add(message* m)
         {
+            REQUIRE(m);
             INVARIANT(_messages);
             _messages->add(m);
+        }
+
+        void session_widget::add(QWidget* w)
+        {
+            REQUIRE(w);
+            INVARIANT(_messages);
+            _messages->add(w);
         }
 
         s::session_ptr session_widget::session()
         {
             ENSURE(_session);
             return _session;
+        }
+
+        QWidget* contact_alert(us::user_info_ptr c, const std::string message)
+        {
+            REQUIRE(c);
+
+            auto w = new QWidget;
+            auto l = new QHBoxLayout;
+            w->setLayout(l);
+
+            std::stringstream s;
+            s << "<b>" << c->name() << "</b> " << message;
+
+            auto t = new QLabel{s.str().c_str()};
+            l->addWidget(t);
+
+            ENSURE(w);
+            return w;
         }
 
         void session_widget::add_contact()
@@ -135,6 +166,7 @@ namespace fire
             _contacts->add_contact(contact);
 
             update_contact_select();
+            add(contact_alert(contact, "added to session"));
         }
 
         void session_widget::update()
@@ -144,7 +176,6 @@ namespace fire
 
             update_contacts();
             _prev_contacts = _session->contacts().size();
-
         }
 
         void session_widget::update_contacts()

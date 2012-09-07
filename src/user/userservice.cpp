@@ -169,8 +169,9 @@ namespace fire
 
         user_service::user_service(
                 const std::string& home,
-                const std::string& ping_port) :
-            s::service{SERVICE_ADDRESS},
+                const std::string& ping_port,
+                message::mailbox_ptr event) :
+            s::service{SERVICE_ADDRESS, event},
             _home{home},
             _ping_port{ping_port},
             _done{false}
@@ -248,7 +249,7 @@ namespace fire
 
                 {
                     u::mutex_scoped_lock l(_ping_mutex);
-                    if(_ping_connection.count(r.from_id)) 
+                    if(_ping_connection.count(c->id())) 
                     {
                         if(r.send_back) send_ping_address(c, false);
                         return;
@@ -258,8 +259,10 @@ namespace fire
                 std::string ping_address; 
                 if(!construct_ping_address(ping_address, c, r)) return;
 
-                init_ping_connection(r.from_id, ping_address);
+                init_ping_connection(c->id(), ping_address);
                 send_ping_address(c);
+                fire_contact_connected_event(c->id());
+
             }
             else if(m.meta.type == ADD_REQUEST)
             {
@@ -277,6 +280,8 @@ namespace fire
                 {
                     u::mutex_scoped_lock l(_mutex);
                     _pending_requests[r.from->id()] = r;
+
+                    fire_new_contact_event(r.from->id());
                 }
             }
             else if(m.meta.type == REQUEST_CONFIRMED)
@@ -402,6 +407,8 @@ namespace fire
             mail()->push_outbox(convert(r));
         }
 
+        bool available(size_t ticks) { return ticks <= PING_THRESH; }
+
         void ping_thread(user_service* s)
         {
             size_t send_ticks = 0;
@@ -423,6 +430,8 @@ namespace fire
                         auto id = p.first;
                         auto queue = p.second;
                         auto& ticks = s->_last_ping[id];
+                        bool prev_state = available(ticks);
+                        bool cur_state = prev_state;
 
                         CHECK(queue);
                         u::bytes b;
@@ -431,10 +440,26 @@ namespace fire
                             if(b.size() == 1)
                             {
                                 char t = b[0]; 
-                                ticks = t == CONNECTED ? 0 : PING_THRESH + 1; 
+                                if(t == CONNECTED)
+                                {
+                                    ticks = 0;
+                                }
+                                else
+                                {
+                                    PING_THRESH + 1;
+                                }
                             }
                         }
                         else ticks++;
+
+                        cur_state = available(ticks);
+
+                        //if we changed state, fire event
+                        if(cur_state != prev_state)
+                        {
+                            if(cur_state) s->fire_contact_connected_event(id);
+                            else s->fire_contact_disconnected_event(id);
+                        }
                     }
                 }
                 u::sleep_thread(PING_THREAD_SLEEP);
@@ -446,7 +471,7 @@ namespace fire
             auto tp = _last_ping.find(id);
             if(tp == _last_ping.end()) return false;
 
-            return tp->second <= PING_THRESH;
+            return available(tp->second);
         }
 
         void user_service::send_ping(char t)
@@ -493,5 +518,73 @@ namespace fire
             ping_request a{c->address(), _user->info().id(), _ping_port, send_back};
             mail()->push_outbox(convert(a));
         }
+
+        void user_service::fire_new_contact_event(const std::string& id)
+        {
+            event::new_contact e{id};
+            send_event(event::convert(e));
+        }
+
+        void user_service::fire_contact_connected_event(const std::string& id)
+        {
+            event::contact_connected e{id};
+            send_event(event::convert(e));
+        }
+
+        void user_service::fire_contact_disconnected_event(const std::string& id)
+        {
+            event::contact_disconnected e{id};
+            send_event(event::convert(e));
+        }
+
+        namespace event
+        {
+            const std::string NEW_CONTACT = "new_contact";
+            const std::string CONTACT_CONNECTED = "contact_con";
+            const std::string CONTACT_DISCONNECTED = "contact_discon";
+
+            m::message convert(const new_contact& c)
+            {
+                m::message m;
+                m.meta.type = NEW_CONTACT;
+                m.data = u::to_bytes(c.id);
+                return m;
+            }
+
+            void convert(const m::message& m, new_contact& c)
+            {
+                REQUIRE_EQUAL(m.meta.type, NEW_CONTACT);
+                c.id = u::to_str(m.data);
+            }
+
+            m::message convert(const contact_connected& c)
+            {
+                m::message m;
+                m.meta.type = CONTACT_CONNECTED;
+                m.data = u::to_bytes(c.id);
+                return m;
+            }
+
+            void convert(const m::message& m, contact_connected& c)
+            {
+                REQUIRE_EQUAL(m.meta.type, CONTACT_CONNECTED);
+                c.id = u::to_str(m.data);
+            }
+
+            m::message convert(const contact_disconnected& c)
+            {
+                m::message m;
+                m.meta.type = CONTACT_DISCONNECTED;
+                m.data = u::to_bytes(c.id);
+                return m;
+            }
+
+            void convert(const m::message& m, contact_disconnected& c)
+            {
+                REQUIRE_EQUAL(m.meta.type, CONTACT_DISCONNECTED);
+                c.id = u::to_str(m.data);
+            }
+        }
+
     }
 }

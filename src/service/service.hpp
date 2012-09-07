@@ -32,7 +32,9 @@ namespace fire
         class service
         {
             public:
-                service(const std::string& address);
+                service(
+                        const std::string& address,
+                        message::mailbox_ptr event = nullptr);
                 virtual ~service();
 
             public:
@@ -41,11 +43,15 @@ namespace fire
             protected:
                 virtual void message_recieved(const message::message&) = 0;
 
+            protected:
+                void send_event(const message::message&);
+
             private:
                 std::string _address;
                 bool _done;
                 message::mailbox_ptr _mail;
                 util::thread_uptr _thread;
+                message::mailbox_ptr _event;
 
             private:
                 friend void service_thread(service*);

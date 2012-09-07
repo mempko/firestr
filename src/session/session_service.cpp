@@ -85,10 +85,9 @@ namespace fire
                 message::post_office_ptr post,
                 user::user_service_ptr user_service,
                 message::mailbox_ptr event) :
-            s::service{SERVICE_ADDRESS},
+            s::service{SERVICE_ADDRESS, event},
             _post{post},
-            _user_service{user_service},
-            _event{event}
+            _user_service{user_service}
         {
             REQUIRE(post);
             REQUIRE(user_service);
@@ -211,18 +210,9 @@ namespace fire
             return s != _sessions.end() ? s->second : nullptr;
         }
 
-        void session_service::add_contact_to_session( 
-                const user::user_info_ptr contact, 
-                session_ptr s)
+        void session_service::sync_session(session_ptr s)
         {
-            REQUIRE(contact);
             REQUIRE(s);
-            INVARIANT(_sender);
-
-            if(s->contacts().by_id(contact->id())) return;
-
-            //add contact to session
-            s->contacts().add(contact);
 
             //get current contacts in the session.
             //these will be sent to the contact 
@@ -243,6 +233,30 @@ namespace fire
                 CHECK(c);
                 _sender->send(c->id(), convert(ns));
             }
+        }
+
+        void session_service::sync_session(const std::string& session_id)
+        {
+            auto s = session_by_id(session_id);
+            if(!s) return;
+
+            sync_session(s);
+        }
+
+        void session_service::add_contact_to_session( 
+                const user::user_info_ptr contact, 
+                session_ptr s)
+        {
+            REQUIRE(contact);
+            REQUIRE(s);
+            INVARIANT(_sender);
+
+            if(s->contacts().by_id(contact->id())) return;
+
+            //add contact to session
+            s->contacts().add(contact);
+
+            sync_session(s);
         }
 
         bool session_service::add_contact_to_session(
@@ -266,28 +280,29 @@ namespace fire
             return _user_service;
         }
 
-        const std::string NEW_SESSION_EVENT = "new_session";
-
-        m::message convert(const new_session_event& s)
+        namespace event
         {
-            m::message m;
-            m.meta.type = NEW_SESSION;
-            m.data = u::to_bytes(s.session_id);
-            return m;
-        }
+            const std::string NEW_SESSION = "new_session";
 
-        void convert(const m::message& m, new_session_event& s)
-        {
-            REQUIRE_EQUAL(m.meta.type, NEW_SESSION_EVENT);
-            s.session_id = u::to_str(m.data);
+            m::message convert(const new_session& s)
+            {
+                m::message m;
+                m.meta.type = NEW_SESSION;
+                m.data = u::to_bytes(s.session_id);
+                return m;
+            }
+
+            void convert(const m::message& m, new_session& s)
+            {
+                REQUIRE_EQUAL(m.meta.type, NEW_SESSION);
+                s.session_id = u::to_str(m.data);
+            }
         }
 
         void session_service::fire_new_session_event(const std::string id)
         {
-            if(!_event) return;
-
-            new_session_event e{id};
-            _event->push_inbox(convert(e));
+            event::new_session e{id};
+            send_event(event::convert(e));
         }
     }
 }

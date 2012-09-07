@@ -47,7 +47,17 @@ namespace fire
             REQUIRE(m);
             INVARIANT(_layout);
 
+            //we might want to do something 
+            //different with a message here
             list::add(m);
+        }
+
+        void message_list::add(QWidget* w)
+        {
+            REQUIRE(w);
+            INVARIANT(_layout);
+
+            list::add(w);
         }
 
         void message_list::scroll_to_bottom(int min, int max)
