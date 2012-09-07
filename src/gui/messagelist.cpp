@@ -3,6 +3,7 @@
 #include "gui/messagelist.hpp"
 #include "gui/unknown_message.hpp"
 #include "gui/app/chat_sample.hpp"
+#include "gui/app/script_sample.hpp"
 #include "util/dbc.hpp"
 
 #include <sstream>
@@ -82,6 +83,15 @@ namespace fire
                 if(auto post = _session->parent_post().lock())
                 {
                     auto c = new a::chat_sample{n.id(), _session};
+                    add(c);
+                    post->add(c->mail());
+                }
+            }
+            else if(n.type() == a::SCRIPT_SAMPLE)
+            {
+                if(auto post = _session->parent_post().lock())
+                {
+                    auto c = new a::script_sample{n.id(), _session};
                     add(c);
                     post->add(c->mail());
                 }
