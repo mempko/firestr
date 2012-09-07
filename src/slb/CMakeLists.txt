@@ -15,13 +15,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-add_subdirectory(slb)
-add_subdirectory(util)
-add_subdirectory(network)
-add_subdirectory(message)
-add_subdirectory(messages)
-add_subdirectory(service)
-add_subdirectory(user)
-add_subdirectory(session)
-add_subdirectory(gui)
-add_subdirectory(firestr)
+include_directories(.)
+include_directories(..)
+include_directories(lua)
+
+file(GLOB src *.cpp *.c)
+
+add_library(fire_slb STATIC
+    ${src})
+
