@@ -50,6 +50,7 @@ namespace fire
                 void closeEvent(QCloseEvent*);
                 void check_mail();
                 void create_session();
+                void create_session(QString id);
                 void rename_session();
 
             private:
@@ -65,11 +66,17 @@ namespace fire
                 void restore_state();
                 void setup_timers();
                 void create_start_screen();
+                void attach_start_screen();
+                void create_alert_screen();
+                void show_alert(QWidget*);
 
             private:
-                //gui message handlers
+                //gui service event handlers
 
-                void new_session(const std::string& id);
+                void new_session_event(const std::string& id);
+                void new_contact_event(const std::string& id);
+                void contact_connected_event(const std::string& id);
+                void contact_disconnected_event(const std::string& id);
 
             private:
                 QMenu *_main_menu;
@@ -85,6 +92,10 @@ namespace fire
 
                 QTabWidget* _sessions;
                 QWidget* _start_screen;
+                bool _start_screen_attached;
+
+                QWidget* _alert_screen;
+                list* _alerts;
 
                 QWidget* _root;
                 QVBoxLayout* _layout;

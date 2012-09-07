@@ -47,6 +47,7 @@ namespace fire
 
             public:
                 session_ptr session_by_id(const std::string&);
+
                 bool add_contact_to_session( 
                         const user::user_info_ptr contact, 
                         const std::string& session_id);
@@ -54,6 +55,10 @@ namespace fire
                 void add_contact_to_session( 
                         const user::user_info_ptr contact, 
                         session_ptr session);
+
+                void sync_session(session_ptr session);
+                void sync_session(const std::string& session_id);
+
             public:
                 user::user_service_ptr user_service();
 
@@ -68,21 +73,22 @@ namespace fire
                 user::user_service_ptr _user_service;
                 messages::sender_ptr _sender;
                 session_map _sessions;
-                message::mailbox_ptr _event;
-
         };
 
         typedef std::shared_ptr<session_service> session_service_ptr;
         typedef std::weak_ptr<session_service> session_servie_wptr;
 
         //events
-        extern const std::string NEW_SESSION_EVENT;
-        struct new_session_event
+        namespace event
         {
-            std::string session_id;
-        };
-        message::message convert(const new_session_event&);
-        void convert(const message::message&, new_session_event&);
+            extern const std::string NEW_SESSION;
+            struct new_session
+            {
+                std::string session_id;
+            };
+            message::message convert(const new_session&);
+            void convert(const message::message&, new_session&);
+        }
     }
 }
 

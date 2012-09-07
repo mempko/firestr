@@ -48,6 +48,7 @@ namespace fire
 
             public slots:
                 void add(message*);
+                void add(QWidget*);
                 void add_contact();
                 void update_contacts();
                 void update_contact_select();

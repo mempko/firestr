@@ -48,7 +48,8 @@ namespace fire
             public:
                 user_service(
                         const std::string& home,
-                        const std::string& ping_port);
+                        const std::string& ping_port,
+                        message::mailbox_ptr event = nullptr);
                 virtual ~user_service();
 
             public:
@@ -79,6 +80,12 @@ namespace fire
 
                 std::string _home;
                 std::mutex _mutex;
+
+            private:
+                void fire_new_contact_event(const std::string& id);
+                void fire_contact_connected_event(const std::string& id);
+                void fire_contact_disconnected_event(const std::string& id);
+
             private:
                 //ping specific 
                 typedef std::map<std::string, size_t> last_ping_map;
@@ -103,6 +110,26 @@ namespace fire
 
         typedef std::shared_ptr<user_service> user_service_ptr;
         typedef std::weak_ptr<user_service> user_service_wptr;
+
+        namespace event
+        {
+            extern const std::string NEW_CONTACT;
+            extern const std::string CONTACT_CONNECTED;
+            extern const std::string CONTACT_DISCONNECTED;
+
+            struct new_contact { std::string id; };
+            struct contact_connected { std::string id; };
+            struct contact_disconnected { std::string id; };
+
+            message::message convert(const new_contact&);
+            void convert(const message::message&, new_contact&);
+
+            message::message convert(const contact_connected&);
+            void convert(const message::message&, contact_connected&);
+
+            message::message convert(const contact_disconnected&);
+            void convert(const message::message&, contact_disconnected&);
+        }
     }
 }
 

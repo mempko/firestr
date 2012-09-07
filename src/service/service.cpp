@@ -58,8 +58,11 @@ namespace fire
             }
         }
 
-        service::service(const std::string& address) :
+        service::service(
+                const std::string& address, 
+                message::mailbox_ptr event) :
             _address{address},
+            _event{event},
             _done{false}
         {
             REQUIRE_FALSE(address.empty());
@@ -85,6 +88,12 @@ namespace fire
         {
             ENSURE(_mail);
             return _mail;
+        }
+
+        void service::send_event(const message::message& e)
+        {
+            if(!_event) return;
+            _event->push_inbox(e);
         }
     }
 }

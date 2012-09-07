@@ -36,6 +36,7 @@
 #include <stdexcept>
 
 #include <QtGui>
+#include <QSignalMapper>
 
 namespace m = fire::message;
 namespace ms = fire::messages;
@@ -62,6 +63,9 @@ namespace fire
                 const std::string& ping,
                 const std::string& home) :
             _start_screen(0),
+            _start_screen_attached(false),
+            _alert_screen(0),
+            _alerts(0),
             _mail(0),
             _master(0),
             _about_action(0),
@@ -167,6 +171,7 @@ namespace fire
             _layout->addWidget(_sessions);
             _sessions->hide();
 
+            create_alert_screen();
             create_start_screen();
             _layout->addWidget(_start_screen, Qt::AlignCenter);
 
@@ -225,6 +230,22 @@ namespace fire
             l->setContentsMargins(20,10,20,10);
 
             ENSURE(_start_screen);
+        }
+
+        void main_window::create_alert_screen()
+        {
+            REQUIRE_FALSE(_alert_screen);
+            REQUIRE_FALSE(_alerts);
+
+            _alert_screen = new QWidget;
+            auto l = new QVBoxLayout;
+            _alert_screen->setLayout(l);
+            _alerts = new list;
+            l->addWidget(_alerts);
+            _alert_screen->hide();
+
+            ENSURE(_alert_screen);
+            ENSURE(_alerts);
         }
 
         void main_window::create_menus()
@@ -308,7 +329,7 @@ namespace fire
             REQUIRE(_master);
             REQUIRE(_mail);
 
-            _user_service.reset(new us::user_service{_home, ping});
+            _user_service.reset(new us::user_service{_home, ping, _mail});
             _master->add(_user_service->mail());
 
             _session_service.reset(new s::session_service{_master, _user_service, _mail});
@@ -379,12 +400,31 @@ namespace fire
             while(_mail->pop_inbox(m))
             try
             {
-                if(m.meta.type == s::NEW_SESSION_EVENT)
+                if(m.meta.type == s::event::NEW_SESSION)
                 {
-                    s::new_session_event r;
-                    convert(m, r);
+                    s::event::new_session r;
+                    s::event::convert(m, r);
 
-                    new_session(r.session_id);
+                    new_session_event(r.session_id);
+                }
+                else if(m.meta.type == us::event::NEW_CONTACT)
+                {
+                    us::event::new_contact r;
+                    us::event::convert(m, r);
+
+                    new_contact_event(r.id);
+                }
+                else if(m.meta.type == us::event::CONTACT_CONNECTED)
+                {
+                    us::event::contact_connected r;
+                    us::event::convert(m, r);
+                    contact_connected_event(r.id);
+                }
+                else if(m.meta.type == us::event::CONTACT_DISCONNECTED)
+                {
+                    us::event::contact_disconnected r;
+                    us::event::convert(m, r);
+                    contact_disconnected_event(r.id);
                 }
                 else
                 {
@@ -405,6 +445,21 @@ namespace fire
         {
             REQUIRE(_session_service);
             _session_service->create_session();
+        }
+
+        void main_window::create_session(QString id)
+        {
+            REQUIRE(_session_service);
+
+            auto sid = convert(id);
+
+            auto c = _user_service->user().contacts().by_id(sid);
+            if(!c) return;
+
+            us::contact_list l;
+            l.add(c);
+            
+            _session_service->create_session(l);
         }
 
         void main_window::rename_session()
@@ -429,16 +484,46 @@ namespace fire
             _sessions->setTabText(_sessions->currentIndex(), name);
         }
 
-        void main_window::new_session(const std::string& id)
+        void main_window::attach_start_screen()
+        {
+            INVARIANT(_start_screen);
+            INVARIANT(_sessions);
+
+            if(_start_screen_attached) return;
+
+            _sessions->addTab(_start_screen, "start");
+            _sessions->show();
+            _start_screen_attached = true;
+
+            ENSURE(_start_screen_attached);
+            ENSURE(_sessions->isVisible());
+        }
+
+        void main_window::show_alert(QWidget* a)
+        {
+            REQUIRE(a);
+            INVARIANT(_alert_screen);
+
+            if(!_alert_screen->isVisible())
+            {
+                attach_start_screen();
+                CHECK(_sessions->isVisible());
+
+                _alert_screen->show();
+                _sessions->addTab(_alert_screen, "alert");
+            }
+
+            _alerts->add(a);
+
+            ENSURE(_sessions->isVisible());
+        }
+
+        void main_window::new_session_event(const std::string& id)
         {
             REQUIRE(_session_service);
             REQUIRE(_sessions);
 
-            if(_start_screen->isVisible())
-            {
-                _start_screen->hide();
-                _sessions->show();
-            }
+            attach_start_screen();
 
             auto s = _session_service->session_by_id(id);
             if(!s) return;
@@ -454,6 +539,79 @@ namespace fire
             _sessions->addTab(sw, name.c_str());
 
             ENSURE(_sessions->isVisible());
+        }
+
+        void main_window::new_contact_event(const std::string& id)
+        {
+            INVARIANT(_user_service);
+            auto p = _user_service->pending_requests().find(id);
+            if(p == _user_service->pending_requests().end()) return;
+
+            auto c = p->second.from;
+            CHECK(c);
+
+            std::stringstream s;
+            s << "<b>" << c->name() << "</b> wants to connect " << std::endl;
+
+            auto w = new QWidget;
+            auto l = new QHBoxLayout;
+            w->setLayout(l);
+
+            auto t = new QLabel{s.str().c_str()};
+            auto b = new QPushButton{"contact list"};
+
+            l->addWidget(t);
+            l->addWidget(b);
+
+            connect(b, SIGNAL(clicked()), this, SLOT(show_contact_list()));
+
+            show_alert(w);
+        }
+
+        void main_window::contact_connected_event(const std::string& id)
+        {
+            INVARIANT(_user_service);
+
+            auto c = _user_service->user().contacts().by_id(id);
+            if(!c) return;
+
+            std::stringstream s;
+            s << "<b>" << c->name() << "</b> is online" << std::endl;
+
+            auto w = new QWidget;
+            auto l = new QHBoxLayout;
+            w->setLayout(l);
+
+            auto t = new QLabel(s.str().c_str());
+            l->addWidget(t);
+
+            auto b = new QPushButton("new session");
+            l->addWidget(b);
+            auto m = new QSignalMapper(w);
+
+            m->setMapping(b, QString{id.c_str()});
+            connect(b, SIGNAL(clicked()), m, SLOT(map()));
+            connect(m, SIGNAL(mapped(QString)), this, SLOT(create_session(QString)));
+
+            show_alert(w);
+        }
+
+        void main_window::contact_disconnected_event(const std::string& id)
+        {
+            INVARIANT(_user_service);
+
+            auto c = _user_service->user().contacts().by_id(id);
+            if(!c) return;
+
+            std::stringstream s;
+            s << "<b>" << c->name() << "</b> disconnected" << std::endl;
+
+            auto w = new QWidget;
+            auto l = new QHBoxLayout;
+            w->setLayout(l);
+            auto t = new QLabel{s.str().c_str()};
+            l->addWidget(t);
+            show_alert(w);
         }
     }
 }
