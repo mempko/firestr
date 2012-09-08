@@ -28,9 +28,11 @@ namespace fire
         }
 
         void send_thread(post_office* o)
+        try
         {
             REQUIRE(o);
             while(!o->_done)
+            try
             {
                 bool sent = false;
 
@@ -53,6 +55,19 @@ namespace fire
 
                 if(!sent) util::sleep_thread(THREAD_SLEEP);
             }
+            catch(std::exception& e)
+            {
+                INVARIANT(o);
+                std::cerr << "Error sending message in post_office `" << o->address() << "'. " << e.what() << std::endl; 
+            }
+            catch(...)
+            {
+                std::cerr << "Unexpected error sending message in post_office `" << o->address() << "'." << std::endl; 
+            }
+        }
+        catch(...)
+        {
+            std::cerr << "exit: postoffice::send_thread" << std::endl;
         }
          
         post_office::post_office() :
