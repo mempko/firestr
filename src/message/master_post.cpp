@@ -33,6 +33,7 @@ namespace fire
         }
 
         void in_thread(master_post_office* o)
+        try
         {
             REQUIRE(o);
             REQUIRE(o->_in);
@@ -47,7 +48,6 @@ namespace fire
                     u::sleep_thread(THREAD_SLEEP);
                     continue;
                 }
-
 
                 //parse message
                 std::stringstream s(u::to_str(data));
@@ -69,8 +69,13 @@ namespace fire
                 std::cerr << "error recieving message: unknown error." << std::endl;
             }
         }
+        catch(...)
+        {
+            std::cerr << "exit: master_post::in_thread" << std::endl;
+        }
 
         void out_thread(master_post_office* o)
+        try
         {
             REQUIRE(o);
 
@@ -126,6 +131,10 @@ namespace fire
             {
                 std::cerr << "error sending message to " << last_address << ": unknown error." << std::endl;
             }
+        }
+        catch(...)
+        {
+            std::cerr << "exit: master_post::out_thread" << std::endl;
         }
 
         master_post_office::master_post_office(

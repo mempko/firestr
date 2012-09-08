@@ -33,6 +33,7 @@ namespace fire
         }
 
         void service_thread(service* s)
+        try
         {
             REQUIRE(s);
             REQUIRE(s->_mail);
@@ -57,6 +58,11 @@ namespace fire
                 std::cerr << "Unknown error recieving message for mailbox " << s->_address << std::endl;
             }
         }
+        catch(...)
+        {
+            std::cerr << "exit: service::service_thread" << std::endl;
+        }
+
 
         service::service(
                 const std::string& address, 

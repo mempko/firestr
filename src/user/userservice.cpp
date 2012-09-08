@@ -410,11 +410,13 @@ namespace fire
         bool available(size_t ticks) { return ticks <= PING_THRESH; }
 
         void ping_thread(user_service* s)
+        try
         {
             size_t send_ticks = 0;
             REQUIRE(s);
             REQUIRE(s->_user);
             while(!s->_done)
+            try
             {
                 if(send_ticks > PING_TICKS)
                 {
@@ -464,6 +466,18 @@ namespace fire
                 }
                 u::sleep_thread(PING_THREAD_SLEEP);
             }
+            catch(std::exception& e)
+            {
+                std::cerr << "Error in ping thread: " << e.what() << std::endl;
+            }
+            catch(...)
+            {
+                std::cerr << "Unexpected error in ping thread." << std::endl;
+            }
+        }
+        catch(...)
+        {
+            std::cerr << "exit: user_service::ping_thread" << std::endl;
         }
 
         bool user_service::contact_available(const std::string& id) const

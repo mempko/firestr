@@ -424,6 +424,7 @@ namespace fire
         }
 
         void main_window::check_mail()
+        try
         {
             INVARIANT(_mail);
 
@@ -470,6 +471,14 @@ namespace fire
             {
                 std::cerr << "Unexpected error recieving message in `" << _mail->address() << "'" << std::endl;
             }
+        }
+        catch(std::exception& e)
+        {
+            std::cerr << "main_window: error in check_mail. " << e.what() << std::endl;
+        }
+        catch(...)
+        {
+            std::cerr << "main_window: unexpected error in check_mail." << std::endl;
         }
         
         void main_window::create_session()

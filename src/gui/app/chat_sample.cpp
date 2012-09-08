@@ -183,6 +183,7 @@ namespace fire
             }
 
             void chat_sample::check_mail() 
+            try
             {
                 INVARIANT(_mail);
                 INVARIANT(_session);
@@ -206,6 +207,14 @@ namespace fire
                         std::cerr << "chat sample recieved unknown message `" << m.meta.type << "'" << std::endl;
                     }
                 }
+            }
+            catch(std::exception& e)
+            {
+                std::cerr << "chat_sample: error in check_mail. " << e.what() << std::endl;
+            }
+            catch(...)
+            {
+                std::cerr << "chat_sample: unexpected error in check_mail." << std::endl;
             }
 
             void chat_sample::scroll_to_bottom(int min, int max)

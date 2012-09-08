@@ -103,6 +103,7 @@ namespace fire
         }
 
         void message_list::check_mail() 
+        try
         {
             INVARIANT(_session);
             INVARIANT(_session->mail());
@@ -124,6 +125,14 @@ namespace fire
                     add(new unknown_message{s.str()});
                 }
             }
+        }
+        catch(std::exception& e)
+        {
+            std::cerr << "message_list: error in check_mail. " << e.what() << std::endl;
+        }
+        catch(...)
+        {
+            std::cerr << "message_list: unexpected error in check_mail." << std::endl;
         }
     }
 }
