@@ -26,7 +26,7 @@
 
 #include <QObject>
 #include <QLabel>
-#include <QLineEdit>
+#include <QTextEdit>
 #include <QPushButton>
 #include <QComboBox>
 
@@ -40,6 +40,7 @@ namespace fire
     {
         namespace app
         {
+            typedef std::shared_ptr<SLB::Script> script_ptr;
             class script_sample : public message
             {
                 Q_OBJECT
@@ -54,13 +55,22 @@ namespace fire
                     const std::string& type();
                     fire::message::mailbox_ptr mail();
 
+
                 public slots:
                     void send_script();
                     void check_mail();
                     void scroll_to_bottom(int min, int max);
 
+                public:
+                    //LUA api
+                    void print(const std::string& a);
+
                 private:
                     void init();
+                    void bind();
+                    std::string execute(const std::string&);
+                    void run(const std::string name, const std::string&);
+
 
                 private:
                     std::string _id;
@@ -69,8 +79,10 @@ namespace fire
                     messages::sender_ptr _sender;
 
                     gui::list* _output;
-                    QLineEdit* _script;
+                    QTextEdit* _script;
                     QPushButton* _run;
+                    SLB::Manager _m;
+                    script_ptr _state;
             };
             extern const std::string SCRIPT_SAMPLE;
 

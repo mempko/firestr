@@ -24,6 +24,8 @@
 
 #include <QTimer>
 
+#include <functional>
+
 namespace m = fire::message;
 namespace ms = fire::messages;
 namespace us = fire::user;
@@ -40,9 +42,9 @@ namespace fire
 
             namespace
             {
-                const size_t TIMER_SLEEP = 100;//in milliseconds
+                const size_t TIMER_SLEEP = 100; //in milliseconds
                 const size_t PADDING = 20;
-                const std::string MESSAGE = "m";
+                const std::string MESSAGE = "script";
             }
 
             struct text_script
@@ -79,6 +81,7 @@ namespace fire
                 _session{session}
             {
                 REQUIRE(session);
+                bind();
                 init();
             }
 
@@ -88,6 +91,7 @@ namespace fire
                 _session{session}
             {
                 REQUIRE(session);
+                bind();
                 init();
             }
 
@@ -111,14 +115,13 @@ namespace fire
                 layout()->addWidget(_output, 0, 0, 1, 2);
 
                 //text edit
-                _script = new QLineEdit;
-                layout()->addWidget(_script, 1, 0);
+                _script = new QTextEdit;
+                layout()->addWidget(_script, 1, 0, 1, 2);
 
                 //send button
                 _run = new QPushButton{"run"};
-                layout()->addWidget(_run, 1, 1);
+                layout()->addWidget(_run, 2, 1);
 
-                connect(_script, SIGNAL(returnPressed()), this, SLOT(send_script()));
                 connect(_run, SIGNAL(clicked()), this, SLOT(send_script()));
 
                 setMinimumHeight(layout()->sizeHint().height() + PADDING);
@@ -142,6 +145,24 @@ namespace fire
                 INVARIANT(_sender);
             }
 
+            void script_sample::bind()
+            {  
+                using namespace std::placeholders;
+                SLB::Class<script_sample, SLB::Instance::NoCopyNoDestroy>{"App", &_m}
+                    .set("print", &script_sample::print);
+
+                _state.reset(new SLB::Script{&_m});
+                _state->set("app", this);
+                INVARIANT(_state);
+            }
+
+
+            void script_sample::print(const std::string& a)
+            {
+                auto self = _session->user_service()->user().info().name();
+                _output->add(make_script_widget(self, a));
+            }
+
             const std::string& script_sample::id()
             {
                 ENSURE_FALSE(_id.empty());
@@ -160,29 +181,56 @@ namespace fire
                 return _mail;
             }
 
+            std::string script_sample::execute(const std::string& s)
+            try
+            {
+                INVARIANT(_state);
+                _state->doString(s.c_str());
+                return "";
+            }
+            catch(std::exception& e)
+            {
+                return e.what();
+            }
+            catch(...)
+            {
+                return "unknown";
+            }
+
+            void script_sample::run(const std::string name, const std::string& code)
+            {
+                _output->add(make_script_widget(name, "code: " + code));
+                auto error = execute(code);
+                if(!error.empty()) _output->add(make_script_widget(name, "error: " + error));
+            }
+
             void script_sample::send_script()
             {
                 INVARIANT(_script);
                 INVARIANT(_run);
                 INVARIANT(_session);
 
-                auto text = gui::convert(_script->text());
+                //get the code
+                auto code = gui::convert(_script->toPlainText());
                 _script->clear();
 
-                auto self = _session->user_service()->user().info().name();
-                _output->add(make_script_widget(self, text));
-
+                //send the code
                 text_script tm;
-                tm.text = text;
+                tm.text = code;
 
                 for(auto c : _session->contacts().list())
                 {
                     CHECK(c);
                     _sender->send(c->id(), convert(tm)); 
                 }
+
+                //run the code
+                auto self = _session->user_service()->user().info().name();
+                run(self, code);
             }
 
             void script_sample::check_mail() 
+            try
             {
                 INVARIANT(_mail);
                 INVARIANT(_session);
@@ -198,7 +246,7 @@ namespace fire
                         auto c = _session->contacts().by_id(t.from_id);
                         if(!c) continue;
 
-                        _output->add(make_script_widget(c->name(), t.text));
+                        run(c->name(), t.text);
                         _output->verticalScrollBar()->scroll(0, _output->verticalScrollBar()->maximum());
                     }
                     else
@@ -206,6 +254,14 @@ namespace fire
                         std::cerr << "chat sample recieved unknown message `" << m.meta.type << "'" << std::endl;
                     }
                 }
+            }
+            catch(std::exception& e)
+            {
+                std::cerr << "script_sample: error in check_mail. " << e.what() << std::endl;
+            }
+            catch(...)
+            {
+                std::cerr << "script_sample: unexpected error in check_mail." << std::endl;
             }
 
             void script_sample::scroll_to_bottom(int min, int max)
