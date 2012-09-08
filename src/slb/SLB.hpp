@@ -30,7 +30,7 @@
 
 // Enable to compile thread safety support
 #ifndef SLB_THREAD_SAFE
-  #define SLB_THREAD_SAFE 0
+  #define SLB_THREAD_SAFE 1
 #endif
 
 // Enable to support exceptions, otherwise asserts will be used
