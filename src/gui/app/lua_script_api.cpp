@@ -52,7 +52,10 @@ namespace fire
                 layout = new QGridLayout;
                 canvas->setLayout(layout);
 
+                //init mappers
                 button_mapper = new QSignalMapper(canvas);
+                edit_text_edited_mapper = new QSignalMapper(canvas);
+                edit_finished_mapper = new QSignalMapper(canvas);
 
                 //message list
                 output = new list;
@@ -62,6 +65,8 @@ namespace fire
                 INVARIANT(canvas);
                 INVARIANT(layout);
                 INVARIANT(button_mapper);
+                INVARIANT(edit_text_edited_mapper);
+                INVARIANT(edit_finished_mapper);
                 INVARIANT(output);
                 INVARIANT(state);
             }
@@ -73,16 +78,28 @@ namespace fire
                 using namespace std::placeholders;
                 SLB::Class<lua_script_api, SLB::Instance::NoCopyNoDestroy>{"Api", &manager}
                     .set("print", &lua_script_api::print)
-                    .set("button", &lua_script_api::button);
+                    .set("button", &lua_script_api::make_button)
+                    .set("edit", &lua_script_api::make_edit);
 
                 SLB::Class<button_ref>{"button", &manager}
                     .set("get_text", &button_ref::get_text)
                     .set("set_text", &button_ref::set_text)
                     .set("get_callback", &button_ref::get_callback)
-                    .set("set_callback", &button_ref::set_callback)
+                    .set("when_clicked", &button_ref::set_callback)
                     .set("enabled", &button_ref::enabled)
                     .set("enable", &button_ref::enable)
                     .set("disable", &button_ref::disable);
+
+                SLB::Class<edit_ref>{"edit", &manager}
+                    .set("get_text", &edit_ref::get_text)
+                    .set("set_text", &edit_ref::set_text)
+                    .set("get_edited_callback", &edit_ref::get_text_edited_callback)
+                    .set("when_edited", &edit_ref::set_text_edited_callback)
+                    .set("get_finished_callback", &edit_ref::get_finished_callback)
+                    .set("when_finished", &edit_ref::set_finished_callback)
+                    .set("enabled", &edit_ref::enabled)
+                    .set("enable", &edit_ref::enable)
+                    .set("disable", &edit_ref::disable);
 
                 state.reset(new SLB::Script{&manager});
                 state->set("str", this);
@@ -126,6 +143,22 @@ namespace fire
 
 
             //API implementation 
+            template<class M>
+                typename M::mapped_type get_widget(const std::string& id, M& map)
+                {
+                    auto wp = map.find(id);
+                    return wp != map.end() ? wp->second : nullptr;
+                }
+
+            template<class widget_ref, class M>
+                void set_enabled(widget_ref& wr, M& map, bool enabled)
+                {
+                    auto w = get_widget(wr.id, map);
+                    if(!w) return;
+
+                    w->setEnabled(enabled);
+                }
+
             void lua_script_api::print(const std::string& a)
             {
                 INVARIANT(session);
@@ -136,13 +169,13 @@ namespace fire
                 output->add(make_output_widget(self, a));
             }
 
-            button_ref lua_script_api::button(const std::string& text, const std::string& callback, int r, int c)
+            button_ref lua_script_api::make_button(const std::string& text, int r, int c)
             {
                 INVARIANT(layout);
                 INVARIANT(button_mapper);
 
                 //create button reference
-                button_ref ref{u::uuid(), text, callback, this};
+                button_ref ref{u::uuid(), text, "", this};
 
                 //create button widget
                 auto b = new QPushButton(text.c_str());
@@ -158,7 +191,7 @@ namespace fire
                 button_widgets[ref.id] = b;
 
                 ENSURE_EQUAL(ref.text, text);
-                ENSURE_EQUAL(ref.callback, callback);
+                ENSURE(ref.callback.empty());
                 ENSURE(ref.api);
                 return ref;
             }
@@ -173,13 +206,7 @@ namespace fire
                 const auto& callback = rp->second.callback;
                 if(callback.empty()) return;
 
-                state->call(rp->second.callback);
-            }
-
-            QPushButton* get_widget(const button_ref& r, lua_script_api& api)
-            {
-                auto wp = api.button_widgets.find(r.id);
-                return wp != api.button_widgets.end() ? wp->second : nullptr;
+                state->call(callback);
             }
 
             void button_ref::set_text(const std::string& t)
@@ -189,7 +216,7 @@ namespace fire
                 auto rp = api->button_refs.find(id);
                 if(rp == api->button_refs.end()) return;
 
-                auto button = get_widget(*this, *api);
+                auto button = get_widget(id, api->button_widgets);
                 CHECK(button);
 
                 rp->second.text = t;
@@ -211,31 +238,141 @@ namespace fire
             bool button_ref::enabled()
             {
                 INVARIANT(api);
-
-                auto button = get_widget(*this, *api);
-                if(!button) return false;
-
-                return button->isEnabled();
+                auto button = get_widget(id, api->button_widgets);
+                return button ? button->isEnabled() : false;
             }
 
             void button_ref::enable()
             {
                 INVARIANT(api);
 
-                auto button = get_widget(*this, *api);
-                if(!button) return;
-
-                button->setEnabled(true);
+                set_enabled(*this, api->button_widgets, true);
             }
 
             void button_ref::disable()
             {
                 INVARIANT(api);
 
-                auto button = get_widget(*this, *api);
-                if(!button) return;
+                set_enabled(*this, api->button_widgets, false);
+            }
 
-                button->setEnabled(false);
+            edit_ref lua_script_api::make_edit(const std::string& text, int r, int c)
+            {
+                INVARIANT(layout);
+                INVARIANT(edit_text_edited_mapper);
+                INVARIANT(edit_finished_mapper);
+
+                //create edit reference
+                std::string text_edited_callback = "";
+                std::string finished_callback = "";
+                edit_ref ref{u::uuid(), text, text_edited_callback, finished_callback, this};
+
+                //create edit widget
+                auto e = new QLineEdit(text.c_str());
+                layout->addWidget(e, r, c);
+
+                //map edit to C++ callback
+                edit_text_edited_mapper->setMapping(e, QString(ref.id.c_str()));
+                connect(e, SIGNAL(textChanged(QString)), edit_text_edited_mapper, SLOT(map()));
+                connect(edit_text_edited_mapper, SIGNAL(mapped(QString)), this, SLOT(edit_text_edited(QString)));
+
+                edit_finished_mapper->setMapping(e, QString(ref.id.c_str()));
+                connect(e, SIGNAL(editingFinished()), edit_finished_mapper, SLOT(map()));
+                connect(edit_finished_mapper, SIGNAL(mapped(QString)), this, SLOT(edit_finished(QString)));
+
+                //add ref and widget to maps
+                edit_refs[ref.id] = ref;
+                edit_widgets[ref.id] = e;
+
+                ENSURE_EQUAL(ref.text, text);
+                ENSURE(ref.text_edited_callback.empty());
+                ENSURE(ref.finished_callback.empty());
+                ENSURE(ref.api);
+                return ref;
+            }
+
+            void lua_script_api::edit_text_edited(QString id)
+            {
+                INVARIANT(state);
+
+                auto rp = edit_refs.find(gui::convert(id));
+                if(rp == edit_refs.end()) return;
+
+                const auto& callback = rp->second.text_edited_callback;
+                if(callback.empty()) return;
+
+                state->call(callback);
+            }
+
+            void lua_script_api::edit_finished(QString id)
+            {
+                INVARIANT(state);
+
+                auto rp = edit_refs.find(gui::convert(id));
+                if(rp == edit_refs.end()) return;
+
+                const auto& callback = rp->second.finished_callback;
+                if(callback.empty()) return;
+
+                state->call(callback);
+            }
+
+            void edit_ref::set_text(const std::string& t)
+            {
+                INVARIANT(api);
+
+                auto rp = api->edit_refs.find(id);
+                if(rp == api->edit_refs.end()) return;
+
+                auto edit = get_widget(id, api->edit_widgets);
+                CHECK(edit);
+
+                rp->second.text = t;
+                text = t;
+                edit->setText(t.c_str());
+            }
+
+            void edit_ref::set_text_edited_callback(const std::string& c)
+            {
+                INVARIANT(api);
+
+                auto rp = api->edit_refs.find(id);
+                if(rp == api->edit_refs.end()) return;
+
+                rp->second.text_edited_callback = c;
+                text_edited_callback = c;
+            }
+
+            void edit_ref::set_finished_callback(const std::string& c)
+            {
+                INVARIANT(api);
+
+                auto rp = api->edit_refs.find(id);
+                if(rp == api->edit_refs.end()) return;
+
+                rp->second.finished_callback = c;
+                finished_callback = c;
+            }
+
+            bool edit_ref::enabled()
+            {
+                INVARIANT(api);
+                auto edit = get_widget(id, api->edit_widgets);
+                return edit ? edit->isEnabled() : false;
+            }
+
+            void edit_ref::enable()
+            {
+                INVARIANT(api);
+
+                set_enabled(*this, api->edit_widgets, true);
+            }
+
+            void edit_ref::disable()
+            {
+                INVARIANT(api);
+
+                set_enabled(*this, api->edit_widgets, false);
             }
         }
     }

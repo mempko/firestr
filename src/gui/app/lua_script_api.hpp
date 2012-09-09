@@ -60,9 +60,34 @@ namespace fire
 
                 lua_script_api* api;
             };
-
             typedef std::map<std::string, button_ref> button_ref_map;
             typedef std::map<std::string, QPushButton*> button_widget_map;
+
+            struct edit_ref
+            {
+                std::string id;
+                std::string text;
+                std::string text_edited_callback;
+                std::string finished_callback;
+
+                const std::string& get_text() const { return text;}
+                void set_text(const std::string&);
+
+                const std::string& get_text_edited_callback() const { return text_edited_callback;}
+                void set_text_edited_callback(const std::string&);  
+
+                const std::string& get_finished_callback() const { return finished_callback;}
+                void set_finished_callback(const std::string&);  
+
+                bool enabled(); 
+                void enable();
+                void disable();
+
+                lua_script_api* api;
+            };
+            typedef std::map<std::string, edit_ref> edit_ref_map;
+            typedef std::map<std::string, QLineEdit*> edit_widget_map;
+
             typedef std::shared_ptr<SLB::Script> script_ptr;
 
             class lua_script_api : public QObject
@@ -83,20 +108,30 @@ namespace fire
                     session::session_ptr session;
                     messages::sender_ptr sender;
 
-                    button_ref_map button_refs;
-                    button_widget_map button_widgets;
-                    QSignalMapper* button_mapper;
-
                     void bind();
                     std::string execute(const std::string&);
                     void run(const std::string name, const std::string&);
 
-                    //exposed functions
+                    //button_ref code
+                    button_ref_map button_refs;
+                    button_widget_map button_widgets;
+                    QSignalMapper* button_mapper;
+
+                    //edit_ref code
+                    edit_ref_map edit_refs;
+                    edit_widget_map edit_widgets;
+                    QSignalMapper* edit_text_edited_mapper;
+                    QSignalMapper* edit_finished_mapper;
+
+                    //API
                     void print(const std::string& a);
-                    button_ref button(const std::string& title, const std::string& callback, int r = 0, int c = 0);
+                    button_ref make_button(const std::string& title, int r = 0, int c = 0);
+                    edit_ref make_edit(const std::string& title, int r = 0, int c = 0);
 
                     public slots:
                         void button_clicked(QString id);
+                        void edit_text_edited(QString id);
+                        void edit_finished(QString id);
             };
 
             typedef std::shared_ptr<lua_script_api> lua_script_api_ptr;
