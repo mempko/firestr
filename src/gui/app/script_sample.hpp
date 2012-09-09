@@ -29,6 +29,7 @@
 #include <QTextEdit>
 #include <QPushButton>
 #include <QComboBox>
+#include <QSignalMapper>
 
 #include "slb/SLB.hpp"
 
@@ -40,7 +41,62 @@ namespace fire
     {
         namespace app
         {
+            class api_impl;
+            struct button_ref
+            {
+                std::string id;
+                std::string text;
+                std::string callback;
+
+                const std::string& get_text() const { return text;}
+                void set_text(const std::string&);
+
+                const std::string& get_callback() const { return callback;}
+                void set_callback(const std::string&);  
+
+                bool enabled(); 
+                void enable();
+                void disable();
+
+                api_impl* api;
+            };
+
+            typedef std::map<std::string, button_ref> button_ref_map;
+            typedef std::map<std::string, QPushButton*> button_widget_map;
             typedef std::shared_ptr<SLB::Script> script_ptr;
+
+            class api_impl : public QObject
+            {
+                Q_OBJECT
+
+                public:
+                    gui::list* output;
+                    QWidget* canvas;
+                    QGridLayout* layout;
+                    SLB::Manager manager;
+                    script_ptr state;
+
+                    session::session_ptr session;
+                    messages::sender_ptr sender;
+
+                    button_ref_map button_refs;
+                    button_widget_map button_widgets;
+                    QSignalMapper* button_mapper;
+
+                    void bind();
+                    std::string execute(const std::string&);
+                    void run(const std::string name, const std::string&);
+
+                    //exposed functions
+                    void print(const std::string& a);
+                    button_ref button(const std::string& title, const std::string& callback, int r = 0, int c = 0);
+
+                    public slots:
+                        void button_clicked(QString id);
+            };
+
+            typedef std::shared_ptr<api_impl> api_impl_ptr;
+
             class script_sample : public message
             {
                 Q_OBJECT
@@ -55,22 +111,13 @@ namespace fire
                     const std::string& type();
                     fire::message::mailbox_ptr mail();
 
-
                 public slots:
                     void send_script();
                     void check_mail();
                     void scroll_to_bottom(int min, int max);
 
-                public:
-                    //LUA api
-                    void print(const std::string& a);
-
                 private:
                     void init();
-                    void bind();
-                    std::string execute(const std::string&);
-                    void run(const std::string name, const std::string&);
-
 
                 private:
                     std::string _id;
@@ -78,11 +125,10 @@ namespace fire
                     fire::message::mailbox_ptr _mail;
                     messages::sender_ptr _sender;
 
-                    gui::list* _output;
                     QTextEdit* _script;
                     QPushButton* _run;
-                    SLB::Manager _m;
-                    script_ptr _state;
+
+                    api_impl_ptr _api;
             };
             extern const std::string SCRIPT_SAMPLE;
 

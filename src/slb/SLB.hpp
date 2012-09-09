@@ -4489,6 +4489,19 @@ namespace SLB {
     // print function from the scripts in order t
     void setPrintCallback( PrintCallback );
 
+    template<class P1>
+        void call(const std::string& f, P1 p1)
+        {
+            LuaCall<void(P1)> call(getState(), f.c_str());
+            call(p1);
+        }
+
+        void call(const std::string& f)
+        {
+            LuaCall<void(void)> call(getState(), f.c_str());
+            call();
+        }
+
   protected:
     virtual void onNewState(lua_State * /*L*/) {}
     virtual void onCloseState(lua_State * /*L*/) {}
