@@ -72,13 +72,10 @@ namespace fire
             script_sample::script_sample(s::session_ptr session) :
                 message{},
                 _id{u::uuid()},
-                _session{session},
-                _api{new api_impl}
-                
+                _session{session}
             {
                 REQUIRE(session);
 
-                _api->bind();
                 init();
 
                 ENSURE(_api);
@@ -87,12 +84,10 @@ namespace fire
             script_sample::script_sample(const std::string& id, s::session_ptr session) :
                 message{},
                 _id{id},
-                _session{session},
-                _api{new api_impl}
+                _session{session}
             {
                 REQUIRE(session);
 
-                _api->bind();
                 init();
 
                 ENSURE(_api);
@@ -111,22 +106,10 @@ namespace fire
 
                 _mail.reset(new m::mailbox{_id});
                 _sender.reset(new ms::sender{_session->user_service(), _mail});
+                _api.reset(new lua_script_api{_sender, _session});
 
-                //setup api widgets
-                _api->sender = _sender;
-                _api->session = _session;
-
-                //canvas
-                _api->canvas = new QWidget;
-                _api->layout = new QGridLayout;
-                _api->canvas->setLayout(_api->layout);
-
-                _api->button_mapper = new QSignalMapper(_api->canvas);
-
+                //connect api widgets 
                 layout()->addWidget(_api->canvas, 0, 0, 1, 2);
-
-                //message list
-                _api->output = new list;
                 QObject::connect(_api->output->verticalScrollBar(), SIGNAL(rangeChanged(int, int)), this, SLOT(scroll_to_bottom(int, int)));
                 layout()->addWidget(_api->output, 1, 0, 1, 2);
 
@@ -150,30 +133,6 @@ namespace fire
                 INVARIANT(_session);
                 INVARIANT(_mail);
                 INVARIANT(_sender);
-            }
-
-            void api_impl::bind()
-            {  
-                REQUIRE_FALSE(state);
-
-                using namespace std::placeholders;
-                SLB::Class<api_impl, SLB::Instance::NoCopyNoDestroy>{"Api", &manager}
-                    .set("print", &api_impl::print)
-                    .set("button", &api_impl::button);
-
-                SLB::Class<button_ref>{"button", &manager}
-                    .set("get_text", &button_ref::get_text)
-                    .set("set_text", &button_ref::set_text)
-                    .set("get_callback", &button_ref::get_callback)
-                    .set("set_callback", &button_ref::set_callback)
-                    .set("enabled", &button_ref::enabled)
-                    .set("enable", &button_ref::enable)
-                    .set("disable", &button_ref::disable);
-
-                state.reset(new SLB::Script{&manager});
-                state->set("str", this);
-
-                ENSURE(state);
             }
 
             const std::string& script_sample::id()
@@ -261,154 +220,6 @@ namespace fire
                 Q_UNUSED(min);
                 INVARIANT(_api->output);
                 _api->output->verticalScrollBar()->setValue(max);
-            }
-
-            QWidget* make_script_widget(const std::string& name, const std::string& text)
-            {
-                std::string m = "<b>" + name + "</b>: " + text; 
-                return new QLabel{m.c_str()};
-            }
-
-            std::string api_impl::execute(const std::string& s)
-            try
-            {
-                REQUIRE_FALSE(s.empty());
-                INVARIANT(state);
-
-                state->doString(s.c_str());
-                return "";
-            }
-            catch(std::exception& e)
-            {
-                return e.what();
-            }
-            catch(...)
-            {
-                return "unknown";
-            }
-
-            void api_impl::run(const std::string name, const std::string& code)
-            {
-                INVARIANT(output);
-                REQUIRE_FALSE(code.empty());
-
-                output->add(make_script_widget(name, "code: " + code));
-                auto error = execute(code);
-                if(!error.empty()) output->add(make_script_widget(name, "error: " + error));
-            }
-
-
-            //API implementation 
-            void api_impl::print(const std::string& a)
-            {
-                INVARIANT(session);
-                INVARIANT(output);
-                INVARIANT(session->user_service());
-
-                auto self = session->user_service()->user().info().name();
-                output->add(make_script_widget(self, a));
-            }
-
-            button_ref api_impl::button(const std::string& text, const std::string& callback, int r, int c)
-            {
-                INVARIANT(layout);
-                INVARIANT(button_mapper);
-
-                //create button reference
-                button_ref ref{u::uuid(), text, callback, this};
-
-                //create button widget
-                auto b = new QPushButton(text.c_str());
-                layout->addWidget(b, r, c);
-
-                //map button to C++ callback
-                button_mapper->setMapping(b, QString(ref.id.c_str()));
-                connect(b, SIGNAL(clicked()), button_mapper, SLOT(map()));
-                connect(button_mapper, SIGNAL(mapped(QString)), this, SLOT(button_clicked(QString)));
-
-                //add ref and widget to maps
-                button_refs[ref.id] = ref;
-                button_widgets[ref.id] = b;
-
-                ENSURE_EQUAL(ref.text, text);
-                ENSURE_EQUAL(ref.callback, callback);
-                ENSURE(ref.api);
-                return ref;
-            }
-
-            void api_impl::button_clicked(QString id)
-            {
-                INVARIANT(state);
-
-                auto rp = button_refs.find(gui::convert(id));
-                if(rp == button_refs.end()) return;
-
-                const auto& callback = rp->second.callback;
-                if(callback.empty()) return;
-
-                state->call(rp->second.callback);
-            }
-
-            QPushButton* get_widget(const button_ref& r, api_impl& api)
-            {
-                auto wp = api.button_widgets.find(r.id);
-                return wp != api.button_widgets.end() ? wp->second : nullptr;
-            }
-
-            void button_ref::set_text(const std::string& t)
-            {
-                INVARIANT(api);
-
-                auto rp = api->button_refs.find(id);
-                if(rp == api->button_refs.end()) return;
-
-                auto button = get_widget(*this, *api);
-                CHECK(button);
-
-                rp->second.text = t;
-                text = t;
-                button->setText(t.c_str());
-            }
-
-            void button_ref::set_callback(const std::string& c)
-            {
-                INVARIANT(api);
-
-                auto rp = api->button_refs.find(id);
-                if(rp == api->button_refs.end()) return;
-
-                rp->second.callback = c;
-                callback = c;
-            }  
-
-            bool button_ref::enabled()
-            {
-                INVARIANT(api);
-
-                auto button = get_widget(*this, *api);
-                if(!button) return false;
-
-                return button->isEnabled();
-            }
-
-            void button_ref::enable()
-            {
-                INVARIANT(api);
-
-                auto button = get_widget(*this, *api);
-                if(!button) return;
-
-                button->setEnabled(true);
-            }
-
-            void button_ref::disable()
-            {
-                INVARIANT(api);
-
-                auto button = get_widget(*this, *api);
-                if(!button) return;
-
-                button->setEnabled(false);
             }
         }
     }
