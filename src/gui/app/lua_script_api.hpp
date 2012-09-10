@@ -45,10 +45,9 @@ namespace fire
             struct button_ref
             {
                 std::string id;
-                std::string text;
                 std::string callback;
 
-                const std::string& get_text() const { return text;}
+                std::string get_text() const; 
                 void set_text(const std::string&);
 
                 const std::string& get_callback() const { return callback;}
@@ -66,11 +65,10 @@ namespace fire
             struct edit_ref
             {
                 std::string id;
-                std::string text;
                 std::string text_edited_callback;
                 std::string finished_callback;
 
-                const std::string& get_text() const { return text;}
+                std::string get_text() const; 
                 void set_text(const std::string&);
 
                 const std::string& get_text_edited_callback() const { return text_edited_callback;}
