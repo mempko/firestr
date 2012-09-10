@@ -175,7 +175,8 @@ namespace fire
                 INVARIANT(button_mapper);
 
                 //create button reference
-                button_ref ref{u::uuid(), text, "", this};
+                std::string callback = "";
+                button_ref ref{u::uuid(), callback, this};
 
                 //create button widget
                 auto b = new QPushButton(text.c_str());
@@ -190,7 +191,7 @@ namespace fire
                 button_refs[ref.id] = ref;
                 button_widgets[ref.id] = b;
 
-                ENSURE_EQUAL(ref.text, text);
+                ENSURE_FALSE(ref.id.empty());
                 ENSURE(ref.callback.empty());
                 ENSURE(ref.api);
                 return ref;
@@ -209,6 +210,19 @@ namespace fire
                 state->call(callback);
             }
 
+            std::string button_ref::get_text() const
+            {
+                INVARIANT(api);
+
+                auto rp = api->button_refs.find(id);
+                if(rp == api->button_refs.end()) return "";
+
+                auto button = get_widget(id, api->button_widgets);
+                CHECK(button);
+
+                return gui::convert(button->text());
+            }
+
             void button_ref::set_text(const std::string& t)
             {
                 INVARIANT(api);
@@ -219,8 +233,6 @@ namespace fire
                 auto button = get_widget(id, api->button_widgets);
                 CHECK(button);
 
-                rp->second.text = t;
-                text = t;
                 button->setText(t.c_str());
             }
 
@@ -265,7 +277,7 @@ namespace fire
                 //create edit reference
                 std::string text_edited_callback = "";
                 std::string finished_callback = "";
-                edit_ref ref{u::uuid(), text, text_edited_callback, finished_callback, this};
+                edit_ref ref{u::uuid(), text_edited_callback, finished_callback, this};
 
                 //create edit widget
                 auto e = new QLineEdit(text.c_str());
@@ -284,7 +296,7 @@ namespace fire
                 edit_refs[ref.id] = ref;
                 edit_widgets[ref.id] = e;
 
-                ENSURE_EQUAL(ref.text, text);
+                ENSURE_FALSE(ref.id.empty());
                 ENSURE(ref.text_edited_callback.empty());
                 ENSURE(ref.finished_callback.empty());
                 ENSURE(ref.api);
@@ -317,6 +329,19 @@ namespace fire
                 state->call(callback);
             }
 
+            std::string edit_ref::get_text() const
+            {
+                INVARIANT(api);
+
+                auto rp = api->edit_refs.find(id);
+                if(rp == api->edit_refs.end()) return "";
+
+                auto edit = get_widget(id, api->edit_widgets);
+                CHECK(edit);
+
+                return gui::convert(edit->text());
+            }
+
             void edit_ref::set_text(const std::string& t)
             {
                 INVARIANT(api);
@@ -327,8 +352,6 @@ namespace fire
                 auto edit = get_widget(id, api->edit_widgets);
                 CHECK(edit);
 
-                rp->second.text = t;
-                text = t;
                 edit->setText(t.c_str());
             }
 
