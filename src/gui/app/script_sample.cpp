@@ -164,8 +164,6 @@ namespace fire
                 auto code = gui::convert(_script->toPlainText());
                 if(code.empty()) return;
 
-                _script->clear();
-
                 //send the code
                 text_script tm;
                 tm.text = code;
@@ -178,6 +176,7 @@ namespace fire
 
                 //run the code
                 auto self = _session->user_service()->user().info().name();
+                _api->reset_widgets();
                 _api->run(self, code);
             }
 
@@ -198,6 +197,8 @@ namespace fire
                         auto c = _session->contacts().by_id(t.from_id);
                         if(!c) continue;
 
+                        _script->setText(t.text.c_str());
+                        _api->reset_widgets();
                         _api->run(c->name(), t.text);
                     }
                     else

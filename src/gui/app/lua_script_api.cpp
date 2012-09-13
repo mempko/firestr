@@ -102,7 +102,7 @@ namespace fire
                     .set("disable", &edit_ref::disable);
 
                 state.reset(new SLB::Script{&manager});
-                state->set("str", this);
+                state->set("app", this);
 
                 ENSURE(state);
             }
@@ -131,16 +131,49 @@ namespace fire
                 return "unknown";
             }
 
+            void lua_script_api::reset_widgets()
+            {
+                INVARIANT(output);
+                INVARIANT(layout);
+
+                //clear widgets
+                QLayoutItem *c = 0;
+                while((c = layout->takeAt(0)) != 0)
+                {
+                    CHECK(c);
+                    CHECK(c->widget());
+
+                    delete c->widget();
+                    delete c;
+                } 
+
+                output->clear();
+                button_refs.clear();
+                button_widgets.clear();
+
+                edit_refs.clear();
+                edit_widgets.clear();
+
+                //reset mappers
+                delete button_mapper;
+                delete edit_text_edited_mapper;
+                delete edit_finished_mapper;
+
+                button_mapper = new QSignalMapper(canvas);
+                edit_text_edited_mapper = new QSignalMapper(canvas);
+                edit_finished_mapper = new QSignalMapper(canvas);
+
+                ENSURE_EQUAL(layout->count(), 0);
+            }
+
             void lua_script_api::run(const std::string name, const std::string& code)
             {
                 INVARIANT(output);
                 REQUIRE_FALSE(code.empty());
 
-                output->add(make_output_widget(name, "code: " + code));
                 auto error = execute(code);
                 if(!error.empty()) output->add(make_output_widget(name, "error: " + error));
             }
-
 
             //API implementation 
             template<class M>
