@@ -102,7 +102,7 @@ namespace fire
                 bf::directory_iterator end;
                 for (bf::directory_iterator d(app_dir); d != end; ++d)
                 {
-                    if (bf::is_directory(*d)) continue;
+                    if (!bf::is_directory(*d)) continue;
 
                     app_metadata m;
                     if(!load_app_metadata(d->path().string(), m)) continue;
