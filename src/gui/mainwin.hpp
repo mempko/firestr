@@ -19,6 +19,7 @@
 #define FIRESTR_MAINWIN_H
 
 #include <QMainWindow>
+#include <QSignalMapper>
 
 #include "gui/session.hpp"
 #include "message/postoffice.hpp"
@@ -54,6 +55,7 @@ namespace fire
                 void create_session();
                 void create_session(QString id);
                 void rename_session();
+                void load_app_into_session(QString id);
 
             private:
                 void setup_post(
@@ -62,6 +64,7 @@ namespace fire
                 void create_actions();
                 void create_main();
                 void create_menus();
+                void create_app_menu();
                 void make_new_user();
                 void setup_services(const std::string& ping);
                 void save_state();
@@ -92,6 +95,7 @@ namespace fire
                 QMenu *_app_menu;
                 QAction *_chat_sample_action;
                 QAction *_script_sample_action;
+                QSignalMapper* _new_app_mapper;
 
                 QTabWidget* _sessions;
                 QWidget* _start_screen;

@@ -4,6 +4,7 @@
 #include "gui/unknown_message.hpp"
 #include "gui/app/chat_sample.hpp"
 #include "gui/app/script_sample.hpp"
+#include "gui/app/script_app.hpp"
 #include "util/dbc.hpp"
 
 #include <sstream>
@@ -13,6 +14,8 @@ namespace ms = fire::messages;
 namespace us = fire::user;
 namespace s = fire::session;
 namespace a = fire::gui::app;
+namespace u = fire::util;
+
 
 namespace fire
 {
@@ -88,23 +91,34 @@ namespace fire
         void message_list::add_new_app(const ms::new_app& n) 
         {
             INVARIANT(_session);
+            INVARIANT(_app_service);
 
             if(n.type() == a::CHAT_SAMPLE)
             {
                 if(auto post = _session->parent_post().lock())
                 {
                     auto c = new a::chat_sample{n.id(), _session};
-                    add(c);
                     post->add(c->mail());
+                    add(c);
                 }
             }
             else if(n.type() == a::SCRIPT_SAMPLE)
             {
                 if(auto post = _session->parent_post().lock())
                 {
-                    auto c = new a::script_sample{n.id(), _session};
-                    add(c);
+                    auto c = new a::script_sample{n.id(), _app_service, _session};
                     post->add(c->mail());
+                    add(c);
+                }
+            }
+            else if(n.type() == a::SCRIPT_APP)
+            {
+                if(auto post = _session->parent_post().lock())
+                {
+                    app::app_ptr app{new app::app{u::decode<m::message>(n.data())}};
+                    auto c = new a::script_app{n.id(), app, _session};
+                    post->add(c->mail());
+                    add(c);
                 }
             }
             else

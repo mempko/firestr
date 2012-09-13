@@ -18,6 +18,7 @@
 
 #include "gui/app/chat_sample.hpp"
 #include "gui/app/script_sample.hpp"
+#include "gui/app/script_app.hpp"
 
 #include "gui/contactlist.hpp"
 #include "gui/message.hpp"
@@ -74,6 +75,7 @@ namespace fire
             _create_session_action(0),
             _rename_session_action(0),
             _main_menu(0),
+            _app_menu(0),
             _root(0),
             _layout(0),
             _sessions(0),
@@ -271,9 +273,7 @@ namespace fire
             _session_menu->addAction(_create_session_action);
             _session_menu->addAction(_rename_session_action);
 
-            _app_menu = new QMenu{tr("&App"), this};
-            _app_menu->addAction(_chat_sample_action);
-            _app_menu->addAction(_script_sample_action);
+            create_app_menu();
 
             menuBar()->addMenu(_main_menu);
             menuBar()->addMenu(_contact_menu);
@@ -283,6 +283,30 @@ namespace fire
             ENSURE(_main_menu);
             ENSURE(_contact_menu);
             ENSURE(_app_menu);
+        }
+
+        void main_window::create_app_menu()
+        {
+            REQUIRE_FALSE(_app_menu);
+            REQUIRE(_app_service);
+
+            _app_menu = new QMenu{tr("&App"), this};
+            _app_menu->addAction(_chat_sample_action);
+            _app_menu->addAction(_script_sample_action);
+
+            _new_app_mapper = new QSignalMapper{this};
+
+            for( auto p : _app_service->available_apps())
+            {
+                auto name = p.second.name;
+                auto id = p.second.id;
+                auto action  = new QAction{name.c_str(), this};
+                _new_app_mapper->setMapping(action, QString(id.c_str()));
+                connect(action, SIGNAL(triggered()), _new_app_mapper, SLOT(map()));
+                connect(_new_app_mapper, SIGNAL(mapped(QString)), this, SLOT(load_app_into_session(QString)));
+
+                _app_menu->addAction(action);
+            }
         }
 
         void main_window::setup_timers()
@@ -384,22 +408,19 @@ namespace fire
             //send new app message to contacts in session
             ms::new_app n{t->id(), t->type()}; 
 
-            for(auto c : s->session()->contacts().list())
-            {
-                CHECK(c);
-                s->session()->sender()->send(c->id(), n); 
-            }
+            s->session()->send(n);
         }
 
         void main_window::make_script_sample()
         {
             INVARIANT(_sessions);
+            INVARIANT(_app_service);
 
             auto s = dynamic_cast<session_widget*>(_sessions->currentWidget());
             if(!s) return;
 
             //create chat sample
-            auto t = new a::script_sample{s->session()};
+            auto t = new a::script_sample{_app_service, s->session()};
             s->add(t);
 
             //add to master post so it can recieve messages
@@ -409,11 +430,37 @@ namespace fire
             //send new app message to contacts in session
             ms::new_app n{t->id(), t->type()}; 
 
-            for(auto c : s->session()->contacts().list())
-            {
-                CHECK(c);
-                s->session()->sender()->send(c->id(), n); 
-            }
+            s->session()->send(n);
+        }
+
+        void main_window::load_app_into_session(QString qid)
+        {
+            INVARIANT(_app_service);
+            INVARIANT(_sessions);
+
+            //get current session
+            auto s = dynamic_cast<session_widget*>(_sessions->currentWidget());
+            if(!s) return;
+
+            //load app
+            auto id = convert(qid);
+            auto a = _app_service->load_app(id);
+            if(!a) return;
+
+            //create app widget
+            auto t = new a::script_app{a, s->session()};
+
+            //add to session
+            s->add(t);
+
+            //add widget mailbox to master
+            _master->add(t->mail());
+
+            //send new app message to contacts in session
+            m::message app_message = *a;
+            ms::new_app n{t->id(), t->type(), u::encode(app_message)}; 
+
+            s->session()->send(n);
         }
 
         void main_window::about()

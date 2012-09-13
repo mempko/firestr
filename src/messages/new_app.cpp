@@ -31,6 +31,18 @@ namespace fire
                 const std::string& type) :
             _id{id},
             _type{type},
+            _data{},
+            _from_id{}
+        {
+        }
+
+        new_app::new_app(
+                const std::string& id,
+                const std::string& type,
+                const u::bytes& data) :
+            _id{id},
+            _type{type},
+            _data{data},
             _from_id{}
         {
         }
@@ -42,6 +54,7 @@ namespace fire
             _id = m.meta.extra["app_id"].as_string();
             _type = m.meta.extra["app_type"].as_string();
             _from_id = m.meta.extra["from_id"].as_string();
+            _data = m.data;
         }
 
         new_app::operator message::message() const
@@ -50,6 +63,7 @@ namespace fire
             m.meta.type = NEW_APP;
             m.meta.extra["app_id"] = _id;
             m.meta.extra["app_type"] = _type;
+            m.data = _data;
             return m;
         }
 
@@ -61,6 +75,11 @@ namespace fire
         const std::string& new_app::type() const
         {
             return _type;
+        }
+
+        const u::bytes& new_app::data() const
+        {
+            return _data;
         }
 
         const std::string& new_app::from_id() const

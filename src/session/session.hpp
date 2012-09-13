@@ -43,6 +43,10 @@ namespace fire
                 user::contact_list& contacts(); 
 
             public:
+                bool send(const std::string& to, const message::message& m);
+                bool send(const message::message&);
+
+            public:
                 const std::string& id() const;
 
             public:

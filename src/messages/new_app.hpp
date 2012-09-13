@@ -18,6 +18,7 @@
 #define FIRESTR_MESSAGES_NEW_APP_H
 
 #include "message/message.hpp"
+#include "util/bytes.hpp"
 
 #include <string>
 
@@ -32,17 +33,23 @@ namespace fire
             public:
                 new_app();
                 new_app(const std::string& id, const std::string& type);
+                new_app(const std::string& id, const std::string& type, const util::bytes& data);
+
+            public:
                 new_app(const message::message&);
                 operator message::message() const;
+
             public:
                 const std::string& id() const;
                 const std::string& type() const;
                 const std::string& from_id() const;
+                const util::bytes& data() const;
 
             private:
                 std::string _id;
                 std::string _type;
                 std::string _from_id;
+                util::bytes _data;
         };
     }
 }

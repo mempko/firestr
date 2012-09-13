@@ -100,6 +100,21 @@ namespace fire
             ENSURE(_user_service);
             return _user_service;
         }
+
+        bool session::send(const std::string& to, const message::message& m)
+        {
+            INVARIANT(_sender);
+            _sender->send(to, m);
+        }
+
+        bool session::send(const message::message& m)
+        {
+            for(auto c : _contacts.list())
+            {
+                CHECK(c);
+                send(c->id(), m); 
+            }
+        }
     }
 }
 

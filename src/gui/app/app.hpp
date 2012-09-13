@@ -18,6 +18,8 @@
 #ifndef FIRESTR_GUI_APP_APP_H
 #define FIRESTR_GUI_APP_APP_H
 
+#include "message/message.hpp"
+
 #include <string>
 #include <memory>
 
@@ -36,8 +38,10 @@ namespace fire
             class app
             {
                 public:
-                    app(const std::string& id);
                     app();
+                    app(const std::string& id);
+                    app(const fire::message::message&);
+                    operator fire::message::message();
 
                 public:
                     const std::string& name() const;
