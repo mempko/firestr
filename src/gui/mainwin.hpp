@@ -25,6 +25,7 @@
 #include "user/userservice.hpp"
 #include "session/session.hpp"
 #include "session/session_service.hpp"
+#include "gui/app/app_service.hpp"
 
 namespace fire
 {
@@ -107,6 +108,7 @@ namespace fire
                 fire::message::mailbox_ptr _mail;
                 user::user_service_ptr _user_service;
                 session::session_service_ptr _session_service;
+                app::app_service_ptr _app_service;
                 std::string _home;
         };
     }

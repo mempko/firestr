@@ -332,6 +332,8 @@ namespace fire
         void main_window::setup_services(const std::string& ping)
         {
             REQUIRE_FALSE(_user_service);
+            REQUIRE_FALSE(_session_service);
+            REQUIRE_FALSE(_app_service);
             REQUIRE(_master);
             REQUIRE(_mail);
 
@@ -341,8 +343,11 @@ namespace fire
             _session_service.reset(new s::session_service{_master, _user_service, _mail});
             _master->add(_session_service->mail());
 
+            _app_service.reset(new a::app_service{_user_service, _mail});
+
             ENSURE(_user_service);
             ENSURE(_session_service);
+            ENSURE(_app_service);
         }
 
         void main_window::show_contact_list()
@@ -560,15 +565,16 @@ namespace fire
 
         void main_window::new_session_event(const std::string& id)
         {
-            REQUIRE(_session_service);
-            REQUIRE(_sessions);
+            INVARIANT(_app_service);
+            INVARIANT(_session_service);
+            INVARIANT(_sessions);
 
             attach_start_screen();
 
             auto s = _session_service->session_by_id(id);
             if(!s) return;
 
-            auto sw = new session_widget{_session_service, s};
+            auto sw = new session_widget{_session_service, s, _app_service};
 
             std::string name = convert(NEW_SESSION_NAME);
 

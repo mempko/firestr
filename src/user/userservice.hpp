@@ -55,6 +55,7 @@ namespace fire
             public:
                 local_user& user();
                 const local_user& user() const;
+                const std::string& home() const;
 
             public:
                 void attempt_to_add_contact(const std::string& address);

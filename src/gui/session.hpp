@@ -20,6 +20,7 @@
 
 #include "gui/messagelist.hpp"
 #include "gui/contactlist.hpp"
+#include "gui/app/app_service.hpp"
 #include "session/session.hpp"
 #include "session/session_service.hpp"
 
@@ -38,7 +39,8 @@ namespace fire
             public:
                 session_widget(
                         session::session_service_ptr, 
-                        session::session_ptr);
+                        session::session_ptr,
+                        app::app_service_ptr);
 
             public:
                 session::session_ptr session();
@@ -65,6 +67,7 @@ namespace fire
                 size_t _prev_contacts;
                 session::session_ptr _session;
                 session::session_service_ptr _session_service;
+                app::app_service_ptr _app_service;
         };
     }
 }
