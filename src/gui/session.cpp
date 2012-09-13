@@ -52,7 +52,7 @@ namespace fire
             _layout = new QGridLayout;
 
             _contact_select = new QComboBox;
-            _add_contact = new QPushButton{"add"};
+            _add_contact = new QPushButton{"+"};
             connect(_add_contact, SIGNAL(clicked()), this, SLOT(add_contact()));
 
             update_contact_select();
