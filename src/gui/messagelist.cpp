@@ -23,9 +23,13 @@ namespace fire
             const size_t TIMER_SLEEP = 100;//in milliseconds
         }
 
-        message_list::message_list(s::session_ptr session) :
+        message_list::message_list(
+                a::app_service_ptr app_service,
+                s::session_ptr session) :
+            _app_service{app_service},
             _session{session}
         {
+            REQUIRE(app_service);
             REQUIRE(session);
 
             //setup scrollbar
@@ -41,6 +45,7 @@ namespace fire
             INVARIANT(_layout);
             INVARIANT(_scrollbar);
             INVARIANT(_session);
+            INVARIANT(_app_service);
         }
 
         void message_list::add(message* m)
@@ -72,6 +77,12 @@ namespace fire
         {
             ENSURE(_session);
             return _session;
+        }
+
+        a::app_service_ptr message_list::app_service()
+        {
+            ENSURE(_app_service);
+            return _app_service;
         }
 
         void message_list::add_new_app(const ms::new_app& n) 

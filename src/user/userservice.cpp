@@ -322,6 +322,12 @@ namespace fire
             return *_user;
         }
 
+        const std::string& user_service::home() const
+        {
+            ENSURE_FALSE(_home.empty());
+            return _home;
+        }
+
         void user_service::confirm_contact(user_info_ptr contact)
         {
             u::mutex_scoped_lock l(_mutex);

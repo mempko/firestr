@@ -22,6 +22,7 @@
 
 #include "gui/list.hpp"
 #include "gui/message.hpp"
+#include "gui/app/app_service.hpp"
 #include "session/session.hpp"
 #include "messages/new_app.hpp"
 
@@ -33,10 +34,13 @@ namespace fire
         {
             Q_OBJECT
             public:
-                message_list(session::session_ptr);
+                message_list(
+                        app::app_service_ptr,
+                        session::session_ptr);
 
             public:
                 session::session_ptr session();
+                app::app_service_ptr app_service();
 
             public slots:
                 void add(message*);
@@ -50,6 +54,7 @@ namespace fire
             private:
                 QScrollBar* _scrollbar;
                 session::session_ptr _session;
+                app::app_service_ptr _app_service;
         };
     }
 }

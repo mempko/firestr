@@ -24,6 +24,7 @@
 namespace s = fire::session;
 namespace m = fire::message;
 namespace us = fire::user;
+namespace a = fire::gui::app;
 
 namespace fire
 {
@@ -37,13 +38,16 @@ namespace fire
 
         session_widget::session_widget(
                 s::session_service_ptr session_service,
-                s::session_ptr session) :
+                s::session_ptr session,
+                a::app_service_ptr app_service) :
             _session_service{session_service},
             _session{session},
-            _messages{new message_list{session}}
+            _app_service{app_service},
+            _messages{new message_list{app_service, session}}
         {
             REQUIRE(session_service);
             REQUIRE(session);
+            REQUIRE(app_service);
 
             _layout = new QGridLayout;
 
@@ -83,6 +87,7 @@ namespace fire
             INVARIANT(_session);
             INVARIANT(_messages);
             INVARIANT(_layout);
+            INVARIANT(_app_service);
         }
         
         void session_widget::update_contact_select()
