@@ -26,6 +26,7 @@
 #include <stdexcept>
 
 namespace u = fire::util;
+namespace m = fire::message;
 namespace bf = boost::filesystem;
 
 namespace fire
@@ -36,6 +37,7 @@ namespace fire
         {
             namespace 
             {
+                const std::string APP_MESSAGE = "app_message";
                 const std::string METADATA_FILE = "metadata";
                 const std::string CODE_FILE = "code.lua";
             }
@@ -51,6 +53,32 @@ namespace fire
             {
                 _meta.id = u::uuid();
                 INVARIANT_FALSE(_meta.id.empty());
+            }
+
+            app::app(const m::message& m)
+            {
+                REQUIRE_EQUAL(m.meta.type, APP_MESSAGE);
+
+                _meta.id = m.meta.extra["app_id"].as_string();
+                _meta.name = m.meta.extra["app_name"].as_string();
+                _code = u::to_str(m.data);
+
+                if(_meta.id.empty()) 
+                    throw std::runtime_error("recieved app `" + _meta.name + "' with empty id");
+            }
+
+            app::operator m::message()
+            {
+                INVARIANT_FALSE(_meta.id.empty());
+
+                m::message m;
+
+                m.meta.type = APP_MESSAGE;
+                m.meta.extra["app_id"] = _meta.id;
+                m.meta.extra["app_name"] = _meta.name;
+                m.data = u::to_bytes(_code);
+
+                return m;
             }
 
             const std::string& app::name() const

@@ -34,6 +34,7 @@ namespace fire
         {
             const size_t TIMER_SLEEP = 200;//in milliseconds
             const size_t CW_WIDTH = 50;//in milliseconds
+            const size_t ADD_CONTACT_WIDTH = 10;
         }
 
         session_widget::session_widget(

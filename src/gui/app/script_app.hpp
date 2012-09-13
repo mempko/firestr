@@ -15,8 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef FIRESTR_APP_SCRIPT_SAMPLE_H
-#define FIRESTR_APP_SCRIPT_SAMPLE_H
+#ifndef FIRESTR_APP_SCRIPT_APP_H
+#define FIRESTR_APP_SCRIPT_APP_H
 
 #include "gui/list.hpp"
 #include "gui/message.hpp"
@@ -24,7 +24,7 @@
 #include "message/mailbox.hpp"
 #include "messages/sender.hpp"
 #include "gui/app/lua_script_api.hpp"
-#include "gui/app/app_service.hpp"
+#include "gui/app/app.hpp"
 
 #include <QObject>
 #include <QLabel>
@@ -32,8 +32,6 @@
 #include <QPushButton>
 #include <QComboBox>
 #include <QSignalMapper>
-
-#include "slb/SLB.hpp"
 
 #include <string>
 
@@ -43,14 +41,14 @@ namespace fire
     {
         namespace app
         {
-            class script_sample : public message
+            class script_app : public message
             {
                 Q_OBJECT
 
                 public:
-                    script_sample(app_service_ptr, session::session_ptr);
-                    script_sample(const std::string& id, app_service_ptr, session::session_ptr);
-                    ~script_sample();
+                    script_app(app_ptr, session::session_ptr);
+                    script_app(const std::string& address, app_ptr, session::session_ptr);
+                    ~script_app();
 
                 public:
                     const std::string& id();
@@ -58,29 +56,22 @@ namespace fire
                     fire::message::mailbox_ptr mail();
 
                 public slots:
-                    void send_script();
-                    void save_app();
                     void check_mail();
-                    void scroll_to_bottom(int min, int max);
 
                 private:
                     void init();
 
                 private:
                     std::string _id;
-                    app_service_ptr _app_service;
                     session::session_ptr _session;
                     fire::message::mailbox_ptr _mail;
                     messages::sender_ptr _sender;
 
-                    QTextEdit* _script;
-                    QPushButton* _run;
-                    QPushButton* _save;
-
                     lua_script_api_ptr _api;
                     app_ptr _app;
             };
-            extern const std::string SCRIPT_SAMPLE;
+
+            extern const std::string SCRIPT_APP;
 
         }
     }

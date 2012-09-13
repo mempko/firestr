@@ -69,28 +69,35 @@ namespace fire
                 t.text = u::to_str(m.data);
             }
 
-            script_sample::script_sample(s::session_ptr session) :
+            script_sample::script_sample(app_service_ptr app_service, s::session_ptr session) :
                 message{},
                 _id{u::uuid()},
+                _app_service{app_service},
                 _session{session}
             {
                 REQUIRE(session);
+                REQUIRE(app_service);
 
                 init();
 
                 ENSURE(_api);
+                ENSURE(_session);
+                ENSURE(_app_service);
             }
 
-            script_sample::script_sample(const std::string& id, s::session_ptr session) :
+            script_sample::script_sample(const std::string& id, app_service_ptr app_service, s::session_ptr session) :
                 message{},
                 _id{id},
+                _app_service{app_service},
                 _session{session}
             {
                 REQUIRE(session);
+                REQUIRE(app_service);
 
                 init();
 
                 ENSURE(_api);
+                ENSURE(_app_service);
             }
 
             script_sample::~script_sample()
@@ -119,9 +126,12 @@ namespace fire
 
                 //send button
                 _run = new QPushButton{"run"};
-                layout()->addWidget(_run, 3, 1);
-
+                layout()->addWidget(_run, 3, 0);
                 connect(_run, SIGNAL(clicked()), this, SLOT(send_script()));
+
+                _save = new QPushButton{"save"};
+                layout()->addWidget(_save, 3, 1);
+                connect(_save, SIGNAL(clicked()), this, SLOT(save_app()));
 
                 setMinimumHeight(layout()->sizeHint().height() + PADDING);
 
@@ -133,6 +143,8 @@ namespace fire
                 INVARIANT(_session);
                 INVARIANT(_mail);
                 INVARIANT(_sender);
+                INVARIANT(_run);
+                INVARIANT(_save);
             }
 
             const std::string& script_sample::id()
@@ -178,6 +190,36 @@ namespace fire
                 auto self = _session->user_service()->user().info().name();
                 _api->reset_widgets();
                 _api->run(self, code);
+            }
+
+            void script_sample::save_app() 
+            {
+                INVARIANT(_session);
+                INVARIANT(_app_service);
+
+                if(!_app)
+                {
+                    bool ok = false;
+                    std::string name = "";
+
+                    QString r = QInputDialog::getText(
+                            0, 
+                            "Name Your App",
+                            "App Name",
+                            QLineEdit::Normal, name.c_str(), &ok);
+
+                    if(ok && !r.isEmpty()) name = gui::convert(r);
+                    else return;
+
+                    _app.reset(new app);
+                    _app->name(name);
+                }
+
+                CHECK(_app);
+
+                auto code = gui::convert(_script->toPlainText());
+                _app->code(code);
+                _app_service->save_app(*_app);
             }
 
             void script_sample::check_mail() 

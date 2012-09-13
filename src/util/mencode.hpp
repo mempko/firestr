@@ -175,6 +175,15 @@ namespace fire
                 std::stringstream s{to_str(b)};
                 s >> v;
             }
+
+        template <typename type> 
+            type decode(const bytes& b)
+            {
+                type v;
+                std::stringstream s{to_str(b)};
+                s >> v;
+                return v;
+            }
     }
 }
 
