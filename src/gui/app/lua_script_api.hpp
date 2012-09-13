@@ -42,6 +42,7 @@ namespace fire
         namespace app
         {
             class lua_script_api;
+
             struct button_ref
             {
                 std::string id;
@@ -59,6 +60,7 @@ namespace fire
 
                 lua_script_api* api;
             };
+
             typedef std::map<std::string, button_ref> button_ref_map;
             typedef std::map<std::string, QPushButton*> button_widget_map;
 
@@ -109,6 +111,7 @@ namespace fire
                     void bind();
                     std::string execute(const std::string&);
                     void run(const std::string name, const std::string&);
+                    void reset_widgets();
 
                     //button_ref code
                     button_ref_map button_refs;
