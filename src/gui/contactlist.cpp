@@ -33,7 +33,6 @@ namespace fire
         namespace
         {
             const size_t TIMER_SLEEP = 200;//in milliseconds
-            const size_t STATUS_SLEEP = 2000;//in milliseconds
         }
 
         std::string online_text(
@@ -49,8 +48,7 @@ namespace fire
                 user::user_info_ptr p, 
                 user::user_service_ptr s,
                 bool accept_reject,
-                bool compact,
-                bool auto_update) :
+                bool compact) :
             _contact{p},
             _service{s}
         {
@@ -93,15 +91,7 @@ namespace fire
                 connect(_accept, SIGNAL(clicked()), this, SLOT(accept()));
                 connect(_reject, SIGNAL(clicked()), this, SLOT(reject()));
             }
-            else
-            {
-                if(auto_update)
-                {
-                    auto *t = new QTimer(this);
-                    connect(t, SIGNAL(timeout()), this, SLOT(update()));
-                    t->start(STATUS_SLEEP);
-                }
-            }
+
             layout->setContentsMargins(2,2,2,2);
             ENSURE(_contact);
         }
@@ -187,7 +177,7 @@ namespace fire
             _list->clear();
 
             for(auto u : _service->user().contacts().list())
-                _list->add(new user_info{u, _service, false, true, true});
+                _list->add(new user_info{u, _service, false, true});
 
             auto pending = _service->pending_requests();
 
@@ -238,10 +228,6 @@ namespace fire
                 CHECK(u);
                 add_contact(u);
             }
-
-            auto *t = new QTimer(this);
-            connect(t, SIGNAL(timeout()), this, SLOT(update_status()));
-            t->start(STATUS_SLEEP);
 
             INVARIANT(_service);
         }

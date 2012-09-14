@@ -17,12 +17,14 @@
 
 
 #include "gui/session.hpp"
+#include "gui/unknown_message.hpp"
 #include "gui/util.hpp"
 
 #include <QtGui>
 
 namespace s = fire::session;
 namespace m = fire::message;
+namespace ms = fire::messages;
 namespace us = fire::user;
 namespace a = fire::gui::app;
 
@@ -79,10 +81,10 @@ namespace fire
             setLayout(_layout);
             _layout->setContentsMargins(0,0,0,0);
 
-            //setup updated timer
-            auto *t = new QTimer(this);
-            connect(t, SIGNAL(timeout()), this, SLOT(update()));
-            t->start(TIMER_SLEEP);
+            //setup mail timer
+            auto *t2 = new QTimer(this);
+            connect(t2, SIGNAL(timeout()), this, SLOT(check_mail()));
+            t2->start(TIMER_SLEEP);
 
             INVARIANT(_session_service);
             INVARIANT(_session);
@@ -175,15 +177,6 @@ namespace fire
             add(contact_alert(contact, "added to session"));
         }
 
-        void session_widget::update()
-        {
-            size_t contacts = _session->contacts().size();
-            if(contacts == _prev_contacts) return;
-
-            update_contacts();
-            _prev_contacts = _session->contacts().size();
-        }
-
         void session_widget::update_contacts()
         {
             _contacts->update(_session->contacts());
@@ -198,6 +191,48 @@ namespace fire
         QString session_widget::name() const
         {
             return _name;
+        }
+
+        void session_widget::check_mail()
+        try
+        {
+            INVARIANT(_messages);
+            INVARIANT(_session);
+            INVARIANT(_session->mail());
+
+            m::message m;
+            while(_session->mail()->pop_inbox(m))
+            {
+                //for now show encoded message
+                //TODO: use factory class to create gui from messages
+                if(m.meta.type == ms::NEW_APP)
+                {
+                    _messages->add_new_app(m);
+                }
+                else if(m.meta.type == us::event::CONTACT_CONNECTED)
+                {
+                    update_contacts();
+                }
+                else if(m.meta.type == us::event::CONTACT_DISCONNECTED)
+                {
+                    update_contacts();
+                }
+                else
+                {
+                    std::stringstream s;
+                    s << m;
+
+                    _messages->add(new unknown_message{s.str()});
+                }
+            }
+        }
+        catch(std::exception& e)
+        {
+            std::cerr << "session: error in check_mail. " << e.what() << std::endl;
+        }
+        catch(...)
+        {
+            std::cerr << "session: unexpected error in check_mail." << std::endl;
         }
     }
 }

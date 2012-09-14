@@ -503,13 +503,13 @@ namespace fire
                 {
                     us::event::contact_connected r;
                     us::event::convert(m, r);
-                    contact_connected_event(r.id);
+                    contact_connected_event(r);
                 }
                 else if(m.meta.type == us::event::CONTACT_DISCONNECTED)
                 {
                     us::event::contact_disconnected r;
                     us::event::convert(m, r);
-                    contact_disconnected_event(r.id);
+                    contact_disconnected_event(r);
                 }
                 else
                 {
@@ -662,13 +662,16 @@ namespace fire
             show_alert(w);
         }
 
-        void main_window::contact_connected_event(const std::string& id)
+        void main_window::contact_connected_event(const us::event::contact_connected& r)
         {
             INVARIANT(_user_service);
+            INVARIANT(_session_service);
 
-            auto c = _user_service->user().contacts().by_id(id);
+            //get user
+            auto c = _user_service->user().contacts().by_id(r.id);
             if(!c) return;
 
+            //setup alert widget
             std::stringstream s;
             s << "<b>" << c->name() << "</b> is online" << std::endl;
 
@@ -683,20 +686,24 @@ namespace fire
             l->addWidget(b);
             auto m = new QSignalMapper(w);
 
-            m->setMapping(b, QString{id.c_str()});
+            m->setMapping(b, QString{r.id.c_str()});
             connect(b, SIGNAL(clicked()), m, SLOT(map()));
             connect(m, SIGNAL(mapped(QString)), this, SLOT(create_session(QString)));
 
+            //display alert
             show_alert(w);
+            _session_service->broadcast_message(us::event::convert(r));
         }
 
-        void main_window::contact_disconnected_event(const std::string& id)
+        void main_window::contact_disconnected_event(const us::event::contact_disconnected& r)
         {
             INVARIANT(_user_service);
 
-            auto c = _user_service->user().contacts().by_id(id);
+            //get user
+            auto c = _user_service->user().contacts().by_id(r.id);
             if(!c) return;
 
+            //setup alert widget
             std::stringstream s;
             s << "<b>" << c->name() << "</b> disconnected" << std::endl;
 
@@ -705,7 +712,10 @@ namespace fire
             w->setLayout(l);
             auto t = new QLabel{s.str().c_str()};
             l->addWidget(t);
+
+            //display alert
             show_alert(w);
+            _session_service->broadcast_message(us::event::convert(r));
         }
     }
 }

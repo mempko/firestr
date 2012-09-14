@@ -39,11 +39,6 @@ namespace fire
             _scrollbar = verticalScrollBar();
             QObject::connect(_scrollbar, SIGNAL(rangeChanged(int, int)), this, SLOT(scroll_to_bottom(int, int)));
 
-            //setup message timer
-            auto *t = new QTimer(this);
-            connect(t, SIGNAL(timeout()), this, SLOT(check_mail()));
-            t->start(TIMER_SLEEP);
-
             INVARIANT(_root);
             INVARIANT(_layout);
             INVARIANT(_scrollbar);
@@ -126,39 +121,6 @@ namespace fire
             {
                 add(new unknown_message{"unknown app type `" + n.type() + "'"});
             }
-        }
-
-        void message_list::check_mail() 
-        try
-        {
-            INVARIANT(_session);
-            INVARIANT(_session->mail());
-
-            m::message m;
-            while(_session->mail()->pop_inbox(m))
-            {
-                //for now show encoded message
-                //TODO: use factory class to create gui from messages
-                if(m.meta.type == ms::NEW_APP)
-                {
-                    add_new_app(m);
-                }
-                else
-                {
-                    std::stringstream s;
-                    s << m;
-
-                    add(new unknown_message{s.str()});
-                }
-            }
-        }
-        catch(std::exception& e)
-        {
-            std::cerr << "message_list: error in check_mail. " << e.what() << std::endl;
-        }
-        catch(...)
-        {
-            std::cerr << "message_list: unexpected error in check_mail." << std::endl;
         }
     }
 }
