@@ -294,16 +294,17 @@ namespace fire
             _app_menu->addAction(_chat_sample_action);
             _app_menu->addAction(_script_sample_action);
 
-            _new_app_mapper = new QSignalMapper{this};
 
             for( auto p : _app_service->available_apps())
             {
                 auto name = p.second.name;
                 auto id = p.second.id;
+
+                auto mapper = new QSignalMapper{this};
                 auto action  = new QAction{name.c_str(), this};
-                _new_app_mapper->setMapping(action, QString(id.c_str()));
-                connect(action, SIGNAL(triggered()), _new_app_mapper, SLOT(map()));
-                connect(_new_app_mapper, SIGNAL(mapped(QString)), this, SLOT(load_app_into_session(QString)));
+                mapper->setMapping(action, QString(id.c_str()));
+                connect(action, SIGNAL(triggered()), mapper, SLOT(map()));
+                connect(mapper, SIGNAL(mapped(QString)), this, SLOT(load_app_into_session(QString)));
 
                 _app_menu->addAction(action);
             }
