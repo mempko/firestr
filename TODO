@@ -1,2 +1,10 @@
-Handle case where a user disconnects, and reconnects again.
-Make button to reconnect a contact to a session when they reconnect?
+Ideas
+
+- Two types of sessions, public and private
+--public ones can be joined from the outside. 
+    This is to allow a sort of persistant presence. To allow things
+    like status updates and other magic. 
+
+- When authenticating first time, encrypt authentication request using passwords. 
+  For the paranoid, they can tell each other the passwords to decrypt the request and get the public key,
+  incase they are worried about spoofing.
