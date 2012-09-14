@@ -41,6 +41,20 @@ namespace fire
     {
         namespace app
         {
+            extern const std::string SIMPLE_MESSAGE;
+            class simple_message
+            {
+                public:
+                    simple_message(const std::string& t);
+                    simple_message(const fire::message::message&);
+                    operator fire::message::message() const;
+                public:
+                    const std::string& text() const;
+
+                private:
+                    std::string _text;
+            };
+
             class lua_script_api;
 
             struct button_ref
@@ -95,6 +109,7 @@ namespace fire
                 Q_OBJECT
                 public:
                     lua_script_api(
+                            const user::contact_list& con,
                             messages::sender_ptr sender,
                             session::session_ptr session);
 
@@ -105,13 +120,18 @@ namespace fire
                     SLB::Manager manager;
                     script_ptr state;
 
+                    //message
+                    user::contact_list contacts;
                     session::session_ptr session;
                     messages::sender_ptr sender;
+                    std::string message_callback;
 
+                    //util
                     void bind();
                     std::string execute(const std::string&);
                     void run(const std::string name, const std::string&);
                     void reset_widgets();
+                    void message_recieved(const simple_message&);
 
                     //button_ref code
                     button_ref_map button_refs;
@@ -125,6 +145,10 @@ namespace fire
                     void print(const std::string& a);
                     button_ref make_button(const std::string& title, int r = 0, int c = 0);
                     edit_ref make_edit(const std::string& title, int r = 0, int c = 0);
+
+                    void set_message_callback(const std::string& a);
+                    void send_all(const std::string&);
+
 
                     public slots:
                         void button_clicked(QString id);
