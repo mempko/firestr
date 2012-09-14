@@ -443,20 +443,17 @@ namespace fire
 
                         CHECK(queue);
                         u::bytes b;
-                        if(queue->recieve(b)) 
+                        if(queue->recieve(b) && b.size() == 1) 
                         {
-                            if(b.size() == 1)
+                            char t = b[0]; 
+                            if(t == CONNECTED)
                             {
-                                char t = b[0]; 
-                                if(t == CONNECTED)
-                                {
-                                    ticks = 0;
-                                }
-                                else
-                                {
-                                    ticks = PING_THRESH + PING_THRESH;
-                                    CHECK_FALSE(available(ticks));
-                                }
+                                ticks = 0;
+                            }
+                            else
+                            {
+                                ticks = PING_THRESH + PING_THRESH;
+                                CHECK_FALSE(available(ticks));
                             }
                         }
                         else ticks++;
