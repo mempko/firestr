@@ -52,11 +52,6 @@ namespace fire
                 layout = new QGridLayout;
                 canvas->setLayout(layout);
 
-                //init mappers
-                button_mapper = new QSignalMapper(canvas);
-                edit_text_edited_mapper = new QSignalMapper(canvas);
-                edit_finished_mapper = new QSignalMapper(canvas);
-
                 //message list
                 output = new list;
 
@@ -64,9 +59,6 @@ namespace fire
 
                 INVARIANT(canvas);
                 INVARIANT(layout);
-                INVARIANT(button_mapper);
-                INVARIANT(edit_text_edited_mapper);
-                INVARIANT(edit_finished_mapper);
                 INVARIANT(output);
                 INVARIANT(state);
             }
@@ -154,15 +146,6 @@ namespace fire
                 edit_refs.clear();
                 edit_widgets.clear();
 
-                //reset mappers
-                delete button_mapper;
-                delete edit_text_edited_mapper;
-                delete edit_finished_mapper;
-
-                button_mapper = new QSignalMapper(canvas);
-                edit_text_edited_mapper = new QSignalMapper(canvas);
-                edit_finished_mapper = new QSignalMapper(canvas);
-
                 ENSURE_EQUAL(layout->count(), 0);
             }
 
@@ -205,7 +188,7 @@ namespace fire
             button_ref lua_script_api::make_button(const std::string& text, int r, int c)
             {
                 INVARIANT(layout);
-                INVARIANT(button_mapper);
+                INVARIANT(canvas);
 
                 //create button reference
                 std::string callback = "";
@@ -216,9 +199,10 @@ namespace fire
                 layout->addWidget(b, r, c);
 
                 //map button to C++ callback
-                button_mapper->setMapping(b, QString(ref.id.c_str()));
-                connect(b, SIGNAL(clicked()), button_mapper, SLOT(map()));
-                connect(button_mapper, SIGNAL(mapped(QString)), this, SLOT(button_clicked(QString)));
+                auto mapper = new QSignalMapper{canvas};
+                mapper->setMapping(b, QString(ref.id.c_str()));
+                connect(b, SIGNAL(clicked()), mapper, SLOT(map()));
+                connect(mapper, SIGNAL(mapped(QString)), this, SLOT(button_clicked(QString)));
 
                 //add ref and widget to maps
                 button_refs[ref.id] = ref;
@@ -304,8 +288,6 @@ namespace fire
             edit_ref lua_script_api::make_edit(const std::string& text, int r, int c)
             {
                 INVARIANT(layout);
-                INVARIANT(edit_text_edited_mapper);
-                INVARIANT(edit_finished_mapper);
 
                 //create edit reference
                 std::string text_edited_callback = "";
@@ -317,13 +299,15 @@ namespace fire
                 layout->addWidget(e, r, c);
 
                 //map edit to C++ callback
-                edit_text_edited_mapper->setMapping(e, QString(ref.id.c_str()));
-                connect(e, SIGNAL(textChanged(QString)), edit_text_edited_mapper, SLOT(map()));
-                connect(edit_text_edited_mapper, SIGNAL(mapped(QString)), this, SLOT(edit_text_edited(QString)));
+                auto edit_mapper = new QSignalMapper{canvas};
+                edit_mapper->setMapping(e, QString(ref.id.c_str()));
+                connect(e, SIGNAL(textChanged(QString)), edit_mapper, SLOT(map()));
+                connect(edit_mapper, SIGNAL(mapped(QString)), this, SLOT(edit_text_edited(QString)));
 
-                edit_finished_mapper->setMapping(e, QString(ref.id.c_str()));
-                connect(e, SIGNAL(editingFinished()), edit_finished_mapper, SLOT(map()));
-                connect(edit_finished_mapper, SIGNAL(mapped(QString)), this, SLOT(edit_finished(QString)));
+                auto finished_mapper = new QSignalMapper{canvas};
+                finished_mapper->setMapping(e, QString(ref.id.c_str()));
+                connect(e, SIGNAL(editingFinished()), finished_mapper, SLOT(map()));
+                connect(finished_mapper, SIGNAL(mapped(QString)), this, SLOT(edit_finished(QString)));
 
                 //add ref and widget to maps
                 edit_refs[ref.id] = ref;

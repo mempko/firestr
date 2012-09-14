@@ -19,8 +19,6 @@
 #define FIRESTR_MAINWIN_H
 
 #include <QMainWindow>
-#include <QSignalMapper>
-
 #include "gui/session.hpp"
 #include "message/postoffice.hpp"
 #include "user/userservice.hpp"
@@ -95,7 +93,6 @@ namespace fire
                 QMenu *_app_menu;
                 QAction *_chat_sample_action;
                 QAction *_script_sample_action;
-                QSignalMapper* _new_app_mapper;
 
                 QTabWidget* _sessions;
                 QWidget* _start_screen;

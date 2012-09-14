@@ -116,13 +116,10 @@ namespace fire
                     //button_ref code
                     button_ref_map button_refs;
                     button_widget_map button_widgets;
-                    QSignalMapper* button_mapper;
 
                     //edit_ref code
                     edit_ref_map edit_refs;
                     edit_widget_map edit_widgets;
-                    QSignalMapper* edit_text_edited_mapper;
-                    QSignalMapper* edit_finished_mapper;
 
                     //API
                     void print(const std::string& a);
