@@ -49,12 +49,12 @@ namespace fire
                 QString name() const;
 
             public slots:
+                void check_mail(); 
                 void add(message*);
                 void add(QWidget*);
                 void add_contact();
                 void update_contacts();
                 void update_contact_select();
-                void update();
 
             private:
                 QGridLayout* _layout;
@@ -64,7 +64,6 @@ namespace fire
                 QString _name;
                 message_list* _messages;
                 contact_list* _contacts;
-                size_t _prev_contacts;
                 session::session_ptr _session;
                 session::session_service_ptr _session_service;
                 app::app_service_ptr _app_service;

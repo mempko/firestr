@@ -16,6 +16,7 @@
  */
 
 #include "session/session_service.hpp"
+#include "util/thread.hpp"
 #include "util/uuid.hpp"
 #include "util/dbc.hpp"
 
@@ -140,6 +141,8 @@ namespace fire
             INVARIANT(_user_service);
             INVARIANT(_sender);
 
+            u::mutex_scoped_lock l(_mutex);
+
             //session already exists, add to existing session
             auto sp = _sessions.find(id);
             if(sp != _sessions.end())
@@ -176,7 +179,6 @@ namespace fire
             //done creating session, fire event
             fire_new_session_event(id);
 
-            ENSURE(session_by_id(id));
             return s;
         }
 
@@ -206,6 +208,7 @@ namespace fire
 
         session_ptr session_service::session_by_id(const std::string& id)
         {
+            u::mutex_scoped_lock l(_mutex);
             auto s = _sessions.find(id);
             return s != _sessions.end() ? s->second : nullptr;
         }
@@ -272,6 +275,21 @@ namespace fire
 
             add_contact_to_session(contact, s);
             return true;
+        }
+
+        void session_service::broadcast_message(const message::message& m)
+        {
+            u::mutex_scoped_lock l(_mutex);
+            for(auto p : _sessions)
+            {
+                auto session = p.second;
+                CHECK(session);
+
+                auto mail = session->mail();
+                CHECK(mail);
+
+                mail->push_inbox(m);
+            }
         }
 
         user::user_service_ptr session_service::user_service()

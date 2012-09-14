@@ -43,13 +43,10 @@ namespace fire
                 app::app_service_ptr app_service();
 
             public slots:
+                void add_new_app(const messages::new_app&); 
                 void add(message*);
                 void add(QWidget*);
-                void check_mail(); 
                 void scroll_to_bottom(int min, int max);
-
-            private:
-                void add_new_app(const messages::new_app&); 
 
             private:
                 QScrollBar* _scrollbar;

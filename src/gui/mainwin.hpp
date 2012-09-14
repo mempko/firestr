@@ -78,8 +78,8 @@ namespace fire
 
                 void new_session_event(const std::string& id);
                 void new_contact_event(const std::string& id);
-                void contact_connected_event(const std::string& id);
-                void contact_disconnected_event(const std::string& id);
+                void contact_connected_event(const user::event::contact_connected&);
+                void contact_disconnected_event(const user::event::contact_disconnected&);
 
             private:
                 QMenu *_main_menu;

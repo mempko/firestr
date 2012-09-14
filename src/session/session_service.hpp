@@ -25,6 +25,7 @@
 #include "messages/sender.hpp"
 
 #include <map>
+#include <mutex>
 
 namespace fire
 {
@@ -58,6 +59,7 @@ namespace fire
 
                 void sync_session(session_ptr session);
                 void sync_session(const std::string& session_id);
+                void broadcast_message(const message::message&);
 
             public:
                 user::user_service_ptr user_service();
@@ -73,6 +75,7 @@ namespace fire
                 user::user_service_ptr _user_service;
                 messages::sender_ptr _sender;
                 session_map _sessions;
+                std::mutex _mutex;
         };
 
         typedef std::shared_ptr<session_service> session_service_ptr;

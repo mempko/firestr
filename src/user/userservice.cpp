@@ -40,9 +40,9 @@ namespace fire
             const std::string REQUEST_CONFIRMED = "add_user_confirmed";
             const std::string REQUEST_REJECTED = "add_user_rejected";
             const std::string PING_REQUEST = "ping_request";
-            const size_t QUIT_SLEEP = 100; //in milliseconds
+            const size_t QUIT_SLEEP = 500; //in milliseconds
             const size_t PING_THREAD_SLEEP = 500; //half a second
-            const size_t PING_TICKS = 10; //5 seconds
+            const size_t PING_TICKS = 6; //3 seconds
             const size_t PING_THRESH = 3*PING_TICKS; 
             const char CONNECTED = 'c';
             const char DISCONNECTED = 'd';
@@ -454,7 +454,8 @@ namespace fire
                                 }
                                 else
                                 {
-                                    PING_THRESH + 1;
+                                    ticks = PING_THRESH + PING_THRESH;
+                                    CHECK_FALSE(available(ticks));
                                 }
                             }
                         }

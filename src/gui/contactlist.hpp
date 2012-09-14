@@ -41,8 +41,7 @@ namespace fire
                         user::user_info_ptr, 
                         user::user_service_ptr,
                         bool accept_reject = false,
-                        bool compact = false,
-                        bool auto_update = false);
+                        bool compact = false);
 
             public slots:
                 void accept();
