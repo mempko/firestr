@@ -72,6 +72,7 @@ namespace fire
                     session::session_ptr _session;
                     fire::message::mailbox_ptr _mail;
                     messages::sender_ptr _sender;
+                    user::contact_list _contacts;
 
                     QTextEdit* _script;
                     QPushButton* _run;

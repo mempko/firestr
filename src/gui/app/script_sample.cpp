@@ -44,7 +44,7 @@ namespace fire
             {
                 const size_t TIMER_SLEEP = 100; //in milliseconds
                 const size_t PADDING = 20;
-                const std::string MESSAGE = "script";
+                const std::string SCRIPT_MESSAGE = "script";
             }
 
             struct text_script
@@ -56,7 +56,7 @@ namespace fire
             m::message convert(const text_script& t)
             {
                 m::message m;
-                m.meta.type = MESSAGE;
+                m.meta.type = SCRIPT_MESSAGE;
                 m.data = u::to_bytes(t.text);
 
                 return m;
@@ -64,7 +64,7 @@ namespace fire
 
             void convert(const m::message& m, text_script& t)
             {
-                REQUIRE_EQUAL(m.meta.type, MESSAGE);
+                REQUIRE_EQUAL(m.meta.type, SCRIPT_MESSAGE);
                 t.from_id = m.meta.extra["from_id"].as_string();
                 t.text = u::to_str(m.data);
             }
@@ -73,7 +73,8 @@ namespace fire
                 message{},
                 _id{u::uuid()},
                 _app_service{app_service},
-                _session{session}
+                _session{session},
+                _contacts{session->contacts()}
             {
                 REQUIRE(session);
                 REQUIRE(app_service);
@@ -89,7 +90,8 @@ namespace fire
                 message{},
                 _id{id},
                 _app_service{app_service},
-                _session{session}
+                _session{session},
+                _contacts{session->contacts()}
             {
                 REQUIRE(session);
                 REQUIRE(app_service);
@@ -113,7 +115,7 @@ namespace fire
 
                 _mail.reset(new m::mailbox{_id});
                 _sender.reset(new ms::sender{_session->user_service(), _mail});
-                _api.reset(new lua_script_api{_sender, _session});
+                _api.reset(new lua_script_api{_contacts, _sender, _session});
 
                 //connect api widgets 
                 layout()->addWidget(_api->canvas, 0, 0, 1, 2);
@@ -180,7 +182,7 @@ namespace fire
                 text_script tm;
                 tm.text = code;
 
-                for(auto c : _session->contacts().list())
+                for(auto c : _contacts.list())
                 {
                     CHECK(c);
                     _sender->send(c->id(), convert(tm)); 
@@ -231,21 +233,26 @@ namespace fire
                 m::message m;
                 while(_mail->pop_inbox(m))
                 {
-                    if(m.meta.type == MESSAGE)
+                    if(m.meta.type == SCRIPT_MESSAGE)
                     {
                         text_script t;
                         convert(m, t);
 
-                        auto c = _session->contacts().by_id(t.from_id);
+                        auto c = _contacts.by_id(t.from_id);
                         if(!c) continue;
 
                         _script->setText(t.text.c_str());
                         _api->reset_widgets();
                         _api->run(c->name(), t.text);
                     }
+                    else if(m.meta.type == SIMPLE_MESSAGE)
+                    {
+                        simple_message sm{m};
+                        _api->message_recieved(sm);
+                    }
                     else
                     {
-                        std::cerr << "chat sample recieved unknown message `" << m.meta.type << "'" << std::endl;
+                        std::cerr << "script_sample recieved unknown message `" << m.meta.type << "'" << std::endl;
                     }
                 }
             }

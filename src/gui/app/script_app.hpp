@@ -66,6 +66,7 @@ namespace fire
                     session::session_ptr _session;
                     fire::message::mailbox_ptr _mail;
                     messages::sender_ptr _sender;
+                    user::contact_list _contacts;
 
                     lua_script_api_ptr _api;
                     app_ptr _app;

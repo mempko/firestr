@@ -38,9 +38,33 @@ namespace fire
     {
         namespace app
         {
+            const std::string SIMPLE_MESSAGE = "simple_msg";
+            simple_message::simple_message(const std::string& t) : _text{t} { }
+
+            simple_message::simple_message(const m::message& m)
+            {
+                REQUIRE_EQUAL(m.meta.type, SIMPLE_MESSAGE);
+                _text = u::to_str(m.data);
+            }
+            
+            simple_message::operator m::message() const
+            {
+                m::message m; 
+                m.meta.type = SIMPLE_MESSAGE;
+                m.data = u::to_bytes(_text);
+                return m;
+            }
+
+            const std::string& simple_message::text() const
+            {
+                return _text;
+            }
+
             lua_script_api::lua_script_api(
+                    const us::contact_list& con,
                     ms::sender_ptr sndr,
                     s::session_ptr s) :
+                contacts{con},
                 sender{sndr},
                 session{s}
             {
@@ -71,7 +95,9 @@ namespace fire
                 SLB::Class<lua_script_api, SLB::Instance::NoCopyNoDestroy>{"Api", &manager}
                     .set("print", &lua_script_api::print)
                     .set("button", &lua_script_api::make_button)
-                    .set("edit", &lua_script_api::make_edit);
+                    .set("edit", &lua_script_api::make_edit)
+                    .set("when_message_received", &lua_script_api::set_message_callback)
+                    .set("send_all", &lua_script_api::send_all);
 
                 SLB::Class<button_ref>{"button", &manager}
                     .set("get_text", &button_ref::get_text)
@@ -106,14 +132,14 @@ namespace fire
             }
 
             std::string lua_script_api::execute(const std::string& s)
-            try
-            {
-                REQUIRE_FALSE(s.empty());
-                INVARIANT(state);
+                try
+                {
+                    REQUIRE_FALSE(s.empty());
+                    INVARIANT(state);
 
-                state->doString(s.c_str());
-                return "";
-            }
+                    state->doString(s.c_str());
+                    return "";
+                }
             catch(std::exception& e)
             {
                 return e.what();
@@ -413,6 +439,30 @@ namespace fire
                 INVARIANT(api);
 
                 set_enabled(*this, api->edit_widgets, false);
+            }
+
+            void lua_script_api::message_recieved(const simple_message& m)
+            {
+                INVARIANT(state);
+                if(message_callback.empty()) return;
+
+                state->call(message_callback, m.text());
+            }
+
+            void lua_script_api::set_message_callback(const std::string& a)
+            {
+                message_callback = a;
+            }
+
+            void lua_script_api::send_all(const std::string& m)
+            {
+                INVARIANT(sender);
+                for(auto c : contacts.list())
+                {
+                    CHECK(c);
+                    simple_message sm{m};
+                    sender->send(c->id(), sm); 
+                }
             }
         }
     }

@@ -50,7 +50,8 @@ namespace fire
                 message{},
                 _id{u::uuid()},
                 _session{session},
-                _app{app}
+                _app{app},
+                _contacts{session->contacts()}
             {
                 REQUIRE(session);
                 REQUIRE(app);
@@ -67,7 +68,8 @@ namespace fire
                 message{},
                 _id{id},
                 _session{session},
-                _app{app}
+                _app{app},
+                _contacts{session->contacts()}
             {
                 REQUIRE(session);
                 REQUIRE(app);
@@ -95,7 +97,7 @@ namespace fire
 
                 _mail.reset(new m::mailbox{_id});
                 _sender.reset(new ms::sender{_session->user_service(), _mail});
-                _api.reset(new lua_script_api{_sender, _session});
+                _api.reset(new lua_script_api{_contacts, _sender, _session});
 
                 //connect api widgets 
                 layout()->addWidget(_api->canvas);
@@ -139,11 +141,16 @@ namespace fire
             {
                 INVARIANT(_mail);
                 INVARIANT(_session);
+                INVARIANT(_api);
 
                 m::message m;
                 while(_mail->pop_inbox(m))
                 {
-                    //TODO, add to SCRIPT API mailbox
+                    if(m.meta.type == SIMPLE_MESSAGE)
+                    {
+                        simple_message sm{m};
+                        _api->message_recieved(sm);
+                    }
                 }
             }
             catch(std::exception& e)
