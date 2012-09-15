@@ -124,6 +124,8 @@ namespace fire
 
                 //text edit
                 _script = new QTextEdit;
+                _script->setWordWrapMode(QTextOption::NoWrap);
+                _script->setTabStopWidth(40);
                 layout()->addWidget(_script, 2, 0, 1, 2);
 
                 //send button
