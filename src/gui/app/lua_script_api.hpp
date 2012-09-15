@@ -3,8 +3,8 @@
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * the Free Software Foundation, either vedit_refsion 3 of the License, or
+ * (at your option) any later vedit_refsion.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -57,9 +57,18 @@ namespace fire
 
             class lua_script_api;
 
-            struct button_ref
+            struct widget_ref
             {
                 std::string id;
+                lua_script_api* api;
+
+                bool enabled(); 
+                void enable();
+                void disable();
+            };
+
+            struct button_ref : public widget_ref
+            {
                 std::string callback;
 
                 std::string get_text() const; 
@@ -67,41 +76,39 @@ namespace fire
 
                 const std::string& get_callback() const { return callback;}
                 void set_callback(const std::string&);  
-
-                bool enabled(); 
-                void enable();
-                void disable();
-
-                lua_script_api* api;
             };
-
             typedef std::map<std::string, button_ref> button_ref_map;
-            typedef std::map<std::string, QPushButton*> button_widget_map;
 
-            struct edit_ref
+            struct edit_ref : public widget_ref
             {
-                std::string id;
-                std::string text_edited_callback;
+                std::string edited_callback;
                 std::string finished_callback;
 
                 std::string get_text() const; 
                 void set_text(const std::string&);
 
-                const std::string& get_text_edited_callback() const { return text_edited_callback;}
-                void set_text_edited_callback(const std::string&);  
+                const std::string& get_edited_callback() const { return edited_callback;}
+                void set_edited_callback(const std::string&);  
 
                 const std::string& get_finished_callback() const { return finished_callback;}
                 void set_finished_callback(const std::string&);  
-
-                bool enabled(); 
-                void enable();
-                void disable();
-
-                lua_script_api* api;
             };
             typedef std::map<std::string, edit_ref> edit_ref_map;
-            typedef std::map<std::string, QLineEdit*> edit_widget_map;
 
+            struct text_edit_ref : public widget_ref
+            {
+                std::string id;
+                std::string edited_callback;
+
+                std::string get_text() const; 
+                void set_text(const std::string&);
+
+                const std::string& get_edited_callback() const { return edited_callback;}
+                void set_edited_callback(const std::string&);  
+            };
+            typedef std::map<std::string, text_edit_ref> text_edit_ref_map;
+
+            typedef std::map<std::string, QWidget*> widget_map;
             typedef std::shared_ptr<SLB::Script> script_ptr;
 
             class lua_script_api : public QObject
@@ -133,27 +140,27 @@ namespace fire
                     void reset_widgets();
                     void message_recieved(const simple_message&);
 
-                    //button_ref code
                     button_ref_map button_refs;
-                    button_widget_map button_widgets;
-
-                    //edit_ref code
                     edit_ref_map edit_refs;
-                    edit_widget_map edit_widgets;
+                    text_edit_ref_map text_edit_refs;
+
+                    //all widgets referenced are stored here
+                    widget_map widgets;
 
                     //API
                     void print(const std::string& a);
-                    button_ref make_button(const std::string& title, int r = 0, int c = 0);
-                    edit_ref make_edit(const std::string& title, int r = 0, int c = 0);
+                    button_ref place_button(const std::string& title, int r = 0, int c = 0);
+                    edit_ref place_edit(const std::string& text, int r = 0, int c = 0);
+                    text_edit_ref place_text_edit(const std::string& text, int r = 0, int c = 0);
 
                     void set_message_callback(const std::string& a);
                     void send_all(const std::string&);
 
-
                     public slots:
                         void button_clicked(QString id);
-                        void edit_text_edited(QString id);
+                        void edit_edited(QString id);
                         void edit_finished(QString id);
+                        void text_edit_edited(QString id);
             };
 
             typedef std::shared_ptr<lua_script_api> lua_script_api_ptr;

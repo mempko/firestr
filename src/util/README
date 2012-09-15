@@ -27,5 +27,7 @@ mencode - Implements a library to serialize data structures into
           mencode (max encode). This is inspired by bencode used
           by BitTorrent. All messages are encoded in this format.
 
+thread  - Utilities dealing with threads.
+
 uuid    - Simple utility to generate uuids.
 
