@@ -260,6 +260,17 @@ namespace fire
             return p != _map.end() ? _list[p->second] : 0; 
         }
 
+        user_info_ptr contact_list::get(size_t i) const
+        {
+            u::mutex_scoped_lock l(_mutex);
+
+            if(i >= _list.size()) return nullptr;
+
+            auto c = _list[i];
+            ENSURE(c);
+            return c;
+        }
+
         bool contact_list::empty() const
         {
             u::mutex_scoped_lock l(_mutex);

@@ -98,8 +98,16 @@ namespace fire
                     .set("button", &lua_script_api::place_button)
                     .set("edit", &lua_script_api::place_edit)
                     .set("text_edit", &lua_script_api::place_text_edit)
+                    .set("total_contacts", &lua_script_api::total_contacts)
+                    .set("last_contact", &lua_script_api::last_contact)
+                    .set("contact", &lua_script_api::get_contact)
                     .set("when_message_received", &lua_script_api::set_message_callback)
-                    .set("send_all", &lua_script_api::send_all);
+                    .set("send", &lua_script_api::send_all)
+                    .set("send_to", &lua_script_api::send_to);
+
+                SLB::Class<contact_ref>{"contact", &manager}
+                    .set("name", &contact_ref::get_name)
+                    .set("online", &contact_ref::is_online);
 
                 SLB::Class<button_ref>{"button", &manager}
                     .set("get_text", &button_ref::get_text)
@@ -242,6 +250,67 @@ namespace fire
                     simple_message sm{m};
                     sender->send(c->id(), sm); 
                 }
+            }
+
+            void lua_script_api::send_to(const contact_ref& cr, const std::string& m)
+            {
+                INVARIANT(sender);
+
+                auto c = contacts.by_id(cr.id);
+                if(!c) return;
+
+                simple_message sm{m};
+                sender->send(c->id(), sm); 
+            }
+
+            size_t lua_script_api::total_contacts() const
+            {
+                return contacts.size();
+            }
+
+            int lua_script_api::last_contact() const
+            {
+                return contacts.size() - 1;
+            }
+
+            contact_ref empty_contact_ref(lua_script_api& api)
+            {
+                contact_ref e;
+                e.api = &api;
+                e.id = "0";
+                return e;
+            }
+
+            contact_ref lua_script_api::get_contact(size_t i)
+            {
+                auto c = contacts.get(i);
+                if(!c) return empty_contact_ref(*this);
+
+                contact_ref r;
+                r.id = c->id();
+                r.api = this;
+
+                ENSURE_EQUAL(r.api, this);
+                ENSURE_FALSE(r.id.empty());
+                return r;
+            }
+
+            std::string contact_ref::get_name() const
+            {
+                INVARIANT(api);
+
+                auto c = api->contacts.by_id(id);
+                if(!c) return "";
+
+                return c->name();
+            }
+
+            bool contact_ref::is_online() const
+            {
+                INVARIANT(api);
+                INVARIANT(api->session);
+
+                return api->session->user_service()->contact_available(id);
             }
 
             bool widget_ref::enabled()
@@ -536,7 +605,6 @@ namespace fire
                 rp->second.edited_callback = c;
                 edited_callback = c;
             }
-
         }
     }
 }

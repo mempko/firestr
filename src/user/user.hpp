@@ -79,6 +79,7 @@ namespace fire
                 bool add(user_info_ptr);
                 bool remove(user_info_ptr);
                 user_info_ptr by_id(const std::string& id) const;
+                user_info_ptr get(size_t) const;
                 
             public:
                 bool empty() const;
