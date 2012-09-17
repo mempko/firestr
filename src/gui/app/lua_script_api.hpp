@@ -57,10 +57,14 @@ namespace fire
 
             class lua_script_api;
 
-            struct widget_ref
+            struct basic_ref
+            {
+                lua_script_api* api;
+            };
+
+            struct widget_ref : public basic_ref
             {
                 std::string id;
-                lua_script_api* api;
 
                 bool enabled(); 
                 void enable();
@@ -109,6 +113,15 @@ namespace fire
             typedef std::map<std::string, text_edit_ref> text_edit_ref_map;
 
             typedef std::map<std::string, QWidget*> widget_map;
+
+            struct contact_ref : public basic_ref
+            {
+                std::string id;
+
+                std::string get_name() const;
+                bool is_online() const;
+            };
+
             typedef std::shared_ptr<SLB::Script> script_ptr;
 
             class lua_script_api : public QObject
@@ -147,7 +160,9 @@ namespace fire
                     //all widgets referenced are stored here
                     widget_map widgets;
 
+                    //================================
                     //API
+                    //================================
                     void print(const std::string& a);
                     button_ref place_button(const std::string& title, int r = 0, int c = 0);
                     edit_ref place_edit(const std::string& text, int r = 0, int c = 0);
@@ -155,6 +170,11 @@ namespace fire
 
                     void set_message_callback(const std::string& a);
                     void send_all(const std::string&);
+                    void send_to(const contact_ref&, const std::string&);
+
+                    size_t total_contacts() const;
+                    int last_contact() const;
+                    contact_ref get_contact(size_t);
 
                     public slots:
                         void button_clicked(QString id);
