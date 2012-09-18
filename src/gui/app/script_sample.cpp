@@ -119,7 +119,6 @@ namespace fire
 
                 //connect api widgets 
                 layout()->addWidget(_api->canvas, 0, 0, 1, 2);
-                QObject::connect(_api->output->verticalScrollBar(), SIGNAL(rangeChanged(int, int)), this, SLOT(scroll_to_bottom(int, int)));
                 layout()->addWidget(_api->output, 1, 0, 1, 2);
 
                 //text edit
@@ -265,13 +264,6 @@ namespace fire
             catch(...)
             {
                 std::cerr << "script_sample: unexpected error in check_mail." << std::endl;
-            }
-
-            void script_sample::scroll_to_bottom(int min, int max)
-            {
-                Q_UNUSED(min);
-                INVARIANT(_api->output);
-                _api->output->verticalScrollBar()->setValue(max);
             }
         }
     }

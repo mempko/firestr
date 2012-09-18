@@ -55,7 +55,6 @@ namespace fire
                 public slots:
                     void send_message();
                     void check_mail();
-                    void scroll_to_bottom(int min, int max);
 
                 private:
                     void init();

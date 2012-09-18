@@ -46,10 +46,8 @@ namespace fire
                 void add_new_app(const messages::new_app&); 
                 void add(message*);
                 void add(QWidget*);
-                void scroll_to_bottom(int min, int max);
 
             private:
-                QScrollBar* _scrollbar;
                 session::session_ptr _session;
                 app::app_service_ptr _app_service;
         };

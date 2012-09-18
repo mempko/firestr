@@ -9,7 +9,7 @@ namespace fire
 {
     namespace gui
     {
-        list::list()
+        list::list() : _auto_scroll{false}
         {
             //setup root
             _root = new QWidget;
@@ -21,6 +21,8 @@ namespace fire
             //setup base
             setWidgetResizable(true);
             setWidget(_root);
+
+            QObject::connect(verticalScrollBar(), SIGNAL(rangeChanged(int, int)), this, SLOT(scroll_to_bottom(int, int)));
 
             INVARIANT(_root);
             INVARIANT(_layout);
@@ -49,6 +51,17 @@ namespace fire
             INVARIANT(_layout);
 
             _layout->addWidget(w);
+        }
+
+        void list::auto_scroll(bool v)
+        {
+            _auto_scroll = v;
+        }
+
+        void list::scroll_to_bottom(int min, int max)
+        {
+            Q_UNUSED(min);
+            if(_auto_scroll) verticalScrollBar()->setValue(max);
         }
     }
 }

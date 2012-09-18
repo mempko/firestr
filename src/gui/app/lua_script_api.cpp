@@ -696,6 +696,7 @@ namespace fire
 
                 //create edit widget
                 auto w = new gui::list;
+                w->auto_scroll(true);
 
                 //add ref and widget to maps
                 list_refs[ref.id] = ref;
@@ -719,7 +720,6 @@ namespace fire
                 if(!w) return;
 
                 l->add(w);
-                l->verticalScrollBar()->setValue(l->verticalScrollBar()->maximum());
             }
 
             void list_ref::clear()

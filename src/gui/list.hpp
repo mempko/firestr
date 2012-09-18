@@ -31,11 +31,16 @@ namespace fire
             public:
                 list();
 
+            public:
+                void auto_scroll(bool);
+
             public slots:
                 virtual void add(QWidget*);
                 virtual void clear();
+                virtual void scroll_to_bottom(int min, int max);
 
             protected:
+                bool _auto_scroll;
                 QWidget* _root;
                 QVBoxLayout* _layout; 
         };

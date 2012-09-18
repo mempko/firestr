@@ -61,7 +61,6 @@ namespace fire
                     void send_script();
                     void save_app();
                     void check_mail();
-                    void scroll_to_bottom(int min, int max);
 
                 private:
                     void init();
