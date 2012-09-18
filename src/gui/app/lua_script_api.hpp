@@ -41,20 +41,6 @@ namespace fire
     {
         namespace app
         {
-            extern const std::string SIMPLE_MESSAGE;
-            class simple_message
-            {
-                public:
-                    simple_message(const std::string& t);
-                    simple_message(const fire::message::message&);
-                    operator fire::message::message() const;
-                public:
-                    const std::string& text() const;
-
-                private:
-                    std::string _text;
-            };
-
             class lua_script_api;
 
             struct basic_ref
@@ -132,6 +118,25 @@ namespace fire
                 bool is_online() const;
             };
 
+            extern const std::string SCRIPT_MESSAGE;
+            class script_message
+            {
+                public:
+                    script_message(lua_script_api*);
+                    script_message(const fire::message::message&, lua_script_api*);
+                    operator fire::message::message() const;
+
+                public:
+                    std::string get(const std::string&) const;
+                    void set(const std::string&, const std::string&);
+                    contact_ref from() const;
+
+                private:
+                    std::string _from_id;
+                    util::dict _v;
+                    lua_script_api* _api;
+            };
+
             typedef std::shared_ptr<SLB::Script> script_ptr;
             typedef std::map<std::string, QWidget*> widget_map;
             typedef std::map<std::string, QGridLayout*> layout_map;
@@ -163,7 +168,7 @@ namespace fire
                     std::string execute(const std::string&);
                     void run(const std::string name, const std::string&);
                     void reset_widgets();
-                    void message_recieved(const simple_message&);
+                    void message_recieved(const script_message&);
 
                     button_ref_map button_refs;
                     edit_ref_map edit_refs;
@@ -189,8 +194,10 @@ namespace fire
                     void place_across(const widget_ref& w, int r, int c, int row_span, int col_span);
 
                     void set_message_callback(const std::string& a);
-                    void send_all(const std::string&);
-                    void send_to(const contact_ref&, const std::string&);
+
+                    script_message make_message();
+                    void send_all(const script_message&);
+                    void send_to(const contact_ref&, const script_message&); 
 
                     size_t total_contacts() const;
                     int last_contact() const;
@@ -204,6 +211,7 @@ namespace fire
             };
 
             typedef std::shared_ptr<lua_script_api> lua_script_api_ptr;
+
         }
     }
 }
