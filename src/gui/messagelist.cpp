@@ -35,13 +35,10 @@ namespace fire
             REQUIRE(app_service);
             REQUIRE(session);
 
-            //setup scrollbar
-            _scrollbar = verticalScrollBar();
-            QObject::connect(_scrollbar, SIGNAL(rangeChanged(int, int)), this, SLOT(scroll_to_bottom(int, int)));
+            auto_scroll(true);
 
             INVARIANT(_root);
             INVARIANT(_layout);
-            INVARIANT(_scrollbar);
             INVARIANT(_session);
             INVARIANT(_app_service);
         }
@@ -62,13 +59,6 @@ namespace fire
             INVARIANT(_layout);
 
             list::add(w);
-        }
-
-        void message_list::scroll_to_bottom(int min, int max)
-        {
-            Q_UNUSED(min);
-            INVARIANT(_scrollbar);
-            _scrollbar->setValue(max);
         }
 
         s::session_ptr message_list::session()

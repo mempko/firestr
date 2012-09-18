@@ -107,7 +107,7 @@ namespace fire
 
                 //message list
                 _messages = new list;
-                QObject::connect(_messages->verticalScrollBar(), SIGNAL(rangeChanged(int, int)), this, SLOT(scroll_to_bottom(int, int)));
+                _messages->auto_scroll(true);
                 layout()->addWidget(_messages, 0, 0, 1, 2);
 
                 //text edit
@@ -216,14 +216,6 @@ namespace fire
             {
                 std::cerr << "chat_sample: unexpected error in check_mail." << std::endl;
             }
-
-            void chat_sample::scroll_to_bottom(int min, int max)
-            {
-                Q_UNUSED(min);
-                INVARIANT(_messages);
-                _messages->verticalScrollBar()->setValue(max);
-            }
-
         }
     }
 }
