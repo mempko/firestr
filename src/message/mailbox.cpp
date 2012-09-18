@@ -44,7 +44,6 @@ namespace fire
         void mailbox::push_inbox(const message& m)
         {
             _in.push(m);
-            ENSURE_GREATER(_in.size(), 0);
         }
 
         bool mailbox::pop_inbox(message& m)
@@ -55,7 +54,6 @@ namespace fire
         void mailbox::push_outbox(const message& m)
         {
             _out.push(m);
-            ENSURE_GREATER(_out.size(), 0);
         }
 
         bool mailbox::pop_outbox(message& m)

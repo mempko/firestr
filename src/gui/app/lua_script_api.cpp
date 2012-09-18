@@ -95,9 +95,13 @@ namespace fire
 
                 SLB::Class<lua_script_api, SLB::Instance::NoCopyNoDestroy>{"Api", &manager}
                     .set("print", &lua_script_api::print)
-                    .set("button", &lua_script_api::place_button)
-                    .set("edit", &lua_script_api::place_edit)
-                    .set("text_edit", &lua_script_api::place_text_edit)
+                    .set("button", &lua_script_api::make_button)
+                    .set("edit", &lua_script_api::make_edit)
+                    .set("text_edit", &lua_script_api::make_text_edit)
+                    .set("list", &lua_script_api::make_list)
+                    .set("canvas", &lua_script_api::make_canvas)
+                    .set("place", &lua_script_api::place)
+                    .set("place_across", &lua_script_api::place_across)
                     .set("total_contacts", &lua_script_api::total_contacts)
                     .set("last_contact", &lua_script_api::last_contact)
                     .set("contact", &lua_script_api::get_contact)
@@ -108,6 +112,10 @@ namespace fire
                 SLB::Class<contact_ref>{"contact", &manager}
                     .set("name", &contact_ref::get_name)
                     .set("online", &contact_ref::is_online);
+
+                SLB::Class<canvas_ref>{"canvas", &manager}
+                    .set("place", &canvas_ref::place)
+                    .set("place_across", &canvas_ref::place_across);
 
                 SLB::Class<button_ref>{"button", &manager}
                     .set("get_text", &button_ref::get_text)
@@ -138,6 +146,13 @@ namespace fire
                     .set("enable", &widget_ref::enable)
                     .set("disable", &widget_ref::disable);
 
+                SLB::Class<list_ref>{"list_ref", &manager}
+                    .set("add", &list_ref::add)
+                    .set("clear", &list_ref::clear)
+                    .set("enabled", &widget_ref::enabled)
+                    .set("enable", &widget_ref::enable)
+                    .set("disable", &widget_ref::disable);
+
                 state.reset(new SLB::Script{&manager});
                 state->set("app", this);
 
@@ -151,21 +166,11 @@ namespace fire
             }
 
             std::string lua_script_api::execute(const std::string& s)
-                try
-                {
-                    REQUIRE_FALSE(s.empty());
-                    INVARIANT(state);
+            {
+                REQUIRE_FALSE(s.empty());
+                INVARIANT(state);
 
-                    state->doString(s.c_str());
-                    return "";
-                }
-            catch(std::exception& e)
-            {
-                return e.what();
-            }
-            catch(...)
-            {
-                return "unknown";
+                return state->safeDoString(s.c_str()) ? "" : state->getLastError();
             }
 
             void lua_script_api::reset_widgets()
@@ -188,6 +193,8 @@ namespace fire
                 button_refs.clear();
                 edit_refs.clear();
                 text_edit_refs.clear();
+                list_refs.clear();
+                canvas_refs.clear();
                 widgets.clear();
 
                 ENSURE_EQUAL(layout->count(), 0);
@@ -209,6 +216,12 @@ namespace fire
                     auto wp = map.find(id);
                     return wp != map.end() ? dynamic_cast<W*>(wp->second) : nullptr;
                 }
+
+            QGridLayout* get_layout(const std::string& id, layout_map& map)
+            {
+                auto lp = map.find(id);
+                return lp != map.end() ? lp->second : nullptr;
+            }
 
             void set_enabled(const std::string& id, widget_map& map, bool enabled)
             {
@@ -313,6 +326,62 @@ namespace fire
                 return api->session->user_service()->contact_available(id);
             }
 
+            canvas_ref lua_script_api::make_canvas(int r, int c)
+            {
+                INVARIANT(layout);
+                INVARIANT(canvas);
+
+                //create button reference
+                canvas_ref ref;
+                ref.id = u::uuid();
+                ref.api = this;
+
+                //create widget and new layout
+                auto b = new QWidget;
+                auto l = new QGridLayout;
+                b->setLayout(l);
+
+                //add ref and widget to maps
+                canvas_refs[ref.id] = ref;
+                widgets[ref.id] = b;
+                layouts[ref.id] = l;
+
+                //place
+                layout->addWidget(b, r, c);
+
+                ENSURE_FALSE(ref.id.empty());
+                ENSURE(ref.api);
+                return ref;
+            }
+
+            void canvas_ref::place(const widget_ref& wr, int r, int c)
+            {
+                INVARIANT(api);
+                INVARIANT_FALSE(id.empty());
+
+                auto l = get_layout(id, api->layouts);
+                if(!l) return;
+
+                auto w = get_widget<QWidget>(wr.id, api->widgets);
+                if(!w) return;
+
+                l->addWidget(w, r, c);
+            }
+
+            void canvas_ref::place_across(const widget_ref& wr, int r, int c, int row_span, int col_span)
+            {
+                INVARIANT(api);
+                INVARIANT_FALSE(id.empty());
+
+                auto l = get_layout(id, api->layouts);
+                if(!l) return;
+
+                auto w = get_widget<QWidget>(wr.id, api->widgets);
+                if(!w) return;
+
+                l->addWidget(w, r, c, row_span, col_span);
+            }
+
             bool widget_ref::enabled()
             {
                 INVARIANT(api);
@@ -332,9 +401,28 @@ namespace fire
                 set_enabled(id, api->widgets, false);
             }
 
-            button_ref lua_script_api::place_button(const std::string& text, int r, int c)
+            void lua_script_api::place(const widget_ref& wr, int r, int c)
             {
                 INVARIANT(layout);
+
+                auto w = get_widget<QWidget>(wr.id, widgets);
+                if(!w) return;
+
+                layout->addWidget(w, r, c);
+            }
+
+            void lua_script_api::place_across(const widget_ref& wr, int r, int c, int row_span, int col_span)
+            {
+                INVARIANT(layout);
+
+                auto w = get_widget<QWidget>(wr.id, widgets);
+                if(!w) return;
+
+                layout->addWidget(w, r, c, row_span, col_span);
+            }
+
+            button_ref lua_script_api::make_button(const std::string& text)
+            {
                 INVARIANT(canvas);
 
                 //create button reference
@@ -354,9 +442,6 @@ namespace fire
                 //add ref and widget to maps
                 button_refs[ref.id] = ref;
                 widgets[ref.id] = b;
-
-                //place
-                layout->addWidget(b, r, c);
 
                 ENSURE_FALSE(ref.id.empty());
                 ENSURE(ref.callback.empty());
@@ -414,9 +499,9 @@ namespace fire
                 callback = c;
             }  
 
-            edit_ref lua_script_api::place_edit(const std::string& text, int r, int c)
+            edit_ref lua_script_api::make_edit(const std::string& text)
             {
-                INVARIANT(layout);
+                INVARIANT(canvas);
 
                 //create edit reference
                 edit_ref ref;
@@ -440,9 +525,6 @@ namespace fire
                 //add ref and widget to maps
                 edit_refs[ref.id] = ref;
                 widgets[ref.id] = e;
-
-                //place
-                layout->addWidget(e, r, c);
 
                 ENSURE_FALSE(ref.id.empty());
                 ENSURE(ref.edited_callback.empty());
@@ -525,9 +607,9 @@ namespace fire
                 finished_callback = c;
             }
 
-            text_edit_ref lua_script_api::place_text_edit(const std::string& text, int r, int c)
+            text_edit_ref lua_script_api::make_text_edit(const std::string& text)
             {
-                INVARIANT(layout);
+                INVARIANT(canvas);
 
                 //create edit reference
                 text_edit_ref ref;
@@ -546,9 +628,6 @@ namespace fire
                 //add ref and widget to maps
                 text_edit_refs[ref.id] = ref;
                 widgets[ref.id] = e;
-
-                //place
-                layout->addWidget(e, r, c);
 
                 ENSURE_FALSE(ref.id.empty());
                 ENSURE(ref.edited_callback.empty());
@@ -604,6 +683,54 @@ namespace fire
 
                 rp->second.edited_callback = c;
                 edited_callback = c;
+            }
+
+            list_ref lua_script_api::make_list()
+            {
+                INVARIANT(canvas);
+
+                //create edit reference
+                list_ref ref;
+                ref.id = u::uuid();
+                ref.api = this;
+
+                //create edit widget
+                auto w = new gui::list;
+
+                //add ref and widget to maps
+                list_refs[ref.id] = ref;
+                widgets[ref.id] = w;
+
+                ENSURE_FALSE(ref.id.empty());
+                ENSURE(ref.api);
+                return ref;
+            }
+
+            void list_ref::add(const widget_ref& wr)
+            {
+                REQUIRE_FALSE(wr.id.empty());
+                INVARIANT(api);
+                INVARIANT_FALSE(id.empty());
+
+                auto l = get_widget<gui::list>(id, api->widgets);
+                if(!l) return;
+
+                auto w = get_widget<QWidget>(wr.id, api->widgets);
+                if(!w) return;
+
+                l->add(w);
+                l->verticalScrollBar()->setValue(l->verticalScrollBar()->maximum());
+            }
+
+            void list_ref::clear()
+            {
+                INVARIANT(api);
+                INVARIANT_FALSE(id.empty());
+
+                auto l = get_widget<gui::list>(id, api->widgets);
+                if(!l) return;
+
+                l->clear();
             }
         }
     }

@@ -59,13 +59,12 @@ namespace fire
 
             struct basic_ref
             {
+                std::string id;
                 lua_script_api* api;
             };
 
             struct widget_ref : public basic_ref
             {
-                std::string id;
-
                 bool enabled(); 
                 void enable();
                 void disable();
@@ -101,7 +100,6 @@ namespace fire
 
             struct text_edit_ref : public widget_ref
             {
-                std::string id;
                 std::string edited_callback;
 
                 std::string get_text() const; 
@@ -112,17 +110,31 @@ namespace fire
             };
             typedef std::map<std::string, text_edit_ref> text_edit_ref_map;
 
-            typedef std::map<std::string, QWidget*> widget_map;
+            struct list_ref : public widget_ref
+            {
+                void add(const widget_ref& r);
+                void clear();
+            };
+            typedef std::map<std::string, list_ref> list_ref_map;
+
+            //decided to call layouts canvases
+            struct canvas_ref : public basic_ref
+            {
+                void place(const widget_ref& w, int r, int c);
+                void place_across(const widget_ref& w, int r, int c, int row_span, int col_span);
+            };
+
+            typedef std::map<std::string, canvas_ref> canvas_ref_map;
 
             struct contact_ref : public basic_ref
             {
-                std::string id;
-
                 std::string get_name() const;
                 bool is_online() const;
             };
 
             typedef std::shared_ptr<SLB::Script> script_ptr;
+            typedef std::map<std::string, QWidget*> widget_map;
+            typedef std::map<std::string, QGridLayout*> layout_map;
 
             class lua_script_api : public QObject
             {
@@ -156,17 +168,25 @@ namespace fire
                     button_ref_map button_refs;
                     edit_ref_map edit_refs;
                     text_edit_ref_map text_edit_refs;
+                    list_ref_map list_refs;
+                    canvas_ref_map canvas_refs;
 
                     //all widgets referenced are stored here
+                    layout_map layouts;
                     widget_map widgets;
 
                     //================================
                     //API
                     //================================
                     void print(const std::string& a);
-                    button_ref place_button(const std::string& title, int r = 0, int c = 0);
-                    edit_ref place_edit(const std::string& text, int r = 0, int c = 0);
-                    text_edit_ref place_text_edit(const std::string& text, int r = 0, int c = 0);
+                    button_ref make_button(const std::string& title);
+                    edit_ref make_edit(const std::string& text);
+                    text_edit_ref make_text_edit(const std::string& text);
+                    list_ref make_list();
+
+                    canvas_ref make_canvas(int r, int c);
+                    void place(const widget_ref& w, int r, int c);
+                    void place_across(const widget_ref& w, int r, int c, int row_span, int col_span);
 
                     void set_message_callback(const std::string& a);
                     void send_all(const std::string&);
