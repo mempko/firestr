@@ -76,6 +76,9 @@ namespace fire
                     QTextEdit* _script;
                     QPushButton* _run;
                     QPushButton* _save;
+                    QWidget* _canvas;
+                    QGridLayout* _canvas_layout;
+                    list* _output;
 
                     lua_script_api_ptr _api;
                     app_ptr _app;

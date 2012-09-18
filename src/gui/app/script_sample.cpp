@@ -113,13 +113,16 @@ namespace fire
                 INVARIANT(layout());
                 INVARIANT(_session);
 
+                _canvas = new QWidget;
+                _canvas_layout = new QGridLayout;
+                _canvas->setLayout(_canvas_layout);
+                _output = new list;
+                layout()->addWidget(_canvas, 0, 0, 1, 2);
+                layout()->addWidget(_output, 1, 0, 1, 2);
+
                 _mail.reset(new m::mailbox{_id});
                 _sender.reset(new ms::sender{_session->user_service(), _mail});
-                _api.reset(new lua_script_api{_contacts, _sender, _session});
-
-                //connect api widgets 
-                layout()->addWidget(_api->canvas, 0, 0, 1, 2);
-                layout()->addWidget(_api->output, 1, 0, 1, 2);
+                _api.reset(new lua_script_api{_contacts, _sender, _session, _canvas, _canvas_layout, _output});
 
                 //text edit
                 _script = new QTextEdit;
@@ -148,6 +151,9 @@ namespace fire
                 INVARIANT(_sender);
                 INVARIANT(_run);
                 INVARIANT(_save);
+                INVARIANT(_canvas);
+                INVARIANT(_canvas_layout);
+                INVARIANT(_output);
             }
 
             const std::string& script_sample::id()

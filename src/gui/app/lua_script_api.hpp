@@ -155,10 +155,13 @@ namespace fire
                     lua_script_api(
                             const user::contact_list& con,
                             messages::sender_ptr sender,
-                            session::session_ptr session);
+                            session::session_ptr session,
+                            QWidget* can,
+                            QGridLayout* lay,
+                            list* out = nullptr);
 
                 public:
-                    gui::list* output;
+                    list* output;
                     QWidget* canvas;
                     QGridLayout* layout;
                     SLB::Manager manager;
