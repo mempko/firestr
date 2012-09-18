@@ -103,27 +103,26 @@ namespace fire
             lua_script_api::lua_script_api(
                     const us::contact_list& con,
                     ms::sender_ptr sndr,
-                    s::session_ptr s) :
+                    s::session_ptr s,
+                    QWidget* c,
+                    QGridLayout* cl,
+                    list* o ) :
                 contacts{con},
                 sender{sndr},
-                session{s}
+                session{s},
+                canvas{c},
+                layout{cl},
+                output{o}
             {
                 INVARIANT(sender);
                 INVARIANT(session);
-
-                //canvas
-                canvas = new QWidget;
-                layout = new QGridLayout;
-                canvas->setLayout(layout);
-
-                //message list
-                output = new list;
+                INVARIANT(canvas);
+                INVARIANT(layout);
 
                 bind();
 
                 INVARIANT(canvas);
                 INVARIANT(layout);
-                INVARIANT(output);
                 INVARIANT(state);
             }
 
@@ -229,7 +228,6 @@ namespace fire
 
             void lua_script_api::reset_widgets()
             {
-                INVARIANT(output);
                 INVARIANT(layout);
 
                 //clear widgets
@@ -243,7 +241,7 @@ namespace fire
                     delete c;
                 } 
 
-                output->clear();
+                if(output) output->clear();
                 button_refs.clear();
                 edit_refs.clear();
                 text_edit_refs.clear();
@@ -256,11 +254,10 @@ namespace fire
 
             void lua_script_api::run(const std::string name, const std::string& code)
             {
-                INVARIANT(output);
                 REQUIRE_FALSE(code.empty());
 
                 auto error = execute(code);
-                if(!error.empty()) output->add(make_output_widget(name, "error: " + error));
+                if(!error.empty() && output) output->add(make_output_widget(name, "error: " + error));
             }
 
             //API implementation 
@@ -288,8 +285,9 @@ namespace fire
             void lua_script_api::print(const std::string& a)
             {
                 INVARIANT(session);
-                INVARIANT(output);
                 INVARIANT(session->user_service());
+
+                if(!output) return;
 
                 auto self = session->user_service()->user().info().name();
                 output->add(make_output_widget(self, a));

@@ -97,11 +97,7 @@ namespace fire
 
                 _mail.reset(new m::mailbox{_id});
                 _sender.reset(new ms::sender{_session->user_service(), _mail});
-                _api.reset(new lua_script_api{_contacts, _sender, _session});
-
-                //connect api widgets 
-                layout()->addWidget(_api->canvas);
-                _api->output->hide();
+                _api.reset(new lua_script_api{_contacts, _sender, _session, root(), layout()});
 
                 //run script
                 _api->execute(_app->code());
