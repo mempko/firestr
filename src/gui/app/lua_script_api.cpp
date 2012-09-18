@@ -136,6 +136,7 @@ namespace fire
                 SLB::Class<lua_script_api, SLB::Instance::NoCopyNoDestroy>{"Api", &manager}
                     .set("print", &lua_script_api::print)
                     .set("button", &lua_script_api::make_button)
+                    .set("label", &lua_script_api::make_label)
                     .set("edit", &lua_script_api::make_edit)
                     .set("text_edit", &lua_script_api::make_text_edit)
                     .set("list", &lua_script_api::make_list)
@@ -168,6 +169,13 @@ namespace fire
                     .set("set_text", &button_ref::set_text)
                     .set("callback", &button_ref::get_callback)
                     .set("when_clicked", &button_ref::set_callback)
+                    .set("enabled", &widget_ref::enabled)
+                    .set("enable", &widget_ref::enable)
+                    .set("disable", &widget_ref::disable);
+
+                SLB::Class<label_ref>{"label", &manager}
+                    .set("text", &label_ref::get_text)
+                    .set("set_text", &label_ref::set_text)
                     .set("enabled", &widget_ref::enabled)
                     .set("enable", &widget_ref::enable)
                     .set("disable", &widget_ref::disable);
@@ -539,6 +547,53 @@ namespace fire
                 rp->second.callback = c;
                 callback = c;
             }  
+
+            label_ref lua_script_api::make_label(const std::string& text)
+            {
+                INVARIANT(canvas);
+
+                //create edit reference
+                label_ref ref;
+                ref.id = u::uuid();
+                ref.api = this;
+
+                //create edit widget
+                auto w = new QLabel(text.c_str());
+
+                //add ref and widget to maps
+                label_refs[ref.id] = ref;
+                widgets[ref.id] = w;
+
+                ENSURE_FALSE(ref.id.empty());
+                ENSURE(ref.api);
+                return ref;
+            }
+
+            std::string label_ref::get_text() const
+            {
+                INVARIANT(api);
+
+                auto rp = api->label_refs.find(id);
+                if(rp == api->label_refs.end()) return "";
+
+                auto l = get_widget<QLabel>(id, api->widgets);
+                CHECK(l);
+
+                return gui::convert(l->text());
+            }
+
+            void label_ref::set_text(const std::string& t)
+            {
+                INVARIANT(api);
+
+                auto rp = api->label_refs.find(id);
+                if(rp == api->label_refs.end()) return;
+
+                auto l = get_widget<QLabel>(id, api->widgets);
+                CHECK(l);
+
+                l->setText(t.c_str());
+            }
 
             edit_ref lua_script_api::make_edit(const std::string& text)
             {
