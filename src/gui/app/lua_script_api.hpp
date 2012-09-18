@@ -68,6 +68,13 @@ namespace fire
             };
             typedef std::map<std::string, button_ref> button_ref_map;
 
+            struct label_ref : public widget_ref
+            {
+                std::string get_text() const; 
+                void set_text(const std::string&);
+            };
+            typedef std::map<std::string, label_ref> label_ref_map;
+
             struct edit_ref : public widget_ref
             {
                 std::string edited_callback;
@@ -171,6 +178,7 @@ namespace fire
                     void message_recieved(const script_message&);
 
                     button_ref_map button_refs;
+                    label_ref_map label_refs;
                     edit_ref_map edit_refs;
                     text_edit_ref_map text_edit_refs;
                     list_ref_map list_refs;
@@ -185,6 +193,7 @@ namespace fire
                     //================================
                     void print(const std::string& a);
                     button_ref make_button(const std::string& title);
+                    label_ref make_label(const std::string& text);
                     edit_ref make_edit(const std::string& text);
                     text_edit_ref make_text_edit(const std::string& text);
                     list_ref make_list();
