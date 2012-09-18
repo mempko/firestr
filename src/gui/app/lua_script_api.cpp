@@ -38,26 +38,66 @@ namespace fire
     {
         namespace app
         {
-            const std::string SIMPLE_MESSAGE = "simple_msg";
-            simple_message::simple_message(const std::string& t) : _text{t} { }
+            const std::string SCRIPT_MESSAGE = "script_msg";
+            script_message::script_message(lua_script_api* api) : 
+                _from_id{}, _v{}, _api{api} 
+                { 
+                    REQUIRE(_api);
+                    INVARIANT(_api);
+                }
 
-            simple_message::simple_message(const m::message& m)
+            script_message::script_message(const m::message& m, lua_script_api* api) :
+                _api{api}
             {
-                REQUIRE_EQUAL(m.meta.type, SIMPLE_MESSAGE);
-                _text = u::to_str(m.data);
+                REQUIRE(api);
+                REQUIRE_EQUAL(m.meta.type, SCRIPT_MESSAGE);
+
+                _from_id = m.meta.extra["from_id"].as_string();
+                u::decode(m.data, _v);
+
+                INVARIANT(_api);
             }
             
-            simple_message::operator m::message() const
+            script_message::operator m::message() const
             {
                 m::message m; 
-                m.meta.type = SIMPLE_MESSAGE;
-                m.data = u::to_bytes(_text);
+                m.meta.type = SCRIPT_MESSAGE;
+                m.data = u::encode(_v);
                 return m;
             }
 
-            const std::string& simple_message::text() const
+            std::string script_message::get(const std::string& k) const
             {
-                return _text;
+                return _v[k].as_string();
+            }
+
+            void script_message::set(const std::string& k, const std::string& v) 
+            {
+                _v[k] = v;
+            }
+
+            contact_ref empty_contact_ref(lua_script_api& api)
+            {
+                contact_ref e;
+                e.api = &api;
+                e.id = "0";
+                return e;
+            }
+
+            contact_ref script_message::from() const
+            {
+                INVARIANT(_api);
+
+                auto c = _api->contacts.by_id(_from_id);
+                if(!c) return empty_contact_ref(*_api);
+
+                contact_ref r;
+                r.id = c->id();
+                r.api = _api;
+
+                ENSURE_EQUAL(r.api, _api);
+                ENSURE_FALSE(r.id.empty());
+                return r;
             }
 
             lua_script_api::lua_script_api(
@@ -105,6 +145,7 @@ namespace fire
                     .set("total_contacts", &lua_script_api::total_contacts)
                     .set("last_contact", &lua_script_api::last_contact)
                     .set("contact", &lua_script_api::get_contact)
+                    .set("message", &lua_script_api::make_message)
                     .set("when_message_received", &lua_script_api::set_message_callback)
                     .set("send", &lua_script_api::send_all)
                     .set("send_to", &lua_script_api::send_to);
@@ -113,34 +154,39 @@ namespace fire
                     .set("name", &contact_ref::get_name)
                     .set("online", &contact_ref::is_online);
 
+                SLB::Class<script_message>{"script_message", &manager}
+                    .set("from", &script_message::from)
+                    .set("get", &script_message::get)
+                    .set("set", &script_message::set);
+
                 SLB::Class<canvas_ref>{"canvas", &manager}
                     .set("place", &canvas_ref::place)
                     .set("place_across", &canvas_ref::place_across);
 
                 SLB::Class<button_ref>{"button", &manager}
-                    .set("get_text", &button_ref::get_text)
+                    .set("text", &button_ref::get_text)
                     .set("set_text", &button_ref::set_text)
-                    .set("get_callback", &button_ref::get_callback)
+                    .set("callback", &button_ref::get_callback)
                     .set("when_clicked", &button_ref::set_callback)
                     .set("enabled", &widget_ref::enabled)
                     .set("enable", &widget_ref::enable)
                     .set("disable", &widget_ref::disable);
 
                 SLB::Class<edit_ref>{"edit", &manager}
-                    .set("get_text", &edit_ref::get_text)
+                    .set("text", &edit_ref::get_text)
                     .set("set_text", &edit_ref::set_text)
-                    .set("get_edited_callback", &edit_ref::get_edited_callback)
+                    .set("edited_callback", &edit_ref::get_edited_callback)
                     .set("when_edited", &edit_ref::set_edited_callback)
-                    .set("get_finished_callback", &edit_ref::get_finished_callback)
+                    .set("finished_callback", &edit_ref::get_finished_callback)
                     .set("when_finished", &edit_ref::set_finished_callback)
                     .set("enabled", &widget_ref::enabled)
                     .set("enable", &widget_ref::enable)
                     .set("disable", &widget_ref::disable);
 
                 SLB::Class<text_edit_ref>{"text_edit", &manager}
-                    .set("get_text", &text_edit_ref::get_text)
+                    .set("text", &text_edit_ref::get_text)
                     .set("set_text", &text_edit_ref::set_text)
-                    .set("get_edited_callback", &text_edit_ref::get_edited_callback)
+                    .set("edited_callback", &text_edit_ref::get_edited_callback)
                     .set("when_edited", &text_edit_ref::set_edited_callback)
                     .set("enabled", &widget_ref::enabled)
                     .set("enable", &widget_ref::enable)
@@ -241,12 +287,12 @@ namespace fire
                 output->add(make_output_widget(self, a));
             }
 
-            void lua_script_api::message_recieved(const simple_message& m)
+            void lua_script_api::message_recieved(const script_message& m)
             {
                 INVARIANT(state);
                 if(message_callback.empty()) return;
 
-                state->call(message_callback, m.text());
+                state->call(message_callback, m);
             }
 
             void lua_script_api::set_message_callback(const std::string& a)
@@ -254,26 +300,29 @@ namespace fire
                 message_callback = a;
             }
 
-            void lua_script_api::send_all(const std::string& m)
+            script_message lua_script_api::make_message()
+            {
+                return {this};
+            }
+
+            void lua_script_api::send_all(const script_message& m)
             {
                 INVARIANT(sender);
                 for(auto c : contacts.list())
                 {
                     CHECK(c);
-                    simple_message sm{m};
-                    sender->send(c->id(), sm); 
+                    sender->send(c->id(), m); 
                 }
             }
 
-            void lua_script_api::send_to(const contact_ref& cr, const std::string& m)
+            void lua_script_api::send_to(const contact_ref& cr, const script_message& m)
             {
                 INVARIANT(sender);
 
                 auto c = contacts.by_id(cr.id);
                 if(!c) return;
 
-                simple_message sm{m};
-                sender->send(c->id(), sm); 
+                sender->send(c->id(), m); 
             }
 
             size_t lua_script_api::total_contacts() const
@@ -284,14 +333,6 @@ namespace fire
             int lua_script_api::last_contact() const
             {
                 return contacts.size() - 1;
-            }
-
-            contact_ref empty_contact_ref(lua_script_api& api)
-            {
-                contact_ref e;
-                e.api = &api;
-                e.id = "0";
-                return e;
             }
 
             contact_ref lua_script_api::get_contact(size_t i)

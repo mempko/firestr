@@ -44,7 +44,7 @@ namespace fire
             {
                 const size_t TIMER_SLEEP = 100; //in milliseconds
                 const size_t PADDING = 20;
-                const std::string SCRIPT_MESSAGE = "script";
+                const std::string SCRIPT_CODE_MESSAGE = "script";
             }
 
             struct text_script
@@ -56,7 +56,7 @@ namespace fire
             m::message convert(const text_script& t)
             {
                 m::message m;
-                m.meta.type = SCRIPT_MESSAGE;
+                m.meta.type = SCRIPT_CODE_MESSAGE;
                 m.data = u::to_bytes(t.text);
 
                 return m;
@@ -64,7 +64,7 @@ namespace fire
 
             void convert(const m::message& m, text_script& t)
             {
-                REQUIRE_EQUAL(m.meta.type, SCRIPT_MESSAGE);
+                REQUIRE_EQUAL(m.meta.type, SCRIPT_CODE_MESSAGE);
                 t.from_id = m.meta.extra["from_id"].as_string();
                 t.text = u::to_str(m.data);
             }
@@ -234,7 +234,7 @@ namespace fire
                 m::message m;
                 while(_mail->pop_inbox(m))
                 {
-                    if(m.meta.type == SCRIPT_MESSAGE)
+                    if(m.meta.type == SCRIPT_CODE_MESSAGE)
                     {
                         text_script t;
                         convert(m, t);
@@ -246,9 +246,9 @@ namespace fire
                         _api->reset_widgets();
                         _api->run(c->name(), t.text);
                     }
-                    else if(m.meta.type == SIMPLE_MESSAGE)
+                    else if(m.meta.type == SCRIPT_MESSAGE)
                     {
-                        simple_message sm{m};
+                        script_message sm{m, _api.get()};
                         _api->message_recieved(sm);
                     }
                     else

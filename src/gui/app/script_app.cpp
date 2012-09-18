@@ -146,9 +146,9 @@ namespace fire
                 m::message m;
                 while(_mail->pop_inbox(m))
                 {
-                    if(m.meta.type == SIMPLE_MESSAGE)
+                    if(m.meta.type == SCRIPT_MESSAGE)
                     {
-                        simple_message sm{m};
+                        script_message sm{m, _api.get()};
                         _api->message_recieved(sm);
                     }
                 }
