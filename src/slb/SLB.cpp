@@ -1743,6 +1743,7 @@ namespace SLB {
     {
       const char *s = lua_tostring(L,-1);
       _lastError = lua_tostring(L,-1);
+      result = false;
     }
     lua_settop(L,top);
     return result;
