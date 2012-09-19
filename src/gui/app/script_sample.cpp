@@ -196,9 +196,8 @@ namespace fire
                 }
 
                 //run the code
-                auto self = _session->user_service()->user().info().name();
                 _api->reset_widgets();
-                _api->run(self, code);
+                _api->run(code);
             }
 
             void script_sample::save_app() 
@@ -250,7 +249,7 @@ namespace fire
 
                         _script->setText(t.text.c_str());
                         _api->reset_widgets();
-                        _api->run(c->name(), t.text);
+                        _api->run(t.text);
                     }
                     else if(m.meta.type == SCRIPT_MESSAGE)
                     {

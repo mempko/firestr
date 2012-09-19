@@ -218,6 +218,12 @@ namespace fire
                 return new QLabel{m.c_str()};
             }
 
+            QWidget* make_error_widget(const std::string& text)
+            {
+                std::string m = "<b>error:</b> " + text; 
+                return new QLabel{m.c_str()};
+            }
+
             std::string lua_script_api::execute(const std::string& s)
             {
                 REQUIRE_FALSE(s.empty());
@@ -252,12 +258,12 @@ namespace fire
                 ENSURE_EQUAL(layout->count(), 0);
             }
 
-            void lua_script_api::run(const std::string name, const std::string& code)
+            void lua_script_api::run(const std::string& code)
             {
                 REQUIRE_FALSE(code.empty());
 
                 auto error = execute(code);
-                if(!error.empty() && output) output->add(make_output_widget(name, "error: " + error));
+                if(!error.empty() && output) output->add(make_error_widget("error: " + error));
             }
 
             //API implementation 
@@ -294,11 +300,25 @@ namespace fire
             }
 
             void lua_script_api::message_recieved(const script_message& m)
+            try
             {
                 INVARIANT(state);
                 if(message_callback.empty()) return;
 
                 state->call(message_callback, m);
+            }
+            catch(std::exception& e)
+            {
+                if(!output) return;
+
+                std::stringstream s;
+                s << "error in message callback: " << e.what();
+                output->add(make_error_widget(s.str()));
+            }
+            catch(...)
+            {
+                if(!output) return;
+                output->add(make_error_widget("error in message callback: unknown"));
             }
 
             void lua_script_api::set_message_callback(const std::string& a)
@@ -506,7 +526,7 @@ namespace fire
                 const auto& callback = rp->second.callback;
                 if(callback.empty()) return;
 
-                state->call(callback);
+                run(callback);
             }
 
             std::string button_ref::get_text() const
@@ -637,7 +657,7 @@ namespace fire
                 const auto& callback = rp->second.edited_callback;
                 if(callback.empty()) return;
 
-                state->call(callback);
+                run(callback);
             }
 
             void lua_script_api::edit_finished(QString id)
@@ -650,7 +670,7 @@ namespace fire
                 const auto& callback = rp->second.finished_callback;
                 if(callback.empty()) return;
 
-                state->call(callback);
+                run(callback);
             }
 
             std::string edit_ref::get_text() const
@@ -739,7 +759,7 @@ namespace fire
                 const auto& callback = rp->second.edited_callback;
                 if(callback.empty()) return;
 
-                state->call(callback);
+                run(callback);
             }
 
             std::string text_edit_ref::get_text() const
