@@ -492,6 +492,10 @@ namespace fire
 
                     new_session_event(r.session_id);
                 }
+                else if(m.meta.type == s::event::SESSION_SYNCED)
+                {
+                    session_synced_event(m);
+                }
                 else if(m.meta.type == us::event::NEW_CONTACT)
                 {
                     us::event::new_contact r;
@@ -633,6 +637,20 @@ namespace fire
             _sessions->addTab(sw, name.c_str());
 
             ENSURE(_sessions->isVisible());
+        }
+
+        void main_window::session_synced_event(const m::message& m)
+        {
+            INVARIANT(_session_service);
+
+            s::event::session_synced e;
+            s::event::convert(m, e);
+
+            auto s = _session_service->session_by_id(e.session_id);
+            if(!s) return;
+
+            CHECK(s->mail());
+            s->mail()->push_inbox(m);
         }
 
         void main_window::new_contact_event(const std::string& id)

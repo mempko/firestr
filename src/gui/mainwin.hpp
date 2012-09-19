@@ -77,6 +77,7 @@ namespace fire
                 //gui service event handlers
 
                 void new_session_event(const std::string& id);
+                void session_synced_event(const fire::message::message& m);
                 void new_contact_event(const std::string& id);
                 void contact_connected_event(const user::event::contact_connected&);
                 void contact_disconnected_event(const user::event::contact_disconnected&);

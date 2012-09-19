@@ -209,6 +209,10 @@ namespace fire
                 {
                     _messages->add_new_app(m);
                 }
+                else if(m.meta.type == s::event::SESSION_SYNCED)
+                {
+                    update_contacts();
+                }
                 else if(m.meta.type == us::event::CONTACT_CONNECTED)
                 {
                     update_contacts();
