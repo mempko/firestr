@@ -41,8 +41,8 @@ namespace fire
                         message::mailbox_ptr event = nullptr);
 
             public:
+                session_ptr sync_session(const std::string& id, const user::contact_list&);
                 session_ptr create_session(const std::string& id);
-                session_ptr create_session(const std::string& id, const user::contact_list&);
                 session_ptr create_session(user::contact_list&);
                 session_ptr create_session();
 
@@ -57,8 +57,8 @@ namespace fire
                         const user::user_info_ptr contact, 
                         session_ptr session);
 
-                void sync_session(session_ptr session);
-                void sync_session(const std::string& session_id);
+                void sync_existing_session(session_ptr session);
+                void sync_existing_session(const std::string& session_id);
                 void broadcast_message(const message::message&);
 
             public:
@@ -69,6 +69,7 @@ namespace fire
 
             private:
                 void fire_new_session_event(const std::string id);
+                void fire_session_synced_event(const std::string id);
 
             private:
                 message::post_office_ptr _post;
@@ -91,6 +92,14 @@ namespace fire
             };
             message::message convert(const new_session&);
             void convert(const message::message&, new_session&);
+
+            extern const std::string SESSION_SYNCED;
+            struct session_synced
+            {
+                std::string session_id;
+            };
+            message::message convert(const session_synced&);
+            void convert(const message::message&, session_synced&);
         }
     }
 }

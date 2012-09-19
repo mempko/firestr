@@ -35,7 +35,7 @@ namespace fire
         namespace 
         {
             const std::string SERVICE_ADDRESS = "session_service";
-            const std::string NEW_SESSION = "new_session";
+            const std::string SYNC_SESSION = "sync_session_msg";
         }
 
         typedef std::set<std::string> contact_ids;
@@ -52,28 +52,28 @@ namespace fire
             for(auto v : a) ids.insert(v.as_string());
         }
 
-        struct new_session
+        struct sync_session_msg
         {
             std::string from_id;
             std::string session_id;
             contact_ids ids;
         };
 
-        m::message convert(const new_session& s)
+        m::message convert(const sync_session_msg& s)
         {
             REQUIRE_FALSE(s.session_id.empty());
 
             m::message m;
-            m.meta.type = NEW_SESSION;
+            m.meta.type = SYNC_SESSION;
             m.meta.extra["session_id"] = s.session_id;
             m.data = u::encode(convert(s.ids));
 
             return m;
         }
 
-        void convert(const m::message& m, new_session& s)
+        void convert(const m::message& m, sync_session_msg& s)
         {
-            REQUIRE_EQUAL(m.meta.type, NEW_SESSION);
+            REQUIRE_EQUAL(m.meta.type, SYNC_SESSION);
 
             s.from_id = m.meta.extra["from_id"].as_string();
             s.session_id = m.meta.extra["session_id"].as_string();
@@ -106,9 +106,9 @@ namespace fire
             INVARIANT(mail());
             INVARIANT(_user_service);
 
-            if(m.meta.type == NEW_SESSION)
+            if(m.meta.type == SYNC_SESSION)
             {
-                new_session s;
+                sync_session_msg s;
                 convert(m, s);
 
                 auto c = _user_service->user().contacts().by_id(s.from_id);
@@ -117,17 +117,22 @@ namespace fire
                 us::users contacts;
                 contacts.push_back(c);
 
+                auto self = _user_service->user().info().id();
+
                 //also get other contacts in the session and add them
                 //only if the user knows them
                 for(auto id : s.ids)
                 {
+                    //skip self
+                    if(id == self) continue;
+
                     auto oc = _user_service->user().contacts().by_id(id);
                     if(!oc) continue;
 
                     contacts.push_back(oc);
                 }
 
-                create_session(s.session_id, contacts);
+                sync_session(s.session_id, contacts);
             }
             else
             {
@@ -135,7 +140,7 @@ namespace fire
             }
         }
 
-        session_ptr session_service::create_session(const std::string& id, const user::contact_list& contacts)
+        session_ptr session_service::sync_session(const std::string& id, const user::contact_list& contacts)
         {
             INVARIANT(_post);
             INVARIANT(_user_service);
@@ -143,41 +148,45 @@ namespace fire
 
             u::mutex_scoped_lock l(_mutex);
 
-            //session already exists, add to existing session
+            bool is_new = false;
+            session_ptr s;
+
             auto sp = _sessions.find(id);
-            if(sp != _sessions.end())
-            {
-                auto session = sp->second;
-                for(auto u : contacts.list())
-                {
-                    CHECK(u);
-                    add_contact_to_session(u, session);
-                }
 
-                return sp->second;
+            //session does not exist, create it
+            if(sp == _sessions.end())
+            {
+                //create new session
+                s.reset(new session{id, _user_service, _post});
+                _sessions[id] = s;
+
+                //add new session to post office
+                _post->add(s->mail());
+                is_new = true;
             }
+            else s = sp->second;
 
-            //create new session
-            session_ptr s{new session{id, _user_service, _post}};
-            _sessions[id] = s;
-
-            //add new session to post office
-            _post->add(s->mail());
-
-            //send request to all users in session
-            new_session ns;
-            ns.session_id = id; 
-
-            auto m = convert(ns);
-            for(auto u : contacts.list())
+            CHECK(s);
+            bool new_contact = false;
+            for(auto c : contacts.list())
             {
-                CHECK(u);
-                s->contacts().add(u);
-                _sender->send(u->id(), m);
+                CHECK(c);
+                //skip contact who is in our session
+                if(s->contacts().by_id(c->id())) continue;
+
+                s->contacts().add(c);
+                new_contact = true;
             }
 
             //done creating session, fire event
-            fire_new_session_event(id);
+            if(is_new) fire_new_session_event(id);
+
+            //sync session
+            if(new_contact) 
+            {
+                sync_existing_session(s);
+                fire_session_synced_event(id);
+            }
 
             return s;
         }
@@ -185,13 +194,13 @@ namespace fire
         session_ptr session_service::create_session(const std::string& id)
         {
             us::users nobody;
-            return create_session(id, nobody);
+            return sync_session(id, nobody);
         }
 
         session_ptr session_service::create_session(user::contact_list& contacts)
         {
             std::string id = u::uuid();
-            auto sp = create_session(id, contacts);
+            auto sp = sync_session(id, contacts);
 
             ENSURE(sp);
             return sp;
@@ -213,7 +222,7 @@ namespace fire
             return s != _sessions.end() ? s->second : nullptr;
         }
 
-        void session_service::sync_session(session_ptr s)
+        void session_service::sync_existing_session(session_ptr s)
         {
             REQUIRE(s);
 
@@ -227,7 +236,7 @@ namespace fire
             }
 
             //send request to all contacts in session
-            new_session ns;
+            sync_session_msg ns;
             ns.session_id = s->id(); 
             ns.ids = ids;
 
@@ -238,12 +247,12 @@ namespace fire
             }
         }
 
-        void session_service::sync_session(const std::string& session_id)
+        void session_service::sync_existing_session(const std::string& session_id)
         {
             auto s = session_by_id(session_id);
             if(!s) return;
 
-            sync_session(s);
+            sync_existing_session(s);
         }
 
         void session_service::add_contact_to_session( 
@@ -254,12 +263,13 @@ namespace fire
             REQUIRE(s);
             INVARIANT(_sender);
 
+            //if contact exists, we return
             if(s->contacts().by_id(contact->id())) return;
 
             //add contact to session
             s->contacts().add(contact);
 
-            sync_session(s);
+            sync_existing_session(s);
         }
 
         bool session_service::add_contact_to_session(
@@ -300,7 +310,8 @@ namespace fire
 
         namespace event
         {
-            const std::string NEW_SESSION = "new_session";
+            const std::string NEW_SESSION = "new_session_event";
+            const std::string SESSION_SYNCED = "session_synced_event";
 
             m::message convert(const new_session& s)
             {
@@ -315,11 +326,31 @@ namespace fire
                 REQUIRE_EQUAL(m.meta.type, NEW_SESSION);
                 s.session_id = u::to_str(m.data);
             }
+
+            m::message convert(const session_synced& s)
+            {
+                m::message m;
+                m.meta.type = SESSION_SYNCED;
+                m.data = u::to_bytes(s.session_id);
+                return m;
+            }
+
+            void convert(const m::message& m, session_synced& s)
+            {
+                REQUIRE_EQUAL(m.meta.type, SESSION_SYNCED);
+                s.session_id = u::to_str(m.data);
+            }
         }
 
         void session_service::fire_new_session_event(const std::string id)
         {
             event::new_session e{id};
+            send_event(event::convert(e));
+        }
+
+        void session_service::fire_session_synced_event(const std::string id)
+        {
+            event::session_synced e{id};
             send_event(event::convert(e));
         }
     }
