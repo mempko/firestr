@@ -100,7 +100,7 @@ namespace fire
                 _api.reset(new lua_script_api{_contacts, _sender, _session, root(), layout()});
 
                 //run script
-                _api->execute(_app->code());
+                _api->run(_app->code());
 
                 setMinimumHeight(layout()->sizeHint().height() + PADDING);
 

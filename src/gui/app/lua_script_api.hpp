@@ -176,7 +176,7 @@ namespace fire
                     //util
                     void bind();
                     std::string execute(const std::string&);
-                    void run(const std::string name, const std::string&);
+                    void run(const std::string&);
                     void reset_widgets();
                     void message_recieved(const script_message&);
 
