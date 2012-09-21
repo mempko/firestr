@@ -33,7 +33,7 @@ link_directories(${Boost_LIBRARY_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})
 
 #setup QT
-find_package(Qt4 REQUIRED)
+find_package(Qt4 REQUIRED QtCore QtGui QtNetwork)
 include(${QT_USE_FILE})
 add_definitions(${QT_DEFINITIONS})
 

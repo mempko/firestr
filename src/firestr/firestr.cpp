@@ -28,6 +28,7 @@
 namespace po = boost::program_options;
 namespace ip = boost::asio::ip;
 namespace fg = fire::gui;
+namespace fn = fire::network;
 
 po::options_description create_descriptions()
 {
