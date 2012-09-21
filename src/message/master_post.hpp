@@ -20,6 +20,7 @@
 
 #include "message/postoffice.hpp"
 #include "network/message_queue.hpp"
+#include "network/stungun.hpp"
 #include "util/thread.hpp"
 
 #include <memory>
@@ -29,7 +30,6 @@ namespace fire
 {
     namespace message
     {
-
         class master_post_office : public post_office
         {
             public:
@@ -42,6 +42,13 @@ namespace fire
                 virtual bool send_outside(const message&);
 
             private:
+                void setup_input_connection();
+
+            private:
+                bool _stunned;
+                std::string _in_host;
+                std::string _in_port;
+                network::stun_gun_ptr _stun;
                 network::message_queue_ptr _in;
                 util::thread_uptr _in_thread;
                 util::thread_uptr _out_thread;

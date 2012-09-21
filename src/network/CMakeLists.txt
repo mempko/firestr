@@ -19,6 +19,12 @@ include_directories(.)
 include_directories(..)
 
 file(GLOB src *.cpp)
+file(GLOB headers *.hpp)
+
+#qt specific
+QT4_WRAP_CPP(moc_headers ${headers})
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 add_library(fire_network STATIC
-    ${src})
+    ${src}
+    ${moc_headers})

@@ -29,14 +29,16 @@ namespace fire
 
         namespace
         {
+            const double STUN_WAIT = 10; //in milliseconds 
             const double THREAD_SLEEP = 10; //in milliseconds 
+            const std::string STUN_SERVER = "132.177.123.13";
+            const std::string STUN_PORT = "3478";
         }
 
         void in_thread(master_post_office* o)
         try
         {
             REQUIRE(o);
-            REQUIRE(o->_in);
 
             while(!o->_done)
             try
@@ -78,12 +80,25 @@ namespace fire
         try
         {
             REQUIRE(o);
+            REQUIRE(o->_stun);
 
             std::string last_address;
 
             while(!o->_done)
             try
             {
+                //monitor to see if stun is done
+                if(!o->_stunned)
+                {
+                    if(o->_stun->state() == n::stun_success)
+                    {
+                        o->_address = "zmq,tcp://" + o->_stun->external_ip() + ":" + o->_stun->external_port();
+                        std::cerr << "new external address: " << o->_address << std::endl;
+                        o->_stunned = true;
+                    }
+                    else if(o->_stun->state() == n::stun_failed) o->_stunned = true;
+                }
+
                 message m;
                 if(!o->_out.pop(m))
                 {
@@ -137,15 +152,9 @@ namespace fire
             std::cerr << "exit: master_post::out_thread" << std::endl;
         }
 
-        master_post_office::master_post_office(
-                const std::string& in_host,
-                const std::string& in_port)
+        void master_post_office::setup_input_connection()
         {
-            //setup outside address
-            _address = "zmq,tcp://" + in_host + ":" + in_port;
-
-            //here we use the magic * 
-            const std::string address = "zmq,tcp://*:" + in_port;
+            const std::string address = "zmq,tcp://*:" + _in_port;
 
             n::queue_options qo = { 
                 {"pul", "1"}, 
@@ -154,9 +163,26 @@ namespace fire
                 {"block", "0"}};
 
             _in = n::create_message_queue(address, qo);
+        }
+
+        master_post_office::master_post_office(
+                const std::string& in_host,
+                const std::string& in_port) : 
+            _in_host{in_host},
+            _in_port{in_port},
+            _stunned{false}
+        {
+            //setup outside address
+            _stun.reset(new n::stun_gun{STUN_SERVER, STUN_PORT, _in_port});
+            _address = "zmq,tcp://" + _in_host + ":" + _in_port;
+
+            setup_input_connection();
+
+            //here we use the magic * 
             _in_thread.reset(new std::thread{in_thread, this});
             _out_thread.reset(new std::thread{out_thread, this});
 
+            ENSURE(_stun);
             ENSURE(_in);
             ENSURE(_in_thread);
             ENSURE(_out_thread);
