@@ -124,6 +124,7 @@ void find_user(const ms::greet_find_request& r, user_info_map& users)
         {"psh", "1"}, 
         {"con", "1"},
         {"threads", "1"},
+        {"wait", "50"},
         {"block", "1"}};
 
     std::cerr << "sending reply to " << reply_to << " " << r.response_service_address() << std::endl;
