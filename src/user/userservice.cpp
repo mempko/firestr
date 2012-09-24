@@ -733,11 +733,7 @@ namespace fire
                         if(!rs.found()) continue;
 
                         auto new_address = n::make_zmq_address(rs.ip(), rs.port());
-                        auto c = s->_user->contacts().by_id(rs.id());
-                        if(c)
-                        {
-                            std::cerr << "updating address from: " << c->address() << " to: " << new_address << std::endl;
-                        }
+                        std::cerr << "updating address from: " << c->address() << " to: " << new_address << std::endl;
                         s->update_contact_address(rs.id(), new_address);
                     }
                     u::mutex_scoped_lock l(s->_state_mutex);
