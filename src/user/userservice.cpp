@@ -618,7 +618,7 @@ namespace fire
                     else
                     {
                         u::mutex_scoped_lock l(s->_state_mutex);
-                        s->_state = user_service::done_greet;
+                        s->_state = user_service::got_stun;
                     }
                 }
                 else if(s->_state == user_service::sent_stun)
@@ -659,11 +659,12 @@ namespace fire
                             auto a = n::make_zmq_address(s->_greeter_server, s->_greeter_port);
                             make_pinhole(a, s->_stun->external_port());
                         }
+
                         ms::greet_register r
                         {
                             s->_user->info().id(), 
-                            s->_stun->external_ip(),
-                            s->_stun->external_port() 
+                            (s->_stun ? s->_stun->external_ip() : s->_in_host),
+                            (s->_stun ? s->_stun->external_port() : s->_in_port) 
                         };
 
                         m::message m = r;
@@ -686,7 +687,6 @@ namespace fire
                 else if(s->_state == user_service::sent_greet)
                 {
                     CHECK(s->_greet_queue);
-
 
                     for(auto c : s->_user->contacts().list())
                     {
