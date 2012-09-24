@@ -252,9 +252,9 @@ namespace fire
             {
                 auto address = n::make_zmq_address(_greeter_server, _greeter_port);
                 n::queue_options qo = { 
-                    {"psh", "1"}, 
+                    {"req", "1"}, 
                     {"con", "1"},
-                    {"block", "0"}};
+                    {"block", "1"}};
                 _greet_queue = n::create_message_queue(address, qo);
             }
 
@@ -696,6 +696,11 @@ namespace fire
                         m::message m = r;
                         s->_greet_queue->send(u::encode(m));
 
+                        u::bytes b;
+                        s->_greet_queue->recieve(b);
+                        u::decode(b, m);
+
+
                         u::mutex_scoped_lock l(s->_state_mutex);
                         s->_state = user_service::sent_greet;
                     }
@@ -715,8 +720,25 @@ namespace fire
                         CHECK(c);
                         ms::greet_find_request r {s->_user->info().id(), c->id(), SERVICE_ADDRESS};
 
+                        //send request
                         m::message m = r;
                         s->_greet_queue->send(u::encode(m));
+
+                        //get response
+                        u::bytes response;
+                        s->_greet_queue->recieve(response);
+                        u::decode(response, m);
+
+                        ms::greet_find_response rs{m};
+                        if(!rs.found()) continue;
+
+                        auto new_address = n::make_zmq_address(rs.ip(), rs.port());
+                        auto c = s->_user->contacts().by_id(rs.id());
+                        if(c)
+                        {
+                            std::cerr << "updating address from: " << c->address() << " to: " << new_address << std::endl;
+                        }
+                        s->update_contact_address(rs.id(), new_address);
                     }
                     u::mutex_scoped_lock l(s->_state_mutex);
                     s->_state = user_service::sent_contact_query;

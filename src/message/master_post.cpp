@@ -141,7 +141,7 @@ namespace fire
 
         void master_post_office::setup_input_connection()
         {
-            const std::string address = "zmq,tcp://*:" + _in_port;
+            auto address = n::make_zmq_address("*", _in_port);
 
             n::queue_options qo = { 
                 {"pul", "1"}, 
@@ -159,7 +159,7 @@ namespace fire
             _in_port{in_port}
         {
             //setup outside address
-            _address = "zmq,tcp://" + _in_host + ":" + _in_port;
+            _address = n::make_zmq_address( _in_host,_in_port);
 
             setup_input_connection();
 

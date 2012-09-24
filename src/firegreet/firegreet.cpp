@@ -66,7 +66,8 @@ po::variables_map parse_options(int argc, char* argv[], po::options_description&
 
 n::message_queue_ptr setup_input_connection(const std::string& port)
 {
-    const std::string address = "zmq,tcp://*:" + port;
+
+    auto address = n::make_zmq_address("*", port);
 
     n::queue_options qo = { 
         {"pul", "1"}, 
@@ -85,17 +86,22 @@ struct user_info
 };
 typedef std::map<std::string, user_info> user_info_map;
 
-void register_user(const ms::greet_register& r, user_info_map& m)
+void register_user(n::message_queue_ptr q, const ms::greet_register& r, user_info_map& m)
 {
     if(r.id().empty()) return;
     user_info i = {r.id(), r.ip(), r.port()};
     m[i.id] = i;
 
+    m::message rm = r;
+    q->send(u::encode(rm));
+
     std::cerr << "registered " << i.id << " " << i.ip << ":" << i.port << std::endl;
 }
 
-void find_user(const ms::greet_find_request& r, user_info_map& users)
+void find_user(n::message_queue_ptr q, const ms::greet_find_request& r, user_info_map& users)
 {
+    CHECK(q);
+
     auto fup = users.find(r.from_id());
     auto up = users.find(r.search_id());
 
@@ -120,17 +126,8 @@ void find_user(const ms::greet_find_request& r, user_info_map& users)
     auto reply_to = n::make_zmq_address(f.ip, f.port);
     m.meta.to = {reply_to, r.response_service_address()};
     
-    n::queue_options qo = { 
-        {"psh", "1"}, 
-        {"con", "1"},
-        {"threads", "1"},
-        {"wait", "50"},
-        {"block", "1"}};
-
     std::cerr << "sending reply to " << reply_to << " " << r.response_service_address() << std::endl;
-    auto mq = n::create_message_queue(reply_to, qo);
-    CHECK(mq);
-    mq->send(u::encode(m));
+    q->send(u::encode(m));
 }
 
 int main(int argc, char *argv[])
@@ -160,19 +157,18 @@ int main(int argc, char *argv[])
         }
 
         //parse message
-        std::stringstream s(u::to_str(data));
         m::message m;
-        s >> m;
+        u::decode(data, m);
 
         if(m.meta.type == ms::GREET_REGISTER)
         {
             ms::greet_register r{m};
-            register_user(r, users);
+            register_user(in, r, users);
         }
         else if(m.meta.type == ms::GREET_FIND_REQUEST)
         {
             ms::greet_find_request r{m};
-            find_user(r, users);
+            find_user(in, r, users);
         }
     }
     catch(...){}
