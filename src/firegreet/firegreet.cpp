@@ -174,7 +174,6 @@ int main(int argc, char *argv[])
             ms::greet_find_request r{m};
             find_user(r, users);
         }
-
     }
     catch(...){}
 }

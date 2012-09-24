@@ -294,6 +294,21 @@ namespace fire
 
         void user_service::message_recieved(const message::message& m)
         {
+            //wait until greet is done
+            state cs;
+            {
+                u::mutex_scoped_lock l(_state_mutex);
+                cs = _state; 
+            }
+            while(cs != user_service::done_greet) 
+            {
+                {
+                    u::mutex_scoped_lock l(_state_mutex);
+                    cs = _state; 
+                }
+                u::sleep_thread(GREET_THREAD_SLEEP);
+            }
+
             if(m.meta.type == PING_REQUEST)
             {
                 ping_request r;
@@ -580,6 +595,25 @@ namespace fire
             std::cerr << "exit: user_service::ping_thread" << std::endl;
         }
 
+        void make_pinhole(const std::string& address, const std::string ext_port)
+        {
+            auto a = rewrite_port(address, ext_port);
+            std::cout << "making pinhole: " << a << std::endl;
+            n::queue_options qo = { 
+                {"psh", "1"}, 
+                {"con", "1"},
+                {"wait", "50"},
+                {"block", "1"}};
+            auto pin_hole = n::create_message_queue(a, qo);
+            CHECK(pin_hole);
+            u::bytes b;
+            b.push_back('a');
+            b.push_back('b');
+            b.push_back('c');
+            pin_hole->send(b);
+        }
+
+
         void greet_thread(user_service* s)
         try
         {
@@ -647,6 +681,11 @@ namespace fire
                 {
                     if(s->_greet_queue)
                     {
+                        if(s->_stun) 
+                        {
+                            auto a = n::make_zmq_address(s->_greeter_server, s->_greeter_port);
+                            make_pinhole(a, s->_stun->external_port());
+                        }
                         ms::greet_register r
                         {
                             s->_user->info().id(), 
@@ -779,19 +818,8 @@ namespace fire
             //make pinhole
             if(_stun)
             {
-                auto address = rewrite_port(c->address(), _stun->external_port());
-                std::cout << "making pinhole: " << address << std::endl;
-                n::queue_options qo = { 
-                    {"psh", "1"}, 
-                    {"con", "1"},
-                    {"block", "1"}};
-                auto pin_hole = n::create_message_queue(address, qo);
-                CHECK(pin_hole);
-                u::bytes b;
-                b.push_back('a');
-                b.push_back('b');
-                b.push_back('c');
-                pin_hole->send(b);
+                make_pinhole(c->address(), _stun->external_port());
+                make_pinhole(c->address(), _ping_port);
             }
 
             ping_request a{c->address(), _user->info().id(), _user->info().address(), _ping_port, send_back};
