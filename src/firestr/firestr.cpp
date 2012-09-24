@@ -29,24 +29,35 @@ namespace po = boost::program_options;
 namespace ip = boost::asio::ip;
 namespace fg = fire::gui;
 namespace fn = fire::network;
+namespace fu = fire::util;
 
 po::options_description create_descriptions()
 {
     po::options_description d{"Options"};
 
-    const std::string host = ip::host_name();
-    const std::string port = "6060";
-    const std::string ping_port = "6070";
     std::string user = std::getenv("HOME");
     if(user.empty()) user = ".";
     const std::string home = user + "/.firestr";
+    const std::string host = ip::host_name();
+    const std::string port = "6060";
+    const std::string ping_port = "6070";
+    const std::string stun_server = "";
+    const std::string stun_port = "3478";
+    const std::string greeter_server = "";
+    const std::string greeter_port = "7070";
+
+
 
     d.add_options()
         ("help", "prints help")
+        ("home", po::value<std::string>()->default_value(home), "configuration directory")
         ("host", po::value<std::string>()->default_value(host), "host/ip of this machine") 
         ("port", po::value<std::string>()->default_value(port), "port this machine will recieve messages on")
         ("ping", po::value<std::string>()->default_value(ping_port), "port this machine will send pings on")
-        ("home", po::value<std::string>()->default_value(home), "configuration directory");
+        ("stun-server", po::value<std::string>()->default_value(stun_server), "ip/host of stun server ")
+        ("stun-port", po::value<std::string>()->default_value(stun_port), "port of the stun server")
+        ("greeter-server", po::value<std::string>()->default_value(greeter_server), "ip/host of the greeter server")
+        ("greeter-port", po::value<std::string>()->default_value(greeter_port), "port of the greeter server");
 
     return d;
 }
@@ -78,14 +89,20 @@ int main(int argc, char *argv[])
 
     QApplication a{argc, argv};
 
-    auto host = vm["host"].as<std::string>();
-    auto port = vm["port"].as<std::string>();
-    auto home = vm["home"].as<std::string>();
-    auto ping = vm["ping"].as<std::string>();
+    fg::main_window_context c;
+        
+    c.home = vm["home"].as<std::string>();
+    c.host = vm["host"].as<std::string>();
+    c.port = vm["port"].as<std::string>();
+    c.ping_port = vm["ping"].as<std::string>();
+    c.stun_server = vm["stun-server"].as<std::string>();
+    c.stun_port = vm["stun-port"].as<std::string>();
+    c.greeter_server = vm["greeter-server"].as<std::string>();
+    c.greeter_port = vm["greeter-port"].as<std::string>();
 
-    if(!user_setup(home)) return 0;
+    if(!user_setup(c.home)) return 0;
 
-    fg::main_window w{host, port, ping, home};
+    fg::main_window w{c};
 
     w.show();
 

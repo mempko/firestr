@@ -40,8 +40,8 @@ target_link_libraries(
     firestr
     fire_gui
     fire_session
-    fire_messages
     fire_user
+    fire_messages
     fire_service
     fire_message
     fire_network

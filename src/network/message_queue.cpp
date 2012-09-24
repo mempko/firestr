@@ -95,5 +95,10 @@ namespace fire
             ENSURE(p);
             return p;
         }
+
+        std::string make_zmq_address(const std::string& host, const std::string& port)
+        {
+            return "zmq,tcp://" + host + ":" + port;
+        }
     }
 }

@@ -100,6 +100,7 @@ namespace fire
 
             public:
                 const user_info& info() const { return _info;}
+                user_info& info() { return _info;}
                 const contact_list& contacts() const { return _contacts;}
                 contact_list& contacts() { return _contacts;}
 

@@ -64,6 +64,7 @@ namespace fire
                 if(!accept_reject)
                 {
                     _online = new QLabel{online_text(p, _service).c_str()};
+                    _online->setToolTip(p->address().c_str());
                     layout->addWidget(_online, 0,1);
                 }
             }

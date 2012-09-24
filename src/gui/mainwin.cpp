@@ -46,6 +46,7 @@ namespace u = fire::util;
 namespace us = fire::user;
 namespace s = fire::session;
 namespace a = fire::gui::app;
+namespace n = fire::network;
 
 namespace fire
 {
@@ -59,30 +60,27 @@ namespace fire
             const size_t TIMER_SLEEP = 100; //in milliseconds
         }
 
-        main_window::main_window(
-                const std::string& host, 
-                const std::string& port,
-                const std::string& ping,
-                const std::string& home) :
-            _start_screen(0),
-            _start_screen_attached(false),
-            _alert_screen(0),
-            _alerts(0),
-            _mail(0),
-            _master(0),
-            _about_action(0),
-            _close_action(0),
-            _create_session_action(0),
-            _rename_session_action(0),
-            _main_menu(0),
-            _app_menu(0),
-            _root(0),
-            _layout(0),
-            _sessions(0),
-            _home(home)
+        main_window::main_window(const main_window_context& c) :
+            _start_screen{0},
+            _start_screen_attached{false},
+            _alert_screen{0},
+            _alerts{0},
+            _mail{0},
+            _master{0},
+            _about_action{0},
+            _close_action{0},
+            _create_session_action{0},
+            _rename_session_action{0},
+            _main_menu{0},
+            _app_menu{0},
+            _root{0},
+            _layout{0},
+            _sessions{0},
+            _context{c}
         {
-            setup_post(host, port);
-            setup_services(ping);
+            setup_stun();
+            setup_post();
+            setup_services();
             create_actions();
             create_main();
             create_menus();
@@ -140,14 +138,21 @@ namespace fire
             return user ? user : make_new_user(home);
         }
 
-        void main_window::setup_post(
-                const std::string& host, 
-                const std::string& port)
+        void main_window::setup_stun()
+        {
+            if(_context.stun_server.empty() || _context.stun_port.empty()) return ;
+
+            _stun.reset(new n::stun_gun{this, _context.stun_server, _context.stun_port, _context.port});
+
+            ENSURE(_stun);
+        }
+
+        void main_window::setup_post()
         {
             REQUIRE(!_master);
 
             //create post office to handle incoming and outgoing messages
-            _master.reset(new m::master_post_office{host, port});
+            _master.reset(new m::master_post_office{_context.host, _context.port});
 
             //create mailbox just for gui specific messages.
             //This mailbox is not connected to a post as only internally accessible
@@ -354,7 +359,7 @@ namespace fire
             ENSURE(_rename_session_action);
         }
 
-        void main_window::setup_services(const std::string& ping)
+        void main_window::setup_services()
         {
             REQUIRE_FALSE(_user_service);
             REQUIRE_FALSE(_session_service);
@@ -362,7 +367,21 @@ namespace fire
             REQUIRE(_master);
             REQUIRE(_mail);
 
-            _user_service.reset(new us::user_service{_home, ping, _mail});
+            us::user_service_context uc
+            {
+                _context.home,
+                _context.host,
+                _context.port,
+                _context.ping_port,
+                _context.stun_server,
+                _context.stun_port,
+                _context.greeter_server,
+                _context.greeter_port,
+                _mail,
+                _stun
+            };
+
+            _user_service.reset(new us::user_service{uc});
             _master->add(_user_service->mail());
 
             _session_service.reset(new s::session_service{_master, _user_service, _mail});

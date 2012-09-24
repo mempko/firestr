@@ -80,25 +80,12 @@ namespace fire
         try
         {
             REQUIRE(o);
-            REQUIRE(o->_stun);
 
             std::string last_address;
 
             while(!o->_done)
             try
             {
-                //monitor to see if stun is done
-                if(!o->_stunned)
-                {
-                    if(o->_stun->state() == n::stun_success)
-                    {
-                        o->_address = "zmq,tcp://" + o->_stun->external_ip() + ":" + o->_stun->external_port();
-                        std::cerr << "new external address: " << o->_address << std::endl;
-                        o->_stunned = true;
-                    }
-                    else if(o->_stun->state() == n::stun_failed) o->_stunned = true;
-                }
-
                 message m;
                 if(!o->_out.pop(m))
                 {
@@ -169,11 +156,9 @@ namespace fire
                 const std::string& in_host,
                 const std::string& in_port) : 
             _in_host{in_host},
-            _in_port{in_port},
-            _stunned{false}
+            _in_port{in_port}
         {
             //setup outside address
-            _stun.reset(new n::stun_gun{STUN_SERVER, STUN_PORT, _in_port});
             _address = "zmq,tcp://" + _in_host + ":" + _in_port;
 
             setup_input_connection();
@@ -182,7 +167,6 @@ namespace fire
             _in_thread.reset(new std::thread{in_thread, this});
             _out_thread.reset(new std::thread{out_thread, this});
 
-            ENSURE(_stun);
             ENSURE(_in);
             ENSURE(_in_thread);
             ENSURE(_out_thread);

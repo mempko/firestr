@@ -169,7 +169,7 @@ namespace fire
 
             //send request
             QHostAddress stun_host{_stun_server.c_str()};
-            _socket.writeDatagram(datagram, stun_host, boost::lexical_cast<int>(_stun_port));
+            _socket->writeDatagram(datagram, stun_host, boost::lexical_cast<int>(_stun_port));
         }
         catch(std::exception& e)
         {
@@ -182,18 +182,24 @@ namespace fire
             _state = stun_failed;
         }
 
-        stun_gun::stun_gun(const std::string& stun_server, const std::string stun_port, const std::string port) :
+        stun_gun::stun_gun(QObject* parent, const std::string& stun_server, const std::string stun_port, const std::string port) :
+            QObject{parent},
             _stun_server{stun_server}, 
             _stun_port{stun_port}, 
             _int_port{port},
             _state{stun_in_progress}
         {
-            _socket.bind(boost::lexical_cast<int>(port));
+            REQUIRE(parent);
 
-            connect(&_socket, SIGNAL(readyRead()), this, SLOT(connected()));
-            connect(&_socket, SIGNAL(error(QAbstractSocket::SocketError)),this, SLOT(error(QAbstractSocket::SocketError)));
+            _socket = new QUdpSocket{this};
 
-            send_stun_request();
+            connect(_socket, SIGNAL(readyRead()), this, SLOT(got_response()));
+            connect(_socket, SIGNAL(error(QAbstractSocket::SocketError)),this, SLOT(error(QAbstractSocket::SocketError)));
+
+            int src_port = boost::lexical_cast<int>(_int_port);
+            _socket->bind(src_port);
+
+            INVARIANT(_socket);
         }
 
         stun_state stun_gun::state() const
@@ -211,7 +217,7 @@ namespace fire
             return _stun_port;
         }
 
-        const std::string& stun_gun::interal_port() const
+        const std::string& stun_gun::internal_port() const
         {
             return _int_port;
         }
@@ -370,17 +376,20 @@ namespace fire
             return true;
         }
 
-        void stun_gun::connected()
+        void stun_gun::got_response()
         try
         { 
+            INVARIANT(_socket);
+
+            std::cerr << "got stun response!" << std::endl;
             QByteArray datagram;
 
             do 
             {
-                datagram.resize(_socket.pendingDatagramSize());
-                _socket.readDatagram(datagram.data(), datagram.size());
+                datagram.resize(_socket->pendingDatagramSize());
+                _socket->readDatagram(datagram.data(), datagram.size());
             } 
-            while (_socket.hasPendingDatagrams());
+            while (_socket->hasPendingDatagrams());
 
             QDataStream in{&datagram, QIODevice::ReadOnly};
             in.setVersion(QDataStream::Qt_4_3);
@@ -407,7 +416,7 @@ namespace fire
             _ext_ip = address.ip;
             _ext_port = address.port;
             _state = stun_success;
-            _socket.close();
+            _socket->close();
         }
         catch(std::exception& e)
         {
@@ -434,7 +443,7 @@ namespace fire
                     std::cerr << "error: connection refused" << std::endl;
                     break;
                 default:
-                    std::cerr << "error: " << _socket.errorString().toUtf8().constData() << std::endl;
+                    std::cerr << "error: " << _socket->errorString().toUtf8().constData() << std::endl;
             }
             _state = stun_failed;
         }

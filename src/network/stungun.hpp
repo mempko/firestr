@@ -35,27 +35,27 @@ namespace fire
         {
             Q_OBJECT
             public:
-                stun_gun(const std::string& stun_server, const std::string stun_port, const std::string port);
+                stun_gun(QObject* parent, const std::string& stun_server, const std::string stun_port, const std::string port);
+
+            public:
+                void send_stun_request();
 
             public:
                 stun_state state() const;
 
                 const std::string& stun_server() const;
                 const std::string& stun_port() const;
-                const std::string& interal_port() const;
+                const std::string& internal_port() const;
                 const std::string& external_ip() const;
                 const std::string& external_port() const;
 
             public slots:
-                void connected();
+                void got_response();
                 void error(QAbstractSocket::SocketError);
 
             private:
-                void send_stun_request();
 
-            private:
-
-                QUdpSocket _socket;
+                QUdpSocket* _socket;
                 stun_state _state;
                 std::string _stun_server;
                 std::string _stun_port;
