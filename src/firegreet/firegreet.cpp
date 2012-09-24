@@ -70,7 +70,7 @@ n::message_queue_ptr setup_input_connection(const std::string& port)
     auto address = n::make_zmq_address("*", port);
 
     n::queue_options qo = { 
-        {"pul", "1"}, 
+        {"rep", "1"}, 
         {"bnd", "1"},
         {"threads", "5"},
         {"block", "0"}};
