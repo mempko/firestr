@@ -21,6 +21,7 @@
 #include "user/user.hpp"
 #include "service/service.hpp"
 #include "network/message_queue.hpp"
+#include "network/stungun.hpp"
 #include "util/thread.hpp"
 
 
@@ -43,13 +44,24 @@ namespace fire
         typedef std::map<std::string, add_request> add_requests;
         typedef std::set<std::string> sent_requests;
 
+        struct user_service_context
+        {
+            std::string home;
+            std::string host;
+            std::string port;
+            std::string ping_port;
+            std::string stun_server;
+            std::string stun_port;
+            std::string greeter_server;
+            std::string greeter_port;
+            message::mailbox_ptr events;
+            network::stun_gun_ptr stun;
+        };
+
         class user_service : public service::service
         {
             public:
-                user_service(
-                        const std::string& home,
-                        const std::string& ping_port,
-                        message::mailbox_ptr event = nullptr);
+                user_service(user_service_context&);
                 virtual ~user_service();
 
             public:
@@ -70,7 +82,9 @@ namespace fire
                 virtual void message_recieved(const message::message&);
 
             private:
+                void update_address(const std::string& address);
                 void confirm_contact(user_info_ptr contact);
+                void update_contact_address(const std::string& id, const std::string& adress);
 
             private:
                 sent_requests _sent_requests;
@@ -92,21 +106,41 @@ namespace fire
                 typedef std::map<std::string, size_t> last_ping_map;
                 typedef std::map<std::string, network::message_queue_ptr> ping_connection_map;
                 void init_ping();
+                void init_greet();
                 void send_ping_port_requests();
                 void init_ping_connection(const std::string& from_id, const std::string& ping_address);
                 void send_ping_address(user::user_info_ptr, bool send_back = true);
                 void send_ping(char t);
 
+            private:
+                enum state { started_greet, sent_stun, got_stun, sent_greet, sent_contact_query, done_greet, failed_greet} _state;
+                std::mutex _state_mutex;
+
+            private:
+                //ping
+                std::mutex _ping_mutex;
                 std::string _ping_port;
                 network::message_queue_ptr _ping_queue;
                 util::thread_uptr _ping_thread;
                 last_ping_map _last_ping;
                 ping_connection_map _ping_connection;
-                std::mutex _ping_mutex;
+
+                //greet
+                network::stun_gun_ptr _stun;
+                std::string _in_host;
+                std::string _in_port;
+                std::string _stun_server;
+                std::string _stun_port;
+                std::string _greeter_server;
+                std::string _greeter_port;
+                util::thread_uptr _greet_thread;
+                network::message_queue_ptr _greet_queue;
+
                 bool _done;
 
             private:
                 friend void ping_thread(user_service*);
+                friend void greet_thread(user_service*);
         };
 
         typedef std::shared_ptr<user_service> user_service_ptr;

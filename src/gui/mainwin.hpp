@@ -20,11 +20,12 @@
 
 #include <QMainWindow>
 #include "gui/session.hpp"
+#include "gui/app/app_service.hpp"
 #include "message/postoffice.hpp"
 #include "user/userservice.hpp"
 #include "session/session.hpp"
 #include "session/session_service.hpp"
-#include "gui/app/app_service.hpp"
+#include "network/stungun.hpp"
 
 namespace fire
 {
@@ -32,15 +33,23 @@ namespace fire
     {
         user::local_user_ptr setup_user(const std::string& home);
 
+        struct main_window_context
+        {
+            std::string home;
+            std::string host;
+            std::string port;
+            std::string ping_port;
+            std::string stun_server;
+            std::string stun_port;
+            std::string greeter_server;
+            std::string greeter_port;
+        };
+
         class main_window : public QMainWindow
         {
             Q_OBJECT
             public:
-                main_window(
-                        const std::string& host, 
-                        const std::string& port,
-                        const std::string& ping,
-                        const std::string& home);
+                main_window(const main_window_context&);
 
             private slots:
                 void about();
@@ -56,15 +65,14 @@ namespace fire
                 void load_app_into_session(QString id);
 
             private:
-                void setup_post(
-                        const std::string& host, 
-                        const std::string& port);
+                void setup_stun();
+                void setup_post();
                 void create_actions();
                 void create_main();
                 void create_menus();
                 void create_app_menu();
                 void make_new_user();
-                void setup_services(const std::string& ping);
+                void setup_services();
                 void save_state();
                 void restore_state();
                 void setup_timers();
@@ -111,7 +119,8 @@ namespace fire
                 user::user_service_ptr _user_service;
                 session::session_service_ptr _session_service;
                 app::app_service_ptr _app_service;
-                std::string _home;
+                main_window_context _context;
+                network::stun_gun_ptr _stun;
         };
     }
 }

@@ -15,14 +15,37 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-add_subdirectory(slb)
-add_subdirectory(util)
-add_subdirectory(network)
-add_subdirectory(message)
-add_subdirectory(messages)
-add_subdirectory(service)
-add_subdirectory(user)
-add_subdirectory(session)
-add_subdirectory(gui)
-add_subdirectory(firestr)
-add_subdirectory(firegreet)
+include_directories(.)
+include_directories(..)
+
+file(GLOB src *.cpp)
+file(GLOB headers *.hpp)
+
+#qt specific
+QT4_WRAP_CPP(moc_headers ${headers})
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+
+add_executable(
+    firegreet
+    ${src}
+    ${moc_headers})
+
+target_link_libraries(
+    firegreet
+    fire_user
+    fire_messages
+    fire_service
+    fire_message
+    fire_network
+    fire_util
+    ${Boost_LIBRARIES}
+    ${QT_LIBRARIES}
+    ${ZMQ_LIBS})
+
+add_dependencies(
+    firegreet 
+    fire_messages
+    fire_user
+    fire_message
+    fire_network
+    fire_util)

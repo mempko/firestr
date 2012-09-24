@@ -72,6 +72,8 @@ namespace fire
         address_components parse_address(
                 const std::string& queue_address, 
                 const queue_options& defaults = queue_options());
+
+        std::string make_zmq_address(const std::string& host, const std::string& port);
     }
 }
 

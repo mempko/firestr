@@ -16,6 +16,7 @@
  */
 
 #include "user/userservice.hpp"
+#include "messages/greeter.hpp"
 #include "util/uuid.hpp"
 #include "util/string.hpp"
 #include "util/dbc.hpp"
@@ -24,6 +25,7 @@
 #include <thread>
 
 namespace m = fire::message;
+namespace ms = fire::messages;
 namespace n = fire::network;
 namespace u = fire::util;
 namespace us = fire::user;
@@ -46,12 +48,15 @@ namespace fire
             const size_t PING_THRESH = 3*PING_TICKS; 
             const char CONNECTED = 'c';
             const char DISCONNECTED = 'd';
+            const size_t GREET_THREAD_SLEEP = 200; 
+            const size_t STUN_WAIT_THRESH = 25;
         }
 
         struct ping_request 
         {
             std::string to;
             std::string from_id;
+            std::string from_address;
             std::string port;
             int send_back;
         };
@@ -62,6 +67,7 @@ namespace fire
             m.meta.type = PING_REQUEST;
             m.meta.to = {r.to, SERVICE_ADDRESS};
             m.meta.extra["from_id"] = r.from_id;
+            m.meta.extra["from_address"] = r.from_address;
             m.meta.extra["send_back"] = r.send_back;
             m.data = u::to_bytes(r.port);
 
@@ -73,6 +79,7 @@ namespace fire
             REQUIRE_EQUAL(m.meta.type, PING_REQUEST);
             REQUIRE_GREATER(m.meta.from.size(), 1);
             r.from_id = m.meta.extra["from_id"].as_string();
+            r.from_address = m.meta.extra["from_address"].as_string();
             r.send_back = m.meta.extra["send_back"];
             r.port = u::to_str(m.data);
         }
@@ -167,22 +174,27 @@ namespace fire
             r.address = m.meta.from.front();
         }
 
-        user_service::user_service(
-                const std::string& home,
-                const std::string& ping_port,
-                message::mailbox_ptr event) :
-            s::service{SERVICE_ADDRESS, event},
-            _home{home},
-            _ping_port{ping_port},
+        user_service::user_service(user_service_context& c) :
+            s::service{SERVICE_ADDRESS, c.events},
+            _home{c.home},
+            _in_host{c.host},
+            _in_port{c.port},
+            _ping_port{c.ping_port},
+            _stun_server{c.stun_server},
+            _stun_port{c.stun_port},
+            _stun{c.stun},
+            _greeter_server{c.greeter_server},
+            _greeter_port{c.greeter_port},
             _done{false}
         {
-            REQUIRE_FALSE(home.empty());
+            REQUIRE_FALSE(c.home.empty());
 
-            _user = load_user(home); 
-            if(!_user) throw std::runtime_error{"no user found at `" + home + "'"};
+            _user = load_user(_home); 
+            if(!_user) throw std::runtime_error{"no user found at `" + _home + "'"};
+            update_address(n::make_zmq_address(c.host, c.port));
 
             init_ping();
-            send_ping_port_requests();
+            init_greet();
 
             INVARIANT(_user);
             INVARIANT(mail());
@@ -198,6 +210,16 @@ namespace fire
 
             _done = true;
             _ping_thread->join();
+            _greet_thread->join();
+        }
+
+        void user_service::update_address(const std::string& address)
+        {
+            INVARIANT(_user);
+            if(_user->info().address() == address) return;
+
+            _user->info().address(address);
+            save_user(_home, *_user);
         }
 
         void ping_thread(user_service* s);
@@ -206,7 +228,7 @@ namespace fire
             REQUIRE(!_ping_thread);
             REQUIRE(!_ping_queue);
 
-            std::string ping_address = "zmq,tcp://*:" + _ping_port;
+            auto ping_address = n::make_zmq_address("*", _ping_port);
             n::queue_options qo = { 
                 {"pub", "1"}, 
                 {"bnd", "1"},
@@ -216,6 +238,38 @@ namespace fire
 
             ENSURE(_ping_queue);
             ENSURE(_ping_thread);
+        }
+
+        void greet_thread(user_service* s);
+        void user_service::init_greet()
+        {
+            REQUIRE(!_greet_thread);
+            REQUIRE(!_greet_queue);
+
+            //make connection to greeter server if 
+            //we setup the params
+            if(!_greeter_server.empty() && !_greeter_port.empty())
+            {
+                auto address = n::make_zmq_address(_greeter_server, _greeter_port);
+                n::queue_options qo = { 
+                    {"psh", "1"}, 
+                    {"con", "1"},
+                    {"block", "0"}};
+                _greet_queue = n::create_message_queue(address, qo);
+            }
+
+            _state = started_greet;
+            _greet_thread.reset(new std::thread{greet_thread, this});
+
+            ENSURE(_greet_thread);
+        }
+
+        std::string rewrite_port(const std::string& a, const std::string& port)
+        {
+            auto s = u::split<u::string_vect>(a, ":");
+            if(s.size() != 3) return a;
+            auto r = s[0] + ":" +  s[1] + ":" + port;
+            return r;
         }
 
         bool construct_ping_address(
@@ -233,6 +287,7 @@ namespace fire
             const std::string host = s[0] + ":" + s[1];
             address = "zmq," + host + ":" + r.port;
 
+            std::cerr << "creating ping connection to: " << address << std::endl;
             ENSURE_FALSE(address.empty());
             return true;
         }
@@ -247,22 +302,37 @@ namespace fire
                 auto c = _user->contacts().by_id(r.from_id);
                 if(!c) return;
 
+                std::cerr << "got ping request from: " << c->address() << " updated: " << r.from_address << std::endl;
+
+                //update contact address to the one specified
+                //if it is different.
+                if(c->address() != r.from_address)
+                {
+                    update_contact_address(c->id(), r.from_address);
+                    _ping_connection.erase(c->id());
+                }
+                //if the address is the same
+                //check to see if we opened a connection to listen to their ping
+                else
                 {
                     u::mutex_scoped_lock l(_ping_mutex);
                     if(_ping_connection.count(c->id())) 
                     {
+                        std::cerr << "already have connecton to: " << c->address() << " pinging back" << std::endl;
                         if(r.send_back) send_ping_address(c, false);
                         return;
                     }
                 }
 
+                std::cerr << "making new connection to: " << c->address() << std::endl;
+
+                //otherwise we have a new connection
                 std::string ping_address; 
                 if(!construct_ping_address(ping_address, c, r)) return;
 
                 init_ping_connection(c->id(), ping_address);
                 send_ping_address(c);
                 fire_contact_connected_event(c->id());
-
             }
             else if(m.meta.type == ADD_REQUEST)
             {
@@ -303,11 +373,37 @@ namespace fire
                 convert(m, r);
                 _sent_requests.erase(r.key);
             }
+            else if(m.meta.type == ms::GREET_FIND_RESPONSE)
+            {
+                ms::greet_find_response r{m};
+                if(!r.found()) return;
+
+                auto new_address = n::make_zmq_address(r.ip(), r.port());
+                auto c = _user->contacts().by_id(r.id());
+                if(c)
+                {
+                    std::cerr << "updating address from: " << c->address() << " to: " << new_address << std::endl;
+                }
+                update_contact_address(r.id(), new_address);
+            }
             else
             {
                 throw std::runtime_error{"unsuported message type `" + m.meta.type +"'"};
             }
 
+        }
+
+        void user_service::update_contact_address(const std::string& id, const std::string& a)
+        {
+            INVARIANT(_user);
+            u::mutex_scoped_lock l(_mutex);
+
+            auto c = _user->contacts().by_id(id);
+            if(!c) return;
+            if(c->address() == a) return;
+
+            c->address(a);
+            save_user(_home, *_user);
         }
 
         local_user& user_service::user()
@@ -484,6 +580,152 @@ namespace fire
             std::cerr << "exit: user_service::ping_thread" << std::endl;
         }
 
+        void greet_thread(user_service* s)
+        try
+        {
+            size_t send_ticks = 0;
+            REQUIRE(s);
+            REQUIRE(s->_user);
+            REQUIRE(s->_state == user_service::started_greet);
+
+            size_t stun_wait = 0;
+            size_t tries_left = 10;
+
+            while(!s->_done && tries_left > 0 && s->_state != user_service::done_greet)
+            try
+            {
+                if(s->_state == user_service::started_greet)
+                {
+                    if(s->_stun)
+                    {
+                        CHECK_FALSE(s->_stun_port.empty());
+                        CHECK_FALSE(s->_in_port.empty());
+                        
+                        std::cerr << "sending stun request to " << s->_stun_server << ":" << s->_stun_port << std::endl;
+                        s->_stun->send_stun_request();
+
+                        u::mutex_scoped_lock l(s->_state_mutex);
+                        s->_state = user_service::sent_stun;
+                        stun_wait = 0;
+                    }
+                    else
+                    {
+                        u::mutex_scoped_lock l(s->_state_mutex);
+                        s->_state = user_service::done_greet;
+                    }
+                }
+                else if(s->_state == user_service::sent_stun)
+                {
+                    if(s->_stun->state() == n::stun_success)
+                    {
+                        auto address = n::make_zmq_address(s->_stun->external_ip(), s->_stun->external_port());
+                        std::cerr << "got stun address " << address << std::endl;
+                        s->update_address(address);
+
+                        {
+                            u::mutex_scoped_lock l(s->_state_mutex);
+                            s->_state = user_service::got_stun;
+                        }
+                    }
+                    else if(s->_stun->state() == n::stun_failed)
+                    {
+                        //stun failed, quit
+                        stun_wait = STUN_WAIT_THRESH;
+                    }
+                    else
+                    {
+                        stun_wait++;
+                    }
+
+                    if(stun_wait >= STUN_WAIT_THRESH)
+                    {
+                        u::mutex_scoped_lock l(s->_state_mutex);
+                        s->_state = user_service::failed_greet;
+                    }
+                }
+                else if(s->_state == user_service::got_stun)
+                {
+                    if(s->_greet_queue)
+                    {
+                        ms::greet_register r
+                        {
+                            s->_user->info().id(), 
+                            s->_stun->external_ip(),
+                            s->_stun->external_port() 
+                        };
+
+                        m::message m = r;
+                        s->_greet_queue->send(u::encode(m));
+
+                        u::mutex_scoped_lock l(s->_state_mutex);
+                        s->_state = user_service::sent_greet;
+                    }
+                    else
+                    {
+                        u::mutex_scoped_lock l(s->_state_mutex);
+                        s->_state = user_service::done_greet;
+                    }
+                }
+                else if(s->_state == user_service::sent_greet)
+                {
+                    CHECK(s->_greet_queue);
+
+
+                    for(auto c : s->_user->contacts().list())
+                    {
+                        CHECK(c);
+                        ms::greet_find_request r {s->_user->info().id(), c->id(), SERVICE_ADDRESS};
+
+                        m::message m = r;
+                        s->_greet_queue->send(u::encode(m));
+                    }
+                    u::mutex_scoped_lock l(s->_state_mutex);
+                    s->_state = user_service::sent_contact_query;
+                }
+                else if(s->_state == user_service::sent_contact_query)
+                {
+                    u::mutex_scoped_lock l(s->_state_mutex);
+                    s->_state = user_service::done_greet;
+                }
+                else if(s->_state == user_service::failed_greet)
+                {
+                    u::mutex_scoped_lock l(s->_state_mutex);
+                    tries_left--;
+                    s->_state = user_service::started_greet;
+                }
+                else CHECK(false && "missed state");
+
+                u::sleep_thread(GREET_THREAD_SLEEP);
+            }
+            catch(std::exception& e)
+            {
+                u::mutex_scoped_lock l(s->_state_mutex);
+                s->_state = user_service::failed_greet;
+                std::cerr << "Error in greet thread: " << e.what() << std::endl;
+            }
+            catch(...)
+            {
+                u::mutex_scoped_lock l(s->_state_mutex);
+                s->_state = user_service::failed_greet;
+                std::cerr << "Unexpected error in greet thread." << std::endl;
+            }
+
+            std::cerr << "done greet..." << std::endl;
+            u::mutex_scoped_lock l(s->_state_mutex);
+            s->_state = user_service::done_greet;
+
+            //now we are done, send the ping port requests
+            s->send_ping_port_requests();
+        }
+        catch(std::exception& e)
+        {
+            std::cerr << "exit: user_service::greet_thread: " << e.what() << std::endl;
+        }
+        catch(...)
+        {
+            std::cerr << "exit: user_service::greet_thread" << std::endl;
+        }
+
         bool user_service::contact_available(const std::string& id) const
         {
             auto tp = _last_ping.find(id);
@@ -509,7 +751,7 @@ namespace fire
             for(auto c : _user->contacts().list())
                 send_ping_address(c);
         }
-        
+
         void user_service::init_ping_connection(const std::string& from_id, const std::string& ping_address)
         {
             u::mutex_scoped_lock l(_ping_mutex);
@@ -533,8 +775,28 @@ namespace fire
             INVARIANT(_user);
             INVARIANT(mail());
 
-            ping_request a{c->address(), _user->info().id(), _ping_port, send_back};
+            std::cerr << "sending ping address " << _user->info().address() << " to " << c->address() << " port " << _ping_port << std::endl;
+            //make pinhole
+            if(_stun)
+            {
+                auto address = rewrite_port(c->address(), _stun->external_port());
+                std::cout << "making pinhole: " << address << std::endl;
+                n::queue_options qo = { 
+                    {"psh", "1"}, 
+                    {"con", "1"},
+                    {"block", "1"}};
+                auto pin_hole = n::create_message_queue(address, qo);
+                CHECK(pin_hole);
+                u::bytes b;
+                b.push_back('a');
+                b.push_back('b');
+                b.push_back('c');
+                pin_hole->send(b);
+            }
+
+            ping_request a{c->address(), _user->info().id(), _user->info().address(), _ping_port, send_back};
             mail()->push_outbox(convert(a));
+
         }
 
         void user_service::fire_new_contact_event(const std::string& id)
@@ -603,6 +865,5 @@ namespace fire
                 c.id = u::to_str(m.data);
             }
         }
-
     }
 }
