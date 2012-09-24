@@ -294,21 +294,6 @@ namespace fire
 
         void user_service::message_recieved(const message::message& m)
         {
-            //wait until greet is done
-            state cs;
-            {
-                u::mutex_scoped_lock l(_state_mutex);
-                cs = _state; 
-            }
-            while(cs != user_service::done_greet) 
-            {
-                {
-                    u::mutex_scoped_lock l(_state_mutex);
-                    cs = _state; 
-                }
-                u::sleep_thread(GREET_THREAD_SLEEP);
-            }
-
             if(m.meta.type == PING_REQUEST)
             {
                 ping_request r;
@@ -388,19 +373,6 @@ namespace fire
                 convert(m, r);
                 _sent_requests.erase(r.key);
             }
-            else if(m.meta.type == ms::GREET_FIND_RESPONSE)
-            {
-                ms::greet_find_response r{m};
-                if(!r.found()) return;
-
-                auto new_address = n::make_zmq_address(r.ip(), r.port());
-                auto c = _user->contacts().by_id(r.id());
-                if(c)
-                {
-                    std::cerr << "updating address from: " << c->address() << " to: " << new_address << std::endl;
-                }
-                update_contact_address(r.id(), new_address);
-            }
             else
             {
                 throw std::runtime_error{"unsuported message type `" + m.meta.type +"'"};
@@ -417,6 +389,7 @@ namespace fire
             if(!c) return;
             if(c->address() == a) return;
 
+            std::cerr << "updating address from: " << c->address() << " to: " << a << std::endl;
             c->address(a);
             save_user(_home, *_user);
         }
@@ -732,8 +705,8 @@ namespace fire
                         ms::greet_find_response rs{m};
                         if(!rs.found()) continue;
 
+                        //update address info
                         auto new_address = n::make_zmq_address(rs.ip(), rs.port());
-                        std::cerr << "updating address from: " << c->address() << " to: " << new_address << std::endl;
                         s->update_contact_address(rs.id(), new_address);
                     }
                     u::mutex_scoped_lock l(s->_state_mutex);
