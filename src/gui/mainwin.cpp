@@ -76,7 +76,7 @@ namespace fire
             _root{0},
             _layout{0},
             _sessions{0},
-            _context{c}
+            _context(c)
         {
             setup_stun();
             setup_post();
