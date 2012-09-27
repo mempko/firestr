@@ -23,6 +23,8 @@
 #include <string>
 #include <map>
 
+#include <boost/lexical_cast.hpp>
+
 #include "util/bytes.hpp"
 #include "util/dbc.hpp"
 
@@ -56,11 +58,19 @@ namespace fire
         typedef std::shared_ptr<message_queue> message_queue_ptr;
         typedef std::map<std::string, std::string> queue_options;
 
+        template<class t>
+            t get_opt(const queue_options& o, const std::string& k, t def)
+            {
+                auto i = o.find(k);
+                if(i != o.end()) return boost::lexical_cast<t>(i->second);
+                return def;
+            }
+
         message_queue_ptr create_message_queue(
                 const std::string& queue_address, 
                 const queue_options& default_options = queue_options());
 
-        enum message_type {zeromq};
+        enum message_type {zeromq, bst};
         struct address_components
         {
             std::string queue_address; 
@@ -74,6 +84,7 @@ namespace fire
                 const queue_options& defaults = queue_options());
 
         std::string make_zmq_address(const std::string& host, const std::string& port);
+        std::string make_bst_address(const std::string& host, const std::string& port);
     }
 }
 

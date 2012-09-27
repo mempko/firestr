@@ -66,15 +66,20 @@ po::variables_map parse_options(int argc, char* argv[], po::options_description&
 
 n::message_queue_ptr setup_input_connection(const std::string& port)
 {
-
-    auto address = n::make_zmq_address("*", port);
+    auto address = n::make_bst_address("*", port);
 
     n::queue_options qo = { 
-        {"rep", "1"}, 
         {"bnd", "1"},
-        {"threads", "5"},
         {"block", "0"}};
 
+    return n::create_message_queue(address, qo);
+}
+
+n::message_queue_ptr setup_output_connection(const std::string& address)
+{
+    n::queue_options qo = { 
+        {"con", "1"},
+        {"block", "0"}};
     return n::create_message_queue(address, qo);
 }
 
@@ -93,8 +98,6 @@ void register_user(n::message_queue_ptr q, const ms::greet_register& r, user_inf
     m[i.id] = i;
 
     m::message rm = r;
-    q->send(u::encode(rm));
-
     std::cerr << "registered " << i.id << " " << i.ip << ":" << i.port << std::endl;
 }
 
@@ -123,11 +126,13 @@ void find_user(n::message_queue_ptr q, const ms::greet_find_request& r, user_inf
         m = rs;
     }
 
-    auto reply_to = n::make_zmq_address(f.ip, f.port);
+    auto reply_to = n::make_bst_address(f.ip, f.port);
     m.meta.to = {reply_to, r.response_service_address()};
     
     std::cerr << "sending reply to " << reply_to << " " << r.response_service_address() << std::endl;
-    q->send(u::encode(m));
+    auto rq = setup_output_connection(reply_to);
+    CHECK(rq);
+    rq->send(u::encode(m));
 }
 
 int main(int argc, char *argv[])
@@ -146,10 +151,10 @@ int main(int argc, char *argv[])
     auto in = setup_input_connection(port);
     user_info_map users;
 
+    u::bytes data;
     while(true)
     try
     {
-        u::bytes data;
         if(!in->recieve(data))
         {
             u::sleep_thread(THREAD_SLEEP);
@@ -171,5 +176,14 @@ int main(int argc, char *argv[])
             find_user(in, r, users);
         }
     }
-    catch(...){}
+    catch(std::exception& e)
+    {
+        std::cerr << "error parsing message: " << e.what() << std::endl;
+        std::cerr << "message: " << u::to_str(data) << std::endl;
+    }
+    catch(...)
+    {
+        std::cerr << "unknown error parsing message: " << std::endl;
+        std::cerr << "message: " << u::to_str(data) << std::endl;
+    }
 }

@@ -24,7 +24,6 @@
 #include "network/stungun.hpp"
 #include "util/thread.hpp"
 
-
 #include <map>
 #include <set>
 #include <string>
@@ -43,6 +42,7 @@ namespace fire
 
         typedef std::map<std::string, add_request> add_requests;
         typedef std::set<std::string> sent_requests;
+        typedef std::map<std::string, user_info_ptr> connected_contacts;
 
         struct user_service_context
         {
@@ -104,12 +104,10 @@ namespace fire
             private:
                 //ping specific 
                 typedef std::map<std::string, size_t> last_ping_map;
-                typedef std::map<std::string, network::message_queue_ptr> ping_connection_map;
                 void init_ping();
                 void init_greet();
-                void send_ping_port_requests();
-                void init_ping_connection(const std::string& from_id, const std::string& ping_address);
-                void send_ping_address(user::user_info_ptr, bool send_back = true);
+                void send_ping_requests();
+                void send_ping_request(user::user_info_ptr, bool send_back = true);
                 void send_ping(char t);
 
             private:
@@ -118,12 +116,10 @@ namespace fire
 
             private:
                 //ping
-                std::mutex _ping_mutex;
-                std::string _ping_port;
-                network::message_queue_ptr _ping_queue;
+                mutable std::mutex _ping_mutex;
                 util::thread_uptr _ping_thread;
                 last_ping_map _last_ping;
-                ping_connection_map _ping_connection;
+                connected_contacts _connected;
 
                 //greet
                 network::stun_gun_ptr _stun;

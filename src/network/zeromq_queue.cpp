@@ -20,7 +20,6 @@
 
 #include <stdexcept>
 #include <sstream>
-
 #include <boost/lexical_cast.hpp>
 
 using boost::lexical_cast;
@@ -58,14 +57,6 @@ namespace fire
         {
             return seconds*1000000.0;
         }
-
-        template<class t>
-            t get_opt(const queue_options& o, const std::string& k, t def)
-            {
-                auto i = o.find(k);
-                if(i != o.end()) return lexical_cast<t>(i->second);
-                return def;
-            }
 
         zmq_params parse_zmq_params(const address_components& c)
         {

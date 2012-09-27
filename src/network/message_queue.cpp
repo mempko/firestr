@@ -17,6 +17,7 @@
 
 #include "network/message_queue.hpp"
 #include "network/zeromq_queue.hpp"
+#include "network/boost_asio.hpp"
 
 #include "util/string.hpp"
 
@@ -36,8 +37,9 @@ namespace fire
         message_type determine_type(const std::string type)
         {
             message_type t;
-            if(type == "zmq") t = zeromq; 
-            else std::invalid_argument("Queue type `" + type + "' is not valid. Currently zmq is supported");
+            if(type == "zmq") t = bst; //convert zmq address to bst for now  old: t = zeromq; 
+            else if(type == "bst") t = bst; 
+            else std::invalid_argument("Queue type `" + type + "' is not valid. Currently zmq and bst is supported");
             return t;
         }
 
@@ -63,7 +65,7 @@ namespace fire
                 const queue_options& defaults)
         {
             auto s = util::split<strings>(queue_address, SPLIT_CHAR);
-            if(s.size() < 2) std::invalid_argument("Queue address must have at least a type and location. Example: zmq,http://localhost:10"); 
+            if(s.size() < 2) std::invalid_argument("Queue address must have at least a type and location. Example: bst,http://localhost:10"); 
             address_components c;
             c.queue_address = queue_address;
             c.type = determine_type(s[0]);
@@ -89,6 +91,7 @@ namespace fire
             switch(c.type)
             {
                 case zeromq: p = create_zmq_message_queue(c); break;
+                case bst: p = create_bst_message_queue(c); break;
                 default: CHECK(false && "missed case");
             }
 
@@ -99,6 +102,11 @@ namespace fire
         std::string make_zmq_address(const std::string& host, const std::string& port)
         {
             return "zmq,tcp://" + host + ":" + port;
+        }
+
+        std::string make_bst_address(const std::string& host, const std::string& port)
+        {
+            return "bst,tcp://" + host + ":" + port;
         }
     }
 }

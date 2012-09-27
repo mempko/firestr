@@ -82,12 +82,12 @@ namespace fire
 
         std::string external_address(const std::string& host, const std::string& port)
         {
-            return "zmq,tcp://" + host + ":" + port;
+            return "bst,tcp://" + host + ":" + port;
         }
 
         std::string external_address(const std::string& host_port)
         {
-            return "zmq,tcp://" + host_port;
+            return "bst,tcp://" + host_port;
         }
     }
 }
