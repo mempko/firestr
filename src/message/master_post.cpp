@@ -105,7 +105,6 @@ namespace fire
                 if(c == o->_connections.end())
                 {
                     n::queue_options qo = { 
-                        {"psh", "1"}, 
                         {"con", "1"},
                         {"block", "0"}};
 
@@ -141,12 +140,10 @@ namespace fire
 
         void master_post_office::setup_input_connection()
         {
-            auto address = n::make_zmq_address("*", _in_port);
+            auto address = n::make_bst_address("*", _in_port);
 
             n::queue_options qo = { 
-                {"pul", "1"}, 
                 {"bnd", "1"},
-                {"threads", "5"},
                 {"block", "0"}};
 
             _in = n::create_message_queue(address, qo);
@@ -159,7 +156,7 @@ namespace fire
             _in_port{in_port}
         {
             //setup outside address
-            _address = n::make_zmq_address( _in_host,_in_port);
+            _address = n::make_bst_address(_in_host,_in_port);
 
             setup_input_connection();
 

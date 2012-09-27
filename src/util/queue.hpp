@@ -83,6 +83,21 @@ namespace fire
                     return v;
                 }
 
+                virtual void pop_front()
+                {
+                    std::lock_guard<std::mutex> lock(_m);
+                    REQUIRE_FALSE(_q.empty());
+                    _q.pop_front();
+                }
+
+                virtual t front()
+                {
+                    std::lock_guard<std::mutex> lock(_m);
+                    REQUIRE_FALSE(_q.empty());
+
+                    return _q.front();
+                }
+
                 virtual size_t size() const 
                 { 
                     std::lock_guard<std::mutex> lock(_m);
