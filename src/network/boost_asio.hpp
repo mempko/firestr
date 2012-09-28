@@ -48,7 +48,7 @@ namespace fire
                         byte_queue& out,
                         bool con = false);
             public:
-                void connect(boost::asio::ip::tcp::resolver::iterator e);
+                void connect(boost::asio::ip::tcp::resolver::iterator, const std::string&);
                 void start_read();
                 void close();
                 bool is_connected() const;
@@ -90,6 +90,7 @@ namespace fire
             std::string uri;
             std::string host;
             std::string port;
+            std::string local_port;
             bool block;
             bool wait;
         };

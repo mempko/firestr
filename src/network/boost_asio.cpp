@@ -71,6 +71,7 @@ namespace fire
                 p.mode = determine_connection_mode(o);
                 p.uri = c.location;
                 parse_uri(p.uri, p.host, p.port);
+                p.local_port = get_opt(o, "local_port", std::string(""));
                 p.block = get_opt(o, "block", 0);
                 p.wait = get_opt(o, "wait", 0);
 
@@ -117,12 +118,26 @@ namespace fire
             return _state;
         }
 
-        void connection::connect(tcp::resolver::iterator e)
+        void connection::connect(tcp::resolver::iterator e, const std::string& local_port)
         {
             INVARIANT(_socket);
 
             _state = connecting;
             auto endpoint = *e;
+            if(!local_port.empty())
+            {
+                boost::system::error_code error;
+                _socket->open(tcp::v4(), error);
+                _socket->set_option(tcp::socket::reuse_address(true),error);
+                auto port = boost::lexical_cast<short unsigned int>(local_port);
+                _socket->bind(tcp::endpoint(tcp::v4(), port), error);
+                if(error)
+                {
+                    _state = disconnected;
+                    return;
+                }
+            } 
+
             _socket->async_connect(endpoint,
                     bind(&connection::handle_connect, this,
                         ba::placeholders::error, ++e));
@@ -353,7 +368,7 @@ namespace fire
             auto ei = _resolver->resolve(query);
 
             _out.reset(new connection{*_io, _in_queue, _out_queue});
-            _out->connect(ei);
+            _out->connect(ei, _p.local_port);
 
             ENSURE(_resolver);
             ENSURE(_out);
