@@ -200,6 +200,16 @@ namespace fire
             }
         }
 
+        u::bytes encode_wire(const u::bytes data)
+        {
+            auto m = u::encode(data);
+            u::bytes encoded;
+            encoded.resize(m.size() + 1);
+            encoded[0] = '!';
+            std::copy(m.begin(), m.end(), encoded.begin() + 1);
+            return encoded;
+        }
+
         void connection::do_send(bool force)
         {
             REQUIRE_FALSE(_out_queue.empty());
@@ -209,7 +219,9 @@ namespace fire
             if(!force && _writing) return;
 
             _writing = true;
-            _out_buffer = u::encode(_out_queue.front());
+
+            //encode bytes to wire format
+            _out_buffer = encode_wire(_out_queue.front());
 
             ba::async_write(*_socket,
                     ba::buffer(&_out_buffer[0], _out_buffer.size()),
@@ -250,6 +262,15 @@ namespace fire
             std::string size_buf;
             size_buf.reserve(64);
             int c = in.get();
+            size_t garbage = 1;
+
+            while(c != '!' && in.good()) 
+            { 
+                c = in.get(); 
+                garbage++;
+            }
+
+            c = in.get();
             size_t rc = 1;
             while(c != ':' && in.good())
             {
@@ -258,7 +279,7 @@ namespace fire
                 rc++;
             }
 
-            CHECK_EQUAL(_in_buffer.size(), o_size - rc);
+            CHECK_EQUAL(_in_buffer.size(), o_size - rc - garbage);
 
             size_t size = 0; 
             try { size = lexical_cast<size_t>(size_buf); } catch (...){}
