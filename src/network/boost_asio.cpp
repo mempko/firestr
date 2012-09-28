@@ -94,6 +94,11 @@ namespace fire
             INVARIANT(_socket);
         }
 
+        connection::~connection()
+        {
+            close();
+        }
+
         void connection::close()
         {
             _io.post(bind(&connection::do_close, this));
@@ -106,6 +111,7 @@ namespace fire
             std::cerr << "connection closed " << _socket->local_endpoint() << " + " << _socket->remote_endpoint() << " error: " << _error.message() << std::endl;
             _socket->close();
             _state = disconnected;
+            _writing = false;
         }
 
         bool connection::is_connected() const
@@ -172,10 +178,7 @@ namespace fire
                 //if we have called send already before we connected,
                 //send the data
                 if(!_out_queue.empty()) 
-                {
-                    std::cerr << "got data before connect..." << std::endl;
                     do_send(false);
-                }
             }
             //otherwise try next endpoint in list
             else if (e != tcp::resolver::iterator())
@@ -186,7 +189,15 @@ namespace fire
                         bind(&connection::handle_connect, this,
                             ba::placeholders::error, ++e));
             }
-            else _state = disconnected;
+            else 
+            {
+                _error = error;
+                _state = disconnected;
+            }
+            if(error)
+            {
+                std::cerr << "error connecting " << error.message() << std::endl;
+            }
         }
 
         void connection::do_send(bool force)
@@ -329,8 +340,6 @@ namespace fire
             if(_out->state() == connection::disconnected) 
                 connect();
 
-            std::cerr << "send: " << u::to_str(b) << std::endl;
-
             //add message to queue
             _out_queue.push(b);
 
@@ -350,16 +359,14 @@ namespace fire
             while(_p.block && !_in_queue.empty()) u::sleep_thread(BLOCK_SLEEP);
 
             //return true if we got message
-            bool got =_in_queue.pop(b);
-            if(got) std::cerr << "recieve: " << u::to_str(b) << std::endl;
-            return got;
+            return _in_queue.pop(b);
         }
 
         void boost_asio_queue::connect()
         try
         {
             INVARIANT(_io);
-            if(_out && _out->is_connected()) return;
+            if(_out && _out->state() != connection::disconnected) return;
 
             //init resolver if it does not exist
             if(!_resolver) _resolver.reset(new tcp::resolver{*_io}); 
@@ -397,7 +404,6 @@ namespace fire
                 _acceptor->set_option(tcp::acceptor::reuse_address(true));
                 _acceptor->bind(endpoint);
                 _acceptor->listen();
-                std::cerr << "binding: " << endpoint << std::endl;
             }
 
             //prepare incoming connection
