@@ -37,6 +37,9 @@ namespace fire
         typedef std::unique_ptr<boost::asio::ip::tcp::acceptor> asio_acceptor_ptr;
         typedef std::unique_ptr<boost::asio::ip::tcp::socket> asio_socket_ptr;
 
+        class connection;
+        typedef util::queue<connection*> connection_ptr_queue;
+
         class connection
         {
             public:
@@ -46,6 +49,8 @@ namespace fire
                         boost::asio::io_service& io, 
                         byte_queue& in,
                         byte_queue& out,
+                        connection_ptr_queue& last_in,
+                        bool track = false,
                         bool con = false);
                 ~connection();
             public:
@@ -70,6 +75,8 @@ namespace fire
                 boost::asio::io_service& _io;
                 byte_queue& _in_queue;
                 byte_queue& _out_queue;
+                connection_ptr_queue& _last_in_socket;
+                bool _track;
                 util::bytes _out_buffer;
                 std::string _src_host;
                 std::string _src_port;
@@ -94,6 +101,7 @@ namespace fire
             std::string local_port;
             bool block;
             bool wait;
+            bool track_incoming;
         };
 
         class boost_asio_queue : public message_queue
@@ -107,8 +115,8 @@ namespace fire
                 virtual bool recieve(util::bytes& b);
 
             public:
-                const std::string& src_host() const;
-                const std::string& src_port() const;
+                virtual socket_info get_socket_info() const;
+
             private:
                 void connect();
                 void accept();
@@ -124,6 +132,7 @@ namespace fire
                 util::thread_uptr _run_thread;
 
                 connection_ptr _out;
+                mutable connection_ptr_queue _last_in_socket;
                 connections _in_connections;
                 byte_queue _in_queue;
                 byte_queue _out_queue;

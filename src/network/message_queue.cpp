@@ -108,5 +108,10 @@ namespace fire
         {
             return "bst,tcp://" + host + ":" + port;
         }
+
+        std::string make_bst_address(const std::string& host, const std::string& port, const std::string& local_port)
+        {
+            return "bst,tcp://" + host + ":" + port + ",local_port="+local_port;
+        }
     }
 }

@@ -46,8 +46,6 @@ po::options_description create_descriptions()
     const std::string greeter_server = "";
     const std::string greeter_port = "7070";
 
-
-
     d.add_options()
         ("help", "prints help")
         ("home", po::value<std::string>()->default_value(home), "configuration directory")

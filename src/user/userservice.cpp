@@ -664,8 +664,9 @@ namespace fire
                         ms::greet_register r
                         {
                             s->_user->info().id(), 
-                            (s->_stun ? s->_stun->external_ip() : s->_in_host),
-                            (s->_stun ? s->_stun->external_port() : s->_in_port) 
+                            (s->_stun ? s->_stun->external_ip() : ""), //if no stun, let greeter use socket ip
+                            (s->_stun ? s->_stun->external_port() : s->_in_port),
+                            (s->_stun ? s->_stun->external_port() : s->_in_port) //TODO: change to random port
                         };
 
                         m::message m = r;

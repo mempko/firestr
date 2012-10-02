@@ -60,6 +60,9 @@ namespace fire
                 virtual bool send(const util::bytes& b);
                 virtual bool recieve(util::bytes& b);
 
+            public:
+                virtual socket_info get_socket_info() const;
+
             private:
                 bool timedout(short event);
 

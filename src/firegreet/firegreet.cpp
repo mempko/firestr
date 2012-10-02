@@ -70,7 +70,8 @@ n::message_queue_ptr setup_input_connection(const std::string& port)
 
     n::queue_options qo = { 
         {"bnd", "1"},
-        {"block", "0"}};
+        {"block", "0"},
+        {"track_incoming", "1"}};
 
     return n::create_message_queue(address, qo);
 }
@@ -88,13 +89,18 @@ struct user_info
     std::string id;
     std::string ip;
     std::string port;
+    std::string return_port;
 };
 typedef std::map<std::string, user_info> user_info_map;
 
-void register_user(n::message_queue_ptr q, const ms::greet_register& r, user_info_map& m)
+void register_user(const n::socket_info& sock, n::message_queue_ptr q, const ms::greet_register& r, user_info_map& m)
 {
     if(r.id().empty()) return;
-    user_info i = {r.id(), r.ip(), r.port()};
+
+    //use user specified ip, otherwise use socket ip
+    std::string ip = r.ip().empty() ? sock.remote_address : r.ip();
+
+    user_info i = {r.id(), ip, r.port(), r.return_port()};
     m[i.id] = i;
 
     m::message rm = r;
@@ -126,7 +132,7 @@ void find_user(n::message_queue_ptr q, const ms::greet_find_request& r, user_inf
         m = rs;
     }
 
-    auto reply_to = n::make_bst_address(f.ip, f.port);
+    auto reply_to = n::make_bst_address(f.ip, f.port); // f.return_port);
     m.meta.to = {reply_to, r.response_service_address()};
     
     std::cerr << "sending reply to " << reply_to << " " << r.response_service_address() << std::endl;
@@ -165,10 +171,14 @@ int main(int argc, char *argv[])
         m::message m;
         u::decode(data, m);
 
+        //get socket info of the message just recieved.
+        //because we are tracking incoming
+        auto info = in->get_socket_info();
+
         if(m.meta.type == ms::GREET_REGISTER)
         {
             ms::greet_register r{m};
-            register_user(in, r, users);
+            register_user(info, in, r, users);
         }
         else if(m.meta.type == ms::GREET_FIND_REQUEST)
         {

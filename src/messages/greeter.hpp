@@ -36,7 +36,8 @@ namespace fire
                 greet_register(
                         const std::string& id,
                         const std::string& ip,
-                        const std::string& port);
+                        const std::string& port,
+                        const std::string& return_port);
 
             public:
                 greet_register(const message::message&);
@@ -46,11 +47,13 @@ namespace fire
                 const std::string& id() const;
                 const std::string& ip() const;
                 const std::string& port() const;
+                const std::string& return_port() const;
 
             private:
                 std::string _id;
                 std::string _ip;
                 std::string _port;
+                std::string _return_port;
         };
 
         class greet_find_request
