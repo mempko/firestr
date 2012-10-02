@@ -39,7 +39,7 @@ namespace fire
     {
         namespace
         {
-            const size_t BLOCK_SLEEP = 100;
+            const size_t BLOCK_SLEEP = 10;
 
             asio_params::connect_mode determine_connection_mode(const queue_options& o)
             {
@@ -74,6 +74,7 @@ namespace fire
                 p.local_port = get_opt(o, "local_port", std::string(""));
                 p.block = get_opt(o, "block", 0);
                 p.wait = get_opt(o, "wait", 0);
+                p.track_incoming = get_opt(o, "track_incoming", 0);
 
                 return p;
             }
@@ -83,10 +84,14 @@ namespace fire
                 ba::io_service& io, 
                 byte_queue& in,
                 byte_queue& out,
+                connection_ptr_queue& last_in,
+                bool track,
                 bool con) :
             _io(io),
             _in_queue(in),
             _out_queue(out),
+            _last_in_socket(last_in),
+            _track{track},
             _socket{new tcp::socket{io}},
             _state{ con ? connected : disconnected},
             _writing{false}
@@ -196,7 +201,7 @@ namespace fire
             }
             if(error)
             {
-                std::cerr << "error connecting " << error.message() << std::endl;
+                std::cerr << "error connecting: " << error.message() << std::endl;
             }
         }
 
@@ -312,6 +317,7 @@ namespace fire
 
             //add message to in queue
             _in_queue.push(data);
+            if(_track) _last_in_socket.push(this);
 
             //read next message
             start_read();
@@ -395,7 +401,7 @@ namespace fire
             tcp::resolver::query query{_p.host, _p.port}; 
             auto ei = _resolver->resolve(query);
 
-            _out.reset(new connection{*_io, _in_queue, _out_queue});
+            _out.reset(new connection{*_io, _in_queue, _out_queue, _last_in_socket});
             _out->connect(ei, _p.local_port);
 
             ENSURE(_resolver);
@@ -428,7 +434,7 @@ namespace fire
             }
 
             //prepare incoming connection
-            connection_ptr new_connection{new connection{*_io, _in_queue, _out_queue, true}};
+            connection_ptr new_connection{new connection{*_io, _in_queue, _out_queue, _last_in_socket, _p.track_incoming, true}};
             _acceptor->async_accept(new_connection->socket(),
                     bind(&boost_asio_queue::handle_accept, this, new_connection,
                         ba::placeholders::error));
@@ -452,12 +458,57 @@ namespace fire
             nc->start_read();
 
             //prepare next incoming connection
-            connection_ptr new_connection{new connection{*_io,  _in_queue, _out_queue}};
+            connection_ptr new_connection{new connection{*_io, _in_queue, _out_queue, _last_in_socket, _p.track_incoming, true}};
             _acceptor->async_accept(new_connection->socket(),
                     bind(&boost_asio_queue::handle_accept, this, new_connection,
                         ba::placeholders::error));
 
             ENSURE(new_connection);
+        }
+
+        socket_info boost_asio_queue::get_socket_info() const
+        {
+            socket_info r;
+            switch(_p.mode)
+            {
+                case asio_params::bind: 
+                    {
+                        INVARIANT(_acceptor);
+                        auto local = _acceptor->local_endpoint();
+                        r.local_address = local.address().to_string();
+                        r.local_port = boost::lexical_cast<std::string>(local.port());
+                        if(_p.track_incoming)
+                        {
+                            connection* i = 0;
+                            _last_in_socket.pop(i);
+                            if(i)
+                            {
+                                auto remote = i->socket().remote_endpoint();
+                                r.remote_address = remote.address().to_string();
+                                r.remote_port = boost::lexical_cast<std::string>(remote.port());
+                            }
+                        }
+                    }
+                    break;
+                case asio_params::connect: 
+                    {
+                        INVARIANT(_out)
+                        if(_out->is_connected())
+                        {
+                            auto local = _out->socket().local_endpoint();
+                            auto remote = _out->socket().remote_endpoint();
+                            r.local_address = local.address().to_string();
+                            r.local_port = boost::lexical_cast<std::string>(local.port());
+                            r.remote_address = remote.address().to_string();
+                            r.remote_port = boost::lexical_cast<std::string>(remote.port());
+                        }
+                    }
+                    break;
+                default:
+                    CHECK(false && "missed case");
+            }
+
+            return r;
         }
 
         message_queue_ptr create_bst_message_queue(const address_components& c)

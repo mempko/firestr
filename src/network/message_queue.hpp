@@ -32,6 +32,14 @@ namespace fire
 {
     namespace network 
     {
+        struct socket_info
+        {
+            std::string local_address;
+            std::string local_port;
+            std::string remote_address;
+            std::string remote_port;
+        };
+
         class message_queue
         {
             public:
@@ -53,6 +61,8 @@ namespace fire
                 
                 virtual bool send(const util::bytes&) = 0;
                 virtual bool recieve(util::bytes&) = 0;
+
+                virtual socket_info get_socket_info() const = 0;
         };
 
         typedef std::shared_ptr<message_queue> message_queue_ptr;
@@ -85,6 +95,7 @@ namespace fire
 
         std::string make_zmq_address(const std::string& host, const std::string& port);
         std::string make_bst_address(const std::string& host, const std::string& port);
+        std::string make_bst_address(const std::string& host, const std::string& port, const std::string& local_port);
     }
 }
 

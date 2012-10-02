@@ -31,10 +31,12 @@ namespace fire
         greet_register::greet_register(
                 const std::string& id,
                 const std::string& ip,
-                const std::string& port) :
+                const std::string& port,
+                const std::string& return_port) :
             _id{id},
             _ip{ip},
-            _port{port}
+            _port{port},
+            _return_port{return_port}
         {
         }
 
@@ -45,6 +47,7 @@ namespace fire
             _id = m.meta.extra["from_id"].as_string();
             _ip = m.meta.extra["ext_ip"].as_string();
             _port = m.meta.extra["ext_port"].as_string();
+            _return_port = m.meta.extra["rtn_port"].as_string();
         }
 
         greet_register::operator message::message() const
@@ -54,6 +57,7 @@ namespace fire
             m.meta.extra["from_id"] = _id;
             m.meta.extra["ext_ip"] = _ip;
             m.meta.extra["ext_port"] = _port;
+            m.meta.extra["rtn_port"] = _return_port;
             return m;
         }
 
@@ -70,6 +74,11 @@ namespace fire
         const std::string& greet_register::port() const
         {
             return _port;
+        }
+
+        const std::string& greet_register::return_port() const
+        {
+            return _return_port;
         }
 
         greet_find_request::greet_find_request(

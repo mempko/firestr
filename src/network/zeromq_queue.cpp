@@ -175,6 +175,11 @@ namespace fire
             return !(i[0].revents & event);
         }
 
+        socket_info zmq_queue::get_socket_info() const 
+        {
+            return {};
+        }
+
         message_queue_ptr create_zmq_message_queue(const address_components& c)
         {
             zmq_params p = parse_zmq_params(c);
