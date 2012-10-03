@@ -132,7 +132,7 @@ void find_user(n::message_queue_ptr q, const ms::greet_find_request& r, user_inf
         m = rs;
     }
 
-    auto reply_to = n::make_bst_address(f.ip, f.port); // f.return_port);
+    auto reply_to = n::make_bst_address(f.ip, f.port, f.return_port);
     m.meta.to = {reply_to, r.response_service_address()};
     
     std::cerr << "sending reply to " << reply_to << " " << r.response_service_address() << std::endl;
