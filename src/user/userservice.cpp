@@ -23,6 +23,7 @@
 
 #include <stdexcept>
 #include <thread>
+#include <random>
 
 namespace m = fire::message;
 namespace ms = fire::messages;
@@ -51,6 +52,8 @@ namespace fire
             const char DISCONNECTED = 'd';
             const size_t GREET_THREAD_SLEEP = 200; 
             const size_t STUN_WAIT_THRESH = 25;
+            const size_t MIN_PORT = 55000;
+            const size_t MAX_PORT = 65535;
         }
 
         struct ping 
@@ -587,6 +590,13 @@ namespace fire
             pin_hole->send(b);
         }
 
+        std::string random_port()
+        {
+            std::uniform_int_distribution<size_t> distribution(MIN_PORT, MAX_PORT);
+            std::mt19937 engine; 
+            auto generate = std::bind(distribution, engine);
+            return boost::lexical_cast<std::string>(generate());
+        }
 
         void greet_thread(user_service* s)
         try
@@ -666,7 +676,7 @@ namespace fire
                             s->_user->info().id(), 
                             (s->_stun ? s->_stun->external_ip() : ""), //if no stun, let greeter use socket ip
                             (s->_stun ? s->_stun->external_port() : s->_in_port),
-                            (s->_stun ? s->_stun->external_port() : s->_in_port) //TODO: change to random port
+                            random_port()
                         };
 
                         m::message m = r;
