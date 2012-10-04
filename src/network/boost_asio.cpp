@@ -351,6 +351,8 @@ namespace fire
         boost_asio_queue::~boost_asio_queue() 
         {
             INVARIANT(_run_thread);
+            if(_p.wait > 0) u::sleep_thread(_p.wait);
+
             _done = true;
 
             _run_thread->join();
