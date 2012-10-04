@@ -80,9 +80,11 @@ n::message_queue_ptr setup_output_connection(const std::string& address)
 {
     n::queue_options qo = { 
         {"con", "1"},
-        {"block", "0"}};
+        {"block", "1"}};
     return n::create_message_queue(address, qo);
 }
+
+typedef std::map<std::string, std::string> port_map;
 
 struct user_info
 {
@@ -90,6 +92,8 @@ struct user_info
     std::string ip;
     std::string port;
     std::string return_port;
+    std::string response_service_address;
+    port_map from_ports;
 };
 typedef std::map<std::string, user_info> user_info_map;
 
@@ -100,45 +104,56 @@ void register_user(const n::socket_info& sock, n::message_queue_ptr q, const ms:
     //use user specified ip, otherwise use socket ip
     std::string ip = r.ip().empty() ? sock.remote_address : r.ip();
 
-    user_info i = {r.id(), ip, r.port(), r.return_port()};
+    port_map empty;
+    user_info i = {r.id(), ip, r.port(), r.return_port(), r.response_service_address(), empty};
     m[i.id] = i;
 
     m::message rm = r;
     std::cerr << "registered " << i.id << " " << i.ip << ":" << i.port << std::endl;
 }
 
+void send_response(const ms::greet_find_response& r, const user_info& u)
+{
+    m::message m = r;
+    auto address = n::make_bst_address(u.ip, u.port, u.return_port); 
+    m.meta.to = {address, u.response_service_address};
+
+    std::cerr << "sending reply to " << address << std::endl;
+    auto q = setup_output_connection(address);
+    CHECK(q);
+    q->send(u::encode(m));
+}
+
 void find_user(n::message_queue_ptr q, const ms::greet_find_request& r, user_info_map& users)
 {
     CHECK(q);
 
+    //find from user
     auto fup = users.find(r.from_id());
-    auto up = users.find(r.search_id());
-
     if(fup == users.end()) return;
 
-    const auto& f = fup->second;
-    m::message m;
+    //assign remote port
+    auto& f = fup->second;
+    f.from_ports[r.search_id()] = r.from_port();
 
-    if(up == users.end())
-    {
-        ms::greet_find_response rs{false, "", "", ""};
-        m = rs;
-    }
-    else
-    {
-        const auto& i = up->second;
-        std::cerr << "found " << i.id << " " << i.ip << ":" << i.port << std::endl;
-        ms::greet_find_response rs{true, i.id, i.ip,  i.port};
-        m = rs;
-    }
+    //find search user
+    auto up = users.find(r.search_id());
+    if(up == users.end()) return;
 
-    auto reply_to = n::make_bst_address(f.ip, f.port, f.return_port);
-    m.meta.to = {reply_to, r.response_service_address()};
-    
-    std::cerr << "sending reply to " << reply_to << " " << r.response_service_address() << std::endl;
-    auto rq = setup_output_connection(reply_to);
-    CHECK(rq);
-    rq->send(u::encode(m));
+    //get local port
+    auto& i = up->second;
+    if(i.from_ports.count(r.from_id()) == 0) return;
+
+    auto i_from_port = i.from_ports[r.from_id()];
+
+    std::cerr << "found match " << f.id << " " << f.ip << ":" << f.port << " <==> " <<  i.id << " " << i.ip << ":" << i.port << std::endl;
+
+    //send response to both clients
+    ms::greet_find_response fr{true, i.id, i.ip,  i.port, i_from_port};
+    send_response(fr, f);
+
+    ms::greet_find_response ir{true, f.id, f.ip,  f.port, r.from_port()};
+    send_response(ir, i);
 }
 
 int main(int argc, char *argv[])

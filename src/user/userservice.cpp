@@ -17,11 +17,13 @@
 
 #include "user/userservice.hpp"
 #include "messages/greeter.hpp"
+#include "messages/pinhole.hpp"
 #include "util/uuid.hpp"
 #include "util/string.hpp"
 #include "util/dbc.hpp"
 
 #include <stdexcept>
+#include <ctime>
 #include <thread>
 #include <random>
 
@@ -87,7 +89,8 @@ namespace fire
         {
             std::string to;
             std::string from_id;
-            std::string from_address;
+            std::string from_ip;
+            std::string from_port;
             int send_back;
         };
 
@@ -97,7 +100,7 @@ namespace fire
             m.meta.type = PING_REQUEST;
             m.meta.to = {r.to, SERVICE_ADDRESS};
             m.meta.extra["from_id"] = r.from_id;
-            m.meta.extra["from_address"] = r.from_address;
+            m.meta.extra["from_port"] = r.from_port;
             m.meta.extra["send_back"] = r.send_back;
 
             return m;
@@ -108,7 +111,8 @@ namespace fire
             REQUIRE_EQUAL(m.meta.type, PING_REQUEST);
             REQUIRE_GREATER(m.meta.from.size(), 1);
             r.from_id = m.meta.extra["from_id"].as_string();
-            r.from_address = m.meta.extra["from_address"].as_string();
+            r.from_ip = m.meta.extra["from_ip"].as_string();
+            r.from_port = m.meta.extra["from_port"].as_string();
             r.send_back = m.meta.extra["send_back"];
         }
 
@@ -281,12 +285,21 @@ namespace fire
             ENSURE(_greet_thread);
         }
 
-        std::string rewrite_port(const std::string& a, const std::string& port)
+        void make_pinhole(const std::string& ip, const std::string remote_port, const std::string& local_port)
         {
-            auto s = u::split<u::string_vect>(a, ":");
-            if(s.size() != 3) return a;
-            auto r = s[0] + ":" +  s[1] + ":" + port;
-            return r;
+            auto a = n::make_bst_address(ip, remote_port, local_port);
+            std::cout << "making pinhole: " << a << std::endl;
+            n::queue_options qo = { 
+                {"con", "1"},
+                {"block", "0"},
+                {"local_port", local_port}};
+
+            auto pin_hole = n::create_message_queue(a, qo);
+            CHECK(pin_hole);
+
+            ms::pinhole pm;
+            m::message m = pm;
+            pin_hole->send(u::encode(m));
         }
 
         bool available(size_t ticks) { return ticks <= PING_THRESH; }
@@ -330,12 +343,11 @@ namespace fire
                 auto c = _user->contacts().by_id(r.from_id);
                 if(!c) return;
 
-                std::cerr << "got ping request from: " << c->address() << " updated: " << r.from_address << std::endl;
+                std::cerr << "got ping request from: " << c->address() << " updated: " << r.from_ip << ":" << r.from_port << std::endl;
 
                 //update contact address to the one specified
                 //if it is different.
-                if(c->address() != r.from_address)
-                    update_contact_address(c->id(), r.from_address);
+                update_contact_address(c->id(), r.from_ip, r.from_port);
 
                 //we are already connected to this contact
                 //send ping and return
@@ -394,9 +406,18 @@ namespace fire
                 ms::greet_find_response rs{m};
                 if(!rs.found()) return;
 
+                std::cerr << "got greet response: " << rs.ip() << ":" << rs.port() << std::endl;
+
                 //update address info
-                auto new_address = n::make_bst_address(rs.ip(), rs.port());
-                update_contact_address(rs.id(), new_address);
+                update_contact_address(rs.id(), rs.ip(), rs.port());
+
+                //make pinhole
+                if(_stun && !rs.from_port().empty())
+                    make_pinhole(rs.ip(), rs.from_port(), _in_port);
+
+                //send ping request using new address
+                auto c = _user->contacts().by_id(rs.id());
+                if(c) send_ping_request(c);
             }
             else
             {
@@ -404,13 +425,21 @@ namespace fire
             }
         }
 
-        void user_service::update_contact_address(const std::string& id, const std::string& a)
+        void user_service::update_contact_address(const std::string& id, const std::string& ip, const std::string& port)
         {
             INVARIANT(_user);
             u::mutex_scoped_lock l(_mutex);
 
             auto c = _user->contacts().by_id(id);
             if(!c) return;
+
+            std::string local_port;
+            {
+                u::mutex_scoped_lock l(_state_mutex);
+                local_port = _local_ports[c->id()];
+            }
+            auto a = n::make_bst_address(ip, port, local_port);
+
             if(c->address() == a) return;
 
             std::cerr << "updating address from: " << c->address() << " to: " << a << std::endl;
@@ -570,30 +599,11 @@ namespace fire
             std::cerr << "exit: user_service::ping_thread" << std::endl;
         }
 
-        void make_pinhole(const std::string& address, const std::string ext_port)
-        {
-            return;
-
-            auto a = rewrite_port(address, ext_port);
-            std::cout << "making pinhole: " << a << std::endl;
-            n::queue_options qo = { 
-                {"psh", "1"}, 
-                {"con", "1"},
-                {"wait", "50"},
-                {"block", "0"}};
-            auto pin_hole = n::create_message_queue(a, qo);
-            CHECK(pin_hole);
-            u::bytes b;
-            b.push_back('a');
-            b.push_back('b');
-            b.push_back('c');
-            pin_hole->send(b);
-        }
-
-        std::string random_port()
+        std::string random_port(size_t seed)
         {
             std::uniform_int_distribution<size_t> distribution(MIN_PORT, MAX_PORT);
             std::mt19937 engine; 
+            engine.seed(seed + std::time(0));
             auto generate = std::bind(distribution, engine);
             return boost::lexical_cast<std::string>(generate());
         }
@@ -665,22 +675,21 @@ namespace fire
                 {
                     if(s->_greet_queue)
                     {
-                        if(s->_stun) 
-                        {
-                            auto a = n::make_bst_address(s->_greeter_server, s->_greeter_port);
-                            make_pinhole(a, s->_stun->external_port());
-                        }
-
+                        auto return_port = random_port(boost::lexical_cast<size_t>(s->_in_port));
                         ms::greet_register r
                         {
                             s->_user->info().id(), 
                             (s->_stun ? s->_stun->external_ip() : ""), //if no stun, let greeter use socket ip
                             (s->_stun ? s->_stun->external_port() : s->_in_port),
-                            random_port()
+                            return_port,
+                            SERVICE_ADDRESS
                         };
 
                         m::message m = r;
                         s->_greet_queue->send(u::encode(m));
+                
+                        if(s->_stun)
+                            make_pinhole(s->_greeter_server, return_port, s->_in_port);
 
                         u::mutex_scoped_lock l(s->_state_mutex);
                         s->_state = user_service::sent_greet;
@@ -698,11 +707,24 @@ namespace fire
                     for(auto c : s->_user->contacts().list())
                     {
                         CHECK(c);
-                        ms::greet_find_request r {s->_user->info().id(), c->id(), SERVICE_ADDRESS};
+
+                        std::string local_port;
+
+                        //if we are connecting outside nat, assign the port that
+                        //the contact should bind to when connecting to this user.
+                        if(s->_stun)
+                        {
+                            u::mutex_scoped_lock l(s->_state_mutex);
+                            local_port = random_port(boost::lexical_cast<size_t>(s->_in_port));
+                            s->_local_ports[c->id()] = local_port;
+                        }
+
+                        ms::greet_find_request r {s->_user->info().id(), c->id(), local_port};
 
                         //send request
                         m::message m = r;
                         s->_greet_queue->send(u::encode(m));
+
                     }
 
                     u::mutex_scoped_lock l(s->_state_mutex);
@@ -741,7 +763,7 @@ namespace fire
             s->_state = user_service::done_greet;
 
             //now we are done, send the ping port requests
-            s->send_ping_requests();
+            if(!s->_greet_queue) s->send_ping_requests();
         }
         catch(std::exception& e)
         {
@@ -788,13 +810,14 @@ namespace fire
             INVARIANT(_user);
             INVARIANT(mail());
 
-            //make pinhole
-            if(_stun)
+            ping_request a
             {
-                make_pinhole(c->address(), _stun->external_port());
-            }
-
-            ping_request a{c->address(), _user->info().id(), _user->info().address(), send_back};
+                c->address(), 
+                _user->info().id(), 
+                (_stun ? _stun->external_ip() : _in_host), 
+                (_stun ? _stun->external_port() : _in_port),
+                send_back
+            };
             mail()->push_outbox(convert(a));
 
         }

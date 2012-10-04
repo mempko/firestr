@@ -31,8 +31,6 @@ namespace fire
         {
             const double STUN_WAIT = 10; //in milliseconds 
             const double THREAD_SLEEP = 10; //in milliseconds 
-            const std::string STUN_SERVER = "132.177.123.13";
-            const std::string STUN_PORT = "3478";
         }
 
         void in_thread(master_post_office* o)
@@ -51,10 +49,16 @@ namespace fire
                     continue;
                 }
 
+                //get socket info of the message just recieved.
+                auto socket = o->_in->get_socket_info();
+
                 //parse message
                 std::stringstream s(u::to_str(data));
                 message m;
                 s >> m;
+
+                //insert the from_ip
+                m.meta.extra["from_ip"] = socket.remote_address;
 
                 //pop off master address
                 m.meta.to.pop_front();
@@ -144,7 +148,8 @@ namespace fire
 
             n::queue_options qo = { 
                 {"bnd", "1"},
-                {"block", "0"}};
+                {"block", "0"},
+                {"track_incoming", "1"}};
 
             _in = n::create_message_queue(address, qo);
         }
