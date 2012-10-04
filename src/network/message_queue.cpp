@@ -111,7 +111,9 @@ namespace fire
 
         std::string make_bst_address(const std::string& host, const std::string& port, const std::string& local_port)
         {
-            return "bst,tcp://" + host + ":" + port + ",local_port="+local_port;
+            return local_port.empty() ? 
+                make_bst_address(host, port) :
+                "bst,tcp://" + host + ":" + port + ",local_port="+local_port;
         }
     }
 }

@@ -43,6 +43,7 @@ namespace fire
         typedef std::map<std::string, add_request> add_requests;
         typedef std::set<std::string> sent_requests;
         typedef std::map<std::string, user_info_ptr> connected_contacts;
+        typedef std::map<std::string, std::string> port_map;
 
         struct user_service_context
         {
@@ -84,7 +85,7 @@ namespace fire
             private:
                 void update_address(const std::string& address);
                 void confirm_contact(user_info_ptr contact);
-                void update_contact_address(const std::string& id, const std::string& adress);
+                void update_contact_address(const std::string& id, const std::string& ip, const std::string& port);
 
             private:
                 sent_requests _sent_requests;
@@ -129,6 +130,7 @@ namespace fire
                 std::string _stun_port;
                 std::string _greeter_server;
                 std::string _greeter_port;
+                port_map _local_ports;
                 util::thread_uptr _greet_thread;
                 network::message_queue_ptr _greet_queue;
 

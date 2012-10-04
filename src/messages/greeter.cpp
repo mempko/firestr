@@ -32,11 +32,13 @@ namespace fire
                 const std::string& id,
                 const std::string& ip,
                 const std::string& port,
-                const std::string& return_port) :
+                const std::string& return_port,
+                const std::string& response_service_address) :
             _id{id},
             _ip{ip},
             _port{port},
-            _return_port{return_port}
+            _return_port{return_port},
+            _response_service_address{response_service_address}
         {
         }
 
@@ -48,6 +50,7 @@ namespace fire
             _ip = m.meta.extra["ext_ip"].as_string();
             _port = m.meta.extra["ext_port"].as_string();
             _return_port = m.meta.extra["rtn_port"].as_string();
+            _response_service_address = m.meta.extra["response_address"].as_string();
         }
 
         greet_register::operator message::message() const
@@ -58,6 +61,7 @@ namespace fire
             m.meta.extra["ext_ip"] = _ip;
             m.meta.extra["ext_port"] = _port;
             m.meta.extra["rtn_port"] = _return_port;
+            m.meta.extra["response_address"] = _response_service_address;
             return m;
         }
 
@@ -81,13 +85,18 @@ namespace fire
             return _return_port;
         }
 
+        const std::string& greet_register::response_service_address() const
+        {
+            return _response_service_address;
+        }
+
         greet_find_request::greet_find_request(
                 const std::string& from_id,
                 const std::string& search_id,
-                const std::string& response_service_address) :
+                const std::string& from_port) :
             _from_id{from_id},
-            _response_service_address{response_service_address},
-            _search_id{search_id}
+            _search_id{search_id},
+            _from_port{from_port}
         {
         }
 
@@ -97,7 +106,7 @@ namespace fire
 
             _from_id = m.meta.extra["from_id"].as_string();
             _search_id = m.meta.extra["search_id"].as_string();
-            _response_service_address = m.meta.extra["response_address"].as_string();
+            _from_port = m.meta.extra["from_port"].as_string();
         }
 
         greet_find_request::operator message::message() const
@@ -106,7 +115,7 @@ namespace fire
             m.meta.type = GREET_FIND_REQUEST;
             m.meta.extra["from_id"] = _from_id;
             m.meta.extra["search_id"] = _search_id;
-            m.meta.extra["response_address"] = _response_service_address;
+            m.meta.extra["from_port"] = _from_port;
             return m;
         }
 
@@ -120,20 +129,22 @@ namespace fire
             return _search_id;
         }
 
-        const std::string& greet_find_request::response_service_address() const
+        const std::string& greet_find_request::from_port() const
         {
-            return _response_service_address;
+            return _from_port;
         }
 
         greet_find_response::greet_find_response(
                 bool found,
                 const std::string& id,
                 const std::string& ip,
-                const std::string& port) :
+                const std::string& port,
+                const std::string& from_port) :
             _found{found},
             _id{id},
             _ip{ip},
-            _port{port}
+            _port{port},
+            _from_port{from_port}
         {
         }
 
@@ -144,6 +155,7 @@ namespace fire
             _id = m.meta.extra["search_id"].as_string();
             _ip = m.meta.extra["ext_ip"].as_string();
             _port = m.meta.extra["ext_port"].as_string();
+            _from_port = m.meta.extra["from_port"].as_string();
             _found = m.meta.extra["found"].as_int() == 1;
         }
 
@@ -154,6 +166,7 @@ namespace fire
             m.meta.extra["search_id"] = _id;
             m.meta.extra["ext_ip"] = _ip;
             m.meta.extra["ext_port"] = _port;
+            m.meta.extra["from_port"] = _from_port;
             m.meta.extra["found"] = static_cast<int>(_found ? 1 : 0);
             return m;
         }
@@ -177,6 +190,11 @@ namespace fire
         const std::string& greet_find_response::port() const
         {
             return _port;
+        }
+
+        const std::string& greet_find_response::from_port() const
+        {
+            return _from_port;
         }
     }
 }
