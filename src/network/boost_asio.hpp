@@ -58,6 +58,8 @@ namespace fire
                 void start_read();
                 void close();
                 bool is_connected() const;
+                bool is_disconnected() const;
+                bool is_connecting() const;
                 con_state state() const;
                 boost::asio::ip::tcp::socket& socket();
 
@@ -82,7 +84,7 @@ namespace fire
                 std::string _src_port;
                 boost::asio::streambuf _in_buffer;
                 asio_socket_ptr _socket;
-                std::mutex _mutex;
+                mutable std::mutex _mutex;
                 boost::system::error_code _error;
                 bool _writing;
             private:
