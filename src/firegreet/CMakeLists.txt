@@ -40,7 +40,7 @@ target_link_libraries(
     fire_util
     ${Boost_LIBRARIES}
     ${QT_LIBRARIES}
-    ${ZMQ_LIBS})
+    ${MISC_LIBRARIES})
 
 add_dependencies(
     firegreet 

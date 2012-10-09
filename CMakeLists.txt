@@ -37,12 +37,11 @@ find_package(Qt4 REQUIRED QtCore QtGui QtNetwork)
 include(${QT_USE_FILE})
 add_definitions(${QT_DEFINITIONS})
 
-#setup ZeroMq
+#setup misc
 if(APPLE)
-    set(ZMQ_LIBS libzmq.a libuuid.dylib libpthread.dylib)
+    set(MISC_LIBRARIES libuuid.dylib libpthread.dylib)
 else()
-    set(ZMQ_LIBS libzmq.a libuuid.so libpthread.so librt.so)
+    set(MISC_LIBRARIES libuuid.so libpthread.so librt.so)
 endif()
-
 
 add_subdirectory(src)
