@@ -124,6 +124,18 @@ namespace fire
             return _state == connected;
         }
 
+        bool connection::is_disconnected() const
+        {
+            u::mutex_scoped_lock l(_mutex);
+            return _state == disconnected;
+        }
+
+        bool connection::is_connecting() const
+        {
+            u::mutex_scoped_lock l(_mutex);
+            return _state == disconnected;
+        }
+
         connection::con_state connection::state() const
         {
             return _state;
@@ -131,10 +143,13 @@ namespace fire
 
         void connection::connect(tcp::resolver::iterator e, const std::string& local_port)
         {
+            u::mutex_scoped_lock l(_mutex);
             INVARIANT(_socket);
+            REQUIRE(_state == disconnected);
 
-            _state = connecting;
             auto endpoint = *e;
+            _state = connecting;
+
             if(!local_port.empty())
             {
                 boost::system::error_code error;
@@ -144,6 +159,8 @@ namespace fire
                 _socket->bind(tcp::endpoint(tcp::v4(), port), error);
                 if(error)
                 {
+                    std::cerr << "error binding to local port " << local_port << ": " << error.message() << std::endl;
+                    _error = error;
                     _state = disconnected;
                     return;
                 }
@@ -183,7 +200,10 @@ namespace fire
                 //if we have called send already before we connected,
                 //send the data
                 if(!_out_queue.empty()) 
+                {
+                    std::cerr << "already have " << _out_queue.size() << " stuff in queue...sending" << std::endl;
                     do_send(false);
+                }
             }
             //otherwise try next endpoint in list
             else if (e != tcp::resolver::iterator())
@@ -196,6 +216,7 @@ namespace fire
             }
             else 
             {
+                u::mutex_scoped_lock l(_mutex);
                 _error = error;
                 _state = disconnected;
             }
@@ -217,11 +238,12 @@ namespace fire
 
         void connection::do_send(bool force)
         {
-            REQUIRE_FALSE(_out_queue.empty());
             ENSURE(_socket);
 
             //check to see if a write is in progress
             if(!force && _writing) return;
+
+            REQUIRE_FALSE(_out_queue.empty());
 
             _writing = true;
 
@@ -232,6 +254,8 @@ namespace fire
                     ba::buffer(&_out_buffer[0], _out_buffer.size()),
                         bind(&connection::handle_write, this,
                             ba::placeholders::error));
+
+            ENSURE(_writing);
         }
 
         void connection::handle_write(const boost::system::error_code& error)
@@ -253,6 +277,7 @@ namespace fire
 
             //otherwise do another async write
             do_send(true);
+            ENSURE(_writing);
         }
 
         void connection::handle_header(const boost::system::error_code& error, size_t transferred)
@@ -366,18 +391,18 @@ namespace fire
             if(!_out) return false;
             CHECK(_out);
 
-            if(_out->state() == connection::disconnected) 
+            if(_out->is_disconnected()) 
                 connect();
 
             //add message to queue
             _out_queue.push(b);
 
             //do send if we are connected
-            if(_out->state() == connection::connected)
+            if(_out->is_connected())
                 _io->post(bind(&connection::do_send, _out.get(), false));
 
             //if we are blocking, block until all messages are sent
-            while(_p.block && !_out_queue.empty()) u::sleep_thread(BLOCK_SLEEP);
+            while(_p.block && !_out_queue.empty() && !_out->is_disconnected()) u::sleep_thread(BLOCK_SLEEP);
 
             return _out->is_connected();
         }
@@ -395,7 +420,7 @@ namespace fire
         try
         {
             INVARIANT(_io);
-            if(_out && _out->state() != connection::disconnected) return;
+            REQUIRE(!_out || _out->state() == connection::disconnected);
 
             //init resolver if it does not exist
             if(!_resolver) _resolver.reset(new tcp::resolver{*_io}); 
@@ -406,8 +431,8 @@ namespace fire
             _out.reset(new connection{*_io, _in_queue, _out_queue, _last_in_socket});
             _out->connect(ei, _p.local_port);
 
-            ENSURE(_resolver);
             ENSURE(_out);
+            ENSURE(_resolver);
         }
         catch(std::exception& e)
         {
@@ -454,7 +479,7 @@ namespace fire
                 std::cerr << "error accept " << nc->socket().local_endpoint() << " -> " << nc->socket().remote_endpoint() << ": " << error.message() << std::endl;
                 return;
             }
-            std::cerr << "new in connection " << nc->socket().remote_endpoint() << ": " << error.message() << std::endl;
+            std::cerr << "new in connection " << nc->socket().remote_endpoint() << " " << error.message() << std::endl;
 
             _in_connections.push_back(nc);
             nc->start_read();
