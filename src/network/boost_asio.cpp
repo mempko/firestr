@@ -51,26 +51,15 @@ namespace fire
                 return m;
             }
 
-            typedef std::vector<std::string> strings;
-            void parse_uri(const std::string& uri, std::string& host, std::string& port)
-            {
-                //e.g. tcp://<host>:<port>
-                auto s = u::split<strings>(uri, ":");
-                if(s.size() != 3) return;
-                if(s[1].size() <= 2) return;
-                //should start with "//"
-                host = s[1].substr(2, s[1].size() - 2);
-                port = s[2];
-            }
-
             asio_params parse_params(const address_components& c)
             {
                 const auto& o = c.options;
 
                 asio_params p;
                 p.mode = determine_connection_mode(o);
-                p.uri = c.location;
-                parse_uri(p.uri, p.host, p.port);
+                p.uri = c.address;
+                p.host = c.host;
+                p.port = c.port;
                 p.local_port = get_opt(o, "local_port", std::string(""));
                 p.block = get_opt(o, "block", 0);
                 p.wait = get_opt(o, "wait", 0);
@@ -121,6 +110,7 @@ namespace fire
 
         bool connection::is_connected() const
         {
+            u::mutex_scoped_lock l(_mutex);
             return _state == connected;
         }
 
@@ -553,6 +543,23 @@ namespace fire
                 q->_io->run_one();
                 u::sleep_thread(BLOCK_SLEEP);
             }
+        }
+
+        std::string make_tcp_address(const std::string& host, const std::string& port, const std::string& local_port)
+        {
+            return local_port.empty() ? 
+                "tcp://" + host + ":" + port : 
+                "tcp://" + host + ":" + port + ",local_port=" + local_port;
+        }
+
+        message_queue_ptr create_message_queue(
+                const std::string& address, 
+                const queue_options& defaults)
+        {
+            auto c = parse_address(address, defaults); 
+            message_queue_ptr p = create_bst_message_queue(c);
+            ENSURE(p);
+            return p;
         }
     }
 }

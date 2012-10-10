@@ -76,25 +76,18 @@ namespace fire
                 return def;
             }
 
-        message_queue_ptr create_message_queue(
-                const std::string& queue_address, 
-                const queue_options& default_options = queue_options());
-
-        enum message_type {bst};
         struct address_components
         {
-            std::string queue_address; 
-            message_type type;
-            std::string location;
+            std::string address; 
+            std::string transport; 
+            std::string host;
+            std::string port;
             queue_options options;
         };
 
         address_components parse_address(
                 const std::string& queue_address, 
                 const queue_options& defaults = queue_options());
-
-        std::string make_bst_address(const std::string& host, const std::string& port);
-        std::string make_bst_address(const std::string& host, const std::string& port, const std::string& local_port);
     }
 }
 

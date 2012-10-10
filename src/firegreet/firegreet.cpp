@@ -21,7 +21,7 @@
 #include <boost/asio/ip/host_name.hpp>
 #include <boost/program_options.hpp>
 
-#include "network/message_queue.hpp"
+#include "network/boost_asio.hpp"
 #include "message/message.hpp"
 #include "messages/greeter.hpp"
 #include "util/thread.hpp"
@@ -66,7 +66,7 @@ po::variables_map parse_options(int argc, char* argv[], po::options_description&
 
 n::message_queue_ptr setup_input_connection(const std::string& port)
 {
-    auto address = n::make_bst_address("*", port);
+    auto address = n::make_tcp_address("*", port);
 
     n::queue_options qo = { 
         {"bnd", "1"},
