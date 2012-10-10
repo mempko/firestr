@@ -18,6 +18,7 @@
 #include "user/userservice.hpp"
 #include "messages/greeter.hpp"
 #include "messages/pinhole.hpp"
+#include "network/boost_asio.hpp"
 #include "util/uuid.hpp"
 #include "util/string.hpp"
 #include "util/dbc.hpp"
@@ -222,7 +223,7 @@ namespace fire
 
             _user = load_user(_home); 
             if(!_user) throw std::runtime_error{"no user found at `" + _home + "'"};
-            update_address(n::make_bst_address(c.host, c.port));
+            update_address(n::make_tcp_address(c.host, c.port));
 
             init_greet();
             init_ping();
@@ -272,7 +273,7 @@ namespace fire
             //we setup the params
             if(!_greeter_server.empty() && !_greeter_port.empty())
             {
-                auto address = n::make_bst_address(_greeter_server, _greeter_port);
+                auto address = n::make_tcp_address(_greeter_server, _greeter_port);
                 n::queue_options qo = { 
                     {"con", "1"},
                     {"block", "0"}};
@@ -287,11 +288,12 @@ namespace fire
 
         void make_pinhole(const std::string& ip, const std::string remote_port, const std::string& local_port)
         {
-            auto a = n::make_bst_address(ip, remote_port, local_port);
+            auto a = n::make_tcp_address(ip, remote_port, local_port);
             std::cout << "making pinhole: " << a << std::endl;
             n::queue_options qo = { 
                 {"con", "1"},
                 {"block", "0"},
+                {"wait", "50"},
                 {"local_port", local_port}};
 
             auto pin_hole = n::create_message_queue(a, qo);
@@ -433,12 +435,7 @@ namespace fire
             auto c = _user->contacts().by_id(id);
             if(!c) return;
 
-            std::string local_port;
-            {
-                u::mutex_scoped_lock l(_state_mutex);
-                local_port = _local_ports[c->id()];
-            }
-            auto a = n::make_bst_address(ip, port, local_port);
+            auto a = n::make_tcp_address(ip, port);
 
             if(c->address() == a) return;
 
@@ -646,7 +643,7 @@ namespace fire
                 {
                     if(s->_stun->state() == n::stun_success)
                     {
-                        auto address = n::make_bst_address(s->_stun->external_ip(), s->_stun->external_port());
+                        auto address = n::make_tcp_address(s->_stun->external_ip(), s->_stun->external_port());
                         std::cerr << "got stun address " << address << std::endl;
                         s->update_address(address);
 

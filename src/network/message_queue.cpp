@@ -26,20 +26,7 @@ namespace fire
 {
     namespace network
     {
-        namespace
-        {
-            const std::string SPLIT_CHAR = ",";
-        }
-
         typedef std::vector<std::string> strings;
-
-        message_type determine_type(const std::string type)
-        {
-            message_type t;
-            if(type == "bst") t = bst; 
-            else std::invalid_argument("Queue type `" + type + "' is not valid. Currently bst is supported");
-            return t;
-        }
 
         queue_options parse_options(const strings& ss)
         {
@@ -62,50 +49,46 @@ namespace fire
                 const std::string& queue_address, 
                 const queue_options& defaults)
         {
-            auto s = util::split<strings>(queue_address, SPLIT_CHAR);
-            if(s.size() < 2) std::invalid_argument("Queue address must have at least a type and location. Example: bst,http://localhost:10"); 
+            auto s = util::split<strings>(queue_address, ",");
+            if(s.size() < 1) std::invalid_argument("address must have at least a transport and port. Example: tcp://localhost:10"); 
+
+            auto a = util::split<strings>(s[0], ":");
+
             address_components c;
-            c.queue_address = queue_address;
-            c.type = determine_type(s[0]);
-            c.location = s[1];
+            c.address = queue_address;
+            c.transport = a[0];
+            if(c.transport != "tcp" || c.transport != "udp") 
+                std::invalid_argument("address must have a valid transport, `tcp', or `udp'");
+
+            c.host = a[1];
+            if(c.host.size() < 3)
+                std::invalid_argument("address must have be greater than 2 characters");
+
+            if(c.host[0] != '/' || c.host[1] != '/')
+                std::invalid_argument("address must start with `//'");
+
+            c.host = c.host.substr(2);
             c.options = defaults;
 
-            if(s.size() > 2) 
+            c.port = a[2];
+
+            try
             {
-                auto overrides = parse_options(strings(s.begin() + 2, s.end()));
+                int nport = boost::lexical_cast<int>(c.port);
+                if(nport <= 0) std::invalid_argument("invalid port");
+            }
+            catch(...)
+            {
+                std::invalid_argument("port must be a number");
+            }
+
+            if(s.size() > 1) 
+            {
+                auto overrides = parse_options(strings(s.begin() + 1, s.end()));
                 c.options.insert(overrides.begin(), overrides.end());
             }
 
             return c;
-        }
-
-        message_queue_ptr create_message_queue(
-                const std::string& queue_address, 
-                const queue_options& defaults)
-        {
-            auto c = parse_address(queue_address, defaults); 
-            message_queue_ptr p;
-
-            switch(c.type)
-            {
-                case bst: p = create_bst_message_queue(c); break;
-                default: CHECK(false && "missed case");
-            }
-
-            ENSURE(p);
-            return p;
-        }
-
-        std::string make_bst_address(const std::string& host, const std::string& port)
-        {
-            return "bst,tcp://" + host + ":" + port;
-        }
-
-        std::string make_bst_address(const std::string& host, const std::string& port, const std::string& local_port)
-        {
-            return local_port.empty() ? 
-                make_bst_address(host, port) :
-                "bst,tcp://" + host + ":" + port + ",local_port="+local_port;
         }
     }
 }

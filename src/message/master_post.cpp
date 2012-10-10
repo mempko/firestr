@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "message/master_post.hpp"
+#include "network/boost_asio.hpp"
 #include "util/bytes.hpp"
 #include "util/dbc.hpp"
 
@@ -144,7 +145,7 @@ namespace fire
 
         void master_post_office::setup_input_connection()
         {
-            auto address = n::make_bst_address("*", _in_port);
+            auto address = n::make_tcp_address("*", _in_port);
 
             n::queue_options qo = { 
                 {"bnd", "1"},
@@ -161,7 +162,7 @@ namespace fire
             _in_port{in_port}
         {
             //setup outside address
-            _address = n::make_bst_address(_in_host,_in_port);
+            _address = n::make_tcp_address(_in_host,_in_port);
 
             setup_input_connection();
 

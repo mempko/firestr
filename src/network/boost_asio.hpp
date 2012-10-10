@@ -146,6 +146,8 @@ namespace fire
         };
 
         message_queue_ptr create_bst_message_queue(const address_components& c);
+        std::string make_tcp_address(const std::string& host, const std::string& port, const std::string& local_port = "");
+        message_queue_ptr create_message_queue(const std::string& address, const queue_options& defaults);
     }
 }
 
