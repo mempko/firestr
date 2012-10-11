@@ -43,15 +43,16 @@ namespace fire
 
             public:
                 bool recieve(util::bytes& b);
-                connection* get_socket() const;
+                connection* get_socket();
 
             private:
-                assignment_map _assignments;
+                assignment_map _out;
                 connection_pool _pool;
                 std::string _local_port;
                 size_t _next_available;
                 std::mutex _mutex;
                 boost_asio_queue_ptr _in;
+                connection_ptr_queue _last_recieved;
         };
     }
 }
