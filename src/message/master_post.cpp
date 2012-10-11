@@ -32,6 +32,7 @@ namespace fire
         {
             const double STUN_WAIT = 10; //in milliseconds 
             const double THREAD_SLEEP = 10; //in milliseconds 
+            const size_t POOL_SIZE = 20; //small pool size for now
         }
 
         void in_thread(master_post_office* o)
@@ -104,22 +105,9 @@ namespace fire
                 const std::string outside_queue_address = m.meta.to.front();
                 last_address = outside_queue_address;
 
-                auto c = o->_connections.find(outside_queue_address);
-
-                n::message_queue_ptr out;
-                if(c == o->_connections.end())
-                {
-                    n::queue_options qo = { 
-                        {"con", "1"},
-                        {"block", "0"}};
-
-                    out = n::create_message_queue(outside_queue_address, qo);
-                    o->_connections[outside_queue_address] = out;
-                }
-                else
-                {
-                    out = c->second;
-                }
+                //get output queue from connection pool or connect
+                auto out = o->_connections.get(outside_queue_address);
+                if(!out) out = o->_connections.connect(outside_queue_address);
 
                 CHECK(out);
 
@@ -159,7 +147,8 @@ namespace fire
                 const std::string& in_host,
                 const std::string& in_port) : 
             _in_host{in_host},
-            _in_port{in_port}
+            _in_port{in_port},
+            _connections{POOL_SIZE, in_port}
         {
             //setup outside address
             _address = n::make_tcp_address(_in_host,_in_port);
