@@ -63,7 +63,6 @@ namespace fire
 
         boost_asio_queue_ptr connection_manager::connect(const std::string& address)
         {
-            u::mutex_scoped_lock l(_mutex);
             REQUIRE_RANGE(_next_available, 0, _pool.size());
 
             //return if we are already assigned a socket to that address
@@ -84,26 +83,35 @@ namespace fire
             return _pool[i];
         }
 
-        boost_asio_queue_ptr connection_manager::get(const std::string& address)
+        bool connection_manager::send(const std::string& to, const u::bytes& b)
         {
             u::mutex_scoped_lock l(_mutex);
-            auto p = _out.find(address);
-            if(p == _out.end()) return {};
 
-            auto i = p->second;
-            CHECK_RANGE(i, 0, _pool.size());
+            //first check in connections for matching address and use that to send
+            //otherwise use outgoing connection.
+            auto inp = _in_connections.find(to);
+            if(inp != _in_connections.end())
+            {
+                auto o = inp->second;
+                CHECK(o);
+                return o->send(b);
+            }
 
-            auto q = _pool[i];
-            ENSURE(q);
-            return q;
+            auto o = connect(to);
+            CHECK(o);
+            return o->send(b);
         }
 
         bool connection_manager::recieve(u::bytes& b)
         {
+            u::mutex_scoped_lock l(_mutex);
             INVARIANT(_in);
             if(_in->recieve(b)) 
             {
-                _last_recieved.push(_in->get_socket());
+                auto s = _in->get_socket();
+                CHECK(s);
+                _last_recieved.push(s);
+                _in_connections[s->remote_address()] = s;
                 return true;
             }
 

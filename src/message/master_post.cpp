@@ -107,17 +107,11 @@ namespace fire
                 const std::string outside_queue_address = m.meta.to.front();
                 last_address = outside_queue_address;
 
-                //get output queue from connection pool or connect
-                auto out = o->_connections.get(outside_queue_address);
-                if(!out) out = o->_connections.connect(outside_queue_address);
-
-                CHECK(out);
-
                 std::stringstream s;
                 s << m;
                 u::bytes data = u::to_bytes(s.str());
 
-                out->send(data);
+                o->_connections.send(outside_queue_address, data);
             }
             catch(std::exception& e)
             {

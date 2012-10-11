@@ -74,10 +74,12 @@ namespace fire
                 ba::io_service& io, 
                 byte_queue& in,
                 connection_ptr_queue& last_in,
+                std::mutex& in_mutex,
                 bool track,
                 bool con) :
             _io(io),
             _in_queue(in),
+            _in_mutex(in_mutex),
             _last_in_socket(last_in),
             _track{track},
             _socket{new tcp::socket{io}},
@@ -349,8 +351,11 @@ namespace fire
             in.read(&data[0], size);
 
             //add message to in queue
-            _in_queue.push(data);
-            if(_track) _last_in_socket.push(this);
+            {
+                u::mutex_scoped_lock l(_in_mutex);
+                _in_queue.push(data);
+                if(_track) _last_in_socket.push(this);
+            }
 
             //read next message
             start_read();
@@ -360,6 +365,30 @@ namespace fire
         {
             INVARIANT(_socket);
             return *_socket;
+        }
+
+        const std::string& connection::remote_address() const
+        {
+            return _remote_address;
+        }
+
+        void connection::remote_address(const std::string& a)
+        {
+            REQUIRE_FALSE(a.empty());
+            _remote_address = a;
+        }
+
+        void connection::update_remote_address()
+        {
+            INVARIANT(_socket);
+
+            auto remote = _socket->remote_endpoint();
+            auto ip = remote.address().to_string();
+            auto port = boost::lexical_cast<std::string>(remote.port());
+
+            _remote_address = make_tcp_address(ip, port);
+
+            ENSURE_FALSE(_remote_address.empty());
         }
 
         void run_thread(boost_asio_queue*);
@@ -423,7 +452,6 @@ namespace fire
             _p.uri = make_tcp_address(host, port);
             _p.host = host;
             _p.port = port;
-
             _p.mode = asio_params::connect;
             connect();
 
@@ -438,7 +466,7 @@ namespace fire
             INVARIANT(_io);
             REQUIRE(!_out);
 
-            _out.reset(new connection{*_io, _in_queue, _last_in_socket});
+            _out.reset(new connection{*_io, _in_queue, _last_in_socket, _mutex});
             if(!_p.local_port.empty()) _out->bind(_p.local_port);
 
             ENSURE(_out);
@@ -466,6 +494,7 @@ namespace fire
 
             if(!_out) delayed_connect();
 
+            _out->remote_address(_p.uri);
             _out->connect(ei);
 
             ENSURE(_out);
@@ -498,7 +527,7 @@ namespace fire
             }
 
             //prepare incoming connection
-            connection_ptr new_connection{new connection{*_io, _in_queue, _last_in_socket, _p.track_incoming, true}};
+            connection_ptr new_connection{new connection{*_io, _in_queue, _last_in_socket, _mutex, _p.track_incoming, true}};
             _acceptor->async_accept(new_connection->socket(),
                     bind(&boost_asio_queue::handle_accept, this, new_connection,
                         ba::placeholders::error));
@@ -519,10 +548,11 @@ namespace fire
             std::cerr << "new in connection " << nc->socket().remote_endpoint() << " " << error.message() << std::endl;
 
             _in_connections.push_back(nc);
+            nc->update_remote_address();
             nc->start_read();
 
             //prepare next incoming connection
-            connection_ptr new_connection{new connection{*_io, _in_queue, _last_in_socket, _p.track_incoming, true}};
+            connection_ptr new_connection{new connection{*_io, _in_queue, _last_in_socket, _mutex, _p.track_incoming, true}};
             _acceptor->async_accept(new_connection->socket(),
                     boost::bind(&boost_asio_queue::handle_accept, this, new_connection,
                         ba::placeholders::error));

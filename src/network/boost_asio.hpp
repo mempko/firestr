@@ -49,6 +49,7 @@ namespace fire
                         boost::asio::io_service& io, 
                         byte_queue& in,
                         connection_ptr_queue& last_in,
+                        std::mutex& in_mutex,
                         bool track = false,
                         bool con = false);
                 ~connection();
@@ -64,6 +65,11 @@ namespace fire
                 con_state state() const;
                 boost::asio::ip::tcp::socket& socket();
 
+            public:
+                const std::string& remote_address() const;
+                void remote_address(const std::string&);
+                void update_remote_address();
+
             private:
                 void handle_connect(const boost::system::error_code& error,
                         boost::asio::ip::tcp::resolver::iterator ei);
@@ -77,12 +83,14 @@ namespace fire
                 con_state _state;
                 boost::asio::io_service& _io;
                 byte_queue& _in_queue;
+                std::mutex& _in_mutex;
                 byte_queue _out_queue;
                 connection_ptr_queue& _last_in_socket;
                 bool _track;
                 util::bytes _out_buffer;
                 std::string _src_host;
                 std::string _src_port;
+                std::string _remote_address;
                 boost::asio::streambuf _in_buffer;
                 asio_socket_ptr _socket;
                 mutable std::mutex _mutex;
@@ -140,6 +148,7 @@ namespace fire
                 mutable connection_ptr_queue _last_in_socket;
                 connections _in_connections;
                 byte_queue _in_queue;
+                mutable std::mutex _mutex;
 
                 bool _done;
 
