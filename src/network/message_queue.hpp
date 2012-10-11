@@ -61,8 +61,6 @@ namespace fire
                 
                 virtual bool send(const util::bytes&) = 0;
                 virtual bool recieve(util::bytes&) = 0;
-
-                virtual socket_info get_socket_info() const = 0;
         };
 
         typedef std::shared_ptr<message_queue> message_queue_ptr;

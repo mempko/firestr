@@ -543,50 +543,6 @@ namespace fire
             return p;
         }
 
-        socket_info boost_asio_queue::get_socket_info() const
-        {
-            socket_info r;
-            switch(_p.mode)
-            {
-                case asio_params::bind: 
-                    {
-                        INVARIANT(_acceptor);
-                        auto local = _acceptor->local_endpoint();
-                        r.local_address = local.address().to_string();
-                        r.local_port = boost::lexical_cast<std::string>(local.port());
-                        if(_p.track_incoming)
-                        {
-                            connection* i = get_socket();
-                            if(i)
-                            {
-                                auto remote = i->socket().remote_endpoint();
-                                r.remote_address = remote.address().to_string();
-                                r.remote_port = boost::lexical_cast<std::string>(remote.port());
-                            }
-                        }
-                    }
-                    break;
-                case asio_params::connect: 
-                    {
-                        INVARIANT(_out)
-                        if(_out->is_connected())
-                        {
-                            auto local = _out->socket().local_endpoint();
-                            auto remote = _out->socket().remote_endpoint();
-                            r.local_address = local.address().to_string();
-                            r.local_port = boost::lexical_cast<std::string>(local.port());
-                            r.remote_address = remote.address().to_string();
-                            r.remote_port = boost::lexical_cast<std::string>(remote.port());
-                        }
-                    }
-                    break;
-                default:
-                    CHECK(false && "missed case");
-            }
-
-            return r;
-        }
-
         boost_asio_queue_ptr create_bst_message_queue(const address_components& c)
         {
             auto p = parse_params(c);
@@ -619,6 +575,19 @@ namespace fire
             boost_asio_queue_ptr p = create_bst_message_queue(c);
             ENSURE(p);
             return p;
+        }
+
+        socket_info get_socket_info(connection& c)
+        {
+            socket_info r;
+            auto local = c.socket().local_endpoint();
+            auto remote = c.socket().remote_endpoint();
+            r.local_address = local.address().to_string();
+            r.local_port = boost::lexical_cast<std::string>(local.port());
+            r.remote_address = remote.address().to_string();
+            r.remote_port = boost::lexical_cast<std::string>(remote.port());
+
+            return r;
         }
     }
 }
