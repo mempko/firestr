@@ -67,8 +67,8 @@ namespace fire
             REQUIRE_RANGE(_next_available, 0, _pool.size());
 
             //return if we are already assigned a socket to that address
-            auto p = _assignments.find(address);
-            if(p != _assignments.end()) return _pool[p->second];
+            auto p = _out.find(address);
+            if(p != _out.end()) return _pool[p->second];
 
             //parse address to host, port
             auto a = parse_address(address);
@@ -77,7 +77,7 @@ namespace fire
             _next_available++;
 
             //assign address to socket and connect
-            _assignments[address] = i;
+            _out[address] = i;
             _pool[i]->connect(a.host, a.port);
 
             ENSURE_BETWEEN(_next_available, 0, _pool.size());
@@ -87,8 +87,8 @@ namespace fire
         boost_asio_queue_ptr connection_manager::get(const std::string& address)
         {
             u::mutex_scoped_lock l(_mutex);
-            auto p = _assignments.find(address);
-            if(p == _assignments.end()) return {};
+            auto p = _out.find(address);
+            if(p == _out.end()) return {};
 
             auto i = p->second;
             CHECK_RANGE(i, 0, _pool.size());
@@ -101,13 +101,33 @@ namespace fire
         bool connection_manager::recieve(u::bytes& b)
         {
             INVARIANT(_in);
-            return _in->recieve(b);
+            if(_in->recieve(b)) 
+            {
+                _last_recieved.push(_in->get_socket());
+                return true;
+            }
+
+            for(auto p : _out)
+            {
+                auto i = p.second;
+                CHECK_RANGE(i, 0, _pool.size());
+
+                auto c = _pool[i];
+                CHECK(c);
+                if(c->recieve(b)) 
+                {
+                    _last_recieved.push(c->get_socket());
+                    return true;
+                }
+            }
+
+            return false;
         }
 
-        connection* connection_manager::get_socket() const
+        connection* connection_manager::get_socket()
         {
             INVARIANT(_in);
-            return _in->get_socket();
+            return _last_recieved.pop();
         }
     }
 }
