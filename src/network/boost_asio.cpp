@@ -31,7 +31,6 @@ using boost::lexical_cast;
 namespace u = fire::util;
 namespace ba = boost::asio;
 using namespace boost::asio::ip;
-using boost::bind;
 
 namespace fire
 {
@@ -47,38 +46,38 @@ namespace fire
 
                 if(o.count("bnd")) m = asio_params::bind;
                 else if(o.count("con")) m = asio_params::connect;
+                else if(o.count("dcon")) m = asio_params::delayed_connect;
 
                 return m;
             }
 
-            asio_params parse_params(const address_components& c)
-            {
-                const auto& o = c.options;
+        }
 
-                asio_params p;
-                p.mode = determine_connection_mode(o);
-                p.uri = c.address;
-                p.host = c.host;
-                p.port = c.port;
-                p.local_port = get_opt(o, "local_port", std::string(""));
-                p.block = get_opt(o, "block", 0);
-                p.wait = get_opt(o, "wait", 0);
-                p.track_incoming = get_opt(o, "track_incoming", 0);
+        asio_params parse_params(const address_components& c)
+        {
+            const auto& o = c.options;
 
-                return p;
-            }
+            asio_params p;
+            p.mode = determine_connection_mode(o);
+            p.uri = c.address;
+            p.host = c.host;
+            p.port = c.port;
+            p.local_port = get_opt(o, "local_port", std::string(""));
+            p.block = get_opt(o, "block", 0);
+            p.wait = get_opt(o, "wait", 0);
+            p.track_incoming = get_opt(o, "track_incoming", 0);
+
+            return p;
         }
 
         connection::connection(
                 ba::io_service& io, 
                 byte_queue& in,
-                byte_queue& out,
                 connection_ptr_queue& last_in,
                 bool track,
                 bool con) :
             _io(io),
             _in_queue(in),
-            _out_queue(out),
             _last_in_socket(last_in),
             _track{track},
             _socket{new tcp::socket{io}},
@@ -95,7 +94,7 @@ namespace fire
 
         void connection::close()
         {
-            _io.post(bind(&connection::do_close, this));
+            _io.post(boost::bind(&connection::do_close, this));
         }
 
         void connection::do_close()
@@ -131,7 +130,28 @@ namespace fire
             return _state;
         }
 
-        void connection::connect(tcp::resolver::iterator e, const std::string& local_port)
+        void connection::bind(const std::string& port)
+        {
+            u::mutex_scoped_lock l(_mutex);
+            INVARIANT(_socket);
+            REQUIRE(_state == disconnected);
+
+            boost::system::error_code error;
+
+            _socket->open(tcp::v4(), error);
+            _socket->set_option(tcp::socket::reuse_address(true),error);
+            auto p = boost::lexical_cast<short unsigned int>(port);
+            _socket->bind(tcp::endpoint(tcp::v4(), p), error);
+
+            if(error)
+            {
+                std::cerr << "error binding to port " << port << ": " << error.message() << std::endl;
+                _error = error;
+                _state = disconnected;
+            }
+        }
+
+        void connection::connect(tcp::resolver::iterator e)
         {
             u::mutex_scoped_lock l(_mutex);
             INVARIANT(_socket);
@@ -140,24 +160,8 @@ namespace fire
             auto endpoint = *e;
             _state = connecting;
 
-            if(!local_port.empty())
-            {
-                boost::system::error_code error;
-                _socket->open(tcp::v4(), error);
-                _socket->set_option(tcp::socket::reuse_address(true),error);
-                auto port = boost::lexical_cast<short unsigned int>(local_port);
-                _socket->bind(tcp::endpoint(tcp::v4(), port), error);
-                if(error)
-                {
-                    std::cerr << "error binding to local port " << local_port << ": " << error.message() << std::endl;
-                    _error = error;
-                    _state = disconnected;
-                    return;
-                }
-            } 
-
             _socket->async_connect(endpoint,
-                    bind(&connection::handle_connect, this,
+                    boost::bind(&connection::handle_connect, this,
                         ba::placeholders::error, ++e));
         }
 
@@ -167,7 +171,7 @@ namespace fire
 
             //read message header
             ba::async_read_until(*_socket, _in_buffer, ':',
-                    bind(&connection::handle_header, this,
+                    boost::bind(&connection::handle_header, this,
                         ba::placeholders::error,
                         ba::placeholders::bytes_transferred));
         }
@@ -201,7 +205,7 @@ namespace fire
                 _error = error;
                 auto endpoint = *e;
                 _socket->async_connect(endpoint,
-                        bind(&connection::handle_connect, this,
+                        boost::bind(&connection::handle_connect, this,
                             ba::placeholders::error, ++e));
             }
             else 
@@ -210,10 +214,9 @@ namespace fire
                 _error = error;
                 _state = disconnected;
             }
+
             if(error)
-            {
                 std::cerr << "error connecting: " << error.message() << std::endl;
-            }
         }
 
         u::bytes encode_wire(const u::bytes data)
@@ -224,6 +227,21 @@ namespace fire
             encoded[0] = '!';
             std::copy(m.begin(), m.end(), encoded.begin() + 1);
             return encoded;
+        }
+
+        bool connection::send(const u::bytes& b, bool block)
+        {
+            //add message to queue
+            _out_queue.push(b);
+
+            //do send if we are connected
+            if(is_connected())
+                _io.post(boost::bind(&connection::do_send, this, false));
+
+            //if we are blocking, block until all messages are sent
+            while(block && !_out_queue.empty() && is_disconnected()) u::sleep_thread(BLOCK_SLEEP);
+
+            return is_connected();
         }
 
         void connection::do_send(bool force)
@@ -242,7 +260,7 @@ namespace fire
 
             ba::async_write(*_socket,
                     ba::buffer(&_out_buffer[0], _out_buffer.size()),
-                        bind(&connection::handle_write, this,
+                        boost::bind(&connection::handle_write, this,
                             ba::placeholders::error));
 
             ENSURE(_writing);
@@ -314,7 +332,7 @@ namespace fire
             ba::async_read(*_socket,
                     _in_buffer,
                     ba::transfer_at_least(size - _in_buffer.size()),
-                    bind(&connection::handle_body, this,
+                    boost::bind(&connection::handle_body, this,
                         ba::placeholders::error,
                         ba::placeholders::bytes_transferred,
                         size));
@@ -354,47 +372,35 @@ namespace fire
             {
                 case asio_params::bind: accept(); break;
                 case asio_params::connect: connect(); break;
+                case asio_params::delayed_connect: delayed_connect(); break;
                 default: CHECK(false && "missed case");
             }
 
-            _run_thread.reset(new std::thread{run_thread, this});
+            if(_p.mode != asio_params::delayed_connect)
+                _run_thread.reset(new std::thread{run_thread, this});
 
             INVARIANT(_io);
-            INVARIANT(_run_thread);
+            INVARIANT(_p.mode == asio_params::delayed_connect || _run_thread);
         }
 
         boost_asio_queue::~boost_asio_queue() 
         {
-            INVARIANT(_run_thread);
-            if(_p.wait > 0) u::sleep_thread(_p.wait);
-
             _done = true;
-
-            _run_thread->join();
+            if(_p.wait > 0) u::sleep_thread(_p.wait);
+            if(_out) _out->close();
+            if(_run_thread) _run_thread->join();
         }
 
         bool boost_asio_queue::send(const u::bytes& b)
         {
             INVARIANT(_io);
-            if(_p.mode != asio_params::connect) return false;
-
-            if(!_out) return false;
+            REQUIRE(_p.mode != asio_params::bind);
             CHECK(_out);
 
-            if(_out->is_disconnected()) 
+            if(_out->is_disconnected() && _p.mode == asio_params::connect) 
                 connect();
 
-            //add message to queue
-            _out_queue.push(b);
-
-            //do send if we are connected
-            if(_out->is_connected())
-                _io->post(bind(&connection::do_send, _out.get(), false));
-
-            //if we are blocking, block until all messages are sent
-            while(_p.block && !_out_queue.empty() && !_out->is_disconnected()) u::sleep_thread(BLOCK_SLEEP);
-
-            return _out->is_connected();
+            return _out->send(b, _p.block);
         }
 
         bool boost_asio_queue::recieve(u::bytes& b)
@@ -404,6 +410,46 @@ namespace fire
 
             //return true if we got message
             return _in_queue.pop(b);
+        }
+
+        void boost_asio_queue::connect(const std::string& host, const std::string& port)
+        {
+            REQUIRE(_p.mode == asio_params::delayed_connect);
+            REQUIRE_FALSE(host.empty());
+            REQUIRE_FALSE(port.empty());
+            INVARIANT(_io);
+            REQUIRE(!_out || _out->state() == connection::disconnected);
+
+            _p.uri = make_tcp_address(host, port);
+            _p.host = host;
+            _p.port = port;
+
+            _p.mode = asio_params::connect;
+            connect();
+
+            //start up engine
+            _run_thread.reset(new std::thread{run_thread, this});
+            ENSURE(_run_thread);
+        }
+
+        void boost_asio_queue::delayed_connect()
+        try
+        {
+            INVARIANT(_io);
+            REQUIRE(!_out);
+
+            _out.reset(new connection{*_io, _in_queue, _last_in_socket});
+            if(!_p.local_port.empty()) _out->bind(_p.local_port);
+
+            ENSURE(_out);
+        }
+        catch(std::exception& e)
+        {
+            std::cerr << "error in delayed connecting `" << _p.local_port << "' : " << e.what() << std::endl;
+        }
+        catch(...)
+        {
+            std::cerr << "error in delayed connecting `" << _p.local_port << "' : unknown error." << std::endl;
         }
 
         void boost_asio_queue::connect()
@@ -418,8 +464,9 @@ namespace fire
             tcp::resolver::query query{_p.host, _p.port}; 
             auto ei = _resolver->resolve(query);
 
-            _out.reset(new connection{*_io, _in_queue, _out_queue, _last_in_socket});
-            _out->connect(ei, _p.local_port);
+            if(!_out) delayed_connect();
+
+            _out->connect(ei);
 
             ENSURE(_out);
             ENSURE(_resolver);
@@ -451,7 +498,7 @@ namespace fire
             }
 
             //prepare incoming connection
-            connection_ptr new_connection{new connection{*_io, _in_queue, _out_queue, _last_in_socket, _p.track_incoming, true}};
+            connection_ptr new_connection{new connection{*_io, _in_queue, _last_in_socket, _p.track_incoming, true}};
             _acceptor->async_accept(new_connection->socket(),
                     bind(&boost_asio_queue::handle_accept, this, new_connection,
                         ba::placeholders::error));
@@ -475,12 +522,25 @@ namespace fire
             nc->start_read();
 
             //prepare next incoming connection
-            connection_ptr new_connection{new connection{*_io, _in_queue, _out_queue, _last_in_socket, _p.track_incoming, true}};
+            connection_ptr new_connection{new connection{*_io, _in_queue, _last_in_socket, _p.track_incoming, true}};
             _acceptor->async_accept(new_connection->socket(),
-                    bind(&boost_asio_queue::handle_accept, this, new_connection,
+                    boost::bind(&boost_asio_queue::handle_accept, this, new_connection,
                         ba::placeholders::error));
 
             ENSURE(new_connection);
+        }
+
+        connection* boost_asio_queue::get_socket() const
+        {
+            connection* p = nullptr;
+            switch(_p.mode)
+            {
+                case asio_params::bind: if(_p.track_incoming) _last_in_socket.pop(p); break;
+                case asio_params::connect: p = _out.get(); break;
+                default:
+                    CHECK(false && "missed case");
+            }
+            return p;
         }
 
         socket_info boost_asio_queue::get_socket_info() const
@@ -496,8 +556,7 @@ namespace fire
                         r.local_port = boost::lexical_cast<std::string>(local.port());
                         if(_p.track_incoming)
                         {
-                            connection* i = 0;
-                            _last_in_socket.pop(i);
+                            connection* i = get_socket();
                             if(i)
                             {
                                 auto remote = i->socket().remote_endpoint();
@@ -528,10 +587,10 @@ namespace fire
             return r;
         }
 
-        message_queue_ptr create_bst_message_queue(const address_components& c)
+        boost_asio_queue_ptr create_bst_message_queue(const address_components& c)
         {
             auto p = parse_params(c);
-            return message_queue_ptr{new boost_asio_queue{p}};
+            return boost_asio_queue_ptr{new boost_asio_queue{p}};
         }
 
         void run_thread(boost_asio_queue* q)
@@ -552,12 +611,12 @@ namespace fire
                 "tcp://" + host + ":" + port + ",local_port=" + local_port;
         }
 
-        message_queue_ptr create_message_queue(
+        boost_asio_queue_ptr create_message_queue(
                 const std::string& address, 
                 const queue_options& defaults)
         {
             auto c = parse_address(address, defaults); 
-            message_queue_ptr p = create_bst_message_queue(c);
+            boost_asio_queue_ptr p = create_bst_message_queue(c);
             ENSURE(p);
             return p;
         }

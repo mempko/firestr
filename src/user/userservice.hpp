@@ -130,9 +130,8 @@ namespace fire
                 std::string _stun_port;
                 std::string _greeter_server;
                 std::string _greeter_port;
-                port_map _local_ports;
+                std::string _greet;
                 util::thread_uptr _greet_thread;
-                network::message_queue_ptr _greet_queue;
 
                 bool _done;
 

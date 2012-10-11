@@ -48,13 +48,14 @@ namespace fire
                 connection(
                         boost::asio::io_service& io, 
                         byte_queue& in,
-                        byte_queue& out,
                         connection_ptr_queue& last_in,
                         bool track = false,
                         bool con = false);
                 ~connection();
             public:
-                void connect(boost::asio::ip::tcp::resolver::iterator, const std::string&);
+                bool send(const fire::util::bytes& b, bool block = false);
+                void bind(const std::string& port);
+                void connect(boost::asio::ip::tcp::resolver::iterator);
                 void start_read();
                 void close();
                 bool is_connected() const;
@@ -76,7 +77,7 @@ namespace fire
                 con_state _state;
                 boost::asio::io_service& _io;
                 byte_queue& _in_queue;
-                byte_queue& _out_queue;
+                byte_queue _out_queue;
                 connection_ptr_queue& _last_in_socket;
                 bool _track;
                 util::bytes _out_buffer;
@@ -96,13 +97,13 @@ namespace fire
 
         struct asio_params
         {
-            enum connect_mode {bind, connect} mode; 
+            enum connect_mode {bind, connect, delayed_connect} mode; 
             std::string uri;
             std::string host;
             std::string port;
             std::string local_port;
             bool block;
-            bool wait;
+            double wait;
             bool track_incoming;
         };
 
@@ -117,10 +118,13 @@ namespace fire
                 virtual bool recieve(util::bytes& b);
 
             public:
+                connection* get_socket() const;
                 virtual socket_info get_socket_info() const;
+                void connect(const std::string& host, const std::string& port);
 
             private:
                 void connect();
+                void delayed_connect();
                 void accept();
 
             private:
@@ -137,7 +141,6 @@ namespace fire
                 mutable connection_ptr_queue _last_in_socket;
                 connections _in_connections;
                 byte_queue _in_queue;
-                byte_queue _out_queue;
 
                 bool _done;
 
@@ -145,9 +148,12 @@ namespace fire
                 friend void run_thread(boost_asio_queue*);
         };
 
-        message_queue_ptr create_bst_message_queue(const address_components& c);
+        typedef std::shared_ptr<boost_asio_queue> boost_asio_queue_ptr;
+
+        asio_params parse_params(const address_components& c);
+        boost_asio_queue_ptr create_bst_message_queue(const address_components& c);
         std::string make_tcp_address(const std::string& host, const std::string& port, const std::string& local_port = "");
-        message_queue_ptr create_message_queue(const std::string& address, const queue_options& defaults);
+        boost_asio_queue_ptr create_message_queue(const std::string& address, const queue_options& defaults);
     }
 }
 

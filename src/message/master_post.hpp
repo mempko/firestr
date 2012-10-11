@@ -17,9 +17,8 @@
 #ifndef FIRESTR_MESSAGE_MASERT_POSTOFFICE_H
 #define FIRESTR_MESSAGE_MASERT_POSTOFFICE_H
 
-
 #include "message/postoffice.hpp"
-#include "network/message_queue.hpp"
+#include "network/connection_manager.hpp"
 #include "network/stungun.hpp"
 #include "util/thread.hpp"
 
@@ -49,16 +48,11 @@ namespace fire
                 std::string _in_host;
                 std::string _in_port;
                 network::stun_gun_ptr _stun;
-                network::message_queue_ptr _in;
+                network::boost_asio_queue_ptr _in;
                 util::thread_uptr _in_thread;
                 util::thread_uptr _out_thread;
                 queue _out;
-
-            private:
-                typedef std::map<std::string, network::message_queue_ptr> connection_map;
-
-                connection_map _connections;
-                std::mutex _cache_mutex;
+                network::connection_manager _connections;
 
             private:
                 friend void in_thread(master_post_office* o);

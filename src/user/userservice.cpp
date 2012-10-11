@@ -267,41 +267,17 @@ namespace fire
         void user_service::init_greet()
         {
             REQUIRE(!_greet_thread);
-            REQUIRE(!_greet_queue);
+            REQUIRE(_greet.empty());
 
             //make connection to greeter server if 
             //we setup the params
             if(!_greeter_server.empty() && !_greeter_port.empty())
-            {
-                auto address = n::make_tcp_address(_greeter_server, _greeter_port);
-                n::queue_options qo = { 
-                    {"con", "1"},
-                    {"block", "0"}};
-                _greet_queue = n::create_message_queue(address, qo);
-            }
+                _greet = n::make_tcp_address(_greeter_server, _greeter_port);
 
             _state = started_greet;
             _greet_thread.reset(new std::thread{greet_thread, this});
 
             ENSURE(_greet_thread);
-        }
-
-        void make_pinhole(const std::string& ip, const std::string remote_port, const std::string& local_port)
-        {
-            auto a = n::make_tcp_address(ip, remote_port, local_port);
-            std::cout << "making pinhole: " << a << std::endl;
-            n::queue_options qo = { 
-                {"con", "1"},
-                {"block", "0"},
-                {"wait", "50"},
-                {"local_port", local_port}};
-
-            auto pin_hole = n::create_message_queue(a, qo);
-            CHECK(pin_hole);
-
-            ms::pinhole pm;
-            m::message m = pm;
-            pin_hole->send(u::encode(m));
         }
 
         bool available(size_t ticks) { return ticks <= PING_THRESH; }
@@ -403,7 +379,7 @@ namespace fire
             }
             else if(m.meta.type == ms::GREET_FIND_RESPONSE)
             {
-                if(!_greet_queue) return;
+                if(_greet.empty()) return;
 
                 ms::greet_find_response rs{m};
                 if(!rs.found()) return;
@@ -412,10 +388,6 @@ namespace fire
 
                 //update address info
                 update_contact_address(rs.id(), rs.ip(), rs.port());
-
-                //make pinhole
-                if(_stun && !rs.from_port().empty())
-                    make_pinhole(rs.ip(), rs.from_port(), _in_port);
 
                 //send ping request using new address
                 auto c = _user->contacts().by_id(rs.id());
@@ -621,6 +593,7 @@ namespace fire
             {
                 if(s->_state == user_service::started_greet)
                 {
+                    std::cerr << "started greet..." << std::endl;
                     if(s->_stun)
                     {
                         CHECK_FALSE(s->_stun_port.empty());
@@ -670,24 +643,21 @@ namespace fire
                 }
                 else if(s->_state == user_service::got_stun)
                 {
-                    if(s->_greet_queue)
+                    if(!s->_greet.empty())
                     {
-                        auto return_port = random_port(boost::lexical_cast<size_t>(s->_in_port));
+                        std::cerr << "sending greet message to " << s->_greet << std::endl;
                         ms::greet_register r
                         {
                             s->_user->info().id(), 
                             (s->_stun ? s->_stun->external_ip() : ""), //if no stun, let greeter use socket ip
                             (s->_stun ? s->_stun->external_port() : s->_in_port),
-                            return_port,
                             SERVICE_ADDRESS
                         };
 
                         m::message m = r;
-                        s->_greet_queue->send(u::encode(m));
+                        m.meta.to = {s->_greet, "outside"};
+                        s->mail()->push_outbox(m);
                 
-                        if(s->_stun)
-                            make_pinhole(s->_greeter_server, return_port, s->_in_port);
-
                         u::mutex_scoped_lock l(s->_state_mutex);
                         s->_state = user_service::sent_greet;
                     }
@@ -699,29 +669,18 @@ namespace fire
                 }
                 else if(s->_state == user_service::sent_greet)
                 {
-                    CHECK(s->_greet_queue);
+                    CHECK(!s->_greet.empty());
 
                     for(auto c : s->_user->contacts().list())
                     {
                         CHECK(c);
 
-                        std::string local_port;
-
-                        //if we are connecting outside nat, assign the port that
-                        //the contact should bind to when connecting to this user.
-                        if(s->_stun)
-                        {
-                            u::mutex_scoped_lock l(s->_state_mutex);
-                            local_port = random_port(boost::lexical_cast<size_t>(s->_in_port));
-                            s->_local_ports[c->id()] = local_port;
-                        }
-
-                        ms::greet_find_request r {s->_user->info().id(), c->id(), local_port};
+                        ms::greet_find_request r {s->_user->info().id(), c->id()};
 
                         //send request
                         m::message m = r;
-                        s->_greet_queue->send(u::encode(m));
-
+                        m.meta.to = {s->_greet, "outside"};
+                        s->mail()->push_outbox(m);
                     }
 
                     u::mutex_scoped_lock l(s->_state_mutex);
@@ -760,7 +719,7 @@ namespace fire
             s->_state = user_service::done_greet;
 
             //now we are done, send the ping port requests
-            if(!s->_greet_queue) s->send_ping_requests();
+            if(s->_greet.empty()) s->send_ping_requests();
         }
         catch(std::exception& e)
         {

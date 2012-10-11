@@ -37,7 +37,6 @@ namespace fire
                         const std::string& id,
                         const std::string& ip,
                         const std::string& port,
-                        const std::string& return_port,
                         const std::string& response_service_address);
 
             public:
@@ -48,14 +47,12 @@ namespace fire
                 const std::string& id() const;
                 const std::string& ip() const;
                 const std::string& port() const;
-                const std::string& return_port() const;
                 const std::string& response_service_address() const;
 
             private:
                 std::string _id;
                 std::string _ip;
                 std::string _port;
-                std::string _return_port;
                 std::string _response_service_address;
         };
 
@@ -64,8 +61,7 @@ namespace fire
             public:
                 greet_find_request(
                         const std::string& from_id,
-                        const std::string& search_id,
-                        const std::string& from_port);
+                        const std::string& search_id);
 
             public:
                 greet_find_request(const message::message&);
@@ -74,12 +70,10 @@ namespace fire
             public:
                 const std::string& from_id() const;
                 const std::string& search_id() const;
-                const std::string& from_port() const;
 
             private:
                 std::string _from_id;
                 std::string _search_id;
-                std::string _from_port;
         };
 
         class greet_find_response
@@ -89,8 +83,7 @@ namespace fire
                         bool found,
                         const std::string& id,
                         const std::string& ip,
-                        const std::string& port,
-                        const std::string& from_port);
+                        const std::string& port);
 
             public:
                 greet_find_response(const message::message&);
@@ -101,14 +94,12 @@ namespace fire
                 const std::string& id() const;
                 const std::string& ip() const;
                 const std::string& port() const;
-                const std::string& from_port() const;
 
             private:
                 bool _found;
                 std::string _id;
                 std::string _ip;
                 std::string _port;
-                std::string _from_port;
         };
     }
 }
