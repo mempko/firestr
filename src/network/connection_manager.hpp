@@ -35,11 +35,15 @@ namespace fire
         class connection_manager
         {
             public:
-                connection_manager(size_t size, const std::string& local_port);
+                connection_manager(size_t size, const std::string& listen_port);
 
             public:
                 boost_asio_queue_ptr connect(const std::string& address);
                 boost_asio_queue_ptr get(const std::string& address);
+
+            public:
+                bool recieve(util::bytes& b);
+                connection* get_socket() const;
 
             private:
                 assignment_map _assignments;
@@ -47,6 +51,7 @@ namespace fire
                 std::string _local_port;
                 size_t _next_available;
                 std::mutex _mutex;
+                boost_asio_queue_ptr _in;
         };
     }
 }

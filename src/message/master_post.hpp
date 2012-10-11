@@ -41,14 +41,10 @@ namespace fire
                 virtual bool send_outside(const message&);
 
             private:
-                void setup_input_connection();
-
-            private:
                 bool _stunned;
                 std::string _in_host;
                 std::string _in_port;
                 network::stun_gun_ptr _stun;
-                network::boost_asio_queue_ptr _in;
                 util::thread_uptr _in_thread;
                 util::thread_uptr _out_thread;
                 queue _out;

@@ -65,18 +65,6 @@ po::variables_map parse_options(int argc, char* argv[], po::options_description&
     return v;
 }
 
-n::boost_asio_queue_ptr setup_input_connection(const std::string& port)
-{
-    auto address = n::make_tcp_address("*", port);
-
-    n::queue_options qo = { 
-        {"bnd", "1"},
-        {"block", "0"},
-        {"track_incoming", "1"}};
-
-    return n::create_message_queue(address, qo);
-}
-
 typedef std::map<std::string, std::string> port_map;
 
 struct user_info
@@ -89,7 +77,7 @@ struct user_info
 };
 typedef std::map<std::string, user_info> user_info_map;
 
-void register_user(n::connection* sock, n::message_queue_ptr q, const ms::greet_register& r, user_info_map& m)
+void register_user(n::connection* sock, const ms::greet_register& r, user_info_map& m)
 {
     CHECK(sock);
     if(r.id().empty()) return;
@@ -103,7 +91,7 @@ void register_user(n::connection* sock, n::message_queue_ptr q, const ms::greet_
     std::cerr << "registered " << i.id << " " << i.ip << ":" << i.port << std::endl;
 }
 
-void send_response(const ms::greet_find_response& r, const user_info& u, n::connection_manager& connections)
+void send_response(const ms::greet_find_response& r, const user_info& u)
 {
     CHECK(u.sock);
     m::message m = r;
@@ -113,19 +101,10 @@ void send_response(const ms::greet_find_response& r, const user_info& u, n::conn
 
     std::cerr << "sending reply to " << address << std::endl;
     u.sock->send(u::encode(m));
-    /*
-    {
-        auto q = connections.connect(address);
-        CHECK(q);
-        q->send(u::encode(m));
-    }
-    */
 }
 
-void find_user(n::message_queue_ptr q, const ms::greet_find_request& r, user_info_map& users, n::connection_manager& connections)
+void find_user(const ms::greet_find_request& r, user_info_map& users)
 {
-    CHECK(q);
-
     //find from user
     auto fup = users.find(r.from_id());
     if(fup == users.end()) return;
@@ -141,10 +120,10 @@ void find_user(n::message_queue_ptr q, const ms::greet_find_request& r, user_inf
 
     //send response to both clients
     ms::greet_find_response fr{true, i.id, i.ip,  i.port};
-    send_response(fr, f, connections);
+    send_response(fr, f);
 
     ms::greet_find_response ir{true, f.id, f.ip,  f.port};
-    send_response(ir, i, connections);
+    send_response(ir, i);
 }
 
 int main(int argc, char *argv[])
@@ -164,15 +143,14 @@ int main(int argc, char *argv[])
     //the input connection is made. This is because tcp on
     //linux requires that binds to the same port are made before
     //a listen is made.
-    n::connection_manager connections{POOL_SIZE, port};
-    auto in = setup_input_connection(port);
+    n::connection_manager con{POOL_SIZE, port};
     user_info_map users;
 
     u::bytes data;
     while(true)
     try
     {
-        if(!in->recieve(data))
+        if(!con.recieve(data))
         {
             u::sleep_thread(THREAD_SLEEP);
             continue;
@@ -184,17 +162,17 @@ int main(int argc, char *argv[])
 
         //get socket info of the message just recieved.
         //because we are tracking incoming
-        auto socket = in->get_socket();
+        auto socket = con.get_socket();
 
         if(m.meta.type == ms::GREET_REGISTER)
         {
             ms::greet_register r{m};
-            register_user(socket, in, r, users);
+            register_user(socket, r, users);
         }
         else if(m.meta.type == ms::GREET_FIND_REQUEST)
         {
             ms::greet_find_request r{m};
-            find_user(in, r, users, connections);
+            find_user(r, users);
         }
     }
     catch(std::exception& e)

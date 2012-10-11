@@ -45,14 +45,16 @@ namespace fire
             {
                 //get data from outside world
                 u::bytes data;
-                if(!o->_in->recieve(data))
+                if(!o->_connections.recieve(data))
                 {
                     u::sleep_thread(THREAD_SLEEP);
                     continue;
                 }
 
                 //get socket info of the message just recieved.
-                auto socket = o->_in->get_socket_info();
+                n::socket_info i;
+                auto socket = o->_connections.get_socket();
+                if(socket) i = n::get_socket_info(*socket);
 
                 //parse message
                 std::stringstream s(u::to_str(data));
@@ -60,7 +62,7 @@ namespace fire
                 s >> m;
 
                 //insert the from_ip
-                m.meta.extra["from_ip"] = socket.remote_address;
+                m.meta.extra["from_ip"] = i.remote_address;
 
                 //pop off master address
                 m.meta.to.pop_front();
@@ -131,18 +133,6 @@ namespace fire
             std::cerr << "exit: master_post::out_thread" << std::endl;
         }
 
-        void master_post_office::setup_input_connection()
-        {
-            auto address = n::make_tcp_address("*", _in_port);
-
-            n::queue_options qo = { 
-                {"bnd", "1"},
-                {"block", "0"},
-                {"track_incoming", "1"}};
-
-            _in = n::create_message_queue(address, qo);
-        }
-
         master_post_office::master_post_office(
                 const std::string& in_host,
                 const std::string& in_port) : 
@@ -150,16 +140,11 @@ namespace fire
             _in_port{in_port},
             _connections{POOL_SIZE, in_port}
         {
-            //setup outside address
             _address = n::make_tcp_address(_in_host,_in_port);
 
-            setup_input_connection();
-
-            //here we use the magic * 
             _in_thread.reset(new std::thread{in_thread, this});
             _out_thread.reset(new std::thread{out_thread, this});
 
-            ENSURE(_in);
             ENSURE(_in_thread);
             ENSURE(_out_thread);
             ENSURE_FALSE(_address.empty());

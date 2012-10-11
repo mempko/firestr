@@ -32,6 +32,7 @@ namespace fire
             _local_port{local_port},
             _next_available{0}
         {
+            //create outgoing params
             asio_params p = {
                 asio_params::delayed_connect, 
                 "", //uri
@@ -43,8 +44,21 @@ namespace fire
                 false, //track_incoming;
             };
 
+            //create socket pool
             for(size_t i = 0; i < size; ++i)
                 _pool[i].reset(new boost_asio_queue{p});
+
+            //create listen socket
+            auto listen_address = make_tcp_address("*", _local_port);
+
+            queue_options qo = { 
+                {"bnd", "1"},
+                {"block", "0"},
+                {"track_incoming", "1"}};
+
+            _in = create_message_queue(listen_address, qo);
+
+            INVARIANT(_in);
         }
 
         boost_asio_queue_ptr connection_manager::connect(const std::string& address)
@@ -82,6 +96,18 @@ namespace fire
             auto q = _pool[i];
             ENSURE(q);
             return q;
+        }
+
+        bool connection_manager::recieve(u::bytes& b)
+        {
+            INVARIANT(_in);
+            return _in->recieve(b);
+        }
+
+        connection* connection_manager::get_socket() const
+        {
+            INVARIANT(_in);
+            return _in->get_socket();
         }
     }
 }
