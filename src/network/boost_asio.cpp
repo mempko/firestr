@@ -32,6 +32,8 @@ namespace u = fire::util;
 namespace ba = boost::asio;
 using namespace boost::asio::ip;
 
+namespace so = boost::asio::detail::socket_option; 
+typedef so::integer<IPPROTO_IP, IP_TTL> time_to_live; 
 namespace fire
 {
     namespace network
@@ -309,6 +311,8 @@ namespace fire
                 c = in.get(); 
                 garbage++;
             }
+            if(!in.good()) { start_read(); return;}
+
 
             c = in.get();
             size_t rc = 1;
@@ -318,6 +322,7 @@ namespace fire
                 c = in.get();
                 rc++;
             }
+            if(!in.good()) { start_read(); return;}
 
             CHECK_EQUAL(_in_buffer.size(), o_size - rc - garbage);
 
@@ -342,8 +347,20 @@ namespace fire
 
         void connection::handle_body(const boost::system::error_code& error, size_t transferred, size_t size)
         {
+            INVARIANT(_socket);
+            REQUIRE_GREATER(size, 0);
             if(error && error == ba::error::eof) { _error = error; close(); return; }
-            if(_in_buffer.size() < size) { _error = error; close(); return;}
+            if(_in_buffer.size() < size) 
+            {
+                ba::async_read(*_socket,
+                        _in_buffer,
+                        ba::transfer_at_least(size - _in_buffer.size()),
+                        boost::bind(&connection::handle_body, this,
+                            ba::placeholders::error,
+                            ba::placeholders::bytes_transferred,
+                            size));
+                return;
+            }
 
             u::bytes data;
             data.resize(size);
