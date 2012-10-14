@@ -434,6 +434,8 @@ namespace fire
 
         boost_asio_queue::~boost_asio_queue() 
         {
+            INVARIANT(_io);
+            _io->stop();
             _done = true;
             if(_p.wait > 0) u::sleep_thread(_p.wait);
             if(_out) _out->close();
