@@ -56,7 +56,7 @@ namespace fire
             public:
                 bool send(const fire::util::bytes& b, bool block = false);
                 void bind(const std::string& port);
-                void connect(boost::asio::ip::tcp::resolver::iterator);
+                void connect(boost::asio::ip::tcp::endpoint);
                 void start_read();
                 void close();
                 bool is_connected() const;
@@ -71,8 +71,9 @@ namespace fire
                 void update_remote_address();
 
             private:
-                void handle_connect(const boost::system::error_code& error,
-                        boost::asio::ip::tcp::resolver::iterator ei);
+                void handle_connect(
+                        const boost::system::error_code& error, 
+                        boost::asio::ip::tcp::endpoint e);
                 void do_send(bool);
                 void handle_write(const boost::system::error_code& error);
                 void handle_header(const boost::system::error_code& error, size_t);
@@ -96,6 +97,7 @@ namespace fire
                 mutable std::mutex _mutex;
                 boost::system::error_code _error;
                 bool _writing;
+                int _retries;
             private:
                 friend class boost_asio_queue;
         };

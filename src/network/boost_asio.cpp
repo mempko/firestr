@@ -41,6 +41,7 @@ namespace fire
         namespace
         {
             const size_t BLOCK_SLEEP = 10;
+            const int RETRIES = 3;
 
             asio_params::connect_mode determine_connection_mode(const queue_options& o)
             {
@@ -86,7 +87,8 @@ namespace fire
             _track{track},
             _socket{new tcp::socket{io}},
             _state{ con ? connected : disconnected},
-            _writing{false}
+            _writing{false},
+            _retries{RETRIES}
         {
             INVARIANT(_socket);
         }
@@ -155,18 +157,17 @@ namespace fire
             }
         }
 
-        void connection::connect(tcp::resolver::iterator e)
+        void connection::connect(tcp::endpoint endpoint)
         {
             u::mutex_scoped_lock l(_mutex);
             INVARIANT(_socket);
             REQUIRE(_state == disconnected);
 
-            auto endpoint = *e;
             _state = connecting;
 
             _socket->async_connect(endpoint,
                     boost::bind(&connection::handle_connect, this,
-                        ba::placeholders::error, ++e));
+                        ba::placeholders::error, endpoint));
         }
 
         void connection::start_read()
@@ -182,7 +183,7 @@ namespace fire
 
         void connection::handle_connect(
                 const boost::system::error_code& error,
-                tcp::resolver::iterator e)
+                tcp::endpoint endpoint)
         {
             INVARIANT(_socket);
             ENSURE(_state == connecting);
@@ -203,20 +204,21 @@ namespace fire
                     do_send(false);
                 }
             }
-            //otherwise try next endpoint in list
-            else if (e != tcp::resolver::iterator())
-            {
-                _error = error;
-                auto endpoint = *e;
-                _socket->async_connect(endpoint,
-                        boost::bind(&connection::handle_connect, this,
-                            ba::placeholders::error, ++e));
-            }
             else 
             {
-                u::mutex_scoped_lock l(_mutex);
-                _error = error;
-                _state = disconnected;
+                if(_retries > 0)
+                {
+                    _retries--;
+                    std::cerr << "retrying (" << (RETRIES - _retries) << "/" << RETRIES << ")..." << std::endl;
+                    _state = disconnected;
+                    connect(endpoint);
+                }
+                else
+                {
+                    u::mutex_scoped_lock l(_mutex);
+                    _error = error;
+                    _state = disconnected;
+                }
             }
 
             if(error)
@@ -279,6 +281,7 @@ namespace fire
 
             //remove sent message
             _out_queue.pop_front();
+            std::cerr << "sent message, " << _out_queue.size() << " remaining..." << std::endl;
 
             //if we are done sending finish the async write chain
             if(_out_queue.empty()) 
@@ -508,11 +511,12 @@ namespace fire
 
             tcp::resolver::query query{_p.host, _p.port}; 
             auto ei = _resolver->resolve(query);
+            auto endpoint = *ei;
 
             if(!_out) delayed_connect();
 
             _out->remote_address(_p.uri);
-            _out->connect(ei);
+            _out->connect(endpoint);
 
             ENSURE(_out);
             ENSURE(_resolver);
