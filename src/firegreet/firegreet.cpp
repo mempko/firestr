@@ -84,8 +84,9 @@ void register_user(n::connection* sock, const ms::greet_register& r, user_info_m
 
     //use user specified ip, otherwise use socket ip
     std::string ip = r.ip().empty() ? sock->socket().remote_endpoint().address().to_string() : r.ip();
+    std::string port = r.ip().empty() ? boost::lexical_cast<std::string>(sock->socket().remote_endpoint().port()) : r.port();
 
-    user_info i = {r.id(), ip, r.port(), r.response_service_address(), sock};
+    user_info i = {r.id(), ip, port, r.response_service_address(), sock};
     m[i.id] = i;
 
     std::cerr << "registered " << i.id << " " << i.ip << ":" << i.port << std::endl;
