@@ -34,6 +34,10 @@ using namespace boost::asio::ip;
 
 namespace so = boost::asio::detail::socket_option; 
 typedef so::integer<IPPROTO_IP, IP_TTL> time_to_live; 
+#ifdef __APPLE__
+typedef so::boolean<SOL_SOCKET, SO_REUSEPORT> reuse_port;
+#endif
+
 namespace fire
 {
     namespace network
@@ -146,6 +150,9 @@ namespace fire
 
             _socket->open(tcp::v4(), error);
             _socket->set_option(tcp::socket::reuse_address(true),error);
+#ifdef __APPLE__
+            _socket->set_option(reuse_port(true),error);
+#endif
             auto p = boost::lexical_cast<short unsigned int>(port);
             _socket->bind(tcp::endpoint(tcp::v4(), p), error);
 
@@ -545,6 +552,9 @@ namespace fire
 
                 _acceptor->open(endpoint.protocol());
                 _acceptor->set_option(tcp::acceptor::reuse_address(true));
+#ifdef __APPLE__
+                _acceptor->set_option(reuse_port(true));
+#endif
                 _acceptor->bind(endpoint);
                 _acceptor->listen();
             }
