@@ -79,8 +79,9 @@ typedef std::map<std::string, user_info> user_info_map;
 
 void register_user(n::connection* sock, const ms::greet_register& r, user_info_map& m)
 {
-    CHECK(sock);
+    REQUIRE(sock);
     if(r.id().empty()) return;
+    if(sock->is_disconnected()) return;
 
     //use user specified ip, otherwise use socket ip
     std::string ip = r.ip().empty() ? sock->socket().remote_endpoint().address().to_string() : r.ip();
@@ -104,8 +105,10 @@ void send_response(const ms::greet_find_response& r, const user_info& u)
     u.sock->send(u::encode(m));
 }
 
-void find_user(const ms::greet_find_request& r, user_info_map& users)
+void find_user(n::connection* sock, const ms::greet_find_request& r, user_info_map& users)
 {
+    REQUIRE(sock);
+
     //find from user
     auto fup = users.find(r.from_id());
     if(fup == users.end()) return;
@@ -115,6 +118,9 @@ void find_user(const ms::greet_find_request& r, user_info_map& users)
     if(up == users.end()) return;
 
     auto& f = fup->second;
+    if(sock->is_disconnected()) return;
+    f.sock = sock;
+
     auto& i = up->second;
 
     std::cerr << "found match " << f.id << " " << f.ip << ":" << f.port << " <==> " <<  i.id << " " << i.ip << ":" << i.port << std::endl;
@@ -173,7 +179,7 @@ int main(int argc, char *argv[])
         else if(m.meta.type == ms::GREET_FIND_REQUEST)
         {
             ms::greet_find_request r{m};
-            find_user(r, users);
+            find_user(socket, r, users);
         }
     }
     catch(std::exception& e)
