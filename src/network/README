@@ -8,16 +8,25 @@ The general design is that there is a factory function which
 returns a new message_queue object that implements the 
 message_queue interface.
 
-Currently only Zeromq is supported at the moment.
+Currently only boost asio is supported at the moment.
 
 ===================================================================
 file summary
 ===================================================================
 
-message_queue - Main interface for creating a network queue.
-                Contains the message_queue interface and factory 
-                function.
+message_queue       - Main interface for creating a network queue.
+                      Contains the message_queue interface.
 
-zeromq_queue  - Implements the message_queue interface with a zeromq
-                backend.
+boost_asio          - TCP (and UDP) queue implemented using boost asio library. 
+                      Implements the message_queue interface.
+
+connection_manager -  Manages boost_asio TCP connections. Opens a listen
+                      socket and has a socket pool for outbound connections on
+                      the same port. Had a send and recieve function which
+                      multiplexes and demultiplexes messages between all open
+                      connections
+
+stungun            -  Implementation of a simple STUN client to get ip and port 
+                      information. Currently uses QT's UDP sockets but will soon
+                      change it to use boost asio udp.
 

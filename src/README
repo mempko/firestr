@@ -24,29 +24,55 @@ Dependency Graph
             -----------------      |         |
             |     message   |      |         |
             -----------------      |         |
-                          |        |         |
-                    -----------------        |
-                    |     gui       |        |
-                    -----------------        |
-                                   |         |
-                                   |         |
-                                /---------------\
-                                |     firestr   |
-                                \---------------/
+                |                  |         |
+            -----------------      |         |
+            |     user      |      |         |
+            -----------------      |         |
+                 |                 |         |
+                 |                 |         |
+                 |          ------------------
+                 |      /-- |     service    |
+                 |      |   ------------------
+                 |      |          |         |
+            ------------------     |         |
+            |    messages    |     |         |
+            ------------------     |         |
+                 |         |       |         |
+                 |  ------------------       |  
+                 |  |    session     |       | 
+                 |  ------------------       |
+                 |         |       |         |
+                 |         |       |         |
+                 |      -----------------    |
+                 |      |     gui       |    |
+                 |      -----------------    |
+                 |              |            |
+                 |              |            |
+            /---------------\   |            |
+            |     firestr   |----------------/ 
+            \---------------/   
 
 
 ===================================================================
 Component Summary 
 ===================================================================
 
-util    - Place to put things that everything else depends on
+util     - Place to put things that everything else depends on
 
-network - Code dealing with send bits and blips over the network
+network  - Library dealing with send bits and blips over the network
 
-message - Code for sending messages between components and over network
+message  - Library for sending messages between components and over network
 
-gui     - Various widgets which can be combined into an application
+messages - Code for various message types that can go over the wire
 
-firestr - Main Application
+service  - Library that simplifies the creation of threaded services.
+
+user     - Library that manages user and contact state and connectivity
+
+session  - Library that manages session state and connectivity between users
+
+gui      - Various widgets which can be combined into an application
+
+firestr  - Main Application
 
 
