@@ -22,19 +22,25 @@ attempt to send the message over the network.
 file summary
 ===================================================================
 
-message    - Defines the message class and implements serialization 
-             using the mencode format. A message has a type, from, to,
-             extra metadata, and data.
+message     - Defines the message class and implements serialization 
+              using the mencode format. A message has a type, from, to,
+              extra metadata, and data.
 
-mailbox    - Implements a mailbox which can receive messages in the
-             inbox and put messages in the outbox. A post office will
-             grab messages from the outbox and send them to the address
-             requested.
+mailbox     - Implements a mailbox which can receive messages in the
+              inbox and put messages in the outbox. A post office will
+              grab messages from the outbox and send them to the address
+              requested.
 
-postoffice - Implements a post office as described above. Each post office
-             has a thread which polls from all the mailboxes and sends
-             messages from the mailbox outbox. This way, to send a message
-             a mailbox must be attached to a post office. The general idea
-             is that you can add messages to an outbox in a separate thread
-             and the messages are sent asynchronously. The root post office
-             can send messages to the outside world using the network library
+postoffice  - Implements a post office as described above. Each post office
+              has a thread which polls from all the mailboxes and sends
+              messages from the mailbox outbox. This way, to send a message
+              a mailbox must be attached to a post office. The general idea
+              is that you can add messages to an outbox in a separate thread
+              and the messages are sent asynchronously. The root post office
+              can send messages to the outside world using the network library
+
+master_post - Special post office which connects firestr to to the outside world.
+              It uses a connection manager to read from incoming connections 
+              and make outgoing connections. It is the entry and exit point for 
+              messages between firestr instances.
+              
