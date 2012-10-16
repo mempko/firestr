@@ -126,7 +126,8 @@ namespace fire
         bool connection::is_disconnected() const
         {
             u::mutex_scoped_lock l(_mutex);
-            return _state == disconnected;
+            INVARIANT(_socket);
+            return _state == disconnected || !_socket->is_open();
         }
 
         bool connection::is_connecting() const
@@ -149,6 +150,7 @@ namespace fire
             boost::system::error_code error;
 
             _socket->open(tcp::v4(), error);
+            _socket->set_option(tcp::socket::keep_alive(true),error);
             _socket->set_option(tcp::socket::reuse_address(true),error);
 #ifdef __APPLE__
             _socket->set_option(reuse_port(true),error);
@@ -168,7 +170,8 @@ namespace fire
         {
             u::mutex_scoped_lock l(_mutex);
             INVARIANT(_socket);
-            REQUIRE(_state == disconnected);
+
+            if(_state != disconnected || !_socket->is_open()) return;
 
             _state = connecting;
 
@@ -215,9 +218,14 @@ namespace fire
             {
                 if(_retries > 0)
                 {
-                    _retries--;
                     std::cerr << "retrying (" << (RETRIES - _retries) << "/" << RETRIES << ")..." << std::endl;
-                    _state = disconnected;
+                    {
+                        u::mutex_scoped_lock l(_mutex);
+                        _retries--;
+
+                        _state = disconnected;
+                        u::sleep_thread(2000);
+                    }
                     connect(endpoint);
                 }
                 else
@@ -229,7 +237,7 @@ namespace fire
             }
 
             if(error)
-                std::cerr << "error connecting: " << error.message() << std::endl;
+                std::cerr << "error connecting to `" << _remote_address << "' : " << error.message() << std::endl;
         }
 
         u::bytes encode_wire(const u::bytes data)
@@ -551,6 +559,7 @@ namespace fire
                 tcp::endpoint endpoint{tcp::v4(), port}; 
 
                 _acceptor->open(endpoint.protocol());
+                _acceptor->set_option(tcp::acceptor::keep_alive(true));
                 _acceptor->set_option(tcp::acceptor::reuse_address(true));
 #ifdef __APPLE__
                 _acceptor->set_option(reuse_port(true));
