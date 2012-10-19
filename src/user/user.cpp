@@ -295,5 +295,42 @@ namespace fire
             ENSURE(_list.empty());
             ENSURE(_map.empty());
         }
+
+        std::string user_info::name() const 
+        { 
+            u::mutex_scoped_lock l(_mutex);
+            return _name;
+        }
+
+        std::string user_info::id() const 
+        {
+            u::mutex_scoped_lock l(_mutex);
+            return _id;
+        }
+
+        std::string user_info::address() const 
+        {
+            u::mutex_scoped_lock l(_mutex);
+            return _address;
+        }
+
+        void user_info::name(const std::string& v) 
+        {
+            u::mutex_scoped_lock l(_mutex);
+            _name = v;
+        }
+
+        void user_info::address(const std::string& v) 
+        {
+            u::mutex_scoped_lock l(_mutex);
+            _address = v;
+        }
+
+        void user_info::id(const std::string& v) 
+        {
+            u::mutex_scoped_lock l(_mutex);
+            _id = v;
+        }
+
     }
 }
