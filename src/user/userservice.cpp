@@ -748,7 +748,7 @@ namespace fire
                 auto c = p.second;
                 CHECK(c);
 
-                ping r = {r.to = c->address(), _user->info().id(), s};
+                ping r = {c->address(), _user->info().id(), s};
                 mail()->push_outbox(convert(r));
             }
         }
