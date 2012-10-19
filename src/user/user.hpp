@@ -47,19 +47,35 @@ namespace fire
                     REQUIRE_FALSE(id.empty());
                 }
 
-            public:
-                const std::string& name() const { return _name;}
-                const std::string& id() const { return _id;}
-                const std::string& address() const { return _address;}
+                user_info(const user_info& o) :
+                    _address{o._address}, _name{o._name}, _id{o._id} {}
 
-                void name(const std::string& v) { _name = v;}
-                void address(const std::string& v) { _address = v;}
-                void id(const std::string& v) { _id = v;}
+                user_info& operator=(const user_info& o)
+                {
+                    fire::util::mutex_scoped_lock l(_mutex);
+                    if(&o == this) return *this;
+
+                    fire::util::mutex_scoped_lock lo(o._mutex);
+                    _name = o._name;
+                    _id = o._id;
+                    _address = o._address;
+                    return *this;
+                }
+
+            public:
+                std::string name() const;
+                std::string id() const;
+                std::string address() const;
+
+                void name(const std::string& v);
+                void address(const std::string& v);
+                void id(const std::string& v);
 
             private:
                 std::string _address;
                 std::string _name;
                 std::string _id;
+                mutable std::mutex _mutex;
         };
 
         typedef std::shared_ptr<user_info> user_info_ptr;

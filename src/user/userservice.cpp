@@ -741,7 +741,6 @@ namespace fire
             REQUIRE(s == CONNECTED || s == DISCONNECTED);
             u::mutex_scoped_lock l(_ping_mutex);
 
-
             //send pint message to all connected contacts
             for(auto p : _connected)
             {
@@ -786,6 +785,8 @@ namespace fire
 
         void user_service::fire_contact_connected_event(const std::string& id)
         {
+            u::mutex_scoped_lock l(_ping_mutex);
+
             auto c = _user->contacts().by_id(id);
             if(!c) return;
 
