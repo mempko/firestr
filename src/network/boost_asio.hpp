@@ -33,26 +33,26 @@ namespace fire
     {
         typedef util::queue<util::bytes> byte_queue;
         typedef std::unique_ptr<boost::asio::io_service> asio_service_ptr;
-        typedef std::unique_ptr<boost::asio::ip::tcp::resolver> asio_resolver_ptr;
-        typedef std::unique_ptr<boost::asio::ip::tcp::acceptor> asio_acceptor_ptr;
-        typedef std::unique_ptr<boost::asio::ip::tcp::socket> asio_socket_ptr;
+        typedef std::unique_ptr<boost::asio::ip::tcp::resolver> tcp_resolver_ptr;
+        typedef std::unique_ptr<boost::asio::ip::tcp::acceptor> tcp_acceptor_ptr;
+        typedef std::unique_ptr<boost::asio::ip::tcp::socket> tcp_socket_ptr;
 
-        class connection;
-        typedef util::queue<connection*> connection_ptr_queue;
+        class tcp_connection;
+        typedef util::queue<tcp_connection*> tcp_connection_ptr_queue;
 
-        class connection
+        class tcp_connection
         {
             public:
                 enum con_state{connecting, connected, disconnected};
 
-                connection(
+                tcp_connection(
                         boost::asio::io_service& io, 
                         byte_queue& in,
-                        connection_ptr_queue& last_in,
+                        tcp_connection_ptr_queue& last_in,
                         std::mutex& in_mutex,
                         bool track = false,
                         bool con = false);
-                ~connection();
+                ~tcp_connection();
             public:
                 bool send(const fire::util::bytes& b, bool block = false);
                 void bind(const std::string& port);
@@ -74,6 +74,7 @@ namespace fire
                 void handle_connect(
                         const boost::system::error_code& error, 
                         boost::asio::ip::tcp::endpoint e);
+                void handle_punch(const boost::system::error_code& error);
                 void do_send(bool);
                 void handle_write(const boost::system::error_code& error);
                 void handle_header(const boost::system::error_code& error, size_t);
@@ -86,24 +87,24 @@ namespace fire
                 byte_queue& _in_queue;
                 std::mutex& _in_mutex;
                 byte_queue _out_queue;
-                connection_ptr_queue& _last_in_socket;
+                tcp_connection_ptr_queue& _last_in_socket;
                 bool _track;
                 util::bytes _out_buffer;
                 std::string _src_host;
                 std::string _src_port;
                 std::string _remote_address;
                 boost::asio::streambuf _in_buffer;
-                asio_socket_ptr _socket;
+                tcp_socket_ptr _socket;
                 mutable std::mutex _mutex;
                 boost::system::error_code _error;
                 bool _writing;
                 int _retries;
             private:
-                friend class boost_asio_queue;
+                friend class tcp_queue;
         };
 
-        typedef std::shared_ptr<connection> connection_ptr;
-        typedef std::vector<connection_ptr> connections;
+        typedef std::shared_ptr<tcp_connection> tcp_connection_ptr;
+        typedef std::vector<tcp_connection_ptr> tcp_connections;
 
         struct asio_params
         {
@@ -117,18 +118,18 @@ namespace fire
             bool track_incoming;
         };
 
-        class boost_asio_queue : public message_queue
+        class tcp_queue : public message_queue
         {
             public:
-                boost_asio_queue(const asio_params& p);
-                virtual ~boost_asio_queue();
+                tcp_queue(const asio_params& p);
+                virtual ~tcp_queue();
 
             public:
                 virtual bool send(const util::bytes& b);
                 virtual bool recieve(util::bytes& b);
 
             public:
-                connection* get_socket() const;
+                tcp_connection* get_socket() const;
                 void connect(const std::string& host, const std::string& port);
 
             private:
@@ -137,35 +138,35 @@ namespace fire
                 void accept();
 
             private:
-                void handle_accept(connection_ptr nc, const boost::system::error_code& error);
+                void handle_accept(tcp_connection_ptr nc, const boost::system::error_code& error);
 
             private:
                 asio_params _p;
                 asio_service_ptr _io;
-                asio_resolver_ptr _resolver;
-                asio_acceptor_ptr _acceptor;
+                tcp_resolver_ptr _resolver;
+                tcp_acceptor_ptr _acceptor;
                 util::thread_uptr _run_thread;
 
-                connection_ptr _out;
-                mutable connection_ptr_queue _last_in_socket;
-                connections _in_connections;
+                tcp_connection_ptr _out;
+                mutable tcp_connection_ptr_queue _last_in_socket;
+                tcp_connections _in_connections;
                 byte_queue _in_queue;
                 mutable std::mutex _mutex;
 
                 bool _done;
 
             private:
-                friend void run_thread(boost_asio_queue*);
+                friend void run_thread(tcp_queue*);
         };
 
-        typedef std::shared_ptr<boost_asio_queue> boost_asio_queue_ptr;
+        typedef std::shared_ptr<tcp_queue> tcp_queue_ptr;
 
         asio_params parse_params(const address_components& c);
-        boost_asio_queue_ptr create_bst_message_queue(const address_components& c);
+        tcp_queue_ptr create_bst_message_queue(const address_components& c);
         std::string make_tcp_address(const std::string& host, const std::string& port, const std::string& local_port = "");
-        boost_asio_queue_ptr create_message_queue(const std::string& address, const queue_options& defaults);
+        tcp_queue_ptr create_message_queue(const std::string& address, const queue_options& defaults);
 
-        socket_info get_socket_info(connection&);
+        socket_info get_socket_info(tcp_connection&);
     }
 }
 

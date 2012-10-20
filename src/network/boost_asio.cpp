@@ -77,10 +77,10 @@ namespace fire
             return p;
         }
 
-        connection::connection(
+        tcp_connection::tcp_connection(
                 ba::io_service& io, 
                 byte_queue& in,
-                connection_ptr_queue& last_in,
+                tcp_connection_ptr_queue& last_in,
                 std::mutex& in_mutex,
                 bool track,
                 bool con) :
@@ -97,51 +97,51 @@ namespace fire
             INVARIANT(_socket);
         }
 
-        connection::~connection()
+        tcp_connection::~tcp_connection()
         {
             close();
         }
 
-        void connection::close()
+        void tcp_connection::close()
         {
-            _io.post(boost::bind(&connection::do_close, this));
+            _io.post(boost::bind(&tcp_connection::do_close, this));
         }
 
-        void connection::do_close()
+        void tcp_connection::do_close()
         {
             INVARIANT(_socket);
             u::mutex_scoped_lock l(_mutex);
-            std::cerr << "connection closed " << _socket->local_endpoint() << " + " << _socket->remote_endpoint() << " error: " << _error.message() << std::endl;
+            std::cerr << "tcp_connection closed " << _socket->local_endpoint() << " + " << _socket->remote_endpoint() << " error: " << _error.message() << std::endl;
             _socket->close();
             _state = disconnected;
             _writing = false;
         }
 
-        bool connection::is_connected() const
+        bool tcp_connection::is_connected() const
         {
             u::mutex_scoped_lock l(_mutex);
             return _state == connected;
         }
 
-        bool connection::is_disconnected() const
+        bool tcp_connection::is_disconnected() const
         {
             u::mutex_scoped_lock l(_mutex);
             INVARIANT(_socket);
             return _state == disconnected || !_socket->is_open();
         }
 
-        bool connection::is_connecting() const
+        bool tcp_connection::is_connecting() const
         {
             u::mutex_scoped_lock l(_mutex);
             return _state == disconnected;
         }
 
-        connection::con_state connection::state() const
+        tcp_connection::con_state tcp_connection::state() const
         {
             return _state;
         }
 
-        void connection::bind(const std::string& port)
+        void tcp_connection::bind(const std::string& port)
         {
             u::mutex_scoped_lock l(_mutex);
             INVARIANT(_socket);
@@ -166,7 +166,7 @@ namespace fire
             }
         }
 
-        void connection::connect(tcp::endpoint endpoint)
+        void tcp_connection::connect(tcp::endpoint endpoint)
         {
             u::mutex_scoped_lock l(_mutex);
             INVARIANT(_socket);
@@ -176,23 +176,23 @@ namespace fire
             _state = connecting;
 
             _socket->async_connect(endpoint,
-                    boost::bind(&connection::handle_connect, this,
+                    boost::bind(&tcp_connection::handle_connect, this,
                         ba::placeholders::error, endpoint));
         }
 
-        void connection::start_read()
+        void tcp_connection::start_read()
         {
             INVARIANT(_socket);
             if(!_socket->is_open()) return;
 
             //read message header
             ba::async_read_until(*_socket, _in_buffer, ':',
-                    boost::bind(&connection::handle_header, this,
+                    boost::bind(&tcp_connection::handle_header, this,
                         ba::placeholders::error,
                         ba::placeholders::bytes_transferred));
         }
 
-        void connection::handle_connect(
+        void tcp_connection::handle_connect(
                 const boost::system::error_code& error,
                 tcp::endpoint endpoint)
         {
@@ -204,7 +204,7 @@ namespace fire
             {
                 u::mutex_scoped_lock l(_mutex);
                 _state = connected;
-                std::cerr << "new out connection " << _socket->local_endpoint() << " -> " << _socket->remote_endpoint() << ": " << error.message() << std::endl;
+                std::cerr << "new out tcp_connection " << _socket->local_endpoint() << " -> " << _socket->remote_endpoint() << ": " << error.message() << std::endl;
                 start_read();
 
                 //if we have called send already before we connected,
@@ -251,14 +251,14 @@ namespace fire
             return encoded;
         }
 
-        bool connection::send(const u::bytes& b, bool block)
+        bool tcp_connection::send(const u::bytes& b, bool block)
         {
             //add message to queue
             _out_queue.push(b);
 
             //do send if we are connected
             if(is_connected())
-                _io.post(boost::bind(&connection::do_send, this, false));
+                _io.post(boost::bind(&tcp_connection::do_send, this, false));
 
             //if we are blocking, block until all messages are sent
             while(block && !_out_queue.empty() && is_disconnected()) u::sleep_thread(BLOCK_SLEEP);
@@ -266,7 +266,7 @@ namespace fire
             return is_connected();
         }
 
-        void connection::do_send(bool force)
+        void tcp_connection::do_send(bool force)
         {
             ENSURE(_socket);
 
@@ -282,13 +282,13 @@ namespace fire
 
             ba::async_write(*_socket,
                     ba::buffer(&_out_buffer[0], _out_buffer.size()),
-                        boost::bind(&connection::handle_write, this,
+                        boost::bind(&tcp_connection::handle_write, this,
                             ba::placeholders::error));
 
             ENSURE(_writing);
         }
 
-        void connection::handle_write(const boost::system::error_code& error)
+        void tcp_connection::handle_write(const boost::system::error_code& error)
         {
             if(error) { _error = error; close(); return; }
 
@@ -311,7 +311,7 @@ namespace fire
             ENSURE(_writing);
         }
 
-        void connection::handle_header(const boost::system::error_code& error, size_t transferred)
+        void tcp_connection::handle_header(const boost::system::error_code& error, size_t transferred)
         {
             INVARIANT(_socket);
 
@@ -358,13 +358,13 @@ namespace fire
             ba::async_read(*_socket,
                     _in_buffer,
                     ba::transfer_at_least(size - _in_buffer.size()),
-                    boost::bind(&connection::handle_body, this,
+                    boost::bind(&tcp_connection::handle_body, this,
                         ba::placeholders::error,
                         ba::placeholders::bytes_transferred,
                         size));
         }
 
-        void connection::handle_body(const boost::system::error_code& error, size_t transferred, size_t size)
+        void tcp_connection::handle_body(const boost::system::error_code& error, size_t transferred, size_t size)
         {
             INVARIANT(_socket);
             REQUIRE_GREATER(size, 0);
@@ -374,7 +374,7 @@ namespace fire
                 ba::async_read(*_socket,
                         _in_buffer,
                         ba::transfer_at_least(size - _in_buffer.size()),
-                        boost::bind(&connection::handle_body, this,
+                        boost::bind(&tcp_connection::handle_body, this,
                             ba::placeholders::error,
                             ba::placeholders::bytes_transferred,
                             size));
@@ -397,24 +397,24 @@ namespace fire
             start_read();
         }
 
-        tcp::socket& connection::socket()
+        tcp::socket& tcp_connection::socket()
         {
             INVARIANT(_socket);
             return *_socket;
         }
 
-        const std::string& connection::remote_address() const
+        const std::string& tcp_connection::remote_address() const
         {
             return _remote_address;
         }
 
-        void connection::remote_address(const std::string& a)
+        void tcp_connection::remote_address(const std::string& a)
         {
             REQUIRE_FALSE(a.empty());
             _remote_address = a;
         }
 
-        void connection::update_remote_address()
+        void tcp_connection::update_remote_address()
         {
             INVARIANT(_socket);
 
@@ -427,8 +427,8 @@ namespace fire
             ENSURE_FALSE(_remote_address.empty());
         }
 
-        void run_thread(boost_asio_queue*);
-        boost_asio_queue::boost_asio_queue(const asio_params& p) : 
+        void run_thread(tcp_queue*);
+        tcp_queue::tcp_queue(const asio_params& p) : 
             _p(p), _done{false},
             _io{new ba::io_service}
         {
@@ -447,7 +447,7 @@ namespace fire
             INVARIANT(_p.mode == asio_params::delayed_connect || _run_thread);
         }
 
-        boost_asio_queue::~boost_asio_queue() 
+        tcp_queue::~tcp_queue() 
         {
             INVARIANT(_io);
             _io->stop();
@@ -457,7 +457,7 @@ namespace fire
             if(_run_thread) _run_thread->join();
         }
 
-        bool boost_asio_queue::send(const u::bytes& b)
+        bool tcp_queue::send(const u::bytes& b)
         {
             INVARIANT(_io);
             REQUIRE(_p.mode != asio_params::bind);
@@ -469,7 +469,7 @@ namespace fire
             return _out->send(b, _p.block);
         }
 
-        bool boost_asio_queue::recieve(u::bytes& b)
+        bool tcp_queue::recieve(u::bytes& b)
         {
             //if we are blocking, block until we get message
             while(_p.block && !_in_queue.empty()) u::sleep_thread(BLOCK_SLEEP);
@@ -478,13 +478,13 @@ namespace fire
             return _in_queue.pop(b);
         }
 
-        void boost_asio_queue::connect(const std::string& host, const std::string& port)
+        void tcp_queue::connect(const std::string& host, const std::string& port)
         {
             REQUIRE(_p.mode == asio_params::delayed_connect);
             REQUIRE_FALSE(host.empty());
             REQUIRE_FALSE(port.empty());
             INVARIANT(_io);
-            REQUIRE(!_out || _out->state() == connection::disconnected);
+            REQUIRE(!_out || _out->state() == tcp_connection::disconnected);
 
             _p.uri = make_tcp_address(host, port);
             _p.host = host;
@@ -497,13 +497,13 @@ namespace fire
             ENSURE(_run_thread);
         }
 
-        void boost_asio_queue::delayed_connect()
+        void tcp_queue::delayed_connect()
         try
         {
             INVARIANT(_io);
             REQUIRE(!_out);
 
-            _out.reset(new connection{*_io, _in_queue, _last_in_socket, _mutex});
+            _out.reset(new tcp_connection{*_io, _in_queue, _last_in_socket, _mutex});
             if(!_p.local_port.empty()) _out->bind(_p.local_port);
 
             ENSURE(_out);
@@ -517,11 +517,11 @@ namespace fire
             std::cerr << "error in delayed connecting `" << _p.local_port << "' : unknown error." << std::endl;
         }
 
-        void boost_asio_queue::connect()
+        void tcp_queue::connect()
         try
         {
             INVARIANT(_io);
-            REQUIRE(!_out || _out->state() == connection::disconnected);
+            REQUIRE(!_out || _out->state() == tcp_connection::disconnected);
 
             //init resolver if it does not exist
             if(!_resolver) _resolver.reset(new tcp::resolver{*_io}); 
@@ -547,7 +547,7 @@ namespace fire
             std::cerr << "error connecting to `" << _p.host << ":" << _p.port << "' : unknown error." << std::endl;
         }
 
-        void boost_asio_queue::accept()
+        void tcp_queue::accept()
         {
             INVARIANT(_io);
 
@@ -568,16 +568,16 @@ namespace fire
                 _acceptor->listen();
             }
 
-            //prepare incoming connection
-            connection_ptr new_connection{new connection{*_io, _in_queue, _last_in_socket, _mutex, _p.track_incoming, true}};
+            //prepare incoming tcp_connection
+            tcp_connection_ptr new_connection{new tcp_connection{*_io, _in_queue, _last_in_socket, _mutex, _p.track_incoming, true}};
             _acceptor->async_accept(new_connection->socket(),
-                    bind(&boost_asio_queue::handle_accept, this, new_connection,
+                    bind(&tcp_queue::handle_accept, this, new_connection,
                         ba::placeholders::error));
 
             ENSURE(_acceptor);
         }
 
-        void boost_asio_queue::handle_accept(connection_ptr nc, const boost::system::error_code& error)
+        void tcp_queue::handle_accept(tcp_connection_ptr nc, const boost::system::error_code& error)
         {
             REQUIRE(nc);
             INVARIANT(_acceptor);
@@ -587,24 +587,24 @@ namespace fire
                 std::cerr << "error accept " << nc->socket().local_endpoint() << " -> " << nc->socket().remote_endpoint() << ": " << error.message() << std::endl;
                 return;
             }
-            std::cerr << "new in connection " << nc->socket().remote_endpoint() << " " << error.message() << std::endl;
+            std::cerr << "new in tcp_connection " << nc->socket().remote_endpoint() << " " << error.message() << std::endl;
 
             _in_connections.push_back(nc);
             nc->update_remote_address();
             nc->start_read();
 
-            //prepare next incoming connection
-            connection_ptr new_connection{new connection{*_io, _in_queue, _last_in_socket, _mutex, _p.track_incoming, true}};
+            //prepare next incoming tcp_connection
+            tcp_connection_ptr new_connection{new tcp_connection{*_io, _in_queue, _last_in_socket, _mutex, _p.track_incoming, true}};
             _acceptor->async_accept(new_connection->socket(),
-                    boost::bind(&boost_asio_queue::handle_accept, this, new_connection,
+                    boost::bind(&tcp_queue::handle_accept, this, new_connection,
                         ba::placeholders::error));
 
             ENSURE(new_connection);
         }
 
-        connection* boost_asio_queue::get_socket() const
+        tcp_connection* tcp_queue::get_socket() const
         {
-            connection* p = nullptr;
+            tcp_connection* p = nullptr;
             switch(_p.mode)
             {
                 case asio_params::bind: if(_p.track_incoming) _last_in_socket.pop(p); break;
@@ -615,13 +615,13 @@ namespace fire
             return p;
         }
 
-        boost_asio_queue_ptr create_bst_message_queue(const address_components& c)
+        tcp_queue_ptr create_bst_message_queue(const address_components& c)
         {
             auto p = parse_params(c);
-            return boost_asio_queue_ptr{new boost_asio_queue{p}};
+            return tcp_queue_ptr{new tcp_queue{p}};
         }
 
-        void run_thread(boost_asio_queue* q)
+        void run_thread(tcp_queue* q)
         {
             CHECK(q);
             CHECK(q->_io);
@@ -639,17 +639,17 @@ namespace fire
                 "tcp://" + host + ":" + port + ",local_port=" + local_port;
         }
 
-        boost_asio_queue_ptr create_message_queue(
+        tcp_queue_ptr create_message_queue(
                 const std::string& address, 
                 const queue_options& defaults)
         {
             auto c = parse_address(address, defaults); 
-            boost_asio_queue_ptr p = create_bst_message_queue(c);
+            tcp_queue_ptr p = create_bst_message_queue(c);
             ENSURE(p);
             return p;
         }
 
-        socket_info get_socket_info(connection& c)
+        socket_info get_socket_info(tcp_connection& c)
         {
             socket_info r;
             auto local = c.socket().local_endpoint();
