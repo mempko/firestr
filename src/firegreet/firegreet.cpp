@@ -73,11 +73,11 @@ struct user_info
     std::string ip;
     std::string port;
     std::string response_service_address;
-    n::connection* sock;
+    n::tcp_connection* sock;
 };
 typedef std::map<std::string, user_info> user_info_map;
 
-void register_user(n::connection* sock, const ms::greet_register& r, user_info_map& m)
+void register_user(n::tcp_connection* sock, const ms::greet_register& r, user_info_map& m)
 {
     REQUIRE(sock);
     if(r.id().empty()) return;
@@ -105,7 +105,7 @@ void send_response(const ms::greet_find_response& r, const user_info& u)
     u.sock->send(u::encode(m));
 }
 
-void find_user(n::connection* sock, const ms::greet_find_request& r, user_info_map& users)
+void find_user(n::tcp_connection* sock, const ms::greet_find_request& r, user_info_map& users)
 {
     REQUIRE(sock);
 
@@ -146,8 +146,8 @@ int main(int argc, char *argv[])
     auto host = vm["host"].as<std::string>();
     auto port = vm["port"].as<std::string>();
 
-    //it is import the connection manager is created before
-    //the input connection is made. This is because tcp on
+    //it is import the tcp_connection manager is created before
+    //the input tcp_connection is made. This is because tcp on
     //linux requires that binds to the same port are made before
     //a listen is made.
     n::connection_manager con{POOL_SIZE, port};

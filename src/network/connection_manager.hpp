@@ -30,8 +30,8 @@ namespace fire
     namespace network 
     {
         typedef std::map<std::string, int> assignment_map; 
-        typedef std::vector<boost_asio_queue_ptr> connection_pool;
-        typedef std::map<std::string, connection*> connection_map; 
+        typedef std::vector<tcp_queue_ptr> tcp_connection_pool;
+        typedef std::map<std::string, tcp_connection*> tcp_connection_map; 
 
         class connection_manager
         {
@@ -43,20 +43,20 @@ namespace fire
                 bool send(const std::string& to, const util::bytes& b);
 
                 //returns socke for last recieved message
-                connection* get_socket();
+                tcp_connection* get_socket();
 
             private:
-                boost_asio_queue_ptr connect(const std::string& address);
+                tcp_queue_ptr connect(const std::string& address);
 
             private:
                 assignment_map _out;
-                connection_pool _pool;
+                tcp_connection_pool _pool;
                 std::string _local_port;
                 size_t _next_available;
                 std::mutex _mutex;
-                boost_asio_queue_ptr _in;
-                connection_map _in_connections;
-                connection_ptr_queue _last_recieved;
+                tcp_queue_ptr _in;
+                tcp_connection_map _in_connections;
+                tcp_connection_ptr_queue _last_recieved;
         };
     }
 }

@@ -46,7 +46,7 @@ namespace fire
 
             //create socket pool
             for(size_t i = 0; i < size; ++i)
-                _pool[i].reset(new boost_asio_queue{p});
+                _pool[i] = std::make_shared<boost_asio_queue>(p);
 
             //create listen socket
             auto listen_address = make_tcp_address("*", _local_port);
@@ -61,7 +61,7 @@ namespace fire
             INVARIANT(_in);
         }
 
-        tcp_queue_ptr connection_manager::connect(const std::string& address)
+        boost_asio_queue_ptr connection_manager::connect(const std::string& address)
         {
             REQUIRE_RANGE(_next_available, 0, _pool.size());
 
@@ -87,8 +87,8 @@ namespace fire
         {
             u::mutex_scoped_lock l(_mutex);
 
-            //first check in tcp_connections for matching address and use that to send
-            //otherwise use outgoing tcp_connection.
+            //first check in connections for matching address and use that to send
+            //otherwise use outgoing connection.
             auto inp = _in_connections.find(to);
             if(inp != _in_connections.end())
             {
@@ -132,7 +132,7 @@ namespace fire
             return false;
         }
 
-        tcp_connection* connection_manager::get_socket()
+        connection* connection_manager::get_socket()
         {
             INVARIANT(_in);
             return _last_recieved.pop();
