@@ -150,7 +150,7 @@ namespace fire
 
             std::string from = m.meta.from.front();
 
-            r.from.reset(new user_info);
+            r.from = std::make_shared<user_info>();
             u::decode(m.data, *r.from);
             r.from->address(from);
             r.to = "";
@@ -179,7 +179,7 @@ namespace fire
 
             std::string from = m.meta.from.front();
 
-            r.from.reset(new user_info);
+            r.from = std::make_shared<user_info>();
             u::decode(m.data, *r.from);
             r.from->address(from);
             r.to = "";

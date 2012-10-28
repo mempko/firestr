@@ -55,8 +55,8 @@ namespace fire
             INVARIANT_FALSE(_id.empty());
             INVARIANT(_user_service);
 
-            _mail.reset(new m::mailbox{_id});
-            _sender.reset(new ms::sender{_user_service, _mail});
+            _mail = std::make_shared<m::mailbox>(_id);
+            _sender = std::make_shared<ms::sender>(_user_service, _mail);
 
             INVARIANT(_mail);
             INVARIANT(_sender);

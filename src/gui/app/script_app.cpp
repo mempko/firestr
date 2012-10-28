@@ -95,9 +95,9 @@ namespace fire
                 INVARIANT(_session);
                 INVARIANT(_app);
 
-                _mail.reset(new m::mailbox{_id});
-                _sender.reset(new ms::sender{_session->user_service(), _mail});
-                _api.reset(new lua_script_api{_contacts, _sender, _session, root(), layout()});
+                _mail = std::make_shared<m::mailbox>(_id);
+                _sender = std::make_shared<ms::sender>(_session->user_service(), _mail);
+                _api = std::make_shared<lua_script_api>(_contacts, _sender, _session, root(), layout());
 
                 //run script
                 _api->run(_app->code());

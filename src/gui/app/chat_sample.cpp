@@ -102,8 +102,8 @@ namespace fire
                 INVARIANT(layout());
                 INVARIANT(_session);
 
-                _mail.reset(new m::mailbox{_id});
-                _sender.reset(new ms::sender{_session->user_service(), _mail});
+                _mail = std::make_shared<m::mailbox>(_id);
+                _sender = std::make_shared<ms::sender>(_session->user_service(), _mail);
 
                 //message list
                 _messages = new list;

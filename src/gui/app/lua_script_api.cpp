@@ -206,7 +206,7 @@ namespace fire
                     .set("enable", &widget_ref::enable)
                     .set("disable", &widget_ref::disable);
 
-                state.reset(new SLB::Script{&manager});
+                state = std::make_shared<SLB::Script>(&manager);
                 state->set("app", this);
 
                 ENSURE(state);

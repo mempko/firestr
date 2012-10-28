@@ -125,7 +125,7 @@ namespace fire
             if(ok && !r.isEmpty()) name = convert(r);
             else return {};
 
-            us::local_user_ptr user{new us::local_user{name}};
+            auto user = std::make_shared<us::local_user>(name);
             us::save_user(home, *user);
 
             ENSURE(user);
@@ -142,7 +142,11 @@ namespace fire
         {
             if(_context.stun_server.empty() || _context.stun_port.empty()) return ;
 
-            _stun.reset(new n::stun_gun{this, _context.stun_server, _context.stun_port, _context.port});
+            _stun = std::make_shared<n::stun_gun>(
+                    this, 
+                    _context.stun_server, 
+                    _context.stun_port, 
+                    _context.port);
 
             ENSURE(_stun);
         }
@@ -152,11 +156,11 @@ namespace fire
             REQUIRE(!_master);
 
             //create post office to handle incoming and outgoing messages
-            _master.reset(new m::master_post_office{_context.host, _context.port});
+            _master = std::make_shared<m::master_post_office>(_context.host, _context.port);
 
             //create mailbox just for gui specific messages.
             //This mailbox is not connected to a post as only internally accessible
-            _mail.reset(new m::mailbox{GUI_MAIL});
+            _mail = std::make_shared<m::mailbox>(GUI_MAIL);
             INVARIANT(_master);
             INVARIANT(_mail);
         }
@@ -381,13 +385,13 @@ namespace fire
                 _stun
             };
 
-            _user_service.reset(new us::user_service{uc});
+            _user_service = std::make_shared<us::user_service>(uc);
             _master->add(_user_service->mail());
 
-            _session_service.reset(new s::session_service{_master, _user_service, _mail});
+            _session_service = std::make_shared<s::session_service>(_master, _user_service, _mail);
             _master->add(_session_service->mail());
 
-            _app_service.reset(new a::app_service{_user_service, _mail});
+            _app_service = std::make_shared<a::app_service>(_user_service, _mail);
 
             ENSURE(_user_service);
             ENSURE(_session_service);

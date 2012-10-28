@@ -120,9 +120,9 @@ namespace fire
                 layout()->addWidget(_canvas, 0, 0, 1, 2);
                 layout()->addWidget(_output, 1, 0, 1, 2);
 
-                _mail.reset(new m::mailbox{_id});
-                _sender.reset(new ms::sender{_session->user_service(), _mail});
-                _api.reset(new lua_script_api{_contacts, _sender, _session, _canvas, _canvas_layout, _output});
+                _mail = std::make_shared<m::mailbox>(_id);
+                _sender = std::make_shared<ms::sender>(_session->user_service(), _mail);
+                _api = std::make_shared<lua_script_api>(_contacts, _sender, _session, _canvas, _canvas_layout, _output);
 
                 //text edit
                 _script = new QTextEdit;
@@ -219,7 +219,7 @@ namespace fire
                     if(ok && !r.isEmpty()) name = gui::convert(r);
                     else return;
 
-                    _app.reset(new app);
+                    _app = std::make_shared<app>();
                     _app->name(name);
                 }
 
