@@ -183,6 +183,7 @@ namespace fire
         void connection::start_read()
         {
             INVARIANT(_socket);
+            if(!_socket->is_open()) return;
 
             //read message header
             ba::async_read_until(*_socket, _in_buffer, ':',
