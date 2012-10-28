@@ -94,7 +94,7 @@ namespace fire
             REQUIRE(user_service);
             REQUIRE(mail());
 
-            _sender.reset(new ms::sender{_user_service, mail()});
+            _sender = std::make_shared<ms::sender>(_user_service, mail());
 
             INVARIANT(_post);
             INVARIANT(_user_service);
@@ -157,7 +157,7 @@ namespace fire
             if(sp == _sessions.end())
             {
                 //create new session
-                s.reset(new session{id, _user_service, _post});
+                s = std::make_shared<session>(id, _user_service, _post);
                 _sessions[id] = s;
 
                 //add new session to post office

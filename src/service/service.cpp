@@ -73,7 +73,7 @@ namespace fire
         {
             REQUIRE_FALSE(address.empty());
 
-            _mail.reset(new m::mailbox{_address});
+            _mail = std::make_shared<m::mailbox>(_address);
 
             //start user thread
             _thread.reset(new std::thread{service_thread, this});

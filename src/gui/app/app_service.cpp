@@ -68,7 +68,7 @@ namespace fire
                 REQUIRE(user_service);
                 REQUIRE(mail());
 
-                _sender.reset(new ms::sender{_user_service, mail()});
+                _sender = std::make_shared<ms::sender>(_user_service, mail());
                 _app_home = get_app_home(_user_service->home());
                 create_directory(_app_home);
                 load_apps();

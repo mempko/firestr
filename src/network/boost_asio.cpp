@@ -428,10 +428,9 @@ namespace fire
 
         void run_thread(boost_asio_queue*);
         boost_asio_queue::boost_asio_queue(const asio_params& p) : 
-            _p(p), _done{false}
+            _p(p), _done{false},
+            _io{new ba::io_service}
         {
-            _io.reset(new ba::io_service);
-
             switch(_p.mode)
             {
                 case asio_params::bind: accept(); break;
