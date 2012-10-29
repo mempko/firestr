@@ -40,7 +40,13 @@ namespace fire
         class tcp_connection;
         typedef util::queue<tcp_connection*> tcp_connection_ptr_queue;
 
-        class tcp_connection
+        class connection
+        {
+            public:
+            virtual bool send(const fire::util::bytes& b, bool block) = 0;
+        };
+
+        class tcp_connection : public connection
         {
             public:
                 enum con_state{connecting, connected, disconnected};
@@ -54,7 +60,7 @@ namespace fire
                         bool con = false);
                 ~tcp_connection();
             public:
-                bool send(const fire::util::bytes& b, bool block = false);
+                virtual bool send(const fire::util::bytes& b, bool block = false);
                 void bind(const std::string& port);
                 void connect(boost::asio::ip::tcp::endpoint);
                 void start_read();
@@ -105,6 +111,31 @@ namespace fire
 
         typedef std::shared_ptr<tcp_connection> tcp_connection_ptr;
         typedef std::vector<tcp_connection_ptr> tcp_connections;
+
+        struct udp_endpoint
+        {
+            std::string addresss;
+            std::string port;
+        };
+
+        typedef std::unique_ptr<boost::asio::ip::udp::resolver> udp_resolver_ptr;
+        typedef std::unique_ptr<boost::asio::ip::udp::socket> udp_socket_ptr;
+
+        class udp_connection : public connection
+        {
+            public:
+                udp_connection(
+                        const udp_endpoint& ep,
+                        boost::asio::io_service& io, 
+                        std::mutex& in_mutex);
+            public:
+                virtual bool send(const fire::util::bytes& b, bool block = false);
+
+            private:
+                byte_queue _out_queue;
+                util::bytes _out_buffer;
+                udp_socket_ptr _socket;
+        };
 
         struct asio_params
         {

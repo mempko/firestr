@@ -46,7 +46,7 @@ namespace fire
 
             //create socket pool
             for(size_t i = 0; i < size; ++i)
-                _pool[i].reset(new boost_asio_queue{p});
+                _pool[i] = std::make_shared<tcp_queue>(p);
 
             //create listen socket
             auto listen_address = make_tcp_address("*", _local_port);
