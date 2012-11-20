@@ -34,6 +34,7 @@ namespace fire
         {
             //create outgoing params
             asio_params p = {
+                asio_params::tcp, 
                 asio_params::delayed_connect, 
                 "", //uri
                 "", //host

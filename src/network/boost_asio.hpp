@@ -38,7 +38,9 @@ namespace fire
         typedef std::unique_ptr<boost::asio::ip::tcp::socket> tcp_socket_ptr;
 
         class tcp_connection;
+        class udp_connection;
         typedef util::queue<tcp_connection*> tcp_connection_ptr_queue;
+        typedef util::queue<udp_connection*> udp_connection_ptr_queue;
 
         class connection
         {
@@ -121,6 +123,14 @@ namespace fire
         typedef std::unique_ptr<boost::asio::ip::udp::resolver> udp_resolver_ptr;
         typedef std::unique_ptr<boost::asio::ip::udp::socket> udp_socket_ptr;
 
+        struct udp_chunk
+        {
+            uint64_t sequence;
+            int chunk;
+            util::bytes data;
+        };
+        typedef util::queue<udp_chunk> chunk_queue;
+
         class udp_connection : public connection
         {
             public:
@@ -131,14 +141,26 @@ namespace fire
             public:
                 virtual bool send(const fire::util::bytes& b, bool block = false);
 
+            public:
+                void bind(const std::string& port);
+                void do_send(bool force);
+                void handle_write(const boost::system::error_code& error);
+
             private:
-                byte_queue _out_queue;
+                chunk_queue _out_queue;
                 util::bytes _out_buffer;
                 udp_socket_ptr _socket;
+                udp_endpoint _ep;
+                uint64_t _sequence;
+                bool _writing;
         };
+
+        typedef std::shared_ptr<udp_connection> udp_connection_ptr;
+        typedef std::vector<udp_connection_ptr> udp_connections;
 
         struct asio_params
         {
+            enum endpoint_type { tcp, udp} type;
             enum connect_mode {bind, connect, delayed_connect} mode; 
             std::string uri;
             std::string host;
@@ -147,6 +169,33 @@ namespace fire
             bool block;
             double wait;
             bool track_incoming;
+        };
+
+
+        typedef std::vector<util::bytes>  chunked_message;
+        typedef std::map<size_t,chunked_message> incoming_message_buffers;
+        typedef std::map<std::string, incoming_message_buffers> incoming_messages;
+
+        class udp_queue : public message_queue
+        {
+            public:
+                udp_queue(const asio_params& p);
+                virtual ~udp_queue();
+
+            public:
+                virtual bool send(const util::bytes& b);
+                virtual bool recieve(util::bytes& b);
+
+            private:
+                asio_params _p;
+                asio_service_ptr _io;
+                util::thread_uptr _run_thread;
+
+                udp_connection_ptr _out;
+                incoming_messages _incoming;
+                byte_queue _in_queue;
+                mutable std::mutex _mutex;
+                bool _done;
         };
 
         class tcp_queue : public message_queue

@@ -46,6 +46,10 @@ namespace fire
         {
             const size_t BLOCK_SLEEP = 10;
             const int RETRIES = 3;
+            const size_t UDP_CHuNK_SIZE = 1024;
+            const size_t SEQUENCE_BASE = 0;
+            const size_t CHUNK_BASE = 8;
+            const size_t MESSAGE_BASE = 12;
 
             asio_params::connect_mode determine_connection_mode(const queue_options& o)
             {
@@ -241,7 +245,7 @@ namespace fire
                 std::cerr << "error connecting to `" << _remote_address << "' : " << error.message() << std::endl;
         }
 
-        u::bytes encode_wire(const u::bytes data)
+        u::bytes encode_tcp_wire(const u::bytes data)
         {
             auto m = u::encode(data);
             u::bytes encoded;
@@ -278,7 +282,7 @@ namespace fire
             _writing = true;
 
             //encode bytes to wire format
-            _out_buffer = encode_wire(_out_queue.front());
+            _out_buffer = encode_tcp_wire(_out_queue.front());
 
             ba::async_write(*_socket,
                     ba::buffer(&_out_buffer[0], _out_buffer.size()),
@@ -660,6 +664,141 @@ namespace fire
             r.remote_port = boost::lexical_cast<std::string>(remote.port());
 
             return r;
+        }
+
+        //plan
+        //when recieving data on a udp socket
+        //each packet will have: 
+        //      1. message sequence number, 
+        //      2. chunk sequence number 
+        //      3. number of chunks in message
+        //
+        //      we keep track of messages by incoming port and address in the 
+        //      incoming_messages map.
+        //
+        //      which has a map of messages being constructed.
+        //      
+        //      when a chunk is recieved, it is put in the poper slot in the 
+        //      buffer.
+        //
+        //      if a message is complete, it is added to the in_queue and removed
+        //      from the buffers.
+        //
+        //      I will have to come up with a way to remove stale buffers.
+        //
+        //      This way out of order udp packets will be ordered
+        //      and we will also know which messages did not get completed.
+        //      maybe in the future i'll send ACK type messages for all chunks recieved
+        //      and do something like TCP over UDP.
+        //
+        // Sending a message is simpler
+        //
+        //  each message is split by chunks (a bit smaller than udp packet limit)
+        //  and send across the network as these chunks. 
+        //
+        //
+        udp_connection::udp_connection(
+                const udp_endpoint& ep,
+                boost::asio::io_service& io, 
+                std::mutex& in_mutex) :
+            _ep(ep),
+            _socket{new udp::socket{io}},
+            _writing{false}
+        {
+            boost::system::error_code error;
+            _socket->open(udp::v4(), error);
+
+            INVARIANT(_socket);
+        }
+
+        bool udp_connection::send(const fire::util::bytes& b, bool block)
+        {
+            INVARIANT(_socket);
+
+        }
+
+        void write_be(u::bytes& b, size_t offset, uint64_t v)
+        {
+            REQUIRE_GREATER_EQUAL(b.size() - offset, sizeof(uint64_t));
+
+            b[offset]     = (v >> 56) & 0xFF;
+            b[offset + 1] = (v >> 48) & 0xFF;
+            b[offset + 2] = (v >> 40) & 0xFF;
+            b[offset + 3] = (v >> 32) & 0xFF;
+            b[offset + 4] = (v >> 24) & 0xFF;
+            b[offset + 5] = (v >> 16) & 0xFF;
+            b[offset + 6] = (v >>  8) & 0xFF;
+            b[offset + 7] =  v        & 0xFF;
+        }
+
+        void write_be(u::bytes& b, size_t offset, int v)
+        {
+            REQUIRE_GREATER_EQUAL(b.size() - offset, sizeof(int));
+
+            b[offset]     = (v >> 24) & 0xFF;
+            b[offset + 1] = (v >> 16) & 0xFF;
+            b[offset + 2] = (v >>  8) & 0xFF;
+            b[offset + 3] =  v        & 0xFF;
+        }
+
+        u::bytes encode_udp_wire(const udp_chunk& ch)
+        {
+            const size_t header = sizeof(uint64_t) + sizeof(int);
+            u::bytes r;
+            r.resize(header + ch.data.size());
+
+            //write sequence number
+            write_be(r, SEQUENCE_BASE, ch.sequence);
+
+            //write chunk number
+            write_be(r, CHUNK_BASE, ch.chunk);
+
+            //write message
+            std::copy(ch.data.begin(), ch.data.end(), r.begin() + MESSAGE_BASE);
+
+            return r;
+        }
+
+        udp_chunk decode_udp_wire(const u::bytes& b)
+        {
+            REQUIRE_GREATER_EQUAL(b.size(), sizeof(uint64_t) + 2* sizeof(int));
+
+            udp_chunk ch;
+
+        }
+
+        void udp_connection::do_send(bool force)
+        {
+            ENSURE(_socket);
+
+            //check to see if a write is in progress
+            if(!force && _writing) return;
+
+            REQUIRE_FALSE(_out_queue.empty());
+
+            _writing = true;
+
+            //encode bytes to wire format
+            _out_buffer = encode_udp_wire(_out_queue.front());
+
+            _socket->async_send(ba::buffer(&_out_buffer[0], _out_buffer.size()),
+                    boost::bind(&udp_connection::handle_write, this,
+                        ba::placeholders::error));
+
+            ENSURE(_writing);
+        }
+
+        void udp_connection::handle_write(const boost::system::error_code& error)
+        {
+
+        }
+
+        void udp_connection::bind(const std::string& port)
+        {
+            INVARIANT(_socket);
+            auto p = boost::lexical_cast<short unsigned int>(port);
+            boost::system::error_code error;
+            _socket->bind(udp::endpoint(udp::v4(), p), error);
         }
     }
 }
