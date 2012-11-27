@@ -48,9 +48,12 @@ namespace fire
             const int RETRIES = 3;
             const size_t UDP_CHuNK_SIZE = 1024;
             const size_t SEQUENCE_BASE = 0;
-            const size_t CHUNK_BASE = 8;
-            const size_t MESSAGE_BASE = 12;
-            const size_t HEADER_SIZE = sizeof(uint64_t) + sizeof(int);
+            const size_t CHUNK_TOTAL_BASE = 8;
+            const size_t CHUNK_BASE = 12;
+            const size_t MESSAGE_BASE = 16;
+
+            //<sequence num> <chunk total> <chunk>
+            const size_t HEADER_SIZE = sizeof(uint64_t) + sizeof(int) + sizeof(int);
 
             asio_params::connect_mode determine_connection_mode(const queue_options& o)
             {
@@ -776,6 +779,9 @@ namespace fire
             //write sequence number
             write_be(r, SEQUENCE_BASE, ch.sequence);
 
+            //write total chunks
+            write_be(r, CHUNK_TOTAL_BASE, ch.total_chunks);
+
             //write chunk number
             write_be(r, CHUNK_BASE, ch.chunk);
 
@@ -793,8 +799,12 @@ namespace fire
             CHECK_GREATER(data_size, 0);
 
             udp_chunk ch;
+
             //read sequence number
             read_be(b, SEQUENCE_BASE, ch.sequence);
+
+            //write total chunks 
+            read_be(b, CHUNK_TOTAL_BASE, ch.total_chunks);
 
             //read chunk number
             read_be(b, CHUNK_BASE, ch.chunk);
