@@ -126,6 +126,7 @@ namespace fire
         struct udp_chunk
         {
             uint64_t sequence;
+            int total_chunks;
             int chunk;
             util::bytes data;
         };
