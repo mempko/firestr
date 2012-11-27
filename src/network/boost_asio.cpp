@@ -50,6 +50,7 @@ namespace fire
             const size_t SEQUENCE_BASE = 0;
             const size_t CHUNK_BASE = 8;
             const size_t MESSAGE_BASE = 12;
+            const size_t HEADER_SIZE = sizeof(uint64_t) + sizeof(int);
 
             asio_params::connect_mode determine_connection_mode(const queue_options& o)
             {
@@ -741,11 +742,36 @@ namespace fire
             b[offset + 3] =  v        & 0xFF;
         }
 
+        void read_be(const u::bytes& b, size_t offset, uint64_t& v)
+        {
+            REQUIRE_GREATER_EQUAL(b.size() - offset, sizeof(uint64_t));
+
+            v = (static_cast<uint64_t>(b[offset])     << 56) |
+                (static_cast<uint64_t>(b[offset + 1]) << 48) |
+                (static_cast<uint64_t>(b[offset + 2]) << 40) |
+                (static_cast<uint64_t>(b[offset + 3]) << 32) |
+                (static_cast<uint64_t>(b[offset + 4]) << 24) |
+                (static_cast<uint64_t>(b[offset + 5]) << 16) |
+                (static_cast<uint64_t>(b[offset + 6]) << 8)  |
+                (static_cast<uint64_t>(b[offset + 7]));
+        }
+
+        void read_be(const u::bytes& b, size_t offset, int& v)
+        {
+            REQUIRE_GREATER_EQUAL(b.size() - offset, sizeof(uint64_t));
+
+            v = (static_cast<int>(b[offset])     << 24) |
+                (static_cast<int>(b[offset + 1]) << 16) |
+                (static_cast<int>(b[offset + 2]) << 8)  |
+                (static_cast<int>(b[offset + 3]));
+        }
+
         u::bytes encode_udp_wire(const udp_chunk& ch)
         {
-            const size_t header = sizeof(uint64_t) + sizeof(int);
+            REQUIRE_FALSE(ch.data.empty());
+
             u::bytes r;
-            r.resize(header + ch.data.size());
+            r.resize(HEADER_SIZE + ch.data.size());
 
             //write sequence number
             write_be(r, SEQUENCE_BASE, ch.sequence);
@@ -759,12 +785,25 @@ namespace fire
             return r;
         }
 
-        udp_chunk decode_udp_wire(const u::bytes& b)
+        udp_chunk dencode_udp_wire(const u::bytes& b)
         {
-            REQUIRE_GREATER_EQUAL(b.size(), sizeof(uint64_t) + 2* sizeof(int));
+            REQUIRE_GREATER(b.size(), HEADER_SIZE);
+
+            const size_t data_size = b.size() - HEADER_SIZE;
+            CHECK_GREATER(data_size, 0);
 
             udp_chunk ch;
+            //read sequence number
+            read_be(b, SEQUENCE_BASE, ch.sequence);
 
+            //read chunk number
+            read_be(b, CHUNK_BASE, ch.chunk);
+
+            //copy message
+            ch.data.resize(data_size);
+            std::copy(b.begin() + MESSAGE_BASE, b.end(), ch.data.begin());
+
+            return ch;
         }
 
         void udp_connection::do_send(bool force)
