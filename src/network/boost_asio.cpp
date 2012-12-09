@@ -46,7 +46,8 @@ namespace fire
         {
             const size_t BLOCK_SLEEP = 10;
             const int RETRIES = 3;
-            const size_t UDP_CHuNK_SIZE = 1024;
+            const size_t MAX_UDP_BUFF_SIZE = 1024; //in bytes
+            const size_t UDP_CHuNK_SIZE = 508; //in bytes
             const size_t SEQUENCE_BASE = 0;
             const size_t CHUNK_TOTAL_BASE = 8;
             const size_t CHUNK_BASE = 12;
@@ -703,11 +704,16 @@ namespace fire
         //
         udp_connection::udp_connection(
                 const udp_endpoint& ep,
+                byte_queue& in,
                 boost::asio::io_service& io, 
                 std::mutex& in_mutex) :
             _ep(ep),
+            _in_queue(in),
             _socket{new udp::socket{io}},
-            _writing{false}
+            _in_mutex(in_mutex),
+            _io(io),
+            _writing{false},
+            _in_buffer(MAX_UDP_BUFF_SIZE)
         {
             boost::system::error_code error;
             _socket->open(udp::v4(), error);
@@ -715,9 +721,63 @@ namespace fire
             INVARIANT(_socket);
         }
 
+        void udp_connection::chunkify(const fire::util::bytes& b)
+        {
+            REQUIRE_FALSE(b.empty());
+
+            int total_chunks = b.size() < UDP_CHuNK_SIZE ? 
+                1 : (b.size() / UDP_CHuNK_SIZE) + 1;
+
+            CHECK_GREATER(total_chunks, 0);
+
+            int chunk = 0;
+            size_t s = 0;
+            size_t e = std::min(b.size(), UDP_CHuNK_SIZE);
+
+            CHECK_GREATER(total_chunks, 0);
+
+            while(s < b.size())
+            {
+                size_t size = e - s;
+                CHECK_GREATER(size, 0);
+
+                //create chunk
+                udp_chunk c;
+                c.sequence = _sequence;
+                c.total_chunks = total_chunks;
+                c.chunk = chunk;
+                c.data.resize(size);
+                std::copy(b.begin() + s, b.begin() + e, c.data.begin());
+
+                //push chunk to queue
+                _out_queue.push(c);
+
+                //step
+                chunk++;
+                s = e;
+                e+=UDP_CHuNK_SIZE;
+                if(e > b.size()) e = b.size();
+            }
+
+            CHECK_EQUAL(chunk, total_chunks);
+
+        }
+
         bool udp_connection::send(const fire::util::bytes& b, bool block)
         {
             INVARIANT(_socket);
+            if(b.empty()) return false;
+
+            _sequence++;
+            chunkify(b);
+
+            //post to do send
+            _io.post(boost::bind(&udp_connection::do_send, this, false));
+
+            //if we are blocking, block until all messages are sent
+            while(block && !_out_queue.empty()) u::sleep_thread(BLOCK_SLEEP);
+
+            return true;
 
         }
 
@@ -839,7 +899,23 @@ namespace fire
 
         void udp_connection::handle_write(const boost::system::error_code& error)
         {
+            //remove sent message
+            //TODO: maybe do a retry?
+            _out_queue.pop_front();
 
+            if(error) std::cerr << "error sending chunk, " << _out_queue.size() << " remaining..." << std::endl;
+            else      std::cerr << "sent chunk, " << _out_queue.size() << " remaining..." << std::endl;
+
+            //if we are done sending finish the async write chain
+            if(_out_queue.empty()) 
+            {
+                _writing = false;
+                return;
+            }
+
+            //otherwise do another async write
+            do_send(true);
+            ENSURE(_writing);
         }
 
         void udp_connection::bind(const std::string& port)
@@ -848,6 +924,89 @@ namespace fire
             auto p = boost::lexical_cast<short unsigned int>(port);
             boost::system::error_code error;
             _socket->bind(udp::endpoint(udp::v4(), p), error);
+        }
+
+        void udp_connection::start_read()
+        {
+            _socket->async_receive_from(
+                   ba::buffer(_in_buffer, MAX_UDP_BUFF_SIZE), _in_endpoint,
+                    boost::bind(&udp_connection::handle_read, this,
+                        boost::asio::placeholders::error,
+                        boost::asio::placeholders::bytes_transferred));
+        }
+
+        bool insert_chunk(const udp_chunk& c, working_udp_messages& w, u::bytes& complete_message)
+        {
+            auto& wm = w[c.sequence];
+            if(wm.chunks.empty())
+            {
+                if(c.total_chunks == 0) return false;
+
+                wm.chunks.resize(c.total_chunks);
+                wm.set.resize(c.total_chunks);
+            }
+
+            CHECK_FALSE(wm.chunks.empty());
+
+            if(c.chunk >= wm.chunks.size()) return false;
+            if(c.total_chunks != wm.chunks.size()) return false;
+            if(wm.set[c.chunk]) return false;
+
+            wm.chunks[c.chunk] = c;
+            wm.set[c.chunk] = 1;
+
+            //if message is not complete return false
+            if(wm.set.count() != wm.chunks.size()) return false;
+
+            //get total size
+            size_t total_message_size = 0; 
+            for(const auto& cc : wm.chunks) 
+                total_message_size += cc.data.size();
+
+            //combine chunks to recreate original message
+            complete_message.resize(total_message_size);
+            size_t s = 0;
+            for(const auto& cc : wm.chunks) 
+            {
+                std::copy(cc.data.begin(), cc.data.end(), complete_message.begin() + s);
+                s += cc.data.size();
+            }
+            CHECK_EQUAL(s, total_message_size);
+
+            //remove message from working
+            w.erase(c.sequence);
+            return true;
+        }
+
+        void udp_connection::handle_read(const boost::system::error_code& error, size_t transferred)
+        {
+            if(error)
+            {
+                std::cerr << "error getting message of size " << transferred  << ". " << error.message() << std::endl;
+                start_read();
+                return;
+            }
+
+            //get bytes
+            u::bytes data;
+            CHECK_LESS_EQUAL(_in_buffer.size(), transferred);
+            data.resize(transferred);
+            std::copy(_in_buffer.begin(), _in_buffer.begin() + transferred, data.begin());
+
+            //decode message
+            auto chunk = dencode_udp_wire(data);
+
+            //insert chunk to working structure
+            bool complete_message = insert_chunk(chunk, _in_working, data);
+
+            //add message to in queue
+            if(complete_message)
+            {
+                u::mutex_scoped_lock l(_in_mutex);
+                _in_queue.push(data);
+            }
+
+            start_read();
         }
     }
 }
