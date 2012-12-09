@@ -26,6 +26,7 @@
 
 #include <boost/cstdint.hpp>
 #include <boost/asio.hpp>
+#include <boost/dynamic_bitset.hpp>
 
 namespace fire
 {
@@ -122,21 +123,32 @@ namespace fire
 
         typedef std::unique_ptr<boost::asio::ip::udp::resolver> udp_resolver_ptr;
         typedef std::unique_ptr<boost::asio::ip::udp::socket> udp_socket_ptr;
+        typedef uint64_t sequence_type;
 
         struct udp_chunk
         {
-            uint64_t sequence;
+            sequence_type sequence;
             int total_chunks;
             int chunk;
             util::bytes data;
         };
         typedef util::queue<udp_chunk> chunk_queue;
+        typedef std::vector<udp_chunk> udp_chunks;
+
+        struct working_udp_chunks
+        {
+            udp_chunks chunks;
+            boost::dynamic_bitset<> set;
+        };
+
+        typedef std::map<sequence_type, working_udp_chunks> working_udp_messages;
 
         class udp_connection : public connection
         {
             public:
                 udp_connection(
                         const udp_endpoint& ep,
+                        byte_queue& in,
                         boost::asio::io_service& io, 
                         std::mutex& in_mutex);
             public:
@@ -146,10 +158,26 @@ namespace fire
                 void bind(const std::string& port);
                 void do_send(bool force);
                 void handle_write(const boost::system::error_code& error);
+                void handle_read(const boost::system::error_code& error, size_t transferred);
 
             private:
+                void start_read();
+                void chunkify(const fire::util::bytes& b);
+
+            private:
+                //reading
+                util::bytes _in_buffer;
+                boost::asio::ip::udp::endpoint _in_endpoint;
+                working_udp_messages _in_working;
+                byte_queue& _in_queue;
+                std::mutex& _in_mutex;
+
+                //writing
                 chunk_queue _out_queue;
                 util::bytes _out_buffer;
+
+                //other
+                boost::asio::io_service& _io;
                 udp_socket_ptr _socket;
                 udp_endpoint _ep;
                 uint64_t _sequence;
