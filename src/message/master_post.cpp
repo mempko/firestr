@@ -52,9 +52,8 @@ namespace fire
                 }
 
                 //get socket info of the message just recieved.
-                n::socket_info i;
                 auto socket = o->_connections.get_socket();
-                if(socket) i = n::get_socket_info(*socket);
+                CHECK(socket);
 
                 //parse message
                 std::stringstream s(u::to_str(data));
@@ -62,7 +61,7 @@ namespace fire
                 s >> m;
 
                 //insert the from_ip
-                m.meta.extra["from_ip"] = i.remote_address;
+                m.meta.extra["from_ip"] = socket->get_endpoint().address;
 
                 //pop off master address
                 m.meta.to.pop_front();

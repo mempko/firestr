@@ -44,6 +44,7 @@ namespace fire
     {
         namespace
         {
+            const std::string TCP = "tcp"; 
             const size_t BLOCK_SLEEP = 10;
             const int RETRIES = 3;
             const size_t MAX_UDP_BUFF_SIZE = 1024; //in bytes
@@ -247,7 +248,7 @@ namespace fire
             }
 
             if(error)
-                std::cerr << "error connecting to `" << _remote_address << "' : " << error.message() << std::endl;
+                std::cerr << "error connecting to `" << _ep.address << ":" << _ep.port << "' : " << error.message() << std::endl;
         }
 
         u::bytes encode_tcp_wire(const u::bytes data)
@@ -412,31 +413,38 @@ namespace fire
             return *_socket;
         }
 
-        const std::string& tcp_connection::remote_address() const
+        endpoint tcp_connection::get_endpoint() const
         {
-            return _remote_address;
+            return _ep;
         }
 
-        void tcp_connection::remote_address(const std::string& a)
+        void tcp_connection::update_endpoint(const std::string& address, const std::string& port)
         {
-            REQUIRE_FALSE(a.empty());
-            _remote_address = a;
+            REQUIRE_FALSE(address.empty());
+            REQUIRE_FALSE(port.empty());
+
+            _ep.protocol = TCP;
+            _ep.address = address;
+            _ep.port = port;
+
+            ENSURE_FALSE(_ep.address.empty());
+            ENSURE_FALSE(_ep.port.empty());
         }
 
-        void tcp_connection::update_remote_address()
+        void tcp_connection::update_endpoint()
         {
             INVARIANT(_socket);
 
             auto remote = _socket->remote_endpoint();
-            auto ip = remote.address().to_string();
-            auto port = boost::lexical_cast<std::string>(remote.port());
+            _ep.protocol = TCP;
+            _ep.address = remote.address().to_string();
+            _ep.port = boost::lexical_cast<std::string>(remote.port());
 
-            _remote_address = make_tcp_address(ip, port);
-
-            ENSURE_FALSE(_remote_address.empty());
+            ENSURE_FALSE(_ep.address.empty());
+            ENSURE_FALSE(_ep.port.empty());
         }
 
-        void run_thread(tcp_queue*);
+        void tcp_run_thread(tcp_queue*);
         tcp_queue::tcp_queue(const asio_params& p) : 
             _p(p), _done{false},
             _io{new ba::io_service}
@@ -450,7 +458,7 @@ namespace fire
             }
 
             if(_p.mode != asio_params::delayed_connect)
-                _run_thread.reset(new std::thread{run_thread, this});
+                _run_thread.reset(new std::thread{tcp_run_thread, this});
 
             INVARIANT(_io);
             INVARIANT(_p.mode == asio_params::delayed_connect || _run_thread);
@@ -502,7 +510,7 @@ namespace fire
             connect();
 
             //start up engine
-            _run_thread.reset(new std::thread{run_thread, this});
+            _run_thread.reset(new std::thread{tcp_run_thread, this});
             ENSURE(_run_thread);
         }
 
@@ -541,7 +549,7 @@ namespace fire
 
             if(!_out) delayed_connect();
 
-            _out->remote_address(_p.uri);
+            _out->update_endpoint(_p.host, _p.port);
             _out->connect(endpoint);
 
             ENSURE(_out);
@@ -599,7 +607,7 @@ namespace fire
             std::cerr << "new in tcp_connection " << nc->socket().remote_endpoint() << " " << error.message() << std::endl;
 
             _in_connections.push_back(nc);
-            nc->update_remote_address();
+            nc->update_endpoint();
             nc->start_read();
 
             //prepare next incoming tcp_connection
@@ -611,7 +619,7 @@ namespace fire
             ENSURE(new_connection);
         }
 
-        tcp_connection* tcp_queue::get_socket() const
+        connection* tcp_queue::get_socket() const
         {
             tcp_connection* p = nullptr;
             switch(_p.mode)
@@ -630,7 +638,7 @@ namespace fire
             return tcp_queue_ptr{new tcp_queue{p}};
         }
 
-        void run_thread(tcp_queue* q)
+        void tcp_run_thread(tcp_queue* q)
         {
             CHECK(q);
             CHECK(q->_io);
@@ -658,17 +666,9 @@ namespace fire
             return p;
         }
 
-        socket_info get_socket_info(tcp_connection& c)
+        std::string make_address_str(const endpoint& e)
         {
-            socket_info r;
-            auto local = c.socket().local_endpoint();
-            auto remote = c.socket().remote_endpoint();
-            r.local_address = local.address().to_string();
-            r.local_port = boost::lexical_cast<std::string>(local.port());
-            r.remote_address = remote.address().to_string();
-            r.remote_port = boost::lexical_cast<std::string>(remote.port());
-
-            return r;
+            return e.protocol + "://" + e.address + ":" + e.port;
         }
 
         //plan
@@ -703,7 +703,7 @@ namespace fire
         //
         //
         udp_connection::udp_connection(
-                const udp_endpoint& ep,
+                const endpoint& ep,
                 byte_queue& in,
                 boost::asio::io_service& io, 
                 std::mutex& in_mutex) :
@@ -719,6 +719,30 @@ namespace fire
             _socket->open(udp::v4(), error);
 
             INVARIANT(_socket);
+        }
+
+        void udp_connection::close()
+        {
+            _io.post(boost::bind(&udp_connection::do_close, this));
+        }
+
+        void udp_connection::do_close()
+        {
+            INVARIANT(_socket);
+            u::mutex_scoped_lock l(_mutex);
+            std::cerr << "udp_connection closed " << _socket->local_endpoint() << " + " << _socket->remote_endpoint() << " error: " << _error.message() << std::endl;
+            _socket->close();
+            _writing = false;
+        }
+
+        endpoint udp_connection::get_endpoint() const
+        {
+            return _ep;
+        }
+
+        bool udp_connection::is_disconnected() const
+        {
+            return false;
         }
 
         void udp_connection::chunkify(const fire::util::bytes& b)
@@ -902,6 +926,7 @@ namespace fire
             //remove sent message
             //TODO: maybe do a retry?
             _out_queue.pop_front();
+            _error = error;
 
             if(error) std::cerr << "error sending chunk, " << _out_queue.size() << " remaining..." << std::endl;
             else      std::cerr << "sent chunk, " << _out_queue.size() << " remaining..." << std::endl;
@@ -922,8 +947,7 @@ namespace fire
         {
             INVARIANT(_socket);
             auto p = boost::lexical_cast<short unsigned int>(port);
-            boost::system::error_code error;
-            _socket->bind(udp::endpoint(udp::v4(), p), error);
+            _socket->bind(udp::endpoint(udp::v4(), p), _error);
         }
 
         void udp_connection::start_read()
@@ -982,6 +1006,7 @@ namespace fire
         {
             if(error)
             {
+                _error = error;
                 std::cerr << "error getting message of size " << transferred  << ". " << error.message() << std::endl;
                 start_read();
                 return;
@@ -996,11 +1021,8 @@ namespace fire
             //decode message
             auto chunk = dencode_udp_wire(data);
 
-            //insert chunk to working structure
-            bool complete_message = insert_chunk(chunk, _in_working, data);
-
-            //add message to in queue
-            if(complete_message)
+            //add message to in queue if we got complete message
+            if(insert_chunk(chunk, _in_working, data))
             {
                 u::mutex_scoped_lock l(_in_mutex);
                 _in_queue.push(data);
@@ -1008,5 +1030,82 @@ namespace fire
 
             start_read();
         }
+
+        void udp_run_thread(udp_queue*);
+        udp_queue::udp_queue(const asio_params& p) :
+            _p(p), _done{false},
+            _io{new ba::io_service}
+        {
+            switch(_p.mode)
+            {
+                case asio_params::bind: accept(); break;
+                case asio_params::connect: connect(); break;
+                case asio_params::delayed_connect: connect(); break;
+                default: CHECK(false && "missed case");
+            }
+
+            _run_thread.reset(new std::thread{udp_run_thread, this});
+
+            INVARIANT(_io);
+            INVARIANT(_run_thread);
+        }
+
+        void udp_queue::accept()
+        {
+            CHECK_FALSE(_in);
+            CHECK_FALSE(_out);
+
+            
+            ENSURE(_in);
+        }
+
+        void udp_queue::connect()
+        {
+            CHECK_FALSE(_in);
+            CHECK_FALSE(_out);
+
+            ENSURE(_out);
+        }
+
+        udp_queue::~udp_queue()
+        {
+            INVARIANT(_io);
+            _io->stop();
+            _done = true;
+            if(_p.wait > 0) u::sleep_thread(_p.wait);
+            if(_in) _in->close();
+            if(_out) _out->close();
+            if(_run_thread) _run_thread->join();
+        }
+
+        bool udp_queue::send(const u::bytes& b)
+        {
+            INVARIANT(_io);
+            REQUIRE(_p.mode != asio_params::bind);
+            CHECK(_out);
+
+            return _out->send(b, _p.block);
+        }
+
+        bool udp_queue::recieve(u::bytes& b)
+        {
+            //if we are blocking, block until we get message
+            while(_p.block && !_in_queue.empty()) u::sleep_thread(BLOCK_SLEEP);
+
+            //return true if we got message
+            return _in_queue.pop(b);
+        }
+
+        void udp_run_thread(udp_queue* q)
+        {
+            CHECK(q);
+            CHECK(q->_io);
+            while(!q->_done) 
+            {
+                q->_io->run_one();
+                u::sleep_thread(BLOCK_SLEEP);
+            }
+        }
+
     }
 }
