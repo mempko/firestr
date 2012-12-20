@@ -633,12 +633,6 @@ namespace fire
             return p;
         }
 
-        tcp_queue_ptr create_bst_message_queue(const address_components& c)
-        {
-            auto p = parse_params(c);
-            return tcp_queue_ptr{new tcp_queue{p}};
-        }
-
         void tcp_run_thread(tcp_queue* q)
         {
             CHECK(q);
@@ -657,12 +651,34 @@ namespace fire
                 "tcp://" + host + ":" + port + ",local_port=" + local_port;
         }
 
-        tcp_queue_ptr create_message_queue(
+        tcp_queue_ptr create_tcp_queue(const address_components& c)
+        {
+            auto p = parse_params(c);
+            return tcp_queue_ptr{new tcp_queue{p}};
+        }
+
+        tcp_queue_ptr create_tcp_queue(
                 const std::string& address, 
                 const queue_options& defaults)
         {
             auto c = parse_address(address, defaults); 
-            tcp_queue_ptr p = create_bst_message_queue(c);
+            tcp_queue_ptr p = create_tcp_queue(c);
+            ENSURE(p);
+            return p;
+        }
+
+        udp_queue_ptr create_udp_queue(const address_components& c)
+        {
+            auto p = parse_params(c);
+            return udp_queue_ptr{new udp_queue{p}};
+        }
+
+        udp_queue_ptr create_udp_queue(
+                const std::string& address, 
+                const queue_options& defaults)
+        {
+            auto c = parse_address(address, defaults); 
+            udp_queue_ptr p = create_udp_queue(c);
             ENSURE(p);
             return p;
         }

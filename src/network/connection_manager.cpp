@@ -57,7 +57,7 @@ namespace fire
                 {"block", "0"},
                 {"track_incoming", "1"}};
 
-            _in = create_message_queue(listen_address, qo);
+            _in = create_tcp_queue(listen_address, qo);
 
             INVARIANT(_in);
         }
