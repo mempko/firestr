@@ -40,13 +40,24 @@ namespace fire
 
         class tcp_connection;
         class udp_connection;
+        class connection;
         typedef util::queue<tcp_connection*> tcp_connection_ptr_queue;
         typedef util::queue<udp_connection*> udp_connection_ptr_queue;
+        typedef util::queue<connection*> connection_ptr_queue;
+
+        struct endpoint
+        {
+            std::string protocol;
+            std::string address;
+            std::string port;
+        };
 
         class connection
         {
             public:
-            virtual bool send(const fire::util::bytes& b, bool block) = 0;
+            virtual bool send(const fire::util::bytes& b, bool block = false) = 0;
+            virtual endpoint get_endpoint() const = 0;
+            virtual bool is_disconnected() const = 0;
         };
 
         class tcp_connection : public connection
@@ -64,20 +75,22 @@ namespace fire
                 ~tcp_connection();
             public:
                 virtual bool send(const fire::util::bytes& b, bool block = false);
+                virtual endpoint get_endpoint() const;
+                virtual bool is_disconnected() const;
+
+            public:
                 void bind(const std::string& port);
                 void connect(boost::asio::ip::tcp::endpoint);
                 void start_read();
                 void close();
                 bool is_connected() const;
-                bool is_disconnected() const;
                 bool is_connecting() const;
                 con_state state() const;
                 boost::asio::ip::tcp::socket& socket();
 
             public:
-                const std::string& remote_address() const;
-                void remote_address(const std::string&);
-                void update_remote_address();
+                void update_endpoint();
+                void update_endpoint(const std::string& address, const std::string& port);
 
             private:
                 void handle_connect(
@@ -99,9 +112,7 @@ namespace fire
                 tcp_connection_ptr_queue& _last_in_socket;
                 bool _track;
                 util::bytes _out_buffer;
-                std::string _src_host;
-                std::string _src_port;
-                std::string _remote_address;
+                endpoint _ep;
                 boost::asio::streambuf _in_buffer;
                 tcp_socket_ptr _socket;
                 mutable std::mutex _mutex;
@@ -114,12 +125,6 @@ namespace fire
 
         typedef std::shared_ptr<tcp_connection> tcp_connection_ptr;
         typedef std::vector<tcp_connection_ptr> tcp_connections;
-
-        struct udp_endpoint
-        {
-            std::string addresss;
-            std::string port;
-        };
 
         typedef std::unique_ptr<boost::asio::ip::udp::resolver> udp_resolver_ptr;
         typedef std::unique_ptr<boost::asio::ip::udp::socket> udp_socket_ptr;
@@ -135,6 +140,7 @@ namespace fire
         typedef util::queue<udp_chunk> chunk_queue;
         typedef std::vector<udp_chunk> udp_chunks;
 
+        //TODO: need to use endpoint as another indirection
         struct working_udp_chunks
         {
             udp_chunks chunks;
@@ -147,22 +153,26 @@ namespace fire
         {
             public:
                 udp_connection(
-                        const udp_endpoint& ep,
+                        const endpoint& ep,
                         byte_queue& in,
                         boost::asio::io_service& io, 
                         std::mutex& in_mutex);
             public:
                 virtual bool send(const fire::util::bytes& b, bool block = false);
+                virtual endpoint get_endpoint() const;
+                virtual bool is_disconnected() const;
 
             public:
                 void bind(const std::string& port);
                 void do_send(bool force);
                 void handle_write(const boost::system::error_code& error);
                 void handle_read(const boost::system::error_code& error, size_t transferred);
+                void close();
 
             private:
                 void start_read();
                 void chunkify(const fire::util::bytes& b);
+                void do_close();
 
             private:
                 //reading
@@ -179,9 +189,11 @@ namespace fire
                 //other
                 boost::asio::io_service& _io;
                 udp_socket_ptr _socket;
-                udp_endpoint _ep;
+                endpoint _ep;
                 uint64_t _sequence;
                 bool _writing;
+                mutable std::mutex _mutex;
+                boost::system::error_code _error;
         };
 
         typedef std::shared_ptr<udp_connection> udp_connection_ptr;
@@ -216,15 +228,23 @@ namespace fire
                 virtual bool recieve(util::bytes& b);
 
             private:
+                void connect();
+                void accept();
+
+            private:
                 asio_params _p;
                 asio_service_ptr _io;
                 util::thread_uptr _run_thread;
 
                 udp_connection_ptr _out;
+                udp_connection_ptr _in;
                 incoming_messages _incoming;
                 byte_queue _in_queue;
                 mutable std::mutex _mutex;
                 bool _done;
+
+            private:
+                friend void udp_run_thread(udp_queue*);
         };
 
         class tcp_queue : public message_queue
@@ -238,7 +258,7 @@ namespace fire
                 virtual bool recieve(util::bytes& b);
 
             public:
-                tcp_connection* get_socket() const;
+                connection* get_socket() const;
                 void connect(const std::string& host, const std::string& port);
 
             private:
@@ -265,7 +285,7 @@ namespace fire
                 bool _done;
 
             private:
-                friend void run_thread(tcp_queue*);
+                friend void tcp_run_thread(tcp_queue*);
         };
 
         typedef std::shared_ptr<tcp_queue> tcp_queue_ptr;
@@ -275,7 +295,7 @@ namespace fire
         std::string make_tcp_address(const std::string& host, const std::string& port, const std::string& local_port = "");
         tcp_queue_ptr create_message_queue(const std::string& address, const queue_options& defaults);
 
-        socket_info get_socket_info(tcp_connection&);
+        std::string make_address_str(const endpoint& e);
     }
 }
 

@@ -32,14 +32,6 @@ namespace fire
 {
     namespace network 
     {
-        struct socket_info
-        {
-            std::string local_address;
-            std::string local_port;
-            std::string remote_address;
-            std::string remote_port;
-        };
-
         class message_queue
         {
             public:

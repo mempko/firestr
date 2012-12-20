@@ -31,7 +31,7 @@ namespace fire
     {
         typedef std::map<std::string, int> assignment_map; 
         typedef std::vector<tcp_queue_ptr> tcp_connection_pool;
-        typedef std::map<std::string, tcp_connection*> tcp_connection_map; 
+        typedef std::map<std::string, connection*> connection_map; 
 
         class connection_manager
         {
@@ -43,7 +43,7 @@ namespace fire
                 bool send(const std::string& to, const util::bytes& b);
 
                 //returns socke for last recieved message
-                tcp_connection* get_socket();
+                connection* get_socket();
 
             private:
                 tcp_queue_ptr connect(const std::string& address);
@@ -55,8 +55,8 @@ namespace fire
                 size_t _next_available;
                 std::mutex _mutex;
                 tcp_queue_ptr _in;
-                tcp_connection_map _in_connections;
-                tcp_connection_ptr_queue _last_recieved;
+                connection_map _in_connections;
+                connection_ptr_queue _last_recieved;
         };
     }
 }

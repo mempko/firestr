@@ -112,7 +112,7 @@ namespace fire
                 auto s = _in->get_socket();
                 CHECK(s);
                 _last_recieved.push(s);
-                _in_connections[s->remote_address()] = s;
+                _in_connections[make_address_str(s->get_endpoint())] = s;
                 return true;
             }
 
@@ -133,7 +133,7 @@ namespace fire
             return false;
         }
 
-        tcp_connection* connection_manager::get_socket()
+        connection* connection_manager::get_socket()
         {
             INVARIANT(_in);
             return _last_recieved.pop();
