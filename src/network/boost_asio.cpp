@@ -45,6 +45,7 @@ namespace fire
         namespace
         {
             const std::string TCP = "tcp"; 
+            const std::string UDP = "udp"; 
             const size_t BLOCK_SLEEP = 10;
             const int RETRIES = 3;
             const size_t MAX_UDP_BUFF_SIZE = 1024; //in bytes
@@ -737,7 +738,7 @@ namespace fire
 
         endpoint udp_connection::get_endpoint() const
         {
-            return _ep;
+            return _last_in.empty() ? _ep : _last_in.pop();
         }
 
         bool udp_connection::is_disconnected() const
@@ -1026,6 +1027,9 @@ namespace fire
             {
                 u::mutex_scoped_lock l(_in_mutex);
                 _in_queue.push(data);
+
+                endpoint ep = {UDP, _in_endpoint.address().to_string(), boost::lexical_cast<std::string>(_in_endpoint.port())};
+                _last_in.push(ep);
             }
 
             start_read();
@@ -1054,7 +1058,12 @@ namespace fire
         {
             CHECK_FALSE(_in);
             CHECK_FALSE(_out);
+            INVARIANT(_io);
 
+            endpoint ep = {UDP, _p.host, _p.port};
+
+            _in = udp_connection_ptr{new udp_connection{ep, _in_queue, *_io, _mutex}};
+            _in->bind(_p.local_port);
             
             ENSURE(_in);
         }
@@ -1063,6 +1072,10 @@ namespace fire
         {
             CHECK_FALSE(_in);
             CHECK_FALSE(_out);
+            INVARIANT(_io);
+
+            endpoint ep = {UDP, _p.host, _p.port};
+            _out = udp_connection_ptr{new udp_connection{ep, _in_queue, *_io, _mutex}};
 
             ENSURE(_out);
         }

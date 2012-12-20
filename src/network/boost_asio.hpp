@@ -42,7 +42,6 @@ namespace fire
         class udp_connection;
         class connection;
         typedef util::queue<tcp_connection*> tcp_connection_ptr_queue;
-        typedef util::queue<udp_connection*> udp_connection_ptr_queue;
         typedef util::queue<connection*> connection_ptr_queue;
 
         struct endpoint
@@ -51,6 +50,8 @@ namespace fire
             std::string address;
             std::string port;
         };
+
+        typedef util::queue<endpoint> endpoint_queue;
 
         class connection
         {
@@ -181,6 +182,7 @@ namespace fire
                 working_udp_messages _in_working;
                 byte_queue& _in_queue;
                 std::mutex& _in_mutex;
+                mutable endpoint_queue _last_in;
 
                 //writing
                 chunk_queue _out_queue;
@@ -228,6 +230,7 @@ namespace fire
                 virtual bool recieve(util::bytes& b);
 
             private:
+
                 void connect();
                 void accept();
 
