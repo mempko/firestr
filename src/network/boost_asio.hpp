@@ -292,11 +292,14 @@ namespace fire
         };
 
         typedef std::shared_ptr<tcp_queue> tcp_queue_ptr;
+        typedef std::shared_ptr<udp_queue> udp_queue_ptr;
 
         asio_params parse_params(const address_components& c);
-        tcp_queue_ptr create_bst_message_queue(const address_components& c);
         std::string make_tcp_address(const std::string& host, const std::string& port, const std::string& local_port = "");
-        tcp_queue_ptr create_message_queue(const std::string& address, const queue_options& defaults);
+        tcp_queue_ptr create_tcp_queue(const address_components& c);
+        tcp_queue_ptr create_tcp_queue(const std::string& address, const queue_options& defaults);
+        udp_queue_ptr create_udp_queue(const address_components& c);
+        udp_queue_ptr create_udp_queue(const std::string& address, const queue_options& defaults);
 
         std::string make_address_str(const endpoint& e);
     }
