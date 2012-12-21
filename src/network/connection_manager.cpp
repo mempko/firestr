@@ -59,6 +59,19 @@ namespace fire
 
             _in = create_tcp_queue(listen_address, qo);
 
+            asio_params udp_p = {
+                asio_params::udp, 
+                asio_params::bind, 
+                "", //uri
+                "", //host
+                "", //port
+                _local_port,
+                false, //block;
+                0, // wait;
+                true, //track_incoming;
+            };
+            _udp_in = create_udp_queue(udp_p);
+
             INVARIANT(_in);
         }
 
