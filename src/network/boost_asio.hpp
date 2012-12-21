@@ -51,7 +51,13 @@ namespace fire
             std::string port;
         };
 
-        typedef util::queue<endpoint> endpoint_queue;
+        struct endpoint_message
+        {
+            endpoint ep;
+            util::bytes data;
+        };
+
+        typedef util::queue<endpoint_message> endpoint_queue;
 
         class connection
         {
@@ -133,11 +139,14 @@ namespace fire
 
         struct udp_chunk
         {
+            std::string host;
+            std::string port;
             sequence_type sequence;
             int total_chunks;
             int chunk;
             util::bytes data;
         };
+
         typedef util::queue<udp_chunk> chunk_queue;
         typedef std::vector<udp_chunk> udp_chunks;
 
@@ -148,20 +157,18 @@ namespace fire
             boost::dynamic_bitset<> set;
         };
 
-        typedef std::map<sequence_type, working_udp_chunks> working_udp_messages;
+        typedef std::map<sequence_type, working_udp_chunks> working_udp_endpoints;
+        typedef std::map<std::string, working_udp_endpoints> working_udp_messages;
 
-        class udp_connection : public connection
+        class udp_connection
         {
             public:
                 udp_connection(
-                        const endpoint& ep,
-                        byte_queue& in,
+                        endpoint_queue& in,
                         boost::asio::io_service& io, 
                         std::mutex& in_mutex);
             public:
-                virtual bool send(const fire::util::bytes& b, bool block = false);
-                virtual endpoint get_endpoint() const;
-                virtual bool is_disconnected() const;
+                bool send(const endpoint_message& m, bool block = false);
 
             public:
                 void bind(const std::string& port);
@@ -172,7 +179,7 @@ namespace fire
 
             private:
                 void start_read();
-                void chunkify(const fire::util::bytes& b);
+                void chunkify(const std::string& host, const std::string& port, const fire::util::bytes& b);
                 void do_close();
 
             private:
@@ -180,9 +187,8 @@ namespace fire
                 util::bytes _in_buffer;
                 boost::asio::ip::udp::endpoint _in_endpoint;
                 working_udp_messages _in_working;
-                byte_queue& _in_queue;
                 std::mutex& _in_mutex;
-                mutable endpoint_queue _last_in;
+                endpoint_queue& _in_queue;
 
                 //writing
                 chunk_queue _out_queue;
@@ -191,7 +197,6 @@ namespace fire
                 //other
                 boost::asio::io_service& _io;
                 udp_socket_ptr _socket;
-                endpoint _ep;
                 uint64_t _sequence;
                 bool _writing;
                 mutable std::mutex _mutex;
@@ -219,30 +224,27 @@ namespace fire
         typedef std::map<size_t,chunked_message> incoming_message_buffers;
         typedef std::map<std::string, incoming_message_buffers> incoming_messages;
 
-        class udp_queue : public message_queue
+        class udp_queue
         {
             public:
                 udp_queue(const asio_params& p);
                 virtual ~udp_queue();
 
             public:
-                virtual bool send(const util::bytes& b);
-                virtual bool recieve(util::bytes& b);
+                virtual bool send(const endpoint_message& m);
+                virtual bool recieve(endpoint_message& b);
 
             private:
-
-                void connect();
-                void accept();
+                void bind();
 
             private:
                 asio_params _p;
                 asio_service_ptr _io;
                 util::thread_uptr _run_thread;
 
-                udp_connection_ptr _out;
-                udp_connection_ptr _in;
+                udp_connection_ptr _con;
                 incoming_messages _incoming;
-                byte_queue _in_queue;
+                endpoint_queue _in_queue;
                 mutable std::mutex _mutex;
                 bool _done;
 
@@ -295,11 +297,12 @@ namespace fire
         typedef std::shared_ptr<udp_queue> udp_queue_ptr;
 
         asio_params parse_params(const address_components& c);
+        asio_params::endpoint_type determine_type(const std::string& address);
         std::string make_tcp_address(const std::string& host, const std::string& port, const std::string& local_port = "");
+        std::string make_udp_address(const std::string& host, const std::string& port, const std::string& local_port = "");
         tcp_queue_ptr create_tcp_queue(const address_components& c);
         tcp_queue_ptr create_tcp_queue(const std::string& address, const queue_options& defaults);
-        udp_queue_ptr create_udp_queue(const address_components& c);
-        udp_queue_ptr create_udp_queue(const std::string& address, const queue_options& defaults);
+        udp_queue_ptr create_udp_queue(const asio_params& c);
 
         std::string make_address_str(const endpoint& e);
     }

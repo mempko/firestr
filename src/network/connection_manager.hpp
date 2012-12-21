@@ -32,6 +32,7 @@ namespace fire
         typedef std::map<std::string, int> assignment_map; 
         typedef std::vector<tcp_queue_ptr> tcp_connection_pool;
         typedef std::map<std::string, connection*> connection_map; 
+        typedef std::map<std::string, udp_queue_ptr> udp_connection_map; 
 
         class connection_manager
         {
@@ -55,6 +56,9 @@ namespace fire
                 size_t _next_available;
                 std::mutex _mutex;
                 tcp_queue_ptr _in;
+                udp_queue_ptr _udp_in;
+                udp_connection_map _udp_out;
+
                 connection_map _in_connections;
                 connection_ptr_queue _last_recieved;
         };

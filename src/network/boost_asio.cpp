@@ -68,7 +68,17 @@ namespace fire
 
                 return m;
             }
+        }
 
+        asio_params::endpoint_type determine_type(const std::string& t)
+        {
+            asio_params::endpoint_type m = asio_params::tcp;
+            auto s = t.substr(0,3);
+            if(s == TCP) m = asio_params::tcp;
+            else if(s == UDP) m = asio_params::udp;
+            else CHECK(false && "unkown transport"); //TODO: throw here
+
+            return m;
         }
 
         asio_params parse_params(const address_components& c)
@@ -76,6 +86,7 @@ namespace fire
             const auto& o = c.options;
 
             asio_params p;
+            p.type = determine_type(c.transport);
             p.mode = determine_connection_mode(o);
             p.uri = c.address;
             p.host = c.host;
@@ -644,11 +655,24 @@ namespace fire
             }
         }
 
-        std::string make_tcp_address(const std::string& host, const std::string& port, const std::string& local_port)
+        std::string make_pro_address(
+                const std::string& proto, 
+                const std::string& host, 
+                const std::string& port, 
+                const std::string& local_port)
         {
             return local_port.empty() ? 
-                "tcp://" + host + ":" + port : 
-                "tcp://" + host + ":" + port + ",local_port=" + local_port;
+                proto + "://" + host + ":" + port : 
+                proto + "://" + host + ":" + port + ",local_port=" + local_port;
+        }
+
+        std::string make_tcp_address(const std::string& host, const std::string& port, const std::string& local_port)
+        {
+            return make_pro_address(TCP, host, port, local_port);
+        }
+        std::string make_udp_address(const std::string& host, const std::string& port, const std::string& local_port)
+        {
+            return make_pro_address(TCP, host, port, local_port);
         }
 
         tcp_queue_ptr create_tcp_queue(const address_components& c)
@@ -667,20 +691,9 @@ namespace fire
             return p;
         }
 
-        udp_queue_ptr create_udp_queue(const address_components& c)
+        udp_queue_ptr create_udp_queue(const asio_params& p)
         {
-            auto p = parse_params(c);
             return udp_queue_ptr{new udp_queue{p}};
-        }
-
-        udp_queue_ptr create_udp_queue(
-                const std::string& address, 
-                const queue_options& defaults)
-        {
-            auto c = parse_address(address, defaults); 
-            udp_queue_ptr p = create_udp_queue(c);
-            ENSURE(p);
-            return p;
         }
 
         std::string make_address_str(const endpoint& e)
@@ -720,11 +733,9 @@ namespace fire
         //
         //
         udp_connection::udp_connection(
-                const endpoint& ep,
-                byte_queue& in,
+                endpoint_queue& in,
                 boost::asio::io_service& io, 
                 std::mutex& in_mutex) :
-            _ep(ep),
             _in_queue(in),
             _socket{new udp::socket{io}},
             _in_mutex(in_mutex),
@@ -752,17 +763,10 @@ namespace fire
             _writing = false;
         }
 
-        endpoint udp_connection::get_endpoint() const
-        {
-            return _last_in.empty() ? _ep : _last_in.pop();
-        }
-
-        bool udp_connection::is_disconnected() const
-        {
-            return false;
-        }
-
-        void udp_connection::chunkify(const fire::util::bytes& b)
+        void udp_connection::chunkify(
+                const std::string& host, 
+                const std::string& port, 
+                const fire::util::bytes& b)
         {
             REQUIRE_FALSE(b.empty());
 
@@ -784,6 +788,8 @@ namespace fire
 
                 //create chunk
                 udp_chunk c;
+                c.host = host;
+                c.port = port;
                 c.sequence = _sequence;
                 c.total_chunks = total_chunks;
                 c.chunk = chunk;
@@ -804,13 +810,13 @@ namespace fire
 
         }
 
-        bool udp_connection::send(const fire::util::bytes& b, bool block)
+        bool udp_connection::send(const endpoint_message& m, bool block)
         {
             INVARIANT(_socket);
-            if(b.empty()) return false;
+            if(m.data.empty()) return false;
 
             _sequence++;
-            chunkify(b);
+            chunkify(m.ep.address, m.ep.port, m.data);
 
             //post to do send
             _io.post(boost::bind(&udp_connection::do_send, this, false));
@@ -929,9 +935,13 @@ namespace fire
             _writing = true;
 
             //encode bytes to wire format
-            _out_buffer = encode_udp_wire(_out_queue.front());
+            const auto& chunk = _out_queue.front();
+            _out_buffer = encode_udp_wire(chunk);
 
-            _socket->async_send(ba::buffer(&_out_buffer[0], _out_buffer.size()),
+            auto p = boost::lexical_cast<short unsigned int>(chunk.port);
+            udp::endpoint ep(address::from_string(chunk.host), p);
+
+            _socket->async_send_to(ba::buffer(&_out_buffer[0], _out_buffer.size()), ep,
                     boost::bind(&udp_connection::handle_write, this,
                         ba::placeholders::error));
 
@@ -945,7 +955,7 @@ namespace fire
             _out_queue.pop_front();
             _error = error;
 
-            if(error) std::cerr << "error sending chunk, " << _out_queue.size() << " remaining..." << std::endl;
+            if(error) std::cerr << "error sending chunk to, " << _out_queue.size() << " remaining..." << std::endl;
             else      std::cerr << "sent chunk, " << _out_queue.size() << " remaining..." << std::endl;
 
             //if we are done sending finish the async write chain
@@ -964,6 +974,7 @@ namespace fire
         {
             INVARIANT(_socket);
             auto p = boost::lexical_cast<short unsigned int>(port);
+            _socket->set_option(udp::socket::reuse_address(true),_error);
             _socket->bind(udp::endpoint(udp::v4(), p), _error);
         }
 
@@ -976,9 +987,10 @@ namespace fire
                         boost::asio::placeholders::bytes_transferred));
         }
 
-        bool insert_chunk(const udp_chunk& c, working_udp_messages& w, u::bytes& complete_message)
+        bool insert_chunk(const std::string& addr, const udp_chunk& c, working_udp_messages& w, u::bytes& complete_message)
         {
-            auto& wm = w[c.sequence];
+            auto& wms = w[addr];
+            auto& wm = wms[c.sequence];
             if(wm.chunks.empty())
             {
                 if(c.total_chunks == 0) return false;
@@ -1015,7 +1027,7 @@ namespace fire
             CHECK_EQUAL(s, total_message_size);
 
             //remove message from working
-            w.erase(c.sequence);
+            wms.erase(c.sequence);
             return true;
         }
 
@@ -1039,13 +1051,12 @@ namespace fire
             auto chunk = dencode_udp_wire(data);
 
             //add message to in queue if we got complete message
-            if(insert_chunk(chunk, _in_working, data))
+            endpoint ep = {UDP, _in_endpoint.address().to_string(), boost::lexical_cast<std::string>(_in_endpoint.port())};
+            if(insert_chunk(make_address_str(ep), chunk, _in_working, data))
             {
                 u::mutex_scoped_lock l(_in_mutex);
-                _in_queue.push(data);
-
-                endpoint ep = {UDP, _in_endpoint.address().to_string(), boost::lexical_cast<std::string>(_in_endpoint.port())};
-                _last_in.push(ep);
+                endpoint_message em = {ep, data};
+                _in_queue.push(em);
             }
 
             start_read();
@@ -1056,44 +1067,24 @@ namespace fire
             _p(p), _done{false},
             _io{new ba::io_service}
         {
-            switch(_p.mode)
-            {
-                case asio_params::bind: accept(); break;
-                case asio_params::connect: connect(); break;
-                case asio_params::delayed_connect: connect(); break;
-                default: CHECK(false && "missed case");
-            }
-
+            REQUIRE_FALSE(_p.local_port.empty());
+            bind();
             _run_thread.reset(new std::thread{udp_run_thread, this});
 
             INVARIANT(_io);
+            INVARIANT(_con);
             INVARIANT(_run_thread);
         }
 
-        void udp_queue::accept()
+        void udp_queue::bind()
         {
-            CHECK_FALSE(_in);
-            CHECK_FALSE(_out);
+            CHECK_FALSE(_con);
             INVARIANT(_io);
 
-            endpoint ep = {UDP, _p.host, _p.port};
-
-            _in = udp_connection_ptr{new udp_connection{ep, _in_queue, *_io, _mutex}};
-            _in->bind(_p.local_port);
+            _con = udp_connection_ptr{new udp_connection{_in_queue, *_io, _mutex}};
+            _con->bind(_p.local_port);
             
-            ENSURE(_in);
-        }
-
-        void udp_queue::connect()
-        {
-            CHECK_FALSE(_in);
-            CHECK_FALSE(_out);
-            INVARIANT(_io);
-
-            endpoint ep = {UDP, _p.host, _p.port};
-            _out = udp_connection_ptr{new udp_connection{ep, _in_queue, *_io, _mutex}};
-
-            ENSURE(_out);
+            ENSURE(_con);
         }
 
         udp_queue::~udp_queue()
@@ -1102,27 +1093,26 @@ namespace fire
             _io->stop();
             _done = true;
             if(_p.wait > 0) u::sleep_thread(_p.wait);
-            if(_in) _in->close();
-            if(_out) _out->close();
+            if(_con) _con->close();
             if(_run_thread) _run_thread->join();
         }
 
-        bool udp_queue::send(const u::bytes& b)
+        bool udp_queue::send(const endpoint_message& m)
         {
             INVARIANT(_io);
             REQUIRE(_p.mode != asio_params::bind);
-            CHECK(_out);
+            CHECK(_con);
 
-            return _out->send(b, _p.block);
+            return _con->send(m, _p.block);
         }
 
-        bool udp_queue::recieve(u::bytes& b)
+        bool udp_queue::recieve(endpoint_message& m)
         {
             //if we are blocking, block until we get message
             while(_p.block && !_in_queue.empty()) u::sleep_thread(BLOCK_SLEEP);
 
             //return true if we got message
-            return _in_queue.pop(b);
+            return _in_queue.pop(m);
         }
 
         void udp_run_thread(udp_queue* q)
