@@ -73,42 +73,38 @@ struct user_info
     std::string ip;
     std::string port;
     std::string response_service_address;
-    n::connection* sock;
+    n::endpoint ep;
 };
 typedef std::map<std::string, user_info> user_info_map;
 
-void register_user(n::connection* sock, const ms::greet_register& r, user_info_map& m)
+void register_user(n::connection_manager& con, const n::endpoint& ep, const ms::greet_register& r, user_info_map& m)
 {
-    REQUIRE(sock);
     if(r.id().empty()) return;
-    if(sock->is_disconnected()) return;
+    if(con.is_disconnected(n::make_address_str(ep))) return;
 
     //use user specified ip, otherwise use socket ip
-    std::string ip = r.ip().empty() ? sock->get_endpoint().address : r.ip();
-    std::string port = r.ip().empty() ? sock->get_endpoint().port : r.port();
+    std::string ip = r.ip().empty() ? ep.address : r.ip();
+    std::string port = r.ip().empty() ? ep.port : r.port();
 
-    user_info i = {r.id(), ip, port, r.response_service_address(), sock};
+    user_info i = {r.id(), ip, port, r.response_service_address(), ep};
     m[i.id] = i;
 
     std::cerr << "registered " << i.id << " " << i.ip << ":" << i.port << std::endl;
 }
 
-void send_response(const ms::greet_find_response& r, const user_info& u)
+void send_response(n::connection_manager& con, const ms::greet_find_response& r, const user_info& u)
 {
-    CHECK(u.sock);
     m::message m = r;
 
     auto address = n::make_tcp_address(u.ip, u.port); 
     m.meta.to = {address, u.response_service_address};
 
     std::cerr << "sending reply to " << address << std::endl;
-    u.sock->send(u::encode(m));
+    con.send(n::make_address_str(u.ep), u::encode(m));
 }
 
-void find_user(n::connection* sock, const ms::greet_find_request& r, user_info_map& users)
+void find_user(n::connection_manager& con, const n::endpoint& ep,  const ms::greet_find_request& r, user_info_map& users)
 {
-    REQUIRE(sock);
-
     //find from user
     auto fup = users.find(r.from_id());
     if(fup == users.end()) return;
@@ -118,8 +114,8 @@ void find_user(n::connection* sock, const ms::greet_find_request& r, user_info_m
     if(up == users.end()) return;
 
     auto& f = fup->second;
-    if(sock->is_disconnected()) return;
-    f.sock = sock;
+    if(con.is_disconnected(n::make_address_str(ep))) return;
+    f.ep = ep;
 
     auto& i = up->second;
 
@@ -127,10 +123,10 @@ void find_user(n::connection* sock, const ms::greet_find_request& r, user_info_m
 
     //send response to both clients
     ms::greet_find_response fr{true, i.id, i.ip,  i.port};
-    send_response(fr, f);
+    send_response(con, fr, f);
 
     ms::greet_find_response ir{true, f.id, f.ip,  f.port};
-    send_response(ir, i);
+    send_response(con, ir, i);
 }
 
 int main(int argc, char *argv[])
@@ -157,7 +153,8 @@ int main(int argc, char *argv[])
     while(true)
     try
     {
-        if(!con.recieve(data))
+        n::endpoint ep;
+        if(!con.recieve(ep, data))
         {
             u::sleep_thread(THREAD_SLEEP);
             continue;
@@ -167,19 +164,15 @@ int main(int argc, char *argv[])
         m::message m;
         u::decode(data, m);
 
-        //get socket info of the message just recieved.
-        //because we are tracking incoming
-        auto socket = con.get_socket();
-
         if(m.meta.type == ms::GREET_REGISTER)
         {
             ms::greet_register r{m};
-            register_user(socket, r, users);
+            register_user(con, ep, r, users);
         }
         else if(m.meta.type == ms::GREET_FIND_REQUEST)
         {
             ms::greet_find_request r{m};
-            find_user(socket, r, users);
+            find_user(con, ep, r, users);
         }
     }
     catch(std::exception& e)

@@ -32,6 +32,9 @@ namespace fire
 {
     namespace network
     {
+        extern const std::string UDP;
+        extern const std::string TCP;
+
         typedef util::queue<util::bytes> byte_queue;
         typedef std::unique_ptr<boost::asio::io_service> asio_service_ptr;
         typedef std::unique_ptr<boost::asio::ip::tcp::resolver> tcp_resolver_ptr;
@@ -176,11 +179,11 @@ namespace fire
                 void handle_write(const boost::system::error_code& error);
                 void handle_read(const boost::system::error_code& error, size_t transferred);
                 void close();
+                void start_read();
+                void do_close();
 
             private:
-                void start_read();
-                void chunkify(const std::string& host, const std::string& port, const fire::util::bytes& b);
-                void do_close();
+                size_t chunkify(const std::string& host, const std::string& port, const fire::util::bytes& b);
 
             private:
                 //reading

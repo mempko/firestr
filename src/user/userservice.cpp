@@ -223,7 +223,7 @@ namespace fire
 
             _user = load_user(_home); 
             if(!_user) throw std::runtime_error{"no user found at `" + _home + "'"};
-            update_address(n::make_tcp_address(c.host, c.port));
+            update_address(n::make_udp_address(c.host, c.port));
 
             init_greet();
             init_ping();
@@ -407,7 +407,7 @@ namespace fire
             auto c = _user->contacts().by_id(id);
             if(!c) return;
 
-            auto a = n::make_tcp_address(ip, port);
+            auto a = n::make_udp_address(ip, port);
 
             if(c->address() == a) return;
 
@@ -616,7 +616,7 @@ namespace fire
                 {
                     if(s->_stun->state() == n::stun_success)
                     {
-                        auto address = n::make_tcp_address(s->_stun->external_ip(), s->_stun->external_port());
+                        auto address = n::make_udp_address(s->_stun->external_ip(), s->_stun->external_port());
                         std::cerr << "got stun address " << address << std::endl;
                         s->update_address(address);
 

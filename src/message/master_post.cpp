@@ -45,23 +45,22 @@ namespace fire
             {
                 //get data from outside world
                 u::bytes data;
-                if(!o->_connections.recieve(data))
+                n::endpoint ep;
+                if(!o->_connections.recieve(ep, data))
                 {
                     u::sleep_thread(THREAD_SLEEP);
                     continue;
                 }
-
-                //get socket info of the message just recieved.
-                auto socket = o->_connections.get_socket();
-                CHECK(socket);
 
                 //parse message
                 std::stringstream s(u::to_str(data));
                 message m;
                 s >> m;
 
-                //insert the from_ip
-                m.meta.extra["from_ip"] = socket->get_endpoint().address;
+                //insert the from_ip, from_port
+                m.meta.extra["from_protocol"] = ep.protocol;
+                m.meta.extra["from_ip"] = ep.address;
+                m.meta.extra["from_port"] = ep.port;
 
                 //pop off master address
                 m.meta.to.pop_front();
@@ -133,7 +132,7 @@ namespace fire
             _in_port{in_port},
             _connections{POOL_SIZE, in_port}
         {
-            _address = n::make_tcp_address(_in_host,_in_port);
+            _address = n::make_udp_address(_in_host,_in_port);
 
             _in_thread.reset(new std::thread{in_thread, this});
             _out_thread.reset(new std::thread{out_thread, this});
