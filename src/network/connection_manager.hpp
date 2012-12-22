@@ -32,7 +32,6 @@ namespace fire
         typedef std::map<std::string, int> assignment_map; 
         typedef std::vector<tcp_queue_ptr> tcp_connection_pool;
         typedef std::map<std::string, connection*> connection_map; 
-        typedef std::map<std::string, udp_queue_ptr> udp_connection_map; 
 
         class connection_manager
         {
@@ -40,11 +39,9 @@ namespace fire
                 connection_manager(size_t size, const std::string& listen_port);
 
             public:
-                bool recieve(util::bytes& b);
+                bool recieve(endpoint& ep, util::bytes& b);
                 bool send(const std::string& to, const util::bytes& b);
-
-                //returns socke for last recieved message
-                connection* get_socket();
+                bool is_disconnected(const std::string& addr);
 
             private:
                 tcp_queue_ptr connect(const std::string& address);
@@ -56,11 +53,9 @@ namespace fire
                 size_t _next_available;
                 std::mutex _mutex;
                 tcp_queue_ptr _in;
-                udp_queue_ptr _udp_in;
-                udp_connection_map _udp_out;
+                udp_queue_ptr _udp_con;
 
                 connection_map _in_connections;
-                connection_ptr_queue _last_recieved;
         };
     }
 }

@@ -70,7 +70,7 @@ namespace fire
                 0, // wait;
                 true, //track_incoming;
             };
-            _udp_in = create_udp_queue(udp_p);
+            _udp_con = create_udp_queue(udp_p);
 
             INVARIANT(_in);
         }
@@ -101,31 +101,54 @@ namespace fire
         {
             u::mutex_scoped_lock l(_mutex);
 
-            //first check in tcp_connections for matching address and use that to send
-            //otherwise use outgoing tcp_connection.
-            auto inp = _in_connections.find(to);
-            if(inp != _in_connections.end())
+            auto type = determine_type(to);
+
+            if(type == asio_params::tcp)
             {
-                auto o = inp->second;
+
+                //first check in tcp_connections for matching address and use that to send
+                //otherwise use outgoing tcp_connection.
+                auto inp = _in_connections.find(to);
+                if(inp != _in_connections.end())
+                {
+                    auto o = inp->second;
+                    CHECK(o);
+                    return o->send(b);
+                }
+
+                auto o = connect(to);
                 CHECK(o);
                 return o->send(b);
             }
 
-            auto o = connect(to);
-            CHECK(o);
-            return o->send(b);
+            CHECK(type == asio_params::udp);
+
+            auto a = parse_address(to);
+            endpoint ep { UDP, a.host, a.port};
+            endpoint_message em{ep, b}; 
+            return _udp_con->send(em);
         }
 
-        bool connection_manager::recieve(u::bytes& b)
+        bool connection_manager::recieve(endpoint& ep, u::bytes& b)
         {
             u::mutex_scoped_lock l(_mutex);
             INVARIANT(_in);
+
+            endpoint_message um;
+            if(_udp_con->recieve(um))
+            {
+                ep = um.ep;
+                b = std::move(um.data);
+                return true;
+            }
+
             if(_in->recieve(b)) 
             {
                 auto s = _in->get_socket();
                 CHECK(s);
-                _last_recieved.push(s);
-                _in_connections[make_address_str(s->get_endpoint())] = s;
+                ep = s->get_endpoint();
+                _in_connections[make_address_str(ep)] = s;
+                
                 return true;
             }
 
@@ -138,7 +161,9 @@ namespace fire
                 CHECK(c);
                 if(c->recieve(b)) 
                 {
-                    _last_recieved.push(c->get_socket());
+                    auto s = c->get_socket();
+                    CHECK(s);
+                    ep = s->get_endpoint();
                     return true;
                 }
             }
@@ -146,10 +171,11 @@ namespace fire
             return false;
         }
 
-        connection* connection_manager::get_socket()
+        bool connection_manager::is_disconnected(const std::string& addr)
         {
-            INVARIANT(_in);
-            return _last_recieved.pop();
+            auto s = _in_connections[addr];
+            if(!s) return true;
+            return s->is_disconnected();
         }
     }
 }

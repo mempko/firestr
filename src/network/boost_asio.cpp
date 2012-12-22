@@ -42,10 +42,11 @@ namespace fire
 {
     namespace network
     {
+        const std::string TCP = "tcp"; 
+        const std::string UDP = "udp"; 
+
         namespace
         {
-            const std::string TCP = "tcp"; 
-            const std::string UDP = "udp"; 
             const size_t BLOCK_SLEEP = 10;
             const int RETRIES = 3;
             const size_t MAX_UDP_BUFF_SIZE = 1024; //in bytes
@@ -672,7 +673,7 @@ namespace fire
         }
         std::string make_udp_address(const std::string& host, const std::string& port, const std::string& local_port)
         {
-            return make_pro_address(TCP, host, port, local_port);
+            return make_pro_address(UDP, host, port, local_port);
         }
 
         tcp_queue_ptr create_tcp_queue(const address_components& c)
@@ -763,7 +764,7 @@ namespace fire
             _writing = false;
         }
 
-        void udp_connection::chunkify(
+        size_t udp_connection::chunkify(
                 const std::string& host, 
                 const std::string& port, 
                 const fire::util::bytes& b)
@@ -807,6 +808,7 @@ namespace fire
             }
 
             CHECK_EQUAL(chunk, total_chunks);
+            return chunk;
 
         }
 
@@ -816,7 +818,9 @@ namespace fire
             if(m.data.empty()) return false;
 
             _sequence++;
-            chunkify(m.ep.address, m.ep.port, m.data);
+            size_t chunks = chunkify(m.ep.address, m.ep.port, m.data);
+
+            std::cerr << "sending message in " << chunks << " chunks to " << make_address_str(m.ep) << std::endl;
 
             //post to do send
             _io.post(boost::bind(&udp_connection::do_send, this, false));
@@ -825,7 +829,6 @@ namespace fire
             while(block && !_out_queue.empty()) u::sleep_thread(BLOCK_SLEEP);
 
             return true;
-
         }
 
         void write_be(u::bytes& b, size_t offset, uint64_t v)
@@ -955,8 +958,7 @@ namespace fire
             _out_queue.pop_front();
             _error = error;
 
-            if(error) std::cerr << "error sending chunk to, " << _out_queue.size() << " remaining..." << std::endl;
-            else      std::cerr << "sent chunk, " << _out_queue.size() << " remaining..." << std::endl;
+            if(error) std::cerr << "error sending chunk, " << _out_queue.size() << " remaining..." << std::endl;
 
             //if we are done sending finish the async write chain
             if(_out_queue.empty()) 
@@ -972,10 +974,18 @@ namespace fire
 
         void udp_connection::bind(const std::string& port)
         {
+            std::cerr << "bind udp port " << port << std::endl;
             INVARIANT(_socket);
             auto p = boost::lexical_cast<short unsigned int>(port);
+
+            _socket->open(udp::v4(), _error);
             _socket->set_option(udp::socket::reuse_address(true),_error);
             _socket->bind(udp::endpoint(udp::v4(), p), _error);
+
+            if(_error)
+                std::cerr << "error binding udp to port " << p << ": " << _error.message() << std::endl;
+
+            start_read();
         }
 
         void udp_connection::start_read()
@@ -1035,6 +1045,7 @@ namespace fire
         {
             if(error)
             {
+                u::mutex_scoped_lock l(_mutex);
                 _error = error;
                 std::cerr << "error getting message of size " << transferred  << ". " << error.message() << std::endl;
                 start_read();
@@ -1043,7 +1054,7 @@ namespace fire
 
             //get bytes
             u::bytes data;
-            CHECK_LESS_EQUAL(_in_buffer.size(), transferred);
+            CHECK_LESS_EQUAL(transferred, _in_buffer.size());
             data.resize(transferred);
             std::copy(_in_buffer.begin(), _in_buffer.begin() + transferred, data.begin());
 
@@ -1052,8 +1063,15 @@ namespace fire
 
             //add message to in queue if we got complete message
             endpoint ep = {UDP, _in_endpoint.address().to_string(), boost::lexical_cast<std::string>(_in_endpoint.port())};
-            if(insert_chunk(make_address_str(ep), chunk, _in_working, data))
+
+            bool inserted = false;
             {
+                u::mutex_scoped_lock l(_mutex);
+                inserted = insert_chunk(make_address_str(ep), chunk, _in_working, data);
+            }
+            if(inserted)
+            {
+                std::cerr << "got message in " << chunk.total_chunks << " from " << make_address_str(ep) << std::endl;
                 u::mutex_scoped_lock l(_in_mutex);
                 endpoint_message em = {ep, data};
                 _in_queue.push(em);
@@ -1089,6 +1107,7 @@ namespace fire
 
         udp_queue::~udp_queue()
         {
+            std::cerr << "stopping udp socket on port " << _p.local_port << std::endl;
             INVARIANT(_io);
             _io->stop();
             _done = true;
@@ -1100,7 +1119,6 @@ namespace fire
         bool udp_queue::send(const endpoint_message& m)
         {
             INVARIANT(_io);
-            REQUIRE(_p.mode != asio_params::bind);
             CHECK(_con);
 
             return _con->send(m, _p.block);
