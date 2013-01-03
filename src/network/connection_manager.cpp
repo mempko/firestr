@@ -32,6 +32,18 @@ namespace fire
             _local_port{local_port},
             _next_available{0}
         {
+            //create listen socket
+#ifdef __APPLE__
+            auto listen_address = make_tcp_address("*", _local_port);
+
+            queue_options qo = { 
+                {"bnd", "1"},
+                {"block", "0"},
+                {"track_incoming", "1"}};
+
+            _in = create_tcp_queue(listen_address, qo);
+#endif
+
             //create outgoing params
             asio_params p = {
                 asio_params::tcp, 
@@ -49,6 +61,7 @@ namespace fire
             for(size_t i = 0; i < size; ++i)
                 _pool[i] = std::make_shared<tcp_queue>(p);
 
+#ifndef __APPLE__
             //create listen socket
             auto listen_address = make_tcp_address("*", _local_port);
 
@@ -58,6 +71,7 @@ namespace fire
                 {"track_incoming", "1"}};
 
             _in = create_tcp_queue(listen_address, qo);
+#endif
 
             asio_params udp_p = {
                 asio_params::udp, 
