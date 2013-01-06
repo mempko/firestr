@@ -225,6 +225,9 @@ namespace fire
             if(!_user) throw std::runtime_error{"no user found at `" + _home + "'"};
             update_address(n::make_udp_address(c.host, c.port));
 
+            for(auto c : _user->contacts().list())
+                add_contact_data(c);
+
             init_greet();
             init_ping();
 
@@ -242,6 +245,15 @@ namespace fire
             _done = true;
             _ping_thread->join();
             _greet_thread->join();
+        }
+
+        void user_service::add_contact_data(user::user_info_ptr u)
+        {
+            REQUIRE(u);
+            contact_data cd  = {contact_data::OFFLINE, u, PING_THRESH};
+            _contacts[u->id()] = cd; 
+
+            REQUIRE(_contacts[u->id()].contact == u);
         }
 
         void user_service::update_address(const std::string& address)
@@ -290,10 +302,10 @@ namespace fire
                 ping r;
                 convert(m, r);
 
-                auto p = _last_ping.find(r.from_id);
-                if(p == _last_ping.end()) return;
+                auto p = _contacts.find(r.from_id);
+                if(p == _contacts.end()) return;
 
-                auto& ticks = p->second;
+                auto& ticks = p->second.last_ping;
                 bool prev_state = available(ticks);
 
                 if(r.state == CONNECTED)
@@ -391,7 +403,13 @@ namespace fire
 
                 //send ping request using new address
                 auto c = _user->contacts().by_id(rs.id());
-                if(c) send_ping_request(c);
+                if(c) 
+                {
+                    CHECK(_contacts.count(c->id()));
+                    _contacts[c->id()].state = contact_data::ONLINE;
+
+                    send_ping_request(c);
+                }
             }
             else
             {
@@ -444,6 +462,7 @@ namespace fire
 
             //add user
             _user->contacts().add(contact);
+            add_contact_data(contact);
             save_user(_home, *_user);
         }
 
@@ -483,6 +502,7 @@ namespace fire
                 CHECK(p->second.from);
 
                 _user->contacts().add(p->second.from);
+                add_contact_data(p->second.from);
                 save_user(_home, *_user);
 
                 key = p->second.key;
@@ -537,9 +557,12 @@ namespace fire
 
                 {
                     u::mutex_scoped_lock l(s->_ping_mutex);
-                    for(auto& p : s->_last_ping)
+                    for(auto& p : s->_contacts)
                     {
-                        auto& ticks = p.second;
+                        //skip any offline contacts
+                        if(p.second.state == contact_data::OFFLINE) continue;
+
+                        auto& ticks = p.second.last_ping;
                         bool prev_state = available(ticks);
                         ticks++;
                         bool cur_state = available(ticks);
@@ -733,7 +756,9 @@ namespace fire
         bool user_service::contact_available(const std::string& id) const
         {
             u::mutex_scoped_lock l(_ping_mutex);
-            return _connected.count(id) > 0;
+            auto c = _contacts.find(id);
+            if(c == _contacts.end()) return false;
+            return c->second.state == contact_data::CONNECTED;
         }
 
         void user_service::send_ping(char s)
@@ -741,10 +766,11 @@ namespace fire
             REQUIRE(s == CONNECTED || s == DISCONNECTED);
             u::mutex_scoped_lock l(_ping_mutex);
 
-            //send pint message to all connected contacts
-            for(auto p : _connected)
+            //send ping message to all connected contacts
+            for(auto p : _contacts)
             {
-                auto c = p.second;
+                if(p.second.state != contact_data::CONNECTED) continue;
+                auto c = p.second.contact;
                 CHECK(c);
 
                 ping r = {c->address(), _user->info().id(), s};
@@ -774,7 +800,6 @@ namespace fire
                 send_back
             };
             mail()->push_outbox(convert(a));
-
         }
 
         void user_service::fire_new_contact_event(const std::string& id)
@@ -790,20 +815,27 @@ namespace fire
             auto c = _user->contacts().by_id(id);
             if(!c) return;
 
-            _connected[c->id()] = c;
-            _last_ping[c->id()] = 0;
+            auto& cd = _contacts[c->id()];
+            cd.contact = c;
+            cd.last_ping = 0;
+            cd.state = contact_data::CONNECTED;
 
             event::contact_connected e{id};
             send_event(event::convert(e));
+
+            ENSURE(cd.state == contact_data::CONNECTED);
         }
 
         void user_service::fire_contact_disconnected_event(const std::string& id)
         {
-            _connected.erase(id);
-            _last_ping.erase(id);
+            auto& cd = _contacts[id];
+            cd.state = contact_data::OFFLINE;
+            cd.last_ping = PING_THRESH;
 
             event::contact_disconnected e{id};
             send_event(event::convert(e));
+
+            ENSURE(cd.state == contact_data::OFFLINE);
         }
 
         namespace event
