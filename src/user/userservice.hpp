@@ -40,10 +40,16 @@ namespace fire
             user_info_ptr from;
         };
 
+        struct contact_data
+        {
+            enum state { OFFLINE, ONLINE, CONNECTED} state;
+            user_info_ptr contact;
+            size_t last_ping;
+        };
+
         typedef std::map<std::string, add_request> add_requests;
         typedef std::set<std::string> sent_requests;
-        typedef std::map<std::string, user_info_ptr> connected_contacts;
-        typedef std::map<std::string, std::string> port_map;
+        typedef std::map<std::string, contact_data> contacts_data;
 
         struct user_service_context
         {
@@ -104,12 +110,12 @@ namespace fire
 
             private:
                 //ping specific 
-                typedef std::map<std::string, size_t> last_ping_map;
                 void init_ping();
                 void init_greet();
                 void send_ping_requests();
                 void send_ping_request(user::user_info_ptr, bool send_back = true);
                 void send_ping(char t);
+                void add_contact_data(user::user_info_ptr);
 
             private:
                 enum state { started_greet, sent_stun, got_stun, sent_greet, sent_contact_query, done_greet, failed_greet} _state;
@@ -119,8 +125,7 @@ namespace fire
                 //ping
                 mutable std::mutex _ping_mutex;
                 util::thread_uptr _ping_thread;
-                last_ping_map _last_ping;
-                connected_contacts _connected;
+                contacts_data _contacts;
 
                 //greet
                 network::stun_gun_ptr _stun;
