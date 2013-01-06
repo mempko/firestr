@@ -73,11 +73,11 @@ namespace fire
 
         asio_params::endpoint_type determine_type(const std::string& t)
         {
-            asio_params::endpoint_type m = asio_params::tcp;
+            asio_params::endpoint_type m = asio_params::udp;
             auto s = t.substr(0,3);
             if(s == TCP) m = asio_params::tcp;
             else if(s == UDP) m = asio_params::udp;
-            else CHECK(false && "unkown transport"); //TODO: throw here
+            else std::cerr << "unknown transport: `" << s << "', using UDP " << std::endl;
 
             return m;
         }
@@ -932,8 +932,7 @@ namespace fire
 
             //check to see if a write is in progress
             if(!force && _writing) return;
-
-            REQUIRE_FALSE(_out_queue.empty());
+            if(_out_queue.empty()) return;
 
             _writing = true;
 
