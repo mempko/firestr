@@ -18,6 +18,7 @@
 #include <QApplication>
 
 #include "gui/mainwin.hpp"
+#include "network/util.hpp"
 
 #include <string>
 #include <cstdlib>
@@ -38,7 +39,12 @@ po::options_description create_descriptions()
     std::string user = std::getenv("HOME");
     if(user.empty()) user = ".";
     const std::string home = user + "/.firestr";
-    const std::string host = ip::host_name();
+
+    std::string host = ip::host_name();
+
+    std::string ip = fn::get_lan_ip();
+    if(!ip.empty()) host = ip;
+
     const std::string port = "6060";
     const std::string ping_port = "6070";
     const std::string stun_server = "";
