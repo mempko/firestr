@@ -114,6 +114,7 @@ namespace fire
                 void init_greet();
                 void send_ping_requests();
                 void send_ping_request(user::user_info_ptr, bool send_back = true);
+                void send_ping_request(const std::string& address, user::user_info_ptr, bool send_back = true);
                 void send_ping(char t);
                 void add_contact_data(user::user_info_ptr);
 

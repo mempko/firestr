@@ -30,13 +30,18 @@ namespace fire
         extern const std::string GREET_FIND_REQUEST;
         extern const std::string GREET_FIND_RESPONSE;
 
+        struct greet_endpoint
+        {
+            std::string ip;
+            std::string port;
+        };
+
         class greet_register
         {
             public:
                 greet_register(
                         const std::string& id,
-                        const std::string& ip,
-                        const std::string& port,
+                        const greet_endpoint& local,
                         const std::string& response_service_address);
 
             public:
@@ -45,14 +50,12 @@ namespace fire
 
             public:
                 const std::string& id() const;
-                const std::string& ip() const;
-                const std::string& port() const;
+                const greet_endpoint& local() const;
                 const std::string& response_service_address() const;
 
             private:
                 std::string _id;
-                std::string _ip;
-                std::string _port;
+                greet_endpoint _local;
                 std::string _response_service_address;
         };
 
@@ -82,8 +85,8 @@ namespace fire
                 greet_find_response(
                         bool found,
                         const std::string& id,
-                        const std::string& ip,
-                        const std::string& port);
+                        const greet_endpoint& local,
+                        const greet_endpoint& ext);
 
             public:
                 greet_find_response(const message::message&);
@@ -92,14 +95,14 @@ namespace fire
             public:
                 bool found() const;
                 const std::string& id() const;
-                const std::string& ip() const;
-                const std::string& port() const;
+                const greet_endpoint& local() const;
+                const greet_endpoint& external() const;
 
             private:
                 bool _found;
                 std::string _id;
-                std::string _ip;
-                std::string _port;
+                greet_endpoint _local;
+                greet_endpoint _ext;
         };
     }
 }

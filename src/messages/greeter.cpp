@@ -30,12 +30,10 @@ namespace fire
 
         greet_register::greet_register(
                 const std::string& id,
-                const std::string& ip,
-                const std::string& port,
+                const greet_endpoint& local,
                 const std::string& response_service_address) :
             _id{id},
-            _ip{ip},
-            _port{port},
+            _local(local),
             _response_service_address{response_service_address}
         {
         }
@@ -45,8 +43,8 @@ namespace fire
             REQUIRE_EQUAL(m.meta.type, GREET_REGISTER);
 
             _id = m.meta.extra["from_id"].as_string();
-            _ip = m.meta.extra["ext_ip"].as_string();
-            _port = m.meta.extra["ext_port"].as_string();
+            _local.ip = m.meta.extra["loc_ip"].as_string();
+            _local.port = m.meta.extra["loc_port"].as_string();
             _response_service_address = m.meta.extra["response_address"].as_string();
         }
 
@@ -55,8 +53,8 @@ namespace fire
             m::message m;
             m.meta.type = GREET_REGISTER;
             m.meta.extra["from_id"] = _id;
-            m.meta.extra["ext_ip"] = _ip;
-            m.meta.extra["ext_port"] = _port;
+            m.meta.extra["loc_ip"] = _local.ip;
+            m.meta.extra["loc_port"] = _local.port;
             m.meta.extra["response_address"] = _response_service_address;
             return m;
         }
@@ -66,14 +64,9 @@ namespace fire
             return _id;
         }
 
-        const std::string& greet_register::ip() const
+        const greet_endpoint& greet_register::local() const
         {
-            return _ip;
-        }
-
-        const std::string& greet_register::port() const
-        {
-            return _port;
+            return _local;
         }
 
         const std::string& greet_register::response_service_address() const
@@ -119,12 +112,12 @@ namespace fire
         greet_find_response::greet_find_response(
                 bool found,
                 const std::string& id,
-                const std::string& ip,
-                const std::string& port) :
+                const greet_endpoint& local,
+                const greet_endpoint& ext) :
             _found{found},
             _id{id},
-            _ip{ip},
-            _port{port}
+            _local(local),
+            _ext(ext)
         {
         }
 
@@ -133,8 +126,10 @@ namespace fire
             REQUIRE_EQUAL(m.meta.type, GREET_FIND_RESPONSE);
 
             _id = m.meta.extra["search_id"].as_string();
-            _ip = m.meta.extra["ext_ip"].as_string();
-            _port = m.meta.extra["ext_port"].as_string();
+            _local.ip = m.meta.extra["loc_ip"].as_string();
+            _local.port = m.meta.extra["loc_port"].as_string();
+            _ext.ip = m.meta.extra["ext_ip"].as_string();
+            _ext.port = m.meta.extra["ext_port"].as_string();
             _found = m.meta.extra["found"].as_int() == 1;
         }
 
@@ -143,8 +138,10 @@ namespace fire
             m::message m;
             m.meta.type = GREET_FIND_RESPONSE;
             m.meta.extra["search_id"] = _id;
-            m.meta.extra["ext_ip"] = _ip;
-            m.meta.extra["ext_port"] = _port;
+            m.meta.extra["loc_ip"] = _local.ip;
+            m.meta.extra["loc_port"] = _local.port;
+            m.meta.extra["ext_ip"] = _ext.ip;
+            m.meta.extra["ext_port"] = _ext.port;
             m.meta.extra["found"] = static_cast<int>(_found ? 1 : 0);
             return m;
         }
@@ -160,14 +157,15 @@ namespace fire
             return _id;
         }
 
-        const std::string& greet_find_response::ip() const
+        const greet_endpoint& greet_find_response::local() const
         {
-            return _ip;
+            return _local;
         }
 
-        const std::string& greet_find_response::port() const
+        const greet_endpoint& greet_find_response::external() const
         {
-            return _port;
+            return _ext;
         }
+
     }
 }

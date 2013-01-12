@@ -70,8 +70,8 @@ typedef std::map<std::string, std::string> port_map;
 struct user_info
 {
     std::string id;
-    std::string ip;
-    std::string port;
+    ms::greet_endpoint local;
+    ms::greet_endpoint ext;
     std::string response_service_address;
     n::endpoint ep;
 };
@@ -83,20 +83,20 @@ void register_user(n::connection_manager& con, const n::endpoint& ep, const ms::
     if(con.is_disconnected(n::make_address_str(ep))) return;
 
     //use user specified ip, otherwise use socket ip
-    std::string ip = r.ip().empty() ? ep.address : r.ip();
-    std::string port = r.ip().empty() ? ep.port : r.port();
+    ms::greet_endpoint local = r.local();
+    ms::greet_endpoint ext = {ep.address, ep.port};
 
-    user_info i = {r.id(), ip, port, r.response_service_address(), ep};
+    user_info i = {r.id(), local, ext, r.response_service_address(), ep};
     m[i.id] = i;
 
-    std::cerr << "registered " << i.id << " " << i.ip << ":" << i.port << std::endl;
+    std::cerr << "registered " << i.id << " " << i.ext.ip << ":" << i.ext.port << std::endl;
 }
 
 void send_response(n::connection_manager& con, const ms::greet_find_response& r, const user_info& u)
 {
     m::message m = r;
 
-    auto address = n::make_tcp_address(u.ip, u.port); 
+    auto address = n::make_tcp_address(u.ext.ip, u.ext.port); 
     m.meta.to = {address, u.response_service_address};
 
     std::cerr << "sending reply to " << address << std::endl;
@@ -119,13 +119,13 @@ void find_user(n::connection_manager& con, const n::endpoint& ep,  const ms::gre
 
     auto& i = up->second;
 
-    std::cerr << "found match " << f.id << " " << f.ip << ":" << f.port << " <==> " <<  i.id << " " << i.ip << ":" << i.port << std::endl;
+    std::cerr << "found match " << f.id << " " << f.ext.ip << ":" << f.ext.port << " <==> " <<  i.id << " " << i.ext.ip << ":" << i.ext.port << std::endl;
 
     //send response to both clients
-    ms::greet_find_response fr{true, i.id, i.ip,  i.port};
+    ms::greet_find_response fr{true, i.id, i.local,  i.ext};
     send_response(con, fr, f);
 
-    ms::greet_find_response ir{true, f.id, f.ip,  f.port};
+    ms::greet_find_response ir{true, f.id, f.local,  f.ext};
     send_response(con, ir, i);
 }
 
