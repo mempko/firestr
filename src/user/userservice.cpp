@@ -101,7 +101,6 @@ namespace fire
             m.meta.type = PING_REQUEST;
             m.meta.to = {r.to, SERVICE_ADDRESS};
             m.meta.extra["from_id"] = r.from_id;
-            m.meta.extra["from_port"] = r.from_port;
             m.meta.extra["send_back"] = r.send_back;
 
             return m;
@@ -396,19 +395,22 @@ namespace fire
                 ms::greet_find_response rs{m};
                 if(!rs.found()) return;
 
-                std::cerr << "got greet response: " << rs.ip() << ":" << rs.port() << std::endl;
+                std::cerr << "got greet response: " << rs.external().ip << ":" << rs.external().port << std::endl;
 
-                //update address info
-                update_contact_address(rs.id(), rs.ip(), rs.port());
-
-                //send ping request using new address
+                //send ping request using new local and remote address
                 auto c = _user->contacts().by_id(rs.id());
                 if(c) 
                 {
                     CHECK(_contacts.count(c->id()));
                     _contacts[c->id()].state = contact_data::ONLINE;
 
-                    send_ping_request(c);
+                    auto local = n::make_udp_address(rs.local().ip, rs.local().port);
+                    auto external = n::make_udp_address(rs.external().ip, rs.external().port);
+
+                    //send ping request via local network and external
+                    //network. First one to arrive gets to be connection
+                    send_ping_request(local, c);
+                    send_ping_request(external, c);
                 }
             }
             else
@@ -672,8 +674,7 @@ namespace fire
                         ms::greet_register r
                         {
                             s->_user->info().id(), 
-                            (s->_stun ? s->_stun->external_ip() : ""), //if no stun, let greeter use socket ip
-                            (s->_stun ? s->_stun->external_port() : s->_in_port),
+                            {s->_in_host, s->_in_port},
                             SERVICE_ADDRESS
                         };
 
@@ -786,20 +787,26 @@ namespace fire
                 send_ping_request(c);
         }
 
-        void user_service::send_ping_request(us::user_info_ptr c, bool send_back)
+        void user_service::send_ping_request(const std::string& address, us::user_info_ptr c, bool send_back)
         {
             INVARIANT(_user);
             INVARIANT(mail());
 
             ping_request a
             {
-                c->address(), 
-                _user->info().id(), 
-                (_stun ? _stun->external_ip() : _in_host), 
-                (_stun ? _stun->external_port() : _in_port),
+                address, 
+                _user->info().id(), "", "", //the ip and port will be filled in on other side
                 send_back
             };
             mail()->push_outbox(convert(a));
+        }
+
+        void user_service::send_ping_request(us::user_info_ptr c, bool send_back)
+        {
+            INVARIANT(_user);
+            INVARIANT(mail());
+
+            send_ping_request(c->address(), c, send_back);
         }
 
         void user_service::fire_new_contact_event(const std::string& id)
@@ -816,6 +823,9 @@ namespace fire
             if(!c) return;
 
             auto& cd = _contacts[c->id()];
+            //don't fire if state is already connected
+            if(cd.state == contact_data::CONNECTED) return;
+
             cd.contact = c;
             cd.last_ping = 0;
             cd.state = contact_data::CONNECTED;
