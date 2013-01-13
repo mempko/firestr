@@ -149,15 +149,33 @@ namespace fire
 
             //create list
             _list = new list;
-            layout->addWidget(_list, 0, 0);
+            layout->addWidget(_list, 0, 0, 2, 3);
 
             update_contacts();
 
             //create add button
             auto* add_new = new QPushButton("add");
-            layout->addWidget(add_new, 1,0); 
-
+            layout->addWidget(add_new, 2,0); 
             connect(add_new, SIGNAL(clicked()), this, SLOT(new_contact()));
+
+            //create id label
+            std::string id = service->user().info().id(); 
+            auto* id_label = new QLabel("your id");
+            auto* id_txt = new QLineEdit(id.c_str());
+            id_txt->setMinimumWidth(id.size() * 8);
+            id_txt->setReadOnly(true);
+            id_txt->setFrame(false);
+            layout->addWidget(id_label, 3,0); 
+            layout->addWidget(id_txt, 3,1,1,2); 
+
+            std::string addr = service->in_host() + ":" + service->in_port();
+            auto* addr_label = new QLabel("your address");
+            auto* addr_txt = new QLineEdit(addr.c_str());
+            addr_txt->setMinimumWidth(addr.size() * 8);
+            addr_txt->setReadOnly(true);
+            addr_txt->setFrame(false);
+            layout->addWidget(addr_label, 4,0); 
+            layout->addWidget(addr_txt, 4,1,1,2); 
 
             //setup updated timer
             auto *t = new QTimer(this);
@@ -199,7 +217,7 @@ namespace fire
             QString r = QInputDialog::getText(
                     0, 
                     "Add New Contact",
-                    "Contact Address",
+                    "Contact Address or ID",
                     QLineEdit::Normal, address.c_str(), &ok);
 
             if(ok && !r.isEmpty()) address = convert(r);
