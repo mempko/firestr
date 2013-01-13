@@ -75,6 +75,8 @@ namespace fire
                 local_user& user();
                 const local_user& user() const;
                 const std::string& home() const;
+                const std::string& in_host() const;
+                const std::string& in_port() const;
 
             public:
                 void attempt_to_add_contact(const std::string& address);

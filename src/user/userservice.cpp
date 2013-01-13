@@ -454,6 +454,18 @@ namespace fire
             return _home;
         }
 
+        const std::string& user_service::in_host() const
+        {
+            ENSURE_FALSE(_in_host.empty());
+            return _in_host;
+        }
+
+        const std::string& user_service::in_port() const
+        {
+            ENSURE_FALSE(_in_port.empty());
+            return _in_port;
+        }
+
         void user_service::confirm_contact(user_info_ptr contact)
         {
             u::mutex_scoped_lock l(_mutex);
