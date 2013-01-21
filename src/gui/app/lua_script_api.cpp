@@ -19,7 +19,6 @@
 
 #include "gui/app/lua_script_api.hpp"
 #include "gui/util.hpp"
-#include "util/uuid.hpp"
 #include "util/dbc.hpp"
 
 #include <QTimer>
@@ -80,7 +79,8 @@ namespace fire
             {
                 contact_ref e;
                 e.api = &api;
-                e.id = "0";
+                e.id = 0;
+                e.user_id = "0";
                 return e;
             }
 
@@ -92,11 +92,12 @@ namespace fire
                 if(!c) return empty_contact_ref(*_api);
 
                 contact_ref r;
-                r.id = c->id();
+                r.id = 0;
+                r.user_id = c->id();
                 r.api = _api;
 
                 ENSURE_EQUAL(r.api, _api);
-                ENSURE_FALSE(r.id.empty());
+                ENSURE_FALSE(r.user_id.empty());
                 return r;
             }
 
@@ -112,7 +113,8 @@ namespace fire
                 session{s},
                 canvas{c},
                 layout{cl},
-                output{o}
+                output{o},
+                ids{0}
             {
                 INVARIANT(sender);
                 INVARIANT(session);
@@ -124,6 +126,12 @@ namespace fire
                 INVARIANT(canvas);
                 INVARIANT(layout);
                 INVARIANT(state);
+            }
+
+            int lua_script_api::new_id()
+            {
+                ids++;
+                return ids;
             }
 
             void lua_script_api::bind()
@@ -268,19 +276,19 @@ namespace fire
 
             //API implementation 
             template<class W>
-                W* get_widget(const std::string& id, widget_map& map)
+                W* get_widget(int id, widget_map& map)
                 {
                     auto wp = map.find(id);
                     return wp != map.end() ? dynamic_cast<W*>(wp->second) : nullptr;
                 }
 
-            QGridLayout* get_layout(const std::string& id, layout_map& map)
+            QGridLayout* get_layout(int id, layout_map& map)
             {
                 auto lp = map.find(id);
                 return lp != map.end() ? lp->second : nullptr;
             }
 
-            void set_enabled(const std::string& id, widget_map& map, bool enabled)
+            void set_enabled(int id, widget_map& map, bool enabled)
             {
                 auto w = get_widget<QWidget>(id, map);
                 if(!w) return;
@@ -345,7 +353,7 @@ namespace fire
             {
                 INVARIANT(sender);
 
-                auto c = contacts.by_id(cr.id);
+                auto c = contacts.by_id(cr.user_id);
                 if(!c) return;
 
                 sender->send(c->id(), m); 
@@ -367,11 +375,12 @@ namespace fire
                 if(!c) return empty_contact_ref(*this);
 
                 contact_ref r;
-                r.id = c->id();
+                r.id = 0;
+                r.user_id = c->id();
                 r.api = this;
 
                 ENSURE_EQUAL(r.api, this);
-                ENSURE_FALSE(r.id.empty());
+                ENSURE_FALSE(r.user_id.empty());
                 return r;
             }
 
@@ -379,7 +388,7 @@ namespace fire
             {
                 INVARIANT(api);
 
-                auto c = api->contacts.by_id(id);
+                auto c = api->contacts.by_id(user_id);
                 if(!c) return "";
 
                 return c->name();
@@ -390,7 +399,7 @@ namespace fire
                 INVARIANT(api);
                 INVARIANT(api->session);
 
-                return api->session->user_service()->contact_available(id);
+                return api->session->user_service()->contact_available(user_id);
             }
 
             canvas_ref lua_script_api::make_canvas(int r, int c)
@@ -400,7 +409,7 @@ namespace fire
 
                 //create button reference
                 canvas_ref ref;
-                ref.id = u::uuid();
+                ref.id = new_id();
                 ref.api = this;
 
                 //create widget and new layout
@@ -416,7 +425,7 @@ namespace fire
                 //place
                 layout->addWidget(b, r, c);
 
-                ENSURE_FALSE(ref.id.empty());
+                ENSURE_FALSE(ref.id == 0);
                 ENSURE(ref.api);
                 return ref;
             }
@@ -424,7 +433,7 @@ namespace fire
             void canvas_ref::place(const widget_ref& wr, int r, int c)
             {
                 INVARIANT(api);
-                INVARIANT_FALSE(id.empty());
+                INVARIANT_FALSE(id == 0);
 
                 auto l = get_layout(id, api->layouts);
                 if(!l) return;
@@ -438,7 +447,7 @@ namespace fire
             void canvas_ref::place_across(const widget_ref& wr, int r, int c, int row_span, int col_span)
             {
                 INVARIANT(api);
-                INVARIANT_FALSE(id.empty());
+                INVARIANT_FALSE(id == 0);
 
                 auto l = get_layout(id, api->layouts);
                 if(!l) return;
@@ -494,7 +503,7 @@ namespace fire
 
                 //create button reference
                 button_ref ref;
-                ref.id = u::uuid();
+                ref.id = new_id();
                 ref.api = this;
 
                 //create button widget
@@ -502,25 +511,25 @@ namespace fire
 
                 //map button to C++ callback
                 auto mapper = new QSignalMapper{canvas};
-                mapper->setMapping(b, QString(ref.id.c_str()));
+                mapper->setMapping(b, ref.id);
                 connect(b, SIGNAL(clicked()), mapper, SLOT(map()));
-                connect(mapper, SIGNAL(mapped(QString)), this, SLOT(button_clicked(QString)));
+                connect(mapper, SIGNAL(mapped(int)), this, SLOT(button_clicked(int)));
 
                 //add ref and widget to maps
                 button_refs[ref.id] = ref;
                 widgets[ref.id] = b;
 
-                ENSURE_FALSE(ref.id.empty());
+                ENSURE_FALSE(ref.id == 0);
                 ENSURE(ref.callback.empty());
                 ENSURE(ref.api);
                 return ref;
             }
 
-            void lua_script_api::button_clicked(QString id)
+            void lua_script_api::button_clicked(int id)
             {
                 INVARIANT(state);
 
-                auto rp = button_refs.find(gui::convert(id));
+                auto rp = button_refs.find(id);
                 if(rp == button_refs.end()) return;
 
                 const auto& callback = rp->second.callback;
@@ -572,7 +581,7 @@ namespace fire
 
                 //create edit reference
                 label_ref ref;
-                ref.id = u::uuid();
+                ref.id = new_id();
                 ref.api = this;
 
                 //create edit widget
@@ -582,7 +591,7 @@ namespace fire
                 label_refs[ref.id] = ref;
                 widgets[ref.id] = w;
 
-                ENSURE_FALSE(ref.id.empty());
+                ENSURE_FALSE(ref.id == 0);
                 ENSURE(ref.api);
                 return ref;
             }
@@ -619,7 +628,7 @@ namespace fire
 
                 //create edit reference
                 edit_ref ref;
-                ref.id = u::uuid();
+                ref.id = new_id();
                 ref.api = this;
 
                 //create edit widget
@@ -627,31 +636,31 @@ namespace fire
 
                 //map edit to C++ callback
                 auto edit_mapper = new QSignalMapper{canvas};
-                edit_mapper->setMapping(e, QString(ref.id.c_str()));
+                edit_mapper->setMapping(e, ref.id);
                 connect(e, SIGNAL(textChanged(QString)), edit_mapper, SLOT(map()));
-                connect(edit_mapper, SIGNAL(mapped(QString)), this, SLOT(edit_edited(QString)));
+                connect(edit_mapper, SIGNAL(mapped(int)), this, SLOT(edit_edited(int)));
 
                 auto finished_mapper = new QSignalMapper{canvas};
-                finished_mapper->setMapping(e, QString(ref.id.c_str()));
+                finished_mapper->setMapping(e, ref.id);
                 connect(e, SIGNAL(editingFinished()), finished_mapper, SLOT(map()));
-                connect(finished_mapper, SIGNAL(mapped(QString)), this, SLOT(edit_finished(QString)));
+                connect(finished_mapper, SIGNAL(mapped(int)), this, SLOT(edit_finished(int)));
 
                 //add ref and widget to maps
                 edit_refs[ref.id] = ref;
                 widgets[ref.id] = e;
 
-                ENSURE_FALSE(ref.id.empty());
+                ENSURE_FALSE(ref.id == 0);
                 ENSURE(ref.edited_callback.empty());
                 ENSURE(ref.finished_callback.empty());
                 ENSURE(ref.api);
                 return ref;
             }
 
-            void lua_script_api::edit_edited(QString id)
+            void lua_script_api::edit_edited(int id)
             {
                 INVARIANT(state);
 
-                auto rp = edit_refs.find(gui::convert(id));
+                auto rp = edit_refs.find(id);
                 if(rp == edit_refs.end()) return;
 
                 const auto& callback = rp->second.edited_callback;
@@ -660,11 +669,11 @@ namespace fire
                 run(callback);
             }
 
-            void lua_script_api::edit_finished(QString id)
+            void lua_script_api::edit_finished(int id)
             {
                 INVARIANT(state);
 
-                auto rp = edit_refs.find(gui::convert(id));
+                auto rp = edit_refs.find(id);
                 if(rp == edit_refs.end()) return;
 
                 const auto& callback = rp->second.finished_callback;
@@ -727,7 +736,7 @@ namespace fire
 
                 //create edit reference
                 text_edit_ref ref;
-                ref.id = u::uuid();
+                ref.id = new_id();
                 ref.api = this;
 
                 //create edit widget
@@ -735,25 +744,25 @@ namespace fire
 
                 //map edit to C++ callback
                 auto edit_mapper = new QSignalMapper{canvas};
-                edit_mapper->setMapping(e, QString(ref.id.c_str()));
+                edit_mapper->setMapping(e, ref.id);
                 connect(e, SIGNAL(textChanged()), edit_mapper, SLOT(map()));
-                connect(edit_mapper, SIGNAL(mapped(QString)), this, SLOT(text_edit_edited(QString)));
+                connect(edit_mapper, SIGNAL(mapped(int)), this, SLOT(text_edit_edited(int)));
 
                 //add ref and widget to maps
                 text_edit_refs[ref.id] = ref;
                 widgets[ref.id] = e;
 
-                ENSURE_FALSE(ref.id.empty());
+                ENSURE_FALSE(ref.id == 0);
                 ENSURE(ref.edited_callback.empty());
                 ENSURE(ref.api);
                 return ref;
             }
 
-            void lua_script_api::text_edit_edited(QString id)
+            void lua_script_api::text_edit_edited(int id)
             {
                 INVARIANT(state);
 
-                auto rp = text_edit_refs.find(gui::convert(id));
+                auto rp = text_edit_refs.find(id);
                 if(rp == text_edit_refs.end()) return;
 
                 const auto& callback = rp->second.edited_callback;
@@ -805,7 +814,7 @@ namespace fire
 
                 //create edit reference
                 list_ref ref;
-                ref.id = u::uuid();
+                ref.id = new_id();
                 ref.api = this;
 
                 //create edit widget
@@ -816,16 +825,16 @@ namespace fire
                 list_refs[ref.id] = ref;
                 widgets[ref.id] = w;
 
-                ENSURE_FALSE(ref.id.empty());
+                ENSURE_FALSE(ref.id == 0);
                 ENSURE(ref.api);
                 return ref;
             }
 
             void list_ref::add(const widget_ref& wr)
             {
-                REQUIRE_FALSE(wr.id.empty());
+                REQUIRE_FALSE(wr.id == 0);
                 INVARIANT(api);
-                INVARIANT_FALSE(id.empty());
+                INVARIANT_FALSE(id == 0);
 
                 auto l = get_widget<gui::list>(id, api->widgets);
                 if(!l) return;
@@ -839,7 +848,7 @@ namespace fire
             void list_ref::clear()
             {
                 INVARIANT(api);
-                INVARIANT_FALSE(id.empty());
+                INVARIANT_FALSE(id == 0);
 
                 auto l = get_widget<gui::list>(id, api->widgets);
                 if(!l) return;

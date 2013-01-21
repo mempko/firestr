@@ -34,6 +34,7 @@
 #include "slb/SLB.hpp"
 
 #include <string>
+#include <unordered_map>
 
 namespace fire
 {
@@ -45,7 +46,7 @@ namespace fire
 
             struct basic_ref
             {
-                std::string id;
+                int id;
                 lua_script_api* api;
             };
 
@@ -66,14 +67,14 @@ namespace fire
                 const std::string& get_callback() const { return callback;}
                 void set_callback(const std::string&);  
             };
-            typedef std::map<std::string, button_ref> button_ref_map;
+            typedef std::unordered_map<int, button_ref> button_ref_map;
 
             struct label_ref : public widget_ref
             {
                 std::string get_text() const; 
                 void set_text(const std::string&);
             };
-            typedef std::map<std::string, label_ref> label_ref_map;
+            typedef std::unordered_map<int, label_ref> label_ref_map;
 
             struct edit_ref : public widget_ref
             {
@@ -89,7 +90,7 @@ namespace fire
                 const std::string& get_finished_callback() const { return finished_callback;}
                 void set_finished_callback(const std::string&);  
             };
-            typedef std::map<std::string, edit_ref> edit_ref_map;
+            typedef std::unordered_map<int, edit_ref> edit_ref_map;
 
             struct text_edit_ref : public widget_ref
             {
@@ -101,14 +102,14 @@ namespace fire
                 const std::string& get_edited_callback() const { return edited_callback;}
                 void set_edited_callback(const std::string&);  
             };
-            typedef std::map<std::string, text_edit_ref> text_edit_ref_map;
+            typedef std::unordered_map<int, text_edit_ref> text_edit_ref_map;
 
             struct list_ref : public widget_ref
             {
                 void add(const widget_ref& r);
                 void clear();
             };
-            typedef std::map<std::string, list_ref> list_ref_map;
+            typedef std::unordered_map<int, list_ref> list_ref_map;
 
             //decided to call layouts canvases
             struct canvas_ref : public basic_ref
@@ -117,10 +118,11 @@ namespace fire
                 void place_across(const widget_ref& w, int r, int c, int row_span, int col_span);
             };
 
-            typedef std::map<std::string, canvas_ref> canvas_ref_map;
+            typedef std::unordered_map<int, canvas_ref> canvas_ref_map;
 
             struct contact_ref : public basic_ref
             {
+                std::string user_id;
                 std::string get_name() const;
                 bool is_online() const;
             };
@@ -145,8 +147,8 @@ namespace fire
             };
 
             typedef std::shared_ptr<SLB::Script> script_ptr;
-            typedef std::map<std::string, QWidget*> widget_map;
-            typedef std::map<std::string, QGridLayout*> layout_map;
+            typedef std::unordered_map<int, QWidget*> widget_map;
+            typedef std::unordered_map<int, QGridLayout*> layout_map;
 
             class lua_script_api : public QObject
             {
@@ -191,6 +193,10 @@ namespace fire
                     layout_map layouts;
                     widget_map widgets;
 
+                    //id functions
+                    int ids;
+                    int new_id();
+
                     //================================
                     //API
                     //================================
@@ -216,10 +222,10 @@ namespace fire
                     contact_ref get_contact(size_t);
 
                     public slots:
-                        void button_clicked(QString id);
-                        void edit_edited(QString id);
-                        void edit_finished(QString id);
-                        void text_edit_edited(QString id);
+                        void button_clicked(int id);
+                        void edit_edited(int id);
+                        void edit_finished(int id);
+                        void text_edit_edited(int id);
             };
 
             typedef std::shared_ptr<lua_script_api> lua_script_api_ptr;
