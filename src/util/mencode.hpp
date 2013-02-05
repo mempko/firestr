@@ -90,20 +90,20 @@ namespace fire
                 boost::any _v;
         };
 
-        typedef std::pair<std::string, value> kv;
+        using kv = std::pair<std::string, value>;
 
         class dict
         {
             private:
-                typedef std::map<std::string, value> value_map;
+                using value_map = std::map<std::string, value>;
         
             public:
                 dict();
                 dict(std::initializer_list<kv>);
 
             public:
-                typedef value_map::const_iterator const_iterator;
-                typedef value_map::iterator iterator;
+                using const_iterator = value_map::const_iterator;
+                using iterator = value_map::iterator;
                 
             public:
                 value& operator[](const std::string& k);
@@ -125,11 +125,11 @@ namespace fire
         class array
         {
             private:
-                typedef std::vector<value> value_array;
+                using value_array = std::vector<value>;
 
             public:
-                typedef value_array::const_iterator const_iterator;
-                typedef value_array::iterator iterator;
+                using const_iterator = value_array::const_iterator;
+                using iterator = value_array::iterator;
 
             public:
                 array();
@@ -152,6 +152,25 @@ namespace fire
             private:
                 value_array _a;
         };
+
+        template<class C, class Convert>
+        array to_array(const C& cs, Convert conv)
+        {
+            array a;
+            for(auto c : cs) a.add(conv(c));
+
+            ENSURE_EQUAL(a.size(), cs.size());
+            return a;
+        }
+
+        template<class C, class Convert>
+        void from_array(const array& a, C& cs, Convert conv)
+        {
+            for(auto v : a)
+                cs.emplace_back(conv(v.as_dict()));
+
+            ENSURE_EQUAL(cs.size(), a.size());
+        }
 
         std::ostream& operator<<(std::ostream&, const dict&);
         std::ostream& operator<<(std::ostream&, const array&);

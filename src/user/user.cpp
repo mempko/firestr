@@ -53,7 +53,8 @@ namespace fire
 
         void convert(const u::dict& d, user_info& u)
         {
-            u = {
+            u = 
+            {
                 d["address"].as_string(),
                 d["name"].as_string(),
                 d["id"].as_string()
@@ -87,6 +88,25 @@ namespace fire
             ENSURE_EQUAL(us.size(), a.size());
         }
 
+        u::dict from_greet_server(const greet_server& g)
+        {
+            u::dict d;
+
+            d["host"] = g.host();
+            d["port"] = g.port();
+
+            return d;
+        }
+
+        greet_server to_greet_server(const u::dict& d)
+        {
+            greet_server g{
+                d["host"].as_string(),
+                d["port"].as_string(),
+            };
+            return g;
+        }
+
         std::ostream& operator<<(std::ostream& out, const user_info& u)
         {
             out << convert(u);
@@ -117,6 +137,21 @@ namespace fire
             return in;
         }
 
+        std::ostream& operator<<(std::ostream& out, const greet_servers& gs)
+        {
+            out << u::to_array(gs, from_greet_server);
+            return out;
+        }
+
+        std::istream& operator>>(std::istream& in, greet_servers& gs)
+        {
+            u::array a;
+            in >> a;
+
+            u::from_array(a, gs, to_greet_server);
+            return in;
+        }
+
         std::string get_local_user_file(const bf::path& home_dir)
         {
             bf::path l = home_dir / "local";
@@ -129,10 +164,17 @@ namespace fire
             return l.string();
         }
 
+        std::string get_local_greeters_file(const bf::path& home_dir)
+        {
+            bf::path l = home_dir / "greeters";
+            return l.string();
+        }
+
         local_user_ptr load_user(const std::string& home_dir)
         {
-            std::string local_user_file = get_local_user_file(home_dir);
-            std::string local_contacts_file = get_local_contacts_file(home_dir);
+            auto local_user_file = get_local_user_file(home_dir);
+            auto local_contacts_file = get_local_contacts_file(home_dir);
+            auto local_greaters_file = get_local_greeters_file(home_dir);
 
             std::ifstream info_in(local_user_file.c_str());
             if(!info_in.good()) return {};
@@ -147,8 +189,15 @@ namespace fire
                 contacts_in >> us;
             }
 
+            greet_servers greeters;
+            std::ifstream greeters_in(local_greaters_file.c_str());
+            if(greeters_in.good()) 
+            {
+                greeters_in >> greeters;
+            }
+
             contact_list contacts{us};
-            local_user_ptr lu{new local_user{info, contacts}};
+            local_user_ptr lu{new local_user{info, contacts, greeters}};
 
             ENSURE(lu);
             return lu;
@@ -158,31 +207,49 @@ namespace fire
         {
             create_home_directory(home_dir);
 
-            std::string local_user_file = get_local_user_file(home_dir);
-            std::string local_contacts_file = get_local_contacts_file(home_dir);
+            auto local_user_file = get_local_user_file(home_dir);
+            auto local_contacts_file = get_local_contacts_file(home_dir);
+            auto local_greaters_file = get_local_greeters_file(home_dir);
 
-            std::ofstream info_out(local_user_file.c_str());
-            if(!info_out.good()) 
-                throw std::runtime_error{"unable to save `" + local_user_file + "'"};
+            {
+                std::ofstream info_out(local_user_file.c_str());
+                if(!info_out.good()) 
+                    throw std::runtime_error{"unable to save `" + local_user_file + "'"};
 
-            info_out << lu.info();
+                info_out << lu.info();
+            }
 
-            std::ofstream contacts_out(local_contacts_file.c_str());
-            if(!contacts_out.good()) 
-                throw std::runtime_error{"unable to save `" + local_contacts_file + "'"};
-            
-            contacts_out << lu.contacts().list();
+            {
+                std::ofstream contacts_out(local_contacts_file.c_str());
+                if(!contacts_out.good()) 
+                    throw std::runtime_error{"unable to save `" + local_contacts_file + "'"};
+
+                contacts_out << lu.contacts().list();
+            }
+
+            {
+                std::ofstream greeters_out(local_greaters_file.c_str());
+                if(!greeters_out.good()) 
+                    throw std::runtime_error{"unable to save `" + local_greaters_file + "'"};
+
+                greeters_out << lu.greeters();
+            }
         }
 
-        local_user::local_user(const user_info& i, const contact_list& c) : 
+        local_user::local_user(
+                const user_info& i, 
+                const contact_list& c,
+                const greet_servers& g) : 
             _info{i},
-            _contacts{c}
+            _contacts{c},
+            _greet_servers{g}
         {
         }
 
         local_user::local_user(const std::string& name) : 
             _info{"local", name, util::uuid()}, 
-            _contacts{}
+            _contacts{},
+            _greet_servers{}
         {
             REQUIRE_FALSE(name.empty());
 
@@ -332,5 +399,28 @@ namespace fire
             _id = v;
         }
 
+        std::string greet_server::host() const
+        {
+            u::mutex_scoped_lock l(_mutex);
+            return _host;
+        }
+
+        std::string greet_server::port() const
+        {
+            u::mutex_scoped_lock l(_mutex);
+            return _port;
+        }
+
+        void greet_server::host(const std::string& v)
+        {
+            u::mutex_scoped_lock l(_mutex);
+            _host = v;
+        }
+
+        void greet_server::port(const std::string& v)
+        {
+            u::mutex_scoped_lock l(_mutex);
+            _port = v;
+        }
     }
 }
