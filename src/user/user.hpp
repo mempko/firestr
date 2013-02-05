@@ -78,10 +78,10 @@ namespace fire
                 mutable std::mutex _mutex;
         };
 
-        typedef std::shared_ptr<user_info> user_info_ptr;
-        typedef std::weak_ptr<user_info> user_info_wptr;
-        typedef std::vector<user_info_ptr> users;
-        typedef std::map<std::string, size_t> user_map;
+        using user_info_ptr = std::shared_ptr<user_info>;
+        using user_info_wptr = std::weak_ptr<user_info>;
+        using users = std::vector<user_info_ptr>;
+        using user_map = std::map<std::string, size_t>;
 
         class contact_list
         {
@@ -108,21 +108,55 @@ namespace fire
                 mutable std::mutex _mutex;
         };
 
+        class greet_server
+        {
+            public:
+                greet_server() : _host(), _port(){}
+
+                greet_server(const greet_server& o) : 
+                    _host{o._host}, _port{o._port}{}
+
+                greet_server(const std::string& host, const std::string& port) : 
+                    _host{host}, _port{port}{}
+
+            public:
+                std::string host() const; 
+                std::string port() const;
+                void host(const std::string& host); 
+                void port(const std::string& port);
+
+            private:
+                std::string _host;
+                std::string _port;
+                mutable std::mutex _mutex;
+        };
+
+        using greet_servers = std::vector<greet_server>;
+
         class local_user
         {
             public:
-                local_user(const user_info& i, const contact_list& c);
+                local_user(
+                        const user_info& i, 
+                        const contact_list& c,
+                        const greet_servers& g);
+
                 local_user(const std::string& name); 
 
             public:
                 const user_info& info() const { return _info;}
                 user_info& info() { return _info;}
+
                 const contact_list& contacts() const { return _contacts;}
                 contact_list& contacts() { return _contacts;}
+
+                const greet_servers& greeters() const { return _greet_servers;}
+                greet_servers& greeters() { return _greet_servers;}
 
             private:
                 user_info _info;
                 contact_list _contacts;
+                greet_servers _greet_servers;
         };
 
         typedef std::shared_ptr<local_user> local_user_ptr;
