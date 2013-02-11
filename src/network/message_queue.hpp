@@ -78,6 +78,9 @@ namespace fire
         address_components parse_address(
                 const std::string& queue_address, 
                 const queue_options& defaults = queue_options());
+
+        using host_port = std::pair<std::string,std::string>;
+        host_port parse_host_port(const std::string&);
     }
 }
 

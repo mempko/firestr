@@ -143,11 +143,37 @@ namespace fire
             _service{service}
         {
             REQUIRE(service);
-            
-            auto* layout = new QGridLayout{this};
-            setLayout(layout);
 
-            //create list
+            //create tabs
+            auto* layout = new QVBoxLayout{this};
+            setLayout(layout);
+            auto* tabs = new QTabWidget{this};
+            layout->addWidget(tabs);
+            
+            auto* contacts_tab = new QWidget;
+            auto* contacts_layout = new QGridLayout{contacts_tab};
+
+            auto* greeters_tab = new QWidget;
+            auto* greeters_layout = new QGridLayout{greeters_tab};
+            tabs->addTab(contacts_tab, "contacts");
+            tabs->addTab(greeters_tab, "greeters");
+
+            init_contacts_tab(contacts_tab, contacts_layout, add_on_start);
+            init_greeters_tab(greeters_tab, greeters_layout);
+
+            setWindowTitle(tr(title.c_str()));
+
+            //create greeter tab
+            INVARIANT(_list);
+        }
+
+        void contact_list_dialog::init_contacts_tab(QWidget* tab, QGridLayout* layout, bool add_on_start)
+        {
+            REQUIRE(tab);
+            REQUIRE(layout);
+            INVARIANT(_service);
+
+            //create contact list
             _list = new list;
             layout->addWidget(_list, 0, 0, 2, 3);
 
@@ -159,7 +185,7 @@ namespace fire
             connect(add_new, SIGNAL(clicked()), this, SLOT(new_contact()));
 
             //create id label
-            std::string id = service->user().info().id(); 
+            std::string id = _service->user().info().id(); 
             auto* id_label = new QLabel("your id");
             auto* id_txt = new QLineEdit(id.c_str());
             id_txt->setMinimumWidth(id.size() * 8);
@@ -168,7 +194,7 @@ namespace fire
             layout->addWidget(id_label, 3,0); 
             layout->addWidget(id_txt, 3,1,1,2); 
 
-            std::string addr = service->in_host() + ":" + service->in_port();
+            std::string addr = _service->in_host() + ":" + _service->in_port();
             auto* addr_label = new QLabel("your address");
             auto* addr_txt = new QLineEdit(addr.c_str());
             addr_txt->setMinimumWidth(addr.size() * 8);
@@ -182,10 +208,20 @@ namespace fire
             connect(t, SIGNAL(timeout()), this, SLOT(update()));
             t->start(TIMER_SLEEP);
 
-            setWindowTitle(tr(title.c_str()));
-
             if(add_on_start) new_contact();
-            INVARIANT(_list);
+        }
+
+        void contact_list_dialog::init_greeters_tab(QWidget* tab, QGridLayout* layout)
+        {
+            REQUIRE(tab);
+            REQUIRE(layout);
+            INVARIANT(_service);
+            auto gl = new greeter_list{_service};
+
+            layout->addWidget(gl, 0,0);
+            auto* add_new = new QPushButton("add");
+            layout->addWidget(add_new, 1,0); 
+            connect(add_new, SIGNAL(clicked()), gl, SLOT(add_greeter()));
         }
 
         void contact_list_dialog::update_contacts()
@@ -285,5 +321,70 @@ namespace fire
                 p->update();
             }
         }
+
+        greeter_list::greeter_list(user::user_service_ptr service) :
+            _service{service}
+
+        {
+            REQUIRE(service);
+            INVARIANT(_service);
+            for(const auto& s : _service->user().greeters())
+                add_greeter(s);
+        }
+                
+        void greeter_list::add_greeter(const user::greet_server& s)
+        {
+            add(new greeter_info{_service, s});
+        }
+
+        void greeter_list::add_greeter()
+        {
+            bool ok = false;
+            bool error = false;
+            std::string address = "<host>:7070";
+
+            do
+            {
+                try
+                {
+                    QString r = QInputDialog::getText(
+                            0, 
+                            (error ? "Error, try again" : "Add New Greeter"),
+                            "Greeter Address",
+                            QLineEdit::Normal, address.c_str(), &ok);
+
+                    if(ok && !r.isEmpty()) address = convert(r);
+                    else return;
+
+                    error = false;
+                }
+                catch(...)
+                {
+                    error = true;
+                }
+            }
+            while(error);
+
+            _service->add_greeter(address);
+            CHECK_FALSE(_service->user().greeters().empty());
+            add_greeter(_service->user().greeters().back());
+        }
+
+        void greeter_list::remove_greeter()
+        {
+
+        }
+
+        greeter_info::greeter_info(user::user_service_ptr service, const user::greet_server& s) :
+            _server{s}, _service{service}
+        {
+            INVARIANT(_service);
+
+            auto* layout = new QGridLayout{this};
+            setLayout(layout);
+            auto label = _server.host() + ":" + _server.port();
+            layout->addWidget( new QLabel{label.c_str()}, 0,0);
+        }
+
     }
 }

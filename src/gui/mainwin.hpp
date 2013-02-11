@@ -25,7 +25,6 @@
 #include "user/userservice.hpp"
 #include "session/session.hpp"
 #include "session/session_service.hpp"
-#include "network/stungun.hpp"
 
 namespace fire
 {
@@ -38,11 +37,6 @@ namespace fire
             std::string home;
             std::string host;
             std::string port;
-            std::string ping_port;
-            std::string stun_server;
-            std::string stun_port;
-            std::string greeter_server;
-            std::string greeter_port;
         };
 
         class main_window : public QMainWindow
@@ -65,7 +59,6 @@ namespace fire
                 void load_app_into_session(QString id);
 
             private:
-                void setup_stun();
                 void setup_post();
                 void create_actions();
                 void create_main();
@@ -120,7 +113,6 @@ namespace fire
                 session::session_service_ptr _session_service;
                 app::app_service_ptr _app_service;
                 main_window_context _context;
-                network::stun_gun_ptr _stun;
         };
     }
 }

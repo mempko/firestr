@@ -45,6 +45,13 @@ namespace fire
             return o;
         }
 
+        host_port parse_host_port(const std::string& a)
+        {
+            auto s = util::split<strings>(a, ":");
+            if(s.size() != 2) std::invalid_argument("address must have host and port."); 
+            return std::make_pair(s[0], s[1]);
+        }
+
         address_components parse_address(
                 const std::string& queue_address, 
                 const queue_options& defaults)

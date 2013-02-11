@@ -78,7 +78,6 @@ namespace fire
             _sessions{0},
             _context(c)
         {
-            setup_stun();
             setup_post();
             setup_services();
             create_actions();
@@ -136,19 +135,6 @@ namespace fire
         {
             auto user = us::load_user(home);
             return user ? user : make_new_user(home);
-        }
-
-        void main_window::setup_stun()
-        {
-            if(_context.stun_server.empty() || _context.stun_port.empty()) return ;
-
-            _stun = std::make_shared<n::stun_gun>(
-                    this, 
-                    _context.stun_server, 
-                    _context.stun_port, 
-                    _context.port);
-
-            ENSURE(_stun);
         }
 
         void main_window::setup_post()
@@ -376,13 +362,7 @@ namespace fire
                 _context.home,
                 _context.host,
                 _context.port,
-                _context.ping_port,
-                _context.stun_server,
-                _context.stun_port,
-                _context.greeter_server,
-                _context.greeter_port,
                 _mail,
-                _stun
             };
 
             _user_service = std::make_shared<us::user_service>(uc);

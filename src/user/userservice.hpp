@@ -21,7 +21,6 @@
 #include "user/user.hpp"
 #include "service/service.hpp"
 #include "network/message_queue.hpp"
-#include "network/stungun.hpp"
 #include "util/thread.hpp"
 
 #include <map>
@@ -47,6 +46,8 @@ namespace fire
             size_t last_ping;
         };
 
+        struct register_with_greeters {};
+
         typedef std::map<std::string, add_request> add_requests;
         typedef std::set<std::string> sent_requests;
         typedef std::map<std::string, contact_data> contacts_data;
@@ -56,13 +57,7 @@ namespace fire
             std::string home;
             std::string host;
             std::string port;
-            std::string ping_port;
-            std::string stun_server;
-            std::string stun_port;
-            std::string greeter_server;
-            std::string greeter_port;
             message::mailbox_ptr events;
-            network::stun_gun_ptr stun;
         };
 
         class user_service : public service::service
@@ -80,6 +75,7 @@ namespace fire
 
             public:
                 void attempt_to_add_contact(const std::string& address);
+                void add_greeter(const std::string& address);
                 void send_confirmation(const std::string& id, std::string key = "");
                 void send_rejection(const std::string& id);
                 const add_requests& pending_requests() const;
@@ -114,15 +110,13 @@ namespace fire
                 //ping specific 
                 void init_ping();
                 void init_greet();
+                void request_register(const greet_server&);
+                void do_regiser_with_greeter(const std::string& greeter);
                 void send_ping_requests();
                 void send_ping_request(user::user_info_ptr, bool send_back = true);
                 void send_ping_request(const std::string& address, user::user_info_ptr, bool send_back = true);
                 void send_ping(char t);
                 void add_contact_data(user::user_info_ptr);
-
-            private:
-                enum state { started_greet, sent_stun, got_stun, sent_greet, sent_contact_query, done_greet, failed_greet} _state;
-                std::mutex _state_mutex;
 
             private:
                 //ping
@@ -131,15 +125,8 @@ namespace fire
                 contacts_data _contacts;
 
                 //greet
-                network::stun_gun_ptr _stun;
                 std::string _in_host;
                 std::string _in_port;
-                std::string _stun_server;
-                std::string _stun_port;
-                std::string _greeter_server;
-                std::string _greeter_port;
-                std::string _greet;
-                util::thread_uptr _greet_thread;
 
                 bool _done;
 
