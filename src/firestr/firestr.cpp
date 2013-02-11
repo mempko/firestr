@@ -46,22 +46,12 @@ po::options_description create_descriptions()
     if(!ip.empty()) host = ip;
 
     const std::string port = "6060";
-    const std::string ping_port = "6070";
-    const std::string stun_server = "";
-    const std::string stun_port = "3478";
-    const std::string greeter_server = "";
-    const std::string greeter_port = "7070";
 
     d.add_options()
         ("help", "prints help")
         ("home", po::value<std::string>()->default_value(home), "configuration directory")
         ("host", po::value<std::string>()->default_value(host), "host/ip of this machine") 
-        ("port", po::value<std::string>()->default_value(port), "port this machine will recieve messages on")
-        ("ping", po::value<std::string>()->default_value(ping_port), "port this machine will send pings on")
-        ("stun-server", po::value<std::string>()->default_value(stun_server), "ip/host of stun server ")
-        ("stun-port", po::value<std::string>()->default_value(stun_port), "port of the stun server")
-        ("greeter-server", po::value<std::string>()->default_value(greeter_server), "ip/host of the greeter server")
-        ("greeter-port", po::value<std::string>()->default_value(greeter_port), "port of the greeter server");
+        ("port", po::value<std::string>()->default_value(port), "port this machine will recieve messages on");
 
     return d;
 }
@@ -98,11 +88,6 @@ int main(int argc, char *argv[])
     c.home = vm["home"].as<std::string>();
     c.host = vm["host"].as<std::string>();
     c.port = vm["port"].as<std::string>();
-    c.ping_port = vm["ping"].as<std::string>();
-    c.stun_server = vm["stun-server"].as<std::string>();
-    c.stun_port = vm["stun-port"].as<std::string>();
-    c.greeter_server = vm["greeter-server"].as<std::string>();
-    c.greeter_port = vm["greeter-port"].as<std::string>();
 
     if(!user_setup(c.home)) return 0;
 

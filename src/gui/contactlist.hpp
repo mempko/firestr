@@ -74,6 +74,32 @@ namespace fire
                 user_info_ptrs _contact_widgets;
         };
 
+        class greeter_info : public QWidget
+        {
+            Q_OBJECT
+            public:
+                greeter_info(user::user_service_ptr, const user::greet_server& );
+
+            private:
+                user::greet_server _server;
+                user::user_service_ptr _service;
+        };
+
+        class greeter_list : public list
+        {
+            Q_OBJECT
+            public:
+                greeter_list(user::user_service_ptr);
+                void add_greeter(const user::greet_server& s);
+
+            public slots:
+                void add_greeter();
+                void remove_greeter();
+
+            protected:
+                user::user_service_ptr _service;
+        };
+
         class contact_list_dialog : public QDialog
         {
             Q_OBJECT
@@ -88,11 +114,14 @@ namespace fire
                 void update();
 
             protected:
+                void init_contacts_tab(QWidget* tab, QGridLayout* layout, bool add_on_start);
+                void init_greeters_tab(QWidget* tab, QGridLayout* layout);
                 void update_contacts();
 
             protected:
                 list* _list;
                 user::user_service_ptr _service;
+                greeter_list* _greeters;
 
                 size_t _prev_requests;
                 size_t _prev_contacts;

@@ -46,6 +46,7 @@ namespace fire
             const std::string REQUEST_CONFIRMED = "add_user_confirmed";
             const std::string REQUEST_REJECTED = "add_user_rejected";
             const std::string PING_REQUEST = "ping_request";
+            const std::string REGISTER_WITH_GREETER = "reg_with_greeter";
             const std::string PING = "!";
             const size_t QUIT_SLEEP = 500; //in milliseconds
             const size_t PING_THREAD_SLEEP = 500; //half a second
@@ -206,16 +207,34 @@ namespace fire
             r.address = m.meta.from.front();
         }
 
+        struct register_with_greeter
+        {
+            std::string server;
+        };
+
+        m::message convert(const register_with_greeter& r)
+        {
+            m::message m;
+            m.meta.type = REGISTER_WITH_GREETER;
+            m.meta.extra["server"] = r.server;
+            m.meta.to = {SERVICE_ADDRESS}; 
+
+            return m;
+        }
+
+        void convert(const m::message& m, register_with_greeter& r)
+        {
+            REQUIRE_EQUAL(m.meta.type, REGISTER_WITH_GREETER);
+            REQUIRE_FALSE(m.meta.from.empty());
+
+            r.server = m.meta.extra["server"].as_string();
+        }
+
         user_service::user_service(user_service_context& c) :
             s::service{SERVICE_ADDRESS, c.events},
             _home{c.home},
             _in_host{c.host},
             _in_port{c.port},
-            _stun_server{c.stun_server},
-            _stun_port{c.stun_port},
-            _stun{c.stun},
-            _greeter_server{c.greeter_server},
-            _greeter_port{c.greeter_port},
             _done{false}
         {
             REQUIRE_FALSE(c.home.empty());
@@ -243,7 +262,6 @@ namespace fire
 
             _done = true;
             _ping_thread->join();
-            _greet_thread->join();
         }
 
         void user_service::add_contact_data(user::user_info_ptr u)
@@ -274,21 +292,51 @@ namespace fire
             ENSURE(_ping_thread);
         }
 
-        void greet_thread(user_service* s);
         void user_service::init_greet()
         {
-            REQUIRE(!_greet_thread);
-            REQUIRE(_greet.empty());
+            INVARIANT(_user);
 
-            //make connection to greeter server if 
-            //we setup the params
-            if(!_greeter_server.empty() && !_greeter_port.empty())
-                _greet = n::make_tcp_address(_greeter_server, _greeter_port);
+            for(const auto& g : _user->greeters())
+                request_register(g);
+        }
 
-            _state = started_greet;
-            _greet_thread.reset(new std::thread{greet_thread, this});
+        void user_service::request_register(const greet_server& g)
+        {
+            auto s = n::make_tcp_address(g.host(), g.port(), _in_port);
+            register_with_greeter r{s};
 
-            ENSURE(_greet_thread);
+            m::message m = convert(r);
+            m.meta.to = {SERVICE_ADDRESS};
+            mail()->push_outbox(m);
+        }
+
+        void user_service::do_regiser_with_greeter(const std::string& server)
+        {
+            //regiser with greeter
+            std::cerr << "sending greet message to " << server << std::endl;
+            ms::greet_register gr
+            {
+                _user->info().id(), 
+                {_in_host, _in_port},
+                SERVICE_ADDRESS
+            };
+
+            m::message gm = gr;
+            gm.meta.to = {server, "outside"};
+            mail()->push_outbox(gm);
+
+            //send search query to greeter for all contacts
+            for(auto c : _user->contacts().list())
+            {
+                CHECK(c);
+
+                ms::greet_find_request r {_user->info().id(), c->id()};
+
+                //send request
+                m::message m = r;
+                m.meta.to = {server, "outside"};
+                mail()->push_outbox(m);
+            }
         }
 
         bool available(size_t ticks) { return ticks <= PING_THRESH; }
@@ -388,10 +436,14 @@ namespace fire
                 convert(m, r);
                 _sent_requests.erase(r.key);
             }
+            else if(m.meta.type == REGISTER_WITH_GREETER)
+            {
+                register_with_greeter r;
+                convert(m, r);
+                do_regiser_with_greeter(r.server);
+            }
             else if(m.meta.type == ms::GREET_FIND_RESPONSE)
             {
-                if(_greet.empty()) return;
-
                 ms::greet_find_response rs{m};
                 if(!rs.found()) return;
 
@@ -553,6 +605,22 @@ namespace fire
             mail()->push_outbox(convert(r));
         }
 
+        void user_service::add_greeter(const std::string& address)
+        {
+            INVARIANT(_user);
+            //parse host/port
+            auto host_port = n::parse_host_port(address);
+
+            //add greeter
+            greet_server gs{host_port.first, host_port.second};
+            _user->greeters().push_back(gs);
+
+            save_user(_home, *_user);
+
+            //try to connect
+            request_register(gs);
+        }
+
         void ping_thread(user_service* s)
         try
         {
@@ -612,158 +680,6 @@ namespace fire
             engine.seed(seed + std::time(0));
             auto generate = std::bind(distribution, engine);
             return boost::lexical_cast<std::string>(generate());
-        }
-
-        void greet_thread(user_service* s)
-        try
-        {
-            size_t send_ticks = 0;
-            REQUIRE(s);
-            REQUIRE(s->_user);
-            REQUIRE(s->_state == user_service::started_greet);
-
-            size_t stun_wait = 0;
-            size_t tries_left = 10;
-
-            while(!s->_done && tries_left > 0 && s->_state != user_service::done_greet)
-            try
-            {
-                if(s->_state == user_service::started_greet)
-                {
-                    std::cerr << "started greet..." << std::endl;
-                    if(s->_stun)
-                    {
-                        CHECK_FALSE(s->_stun_port.empty());
-                        CHECK_FALSE(s->_in_port.empty());
-                        
-                        std::cerr << "sending stun request to " << s->_stun_server << ":" << s->_stun_port << std::endl;
-                        s->_stun->send_stun_request();
-
-                        u::mutex_scoped_lock l(s->_state_mutex);
-                        s->_state = user_service::sent_stun;
-                        stun_wait = 0;
-                    }
-                    else
-                    {
-                        u::mutex_scoped_lock l(s->_state_mutex);
-                        s->_state = user_service::got_stun;
-                    }
-                }
-                else if(s->_state == user_service::sent_stun)
-                {
-                    if(s->_stun->state() == n::stun_success)
-                    {
-                        auto address = n::make_udp_address(s->_stun->external_ip(), s->_stun->external_port());
-                        std::cerr << "got stun address " << address << std::endl;
-                        s->update_address(address);
-
-                        {
-                            u::mutex_scoped_lock l(s->_state_mutex);
-                            s->_state = user_service::got_stun;
-                        }
-                    }
-                    else if(s->_stun->state() == n::stun_failed)
-                    {
-                        //stun failed, quit
-                        stun_wait = STUN_WAIT_THRESH;
-                    }
-                    else
-                    {
-                        stun_wait++;
-                    }
-
-                    if(stun_wait >= STUN_WAIT_THRESH)
-                    {
-                        u::mutex_scoped_lock l(s->_state_mutex);
-                        s->_state = user_service::failed_greet;
-                    }
-                }
-                else if(s->_state == user_service::got_stun)
-                {
-                    if(!s->_greet.empty())
-                    {
-                        std::cerr << "sending greet message to " << s->_greet << std::endl;
-                        ms::greet_register r
-                        {
-                            s->_user->info().id(), 
-                            {s->_in_host, s->_in_port},
-                            SERVICE_ADDRESS
-                        };
-
-                        m::message m = r;
-                        m.meta.to = {s->_greet, "outside"};
-                        s->mail()->push_outbox(m);
-                
-                        u::mutex_scoped_lock l(s->_state_mutex);
-                        s->_state = user_service::sent_greet;
-                    }
-                    else
-                    {
-                        u::mutex_scoped_lock l(s->_state_mutex);
-                        s->_state = user_service::done_greet;
-                    }
-                }
-                else if(s->_state == user_service::sent_greet)
-                {
-                    CHECK(!s->_greet.empty());
-
-                    for(auto c : s->_user->contacts().list())
-                    {
-                        CHECK(c);
-
-                        ms::greet_find_request r {s->_user->info().id(), c->id()};
-
-                        //send request
-                        m::message m = r;
-                        m.meta.to = {s->_greet, "outside"};
-                        s->mail()->push_outbox(m);
-                    }
-
-                    u::mutex_scoped_lock l(s->_state_mutex);
-                    s->_state = user_service::sent_contact_query;
-                }
-                else if(s->_state == user_service::sent_contact_query)
-                {
-                    u::mutex_scoped_lock l(s->_state_mutex);
-                    s->_state = user_service::done_greet;
-                }
-                else if(s->_state == user_service::failed_greet)
-                {
-                    u::mutex_scoped_lock l(s->_state_mutex);
-                    tries_left--;
-                    s->_state = user_service::started_greet;
-                }
-                else CHECK(false && "missed state");
-
-                u::sleep_thread(GREET_THREAD_SLEEP);
-            }
-            catch(std::exception& e)
-            {
-                u::mutex_scoped_lock l(s->_state_mutex);
-                s->_state = user_service::failed_greet;
-                std::cerr << "Error in greet thread: " << e.what() << std::endl;
-            }
-            catch(...)
-            {
-                u::mutex_scoped_lock l(s->_state_mutex);
-                s->_state = user_service::failed_greet;
-                std::cerr << "Unexpected error in greet thread." << std::endl;
-            }
-
-            std::cerr << "done greet..." << std::endl;
-            u::mutex_scoped_lock l(s->_state_mutex);
-            s->_state = user_service::done_greet;
-
-            //now we are done, send the ping port requests
-            if(s->_greet.empty()) s->send_ping_requests();
-        }
-        catch(std::exception& e)
-        {
-            std::cerr << "exit: user_service::greet_thread: " << e.what() << std::endl;
-        }
-        catch(...)
-        {
-            std::cerr << "exit: user_service::greet_thread" << std::endl;
         }
 
         bool user_service::contact_available(const std::string& id) const
