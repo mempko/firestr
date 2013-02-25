@@ -89,6 +89,7 @@ namespace fire
             private:
                 void update_address(const std::string& address);
                 void confirm_contact(user_info_ptr contact);
+                bool confirm_contact(const std::string& file);
                 void update_contact_address(const std::string& id, const std::string& ip, const std::string& port);
 
             private:
