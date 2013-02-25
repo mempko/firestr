@@ -236,6 +236,24 @@ namespace fire
             }
         }
 
+        user_info_ptr load_contact(const std::string& file)
+        {
+            std::ifstream in(file.c_str());
+            if(!in.good()) return {};
+
+            user_info_ptr u{new user_info};
+            in >> *u;
+            return u;
+        }
+
+        void save_contact(const std::string& file, const user_info& u)
+        {
+            std::ofstream out(file.c_str());
+            if(!out.good()) return;
+
+            out << u;
+        }
+
         local_user::local_user(
                 const user_info& i, 
                 const contact_list& c,

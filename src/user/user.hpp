@@ -166,6 +166,10 @@ namespace fire
         local_user_ptr load_user(const std::string& home_dir);
         void save_user(const std::string& home_dir, const local_user&);
 
+        //loads and saves a contact
+        user_info_ptr load_contact(const std::string& file);
+        void save_contact(const std::string& file, const user_info&);
+
         //serialization functions
         std::ostream& operator<<(std::ostream& out, const user_info& u);
         std::istream& operator>>(std::istream& in, user_info& u);

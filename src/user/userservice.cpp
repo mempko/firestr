@@ -532,6 +532,24 @@ namespace fire
             save_user(_home, *_user);
         }
 
+        bool user_service::confirm_contact(const std::string& file)
+        {
+            u::mutex_scoped_lock l(_mutex);
+
+            INVARIANT(_user);
+            INVARIANT(mail());
+
+            auto contact = load_contact(file);
+            if(!contact) return false;
+
+            //add user
+            _user->contacts().add(contact);
+            add_contact_data(contact);
+            save_user(_home, *_user);
+
+            return true;
+        }
+
         const add_requests& user_service::pending_requests() const
         {
             return _pending_requests;
