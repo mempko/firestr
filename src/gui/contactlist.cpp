@@ -246,20 +246,9 @@ namespace fire
         void contact_list_dialog::new_contact()
         {
             INVARIANT(_service);
-
-            bool ok = false;
-            std::string address = "<host>:6060";
-
-            QString r = QInputDialog::getText(
-                    0, 
-                    "Add New Contact",
-                    "Contact Address or ID",
-                    QLineEdit::Normal, address.c_str(), &ok);
-
-            if(ok && !r.isEmpty()) address = convert(r);
-            else return;
-
-            _service->attempt_to_add_contact(address);
+            auto d = new add_contact_dialog{_service};
+            d->setWindowModality(Qt::ApplicationModal);
+            d->exec();
         }
 
         void contact_list_dialog::update()
@@ -386,5 +375,56 @@ namespace fire
             layout->addWidget( new QLabel{label.c_str()}, 0,0);
         }
 
+        add_contact_dialog::add_contact_dialog(user::user_service_ptr s, QWidget* parent) :
+            _service{s}, QDialog{parent}
+        {
+            INVARIANT(_service);
+
+            auto* layout = new QGridLayout{this};
+            setLayout(layout);
+
+            //create local add button
+            auto* add_local = new QPushButton("add local");
+            layout->addWidget(add_local, 0,0); 
+            connect(add_local, SIGNAL(clicked()), this, SLOT(new_local_contact()));
+
+            //create remote add button
+            auto* add_remote = new QPushButton("add remote");
+            layout->addWidget(add_remote, 0,1); 
+            connect(add_remote, SIGNAL(clicked()), this, SLOT(new_remote_contact()));
+            //create create request button
+            auto* create_request = new QPushButton("create request");
+            layout->addWidget(create_request, 1,0,1,2); 
+            connect(create_request, SIGNAL(clicked()), this, SLOT(create_contact_file()));
+        }
+
+        void add_contact_dialog::new_local_contact()
+        {
+            INVARIANT(_service);
+
+            bool ok = false;
+            std::string address = "<host>:6060";
+
+            QString r = QInputDialog::getText(
+                    0, 
+                    "Add New Contact",
+                    "Contact Address or ID",
+                    QLineEdit::Normal, address.c_str(), &ok);
+
+            if(ok && !r.isEmpty()) address = convert(r);
+            else return;
+
+            _service->attempt_to_add_contact(address);
+        }
+
+        void add_contact_dialog::new_remote_contact()
+        {
+
+        }
+
+        void add_contact_dialog::create_contact_file()
+        {
+
+        }
     }
 }

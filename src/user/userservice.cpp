@@ -27,6 +27,7 @@
 #include <ctime>
 #include <thread>
 #include <random>
+#include <fstream>
 
 namespace m = fire::message;
 namespace ms = fire::messages;
@@ -310,6 +311,33 @@ namespace fire
             mail()->push_outbox(m);
         }
 
+        void user_service::find_contact_with_greeter(user_info_ptr c, const std::string& greeter)
+        {
+            REQUIRE(c);
+            REQUIRE_FALSE(greeter.empty());
+            INVARIANT(_user);
+
+            ms::greet_find_request r {_user->info().id(), c->id()};
+
+            //send request
+            m::message m = r;
+            m.meta.to = {greeter, "outside"};
+            mail()->push_outbox(m);
+        }
+
+        void user_service::find_contact(user_info_ptr c)
+        {
+            REQUIRE(c);
+            INVARIANT(_user);
+
+            for(const auto& g : _user->greeters())
+            {
+                auto s = n::make_tcp_address(g.host(), g.port(), _in_port);
+                CHECK_FALSE(s.empty());
+                find_contact_with_greeter(c, s);
+            }
+        }
+
         void user_service::do_regiser_with_greeter(const std::string& server)
         {
             //regiser with greeter
@@ -329,13 +357,7 @@ namespace fire
             for(auto c : _user->contacts().list())
             {
                 CHECK(c);
-
-                ms::greet_find_request r {_user->info().id(), c->id()};
-
-                //send request
-                m::message m = r;
-                m.meta.to = {server, "outside"};
-                mail()->push_outbox(m);
+                find_contact_with_greeter(c, server);
             }
         }
 
@@ -530,24 +552,7 @@ namespace fire
             _user->contacts().add(contact);
             add_contact_data(contact);
             save_user(_home, *_user);
-        }
-
-        bool user_service::confirm_contact(const std::string& file)
-        {
-            u::mutex_scoped_lock l(_mutex);
-
-            INVARIANT(_user);
-            INVARIANT(mail());
-
-            auto contact = load_contact(file);
-            if(!contact) return false;
-
-            //add user
-            _user->contacts().add(contact);
-            add_contact_data(contact);
-            save_user(_home, *_user);
-
-            return true;
+            find_contact(contact);
         }
 
         const add_requests& user_service::pending_requests() const
@@ -792,6 +797,65 @@ namespace fire
             send_event(event::convert(e));
 
             ENSURE(cd.state == contact_data::OFFLINE);
+        }
+
+        bool load_contact_file(const std::string& file, contact_file& cf)
+        {
+            REQUIRE_FALSE(cf.contact);
+
+            std::ifstream in(file.c_str());
+            if(!in.good()) 
+            {
+                ENSURE(!cf.contact);
+                return false;
+            }
+
+            user_info_ptr u{new user_info};
+            in >> *u;
+
+            u::value gv;
+            in >> gv;
+
+            cf.contact = u;
+            cf.greeter = gv.as_string();
+
+            ENSURE(cf.contact);
+            return true;
+        }
+
+        bool save_contact_file(const std::string& file, const contact_file& cf)
+        {
+            REQUIRE(cf.contact);
+
+            std::ofstream o(file.c_str());
+            if(!o.good()) return false;
+
+            o << *cf.contact;
+            o << u::value{cf.greeter};
+
+            return true;
+        }
+
+        void user_service::confirm_contact_file(const contact_file& cf)
+        {
+            u::mutex_scoped_lock l(_mutex);
+            REQUIRE(cf.contact);
+            INVARIANT(_user);
+            INVARIANT(mail());
+
+            //add user
+            _user->contacts().add(cf.contact);
+            add_contact_data(cf.contact);
+            save_user(_home, *_user);
+
+            //add greeter
+            if(cf.greeter.empty()) return;
+            add_greeter(cf.greeter);
+
+            //hack to make sure greeter has been added
+            //will use messaging instead 
+            u::sleep_thread(PING_THREAD_SLEEP);
+            find_contact(cf.contact);
         }
 
         namespace event

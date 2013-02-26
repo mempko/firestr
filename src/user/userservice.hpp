@@ -46,6 +46,15 @@ namespace fire
             size_t last_ping;
         };
 
+        struct contact_file
+        {
+            user_info_ptr contact;
+            std::string greeter;
+        };
+
+        bool load_contact_file(const std::string& file, contact_file& cf);
+        bool save_contact_file(const std::string& file, const contact_file& cf);
+
         struct register_with_greeters {};
 
         typedef std::map<std::string, add_request> add_requests;
@@ -80,6 +89,8 @@ namespace fire
                 void send_rejection(const std::string& id);
                 const add_requests& pending_requests() const;
 
+                void confirm_contact_file(const contact_file&);
+
             public:
                 bool contact_available(const std::string& id) const;
 
@@ -89,8 +100,9 @@ namespace fire
             private:
                 void update_address(const std::string& address);
                 void confirm_contact(user_info_ptr contact);
-                bool confirm_contact(const std::string& file);
                 void update_contact_address(const std::string& id, const std::string& ip, const std::string& port);
+                void find_contact_with_greeter(user_info_ptr c, const std::string& greeter);
+                void find_contact(user_info_ptr c);
 
             private:
                 sent_requests _sent_requests;
