@@ -126,6 +126,21 @@ namespace fire
                 size_t _prev_requests;
                 size_t _prev_contacts;
         };
+
+        class add_contact_dialog : public QDialog
+        {
+            Q_OBJECT
+            public:
+                add_contact_dialog(user::user_service_ptr, QWidget* parent = nullptr);
+
+            public slots:
+                void new_local_contact();
+                void new_remote_contact();
+                void create_contact_file();
+
+            private:
+                user::user_service_ptr _service;
+        };
     }
 }
 
