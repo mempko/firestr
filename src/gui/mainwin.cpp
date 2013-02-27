@@ -17,7 +17,7 @@
 #include "gui/mainwin.hpp"
 
 #include "gui/app/chat_sample.hpp"
-#include "gui/app/script_sample.hpp"
+#include "gui/app/app_editor.hpp"
 #include "gui/app/script_app.hpp"
 
 #include "gui/contactlist.hpp"
@@ -253,7 +253,7 @@ namespace fire
             REQUIRE(_close_action);
             REQUIRE(_contact_list_action);
             REQUIRE(_chat_sample_action);
-            REQUIRE(_script_sample_action);
+            REQUIRE(_app_editor_action);
             REQUIRE(_create_session_action);
 
             _main_menu = new QMenu{tr("&Main"), this};
@@ -287,7 +287,7 @@ namespace fire
 
             _app_menu = new QMenu{tr("&App"), this};
             _app_menu->addAction(_chat_sample_action);
-            _app_menu->addAction(_script_sample_action);
+            _app_menu->addAction(_app_editor_action);
 
 
             for( auto p : _app_service->available_apps())
@@ -333,8 +333,8 @@ namespace fire
             _chat_sample_action = new QAction{tr("&Chat Sample"), this};
             connect(_chat_sample_action, SIGNAL(triggered()), this, SLOT(make_chat_sample()));
 
-            _script_sample_action = new QAction{tr("&Script Sample"), this};
-            connect(_script_sample_action, SIGNAL(triggered()), this, SLOT(make_script_sample()));
+            _app_editor_action = new QAction{tr("&App Editor"), this};
+            connect(_app_editor_action, SIGNAL(triggered()), this, SLOT(make_script_sample()));
 
             _create_session_action = new QAction{tr("&Create"), this};
             connect(_create_session_action, SIGNAL(triggered()), this, SLOT(create_session()));
@@ -415,7 +415,7 @@ namespace fire
             s->session()->send(n);
         }
 
-        void main_window::make_script_sample()
+        void main_window::make_app_editor()
         {
             INVARIANT(_sessions);
             INVARIANT(_app_service);
@@ -424,7 +424,7 @@ namespace fire
             if(!s) return;
 
             //create chat sample
-            auto t = new a::script_sample{_app_service, s->session()};
+            auto t = new a::app_editor{_app_service, s->session()};
             s->add(t);
 
             //add to master post so it can recieve messages

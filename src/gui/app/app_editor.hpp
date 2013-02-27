@@ -15,8 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef FIRESTR_APP_SCRIPT_SAMPLE_H
-#define FIRESTR_APP_SCRIPT_SAMPLE_H
+#ifndef FIRESTR_APP_APP_EDITOR_H
+#define FIRESTR_APP_APP_EDITOR_H
 
 #include "gui/list.hpp"
 #include "gui/message.hpp"
@@ -43,14 +43,14 @@ namespace fire
     {
         namespace app
         {
-            class script_sample : public message
+            class app_editor : public message
             {
                 Q_OBJECT
 
                 public:
-                    script_sample(app_service_ptr, session::session_ptr);
-                    script_sample(const std::string& id, app_service_ptr, session::session_ptr);
-                    ~script_sample();
+                    app_editor(app_service_ptr, session::session_ptr);
+                    app_editor(const std::string& id, app_service_ptr, session::session_ptr);
+                    ~app_editor();
 
                 public:
                     const std::string& id();

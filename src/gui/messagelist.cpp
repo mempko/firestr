@@ -3,7 +3,7 @@
 #include "gui/messagelist.hpp"
 #include "gui/unknown_message.hpp"
 #include "gui/app/chat_sample.hpp"
-#include "gui/app/script_sample.hpp"
+#include "gui/app/app_editor.hpp"
 #include "gui/app/script_app.hpp"
 #include "util/dbc.hpp"
 
@@ -91,7 +91,7 @@ namespace fire
             {
                 if(auto post = _session->parent_post().lock())
                 {
-                    auto c = new a::script_sample{n.id(), _app_service, _session};
+                    auto c = new a::app_editor{n.id(), _app_service, _session};
                     post->add(c->mail());
                     add(c);
                 }
