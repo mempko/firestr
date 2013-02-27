@@ -297,8 +297,14 @@ namespace fire
         {
             INVARIANT(_user);
 
+            //register with greeter
             for(const auto& g : _user->greeters())
                 request_register(g);
+
+            //send ping requests for all contacts
+            //to handle local contacts on a network using 
+            //last known ip/port
+            send_ping_requests();
         }
 
         void user_service::request_register(const greet_server& g)
@@ -552,7 +558,7 @@ namespace fire
             _user->contacts().add(contact);
             add_contact_data(contact);
             save_user(_home, *_user);
-            find_contact(contact);
+            send_ping_request(contact, true);
         }
 
         const add_requests& user_service::pending_requests() const
