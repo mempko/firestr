@@ -330,7 +330,7 @@ namespace fire
             _contact_list_action = new QAction{tr("&Contacts"), this};
             connect(_contact_list_action, SIGNAL(triggered()), this, SLOT(show_contact_list()));
 
-            _chat_sample_action = new QAction{tr("&Chat Sample"), this};
+            _chat_sample_action = new QAction{tr("&Chat"), this};
             connect(_chat_sample_action, SIGNAL(triggered()), this, SLOT(make_chat_sample()));
 
             _app_editor_action = new QAction{tr("&App Editor"), this};
