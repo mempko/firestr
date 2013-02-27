@@ -112,7 +112,16 @@ namespace fire
                 INVARIANT(root());
                 INVARIANT(layout());
                 INVARIANT(_session);
+                INVARIANT(_app_service);
 
+                //if the app exists, load it
+                if(_app_service->available_apps().count(_id))
+                {
+                    _app = _app_service->load_app(_id);
+                    CHECK_EQUAL(_app->id(), _id);
+                }
+
+                //create gui
                 _canvas = new QWidget;
                 _canvas_layout = new QGridLayout;
                 _canvas->setLayout(_canvas_layout);
@@ -128,12 +137,13 @@ namespace fire
                 _script = new QTextEdit;
                 _script->setWordWrapMode(QTextOption::NoWrap);
                 _script->setTabStopWidth(40);
+                if(_app) _script->setPlainText(_app->code().c_str());
                 layout()->addWidget(_script, 2, 0, 1, 2);
 
                 //send button
                 _run = new QPushButton{"run"};
                 layout()->addWidget(_run, 3, 0);
-                connect(_run, SIGNAL(clicked()), this, SLOT(send_script()));
+                connect(_run, SIGNAL(clicked()), this, SLOT(run_script()));
 
                 _save = new QPushButton{"save"};
                 layout()->addWidget(_save, 3, 1);
@@ -145,6 +155,9 @@ namespace fire
                 auto *t = new QTimer(this);
                 connect(t, SIGNAL(timeout()), this, SLOT(check_mail()));
                 t->start(TIMER_SLEEP);
+
+                //send script
+                send_script();
 
                 INVARIANT(_session);
                 INVARIANT(_mail);
@@ -194,6 +207,20 @@ namespace fire
                     CHECK(c);
                     _sender->send(c->id(), convert(tm)); 
                 }
+            }
+
+            void app_editor::run_script()
+            {
+                INVARIANT(_script);
+                INVARIANT(_session);
+                INVARIANT(_api);
+                INVARIANT(_run);
+
+                //get the code
+                auto code = gui::convert(_script->toPlainText());
+                if(code.empty()) return;
+
+                send_script();
 
                 //run the code
                 _api->reset_widgets();

@@ -55,6 +55,7 @@ namespace fire
 
         namespace
         {
+            const std::string NEW_APP_S = "<new app>";
             const std::string GUI_MAIL = "gui";
             const QString NEW_SESSION_NAME = "new"; 
             const size_t TIMER_SLEEP = 100; //in milliseconds
@@ -334,7 +335,7 @@ namespace fire
             connect(_chat_sample_action, SIGNAL(triggered()), this, SLOT(make_chat_sample()));
 
             _app_editor_action = new QAction{tr("&App Editor"), this};
-            connect(_app_editor_action, SIGNAL(triggered()), this, SLOT(make_script_sample()));
+            connect(_app_editor_action, SIGNAL(triggered()), this, SLOT(make_app_editor()));
 
             _create_session_action = new QAction{tr("&Create"), this};
             connect(_create_session_action, SIGNAL(triggered()), this, SLOT(create_session()));
@@ -415,6 +416,28 @@ namespace fire
             s->session()->send(n);
         }
 
+        bool ask_user_to_select_app(QWidget* w, const a::app_service& apps, std::string& id)
+        {
+            QStringList as;
+            as << NEW_APP_S.c_str();
+            for(const auto& a : apps.available_apps())
+                as << a.second.name.c_str();
+
+            bool ok;
+            auto g = QInputDialog::getItem(w, w->tr("Select App"),
+                    w->tr("Choose an app:"), as, 0, false, &ok);
+
+            if (!ok || g.isEmpty()) return false;
+
+            id = convert(g);
+            if(id == NEW_APP_S) id = "";
+            else 
+                for(const auto& a : apps.available_apps())
+                    if(a.second.name == id) { id = a.second.id; break; }
+
+            return true;
+        }
+
         void main_window::make_app_editor()
         {
             INVARIANT(_sessions);
@@ -423,8 +446,14 @@ namespace fire
             auto s = dynamic_cast<session_widget*>(_sessions->currentWidget());
             if(!s) return;
 
-            //create chat sample
-            auto t = new a::app_editor{_app_service, s->session()};
+            std::string id; 
+            if(!ask_user_to_select_app(this, *_app_service, id)) return;
+
+            //create app editor
+            auto t = id.empty() ? 
+                new a::app_editor{_app_service, s->session()} : 
+                new a::app_editor{id, _app_service, s->session()}; 
+
             s->add(t);
 
             //add to master post so it can recieve messages

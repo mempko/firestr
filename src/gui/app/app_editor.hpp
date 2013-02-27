@@ -58,6 +58,7 @@ namespace fire
                     fire::message::mailbox_ptr mail();
 
                 public slots:
+                    void run_script();
                     void send_script();
                     void save_app();
                     void check_mail();
