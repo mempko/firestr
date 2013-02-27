@@ -501,7 +501,7 @@ namespace fire
                     gs << address(g).c_str();
 
                 bool ok;
-                auto g = QInputDialog::getItem(this, tr("QInputDialog::getItem()"),
+                auto g = QInputDialog::getItem(this, tr("Suggested Greeter"),
                         tr("Choose a greeter:"), gs, 0, false, &ok);
                 if (ok && !g.isEmpty())
                     greeter = convert(g);

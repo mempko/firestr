@@ -64,6 +64,7 @@ namespace fire
 
             auto* cw = new QWidget;
             auto* cl = new QGridLayout;
+
             cw->setLayout(cl);
             cl->addWidget(_contact_select, 0,0);
             cl->addWidget(_add_contact, 0, 1);
