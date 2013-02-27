@@ -48,7 +48,7 @@ namespace fire
 
         struct contact_file
         {
-            user_info_ptr contact;
+            user_info contact;
             std::string greeter;
         };
 
@@ -89,7 +89,7 @@ namespace fire
                 void send_rejection(const std::string& id);
                 const add_requests& pending_requests() const;
 
-                void confirm_contact_file(const contact_file&);
+                void confirm_contact(const contact_file&);
 
             public:
                 bool contact_available(const std::string& id) const;

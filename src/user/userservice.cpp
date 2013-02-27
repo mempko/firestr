@@ -359,10 +359,11 @@ namespace fire
             gm.meta.to = {server, "outside"};
             mail()->push_outbox(gm);
 
-            //send search query to greeter for all contacts
+            //send search query to greeter for all contacts that are offline
             for(auto c : _user->contacts().list())
             {
                 CHECK(c);
+                if(contact_available(c->id())) continue;
                 find_contact_with_greeter(c, server);
             }
         }
@@ -807,61 +808,52 @@ namespace fire
 
         bool load_contact_file(const std::string& file, contact_file& cf)
         {
-            REQUIRE_FALSE(cf.contact);
-
             std::ifstream in(file.c_str());
             if(!in.good()) 
             {
-                ENSURE(!cf.contact);
                 return false;
             }
 
-            user_info_ptr u{new user_info};
-            in >> *u;
+            user_info u;
+            in >> u;
 
             u::value gv;
             in >> gv;
 
             cf.contact = u;
             cf.greeter = gv.as_string();
-
-            ENSURE(cf.contact);
             return true;
         }
 
         bool save_contact_file(const std::string& file, const contact_file& cf)
         {
-            REQUIRE(cf.contact);
-
             std::ofstream o(file.c_str());
             if(!o.good()) return false;
 
-            o << *cf.contact;
+            o << cf.contact;
             o << u::value{cf.greeter};
 
             return true;
         }
 
-        void user_service::confirm_contact_file(const contact_file& cf)
+        void user_service::confirm_contact(const contact_file& cf)
         {
             u::mutex_scoped_lock l(_mutex);
-            REQUIRE(cf.contact);
             INVARIANT(_user);
             INVARIANT(mail());
 
+            user_info_ptr contact{new user_info{cf.contact}};
+
             //add user
-            _user->contacts().add(cf.contact);
-            add_contact_data(cf.contact);
+            _user->contacts().add(contact);
+            add_contact_data(contact);
             save_user(_home, *_user);
 
             //add greeter
-            if(cf.greeter.empty()) return;
-            add_greeter(cf.greeter);
+            if(!cf.greeter.empty()) add_greeter(cf.greeter);
 
-            //hack to make sure greeter has been added
-            //will use messaging instead 
-            u::sleep_thread(PING_THREAD_SLEEP);
-            find_contact(cf.contact);
+            //find contact address
+            find_contact(contact);
         }
 
         namespace event

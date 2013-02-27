@@ -23,6 +23,8 @@
 #include <QGridLayout>
 #include <QLabel>
 
+#include <cstdlib>
+
 namespace u = fire::util;
 namespace usr = fire::user;
                 
@@ -246,9 +248,10 @@ namespace fire
         void contact_list_dialog::new_contact()
         {
             INVARIANT(_service);
-            auto d = new add_contact_dialog{_service};
+            auto d = new add_contact_dialog{_service, this};
             d->setWindowModality(Qt::ApplicationModal);
-            d->exec();
+            auto r = d->exec();
+            if(r == QDialog::Accepted) accept();
         }
 
         void contact_list_dialog::update()
@@ -330,7 +333,7 @@ namespace fire
         {
             bool ok = false;
             bool error = false;
-            std::string address = "<host>:7070";
+            std::string address = "localhost";
 
             do
             {
@@ -353,6 +356,9 @@ namespace fire
                 }
             }
             while(error);
+
+            //append port if not specified
+            if(address.find(":") == std::string::npos) address.append(":7070");
 
             _service->add_greeter(address);
             CHECK_FALSE(_service->user().greeters().empty());
@@ -383,19 +389,20 @@ namespace fire
             auto* layout = new QGridLayout{this};
             setLayout(layout);
 
-            //create local add button
-            auto* add_local = new QPushButton("add local");
-            layout->addWidget(add_local, 0,0); 
-            connect(add_local, SIGNAL(clicked()), this, SLOT(new_local_contact()));
-
             //create remote add button
-            auto* add_remote = new QPushButton("add remote");
-            layout->addWidget(add_remote, 0,1); 
+            auto* add_remote = new QPushButton("add using contact file");
+            layout->addWidget(add_remote, 0,0); 
             connect(add_remote, SIGNAL(clicked()), this, SLOT(new_remote_contact()));
+
             //create create request button
-            auto* create_request = new QPushButton("create request");
-            layout->addWidget(create_request, 1,0,1,2); 
+            auto* create_request = new QPushButton("create contact file");
+            layout->addWidget(create_request, 1,0); 
             connect(create_request, SIGNAL(clicked()), this, SLOT(create_contact_file()));
+
+            //create local add button
+            auto* add_local = new QPushButton("add using local ip");
+            layout->addWidget(add_local, 2,0); 
+            connect(add_local, SIGNAL(clicked()), this, SLOT(new_local_contact()));
         }
 
         void add_contact_dialog::new_local_contact()
@@ -405,26 +412,109 @@ namespace fire
             bool ok = false;
             std::string address = "<host>:6060";
 
-            QString r = QInputDialog::getText(
+            auto r = QInputDialog::getText(
                     0, 
                     "Add New Contact",
                     "Contact Address or ID",
                     QLineEdit::Normal, address.c_str(), &ok);
 
             if(ok && !r.isEmpty()) address = convert(r);
-            else return;
+            else 
+            {
+                reject();
+                return;
+            }
 
             _service->attempt_to_add_contact(address);
+            accept();
+        }
+
+        std::string address(const user::greet_server& s)
+        {
+            return s.host() + ":" + s.port();
         }
 
         void add_contact_dialog::new_remote_contact()
         {
+            INVARIANT(_service);
 
+            //get file name to load
+            std::string home = std::getenv("HOME");
+            auto file = QFileDialog::getOpenFileName(this,
+                    tr("Open Contact File"), home.c_str(), tr("Contact File (*.fcontact)"));
+
+            if(file.isEmpty())
+            {
+                reject();
+                return;
+            }
+
+            //load contact file
+            user::contact_file cf;
+            if(!usr::load_contact_file(convert(file), cf))
+            {
+                reject();
+                return;
+            }
+
+            //add greeter
+            if(!cf.greeter.empty())
+            {
+                bool found = false;
+                for(const auto& s : _service->user().greeters())
+                {
+                    auto a = address(s);
+                    if(a == cf.greeter) {found = true; break;}
+                }
+                if(found) cf.greeter = "";
+            }
+
+            //add contact
+            _service->confirm_contact(cf);
+            accept();
         }
 
         void add_contact_dialog::create_contact_file()
         {
+            //have user select contact file 
+            std::string home = std::getenv("HOME");
+            std::string default_file = home + "/" + _service->user().info().name() + ".fcontact";
+            auto file = QFileDialog::getSaveFileName(this, tr("Save File"),
+                    default_file.c_str(),
+                    tr("Contact File (*.fcontact)"));
 
+            if(file.isEmpty())
+            {
+                reject();
+                return;
+            }
+
+            //user chooses greeter
+            auto total_greeters = _service->user().greeters().size();
+            std::string greeter;
+            if(total_greeters == 1) greeter = address(_service->user().greeters().front());
+            else if(total_greeters > 1)
+            {
+                QStringList gs;
+                for(const auto& g : _service->user().greeters())
+                    gs << address(g).c_str();
+
+                bool ok;
+                auto g = QInputDialog::getItem(this, tr("QInputDialog::getItem()"),
+                        tr("Choose a greeter:"), gs, 0, false, &ok);
+                if (ok && !g.isEmpty())
+                    greeter = convert(g);
+            }
+
+            //save contact file
+            usr::contact_file cf{ _service->user().info(), greeter};
+            if(!usr::save_contact_file(convert(file), cf))
+            {
+                reject();
+                return;
+            }
+
+            accept();
         }
     }
 }
