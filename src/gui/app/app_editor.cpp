@@ -17,7 +17,7 @@
 
 #include <QtGui>
 
-#include "gui/app/script_sample.hpp"
+#include "gui/app/app_editor.hpp"
 #include "gui/util.hpp"
 #include "util/uuid.hpp"
 #include "util/dbc.hpp"
@@ -69,7 +69,7 @@ namespace fire
                 t.text = u::to_str(m.data);
             }
 
-            script_sample::script_sample(app_service_ptr app_service, s::session_ptr session) :
+            app_editor::app_editor(app_service_ptr app_service, s::session_ptr session) :
                 message{},
                 _id{u::uuid()},
                 _app_service{app_service},
@@ -86,7 +86,7 @@ namespace fire
                 ENSURE(_app_service);
             }
 
-            script_sample::script_sample(const std::string& id, app_service_ptr app_service, s::session_ptr session) :
+            app_editor::app_editor(const std::string& id, app_service_ptr app_service, s::session_ptr session) :
                 message{},
                 _id{id},
                 _app_service{app_service},
@@ -102,12 +102,12 @@ namespace fire
                 ENSURE(_app_service);
             }
 
-            script_sample::~script_sample()
+            app_editor::~app_editor()
             {
                 INVARIANT(_session);
             }
 
-            void script_sample::init()
+            void app_editor::init()
             {
                 INVARIANT(root());
                 INVARIANT(layout());
@@ -156,25 +156,25 @@ namespace fire
                 INVARIANT(_output);
             }
 
-            const std::string& script_sample::id()
+            const std::string& app_editor::id()
             {
                 ENSURE_FALSE(_id.empty());
                 return _id;
             }
 
-            const std::string& script_sample::type()
+            const std::string& app_editor::type()
             {
                 ENSURE_FALSE(SCRIPT_SAMPLE.empty());
                 return SCRIPT_SAMPLE;
             }
 
-            m::mailbox_ptr script_sample::mail()
+            m::mailbox_ptr app_editor::mail()
             {
                 ENSURE(_mail);
                 return _mail;
             }
 
-            void script_sample::send_script()
+            void app_editor::send_script()
             {
                 INVARIANT(_script);
                 INVARIANT(_session);
@@ -200,7 +200,7 @@ namespace fire
                 _api->run(code);
             }
 
-            void script_sample::save_app() 
+            void app_editor::save_app() 
             {
                 INVARIANT(_session);
                 INVARIANT(_app_service);
@@ -230,7 +230,7 @@ namespace fire
                 _app_service->save_app(*_app);
             }
 
-            void script_sample::check_mail() 
+            void app_editor::check_mail() 
             try
             {
                 INVARIANT(_mail);
@@ -258,17 +258,17 @@ namespace fire
                     }
                     else
                     {
-                        std::cerr << "script_sample recieved unknown message `" << m.meta.type << "'" << std::endl;
+                        std::cerr << "app_editor recieved unknown message `" << m.meta.type << "'" << std::endl;
                     }
                 }
             }
             catch(std::exception& e)
             {
-                std::cerr << "script_sample: error in check_mail. " << e.what() << std::endl;
+                std::cerr << "app_editor: error in check_mail. " << e.what() << std::endl;
             }
             catch(...)
             {
-                std::cerr << "script_sample: unexpected error in check_mail." << std::endl;
+                std::cerr << "app_editor: unexpected error in check_mail." << std::endl;
             }
         }
     }
