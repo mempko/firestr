@@ -233,10 +233,7 @@ namespace fire
                 //if we have called send already before we connected,
                 //send the data
                 if(!_out_queue.empty()) 
-                {
-                    std::cerr << "already have " << _out_queue.size() << " stuff in queue...sending" << std::endl;
                     do_send(false);
-                }
             }
             else 
             {
@@ -320,7 +317,6 @@ namespace fire
 
             //remove sent message
             _out_queue.pop_front();
-            std::cerr << "sent message, " << _out_queue.size() << " remaining..." << std::endl;
 
             //if we are done sending finish the async write chain
             if(_out_queue.empty()) 
@@ -820,8 +816,6 @@ namespace fire
             _sequence++;
             size_t chunks = chunkify(m.ep.address, m.ep.port, m.data);
 
-            std::cerr << "sending message in " << chunks << " chunks to " << make_address_str(m.ep) << std::endl;
-
             //post to do send
             _io.post(boost::bind(&udp_connection::do_send, this, false));
 
@@ -1070,7 +1064,6 @@ namespace fire
             }
             if(inserted)
             {
-                std::cerr << "got message in " << chunk.total_chunks << " from " << make_address_str(ep) << std::endl;
                 u::mutex_scoped_lock l(_in_mutex);
                 endpoint_message em = {ep, data};
                 _in_queue.push(em);
