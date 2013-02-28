@@ -65,7 +65,7 @@ po::variables_map parse_options(int argc, char* argv[], po::options_description&
     return v;
 }
 
-typedef std::map<std::string, std::string> port_map;
+using port_map = std::map<std::string, std::string>;
 
 struct user_info
 {
@@ -75,7 +75,7 @@ struct user_info
     std::string response_service_address;
     n::endpoint ep;
 };
-typedef std::map<std::string, user_info> user_info_map;
+using user_info_map = std::map<std::string, user_info>;
 
 void register_user(n::connection_manager& con, const n::endpoint& ep, const ms::greet_register& r, user_info_map& m)
 {

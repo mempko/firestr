@@ -48,8 +48,8 @@ namespace fire
                 return result;
             }
 
-        typedef std::vector<std::string> string_vect;
-        typedef std::set<std::string> string_set;
+        using string_vect = std::vector<std::string>;
+        using string_set = std::set<std::string>;
     }
 
 }

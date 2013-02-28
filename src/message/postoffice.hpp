@@ -30,9 +30,9 @@ namespace fire
     namespace message
     {
         class post_office;
-        typedef std::shared_ptr<post_office> post_office_ptr;
-        typedef std::weak_ptr<post_office> post_office_wptr;
-        typedef std::unique_ptr<std::thread> thread_uptr;
+        using post_office_ptr = std::shared_ptr<post_office>;
+        using post_office_wptr = std::weak_ptr<post_office>;
+        using thread_uptr = std::unique_ptr<std::thread>;
 
         class post_office
         {
@@ -67,8 +67,8 @@ namespace fire
                 virtual bool send_outside(const message&);
 
             protected:
-                typedef std::map<std::string, mailbox_wptr> mailboxes;
-                typedef std::map<std::string, post_office_wptr> post_offices;
+                using mailboxes = std::map<std::string, mailbox_wptr>;
+                using post_offices = std::map<std::string, post_office_wptr>;
 
                 std::string _address;
                 mailboxes _boxes;

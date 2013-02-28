@@ -55,8 +55,8 @@ namespace fire
                 virtual bool recieve(util::bytes&) = 0;
         };
 
-        typedef std::shared_ptr<message_queue> message_queue_ptr;
-        typedef std::map<std::string, std::string> queue_options;
+        using message_queue_ptr = std::shared_ptr<message_queue>;
+        using queue_options = std::map<std::string, std::string>;
 
         template<class t>
             t get_opt(const queue_options& o, const std::string& k, t def)

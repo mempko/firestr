@@ -159,8 +159,8 @@ namespace fire
                 greet_servers _greet_servers;
         };
 
-        typedef std::shared_ptr<local_user> local_user_ptr;
-        typedef std::weak_ptr<local_user> local_user_wptr;
+        using local_user_ptr = std::shared_ptr<local_user>;
+        using local_user_wptr = std::weak_ptr<local_user>;
 
         //load and save local user info to disk
         local_user_ptr load_user(const std::string& home_dir);

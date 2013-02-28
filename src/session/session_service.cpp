@@ -38,7 +38,7 @@ namespace fire
             const std::string SYNC_SESSION = "sync_session_msg";
         }
 
-        typedef std::set<std::string> contact_ids;
+        using contact_ids = std::set<std::string>;
 
         u::array convert(const contact_ids& ids)
         {

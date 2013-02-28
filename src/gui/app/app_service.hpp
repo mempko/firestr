@@ -35,7 +35,7 @@ namespace fire
     {
         namespace app
         {
-            typedef std::map<std::string, app_metadata> app_metadata_map;
+            using app_metadata_map = std::map<std::string, app_metadata>;
 
             class app_service : public service::service 
             {
@@ -70,8 +70,8 @@ namespace fire
                     messages::sender_ptr _sender;
             };
 
-            typedef std::shared_ptr<app_service> app_service_ptr;;
-            typedef std::weak_ptr<app_service> app_service_wptr;
+            using app_service_ptr = std::shared_ptr<app_service>;
+            using app_service_wptr = std::weak_ptr<app_service>;
 
             //events
             namespace event

@@ -55,7 +55,7 @@ namespace fire
                 QPushButton* _reject;
                 QLabel* _online;
         };
-        typedef std::vector<user_info*> user_info_ptrs;
+        using user_info_ptrs = std::vector<user_info*>;
 
         class contact_list : public list
         {

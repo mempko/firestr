@@ -31,7 +31,7 @@ namespace fire
 {
     namespace session
     {
-        typedef std::map<std::string, session_ptr> session_map;
+        using session_map = std::map<std::string, session_ptr>;
         class session_service : public service::service 
         {
             public:
@@ -79,8 +79,8 @@ namespace fire
                 std::mutex _mutex;
         };
 
-        typedef std::shared_ptr<session_service> session_service_ptr;
-        typedef std::weak_ptr<session_service> session_servie_wptr;
+        using session_service_ptr = std::shared_ptr<session_service>;
+        using session_servie_wptr = std::weak_ptr<session_service>;
 
         //events
         namespace event

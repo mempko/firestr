@@ -56,8 +56,8 @@ namespace fire
                     std::string _code;
             };
 
-            typedef std::shared_ptr<app> app_ptr;
-            typedef std::weak_ptr<app> app_wptr;
+            using app_ptr = std::shared_ptr<app>;
+            using app_wptr = std::weak_ptr<app>;
 
             bool save_app(const std::string& dir, const app&);
             app_ptr load_app(const std::string& dir);

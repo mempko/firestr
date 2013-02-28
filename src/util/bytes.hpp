@@ -24,10 +24,10 @@ namespace fire
 {
     namespace util 
     {
-        typedef char byte;
-        typedef unsigned char ubyte;
-        typedef std::vector<byte> bytes;
-        typedef std::vector<ubyte> ubytes;
+        using byte = char;
+        using ubyte = unsigned char;
+        using bytes = std::vector<byte>;
+        using ubytes = std::vector<ubyte>;
 
         bytes to_bytes(const std::string&);
         std::string to_str(const bytes&);

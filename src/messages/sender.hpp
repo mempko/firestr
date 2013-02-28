@@ -47,8 +47,8 @@ namespace fire
                 message::mailbox_ptr _mail;
         };
 
-        typedef std::shared_ptr<sender> sender_ptr;
-        typedef std::weak_ptr<sender> sender_wptr;
+        using sender_ptr = std::shared_ptr<sender>;
+        using sender_wptr = std::weak_ptr<sender>;
     }
 }
 #endif

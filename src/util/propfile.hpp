@@ -27,7 +27,7 @@ namespace fire
 {
     namespace util
     {
-        typedef std::map<std::string, std::string> properties;
+        using properties = std::map<std::string, std::string>;
         
     }
 }
