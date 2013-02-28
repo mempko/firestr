@@ -56,6 +56,9 @@ namespace fire
                     virtual void message_recieved(const fire::message::message&);
 
                 private:
+                    void fire_apps_updated_event();
+
+                private:
                     void load_apps();
 
                 private:
@@ -73,6 +76,11 @@ namespace fire
             //events
             namespace event
             {
+                extern const std::string APPS_UPDATED;
+                struct apps_updated {};
+
+                fire::message::message convert(const apps_updated&);
+                void convert(const fire::message::message&, apps_updated&);
             }
         }
     }
