@@ -48,8 +48,8 @@ namespace fire
                 Q_OBJECT
 
                 public:
-                    app_editor(app_service_ptr, session::session_ptr);
-                    app_editor(const std::string& id, app_service_ptr, session::session_ptr);
+                    app_editor(app_service_ptr, session::session_ptr, app_ptr a = nullptr);
+                    app_editor(const std::string& id, app_service_ptr, session::session_ptr, app_ptr a = nullptr);
                     ~app_editor();
 
                 public:
@@ -62,6 +62,7 @@ namespace fire
                     void send_script();
                     void save_app();
                     void check_mail();
+                    void update();
 
                 private:
                     void init();
@@ -75,7 +76,6 @@ namespace fire
                     user::contact_list _contacts;
 
                     QTextEdit* _script;
-                    QPushButton* _run;
                     QPushButton* _save;
                     QWidget* _canvas;
                     QGridLayout* _canvas_layout;
@@ -83,6 +83,7 @@ namespace fire
 
                     lua_script_api_ptr _api;
                     app_ptr _app;
+                    std::string _prev_code;
             };
             extern const std::string SCRIPT_SAMPLE;
 

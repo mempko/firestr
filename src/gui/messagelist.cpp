@@ -91,7 +91,7 @@ namespace fire
             {
                 if(auto post = _session->parent_post().lock())
                 {
-                    auto c = new a::app_editor{n.id(), _app_service, _session};
+                    auto c = new a::app_editor{n.id(), _app_service, _session, nullptr};
                     post->add(c->mail());
                     add(c);
                 }

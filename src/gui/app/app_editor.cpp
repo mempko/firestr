@@ -43,6 +43,7 @@ namespace fire
             namespace
             {
                 const size_t TIMER_SLEEP = 100; //in milliseconds
+                const size_t TIMER_UPDATE = 5000; //in milliseconds
                 const size_t PADDING = 20;
                 const std::string SCRIPT_CODE_MESSAGE = "script";
             }
@@ -69,12 +70,16 @@ namespace fire
                 t.text = u::to_str(m.data);
             }
 
-            app_editor::app_editor(app_service_ptr app_service, s::session_ptr session) :
+            app_editor::app_editor(
+                    app_service_ptr app_service, 
+                    s::session_ptr session, 
+                    app_ptr app) :
                 message{},
                 _id{u::uuid()},
                 _app_service{app_service},
                 _session{session},
-                _contacts{session->contacts()}
+                _contacts{session->contacts()},
+                _app{app}
             {
                 REQUIRE(session);
                 REQUIRE(app_service);
@@ -86,12 +91,17 @@ namespace fire
                 ENSURE(_app_service);
             }
 
-            app_editor::app_editor(const std::string& id, app_service_ptr app_service, s::session_ptr session) :
+            app_editor::app_editor(
+                    const std::string& id, 
+                    app_service_ptr app_service, 
+                    s::session_ptr session,
+                    app_ptr app) :
                 message{},
                 _id{id},
                 _app_service{app_service},
                 _session{session},
-                _contacts{session->contacts()}
+                _contacts{session->contacts()},
+                _app{app}
             {
                 REQUIRE(session);
                 REQUIRE(app_service);
@@ -114,13 +124,6 @@ namespace fire
                 INVARIANT(_session);
                 INVARIANT(_app_service);
 
-                //if the app exists, load it
-                if(_app_service->available_apps().count(_id))
-                {
-                    _app = _app_service->load_app(_id);
-                    CHECK_EQUAL(_app->id(), _id);
-                }
-
                 //create gui
                 _canvas = new QWidget;
                 _canvas_layout = new QGridLayout;
@@ -140,13 +143,9 @@ namespace fire
                 if(_app) _script->setPlainText(_app->code().c_str());
                 layout()->addWidget(_script, 2, 0, 1, 2);
 
-                //send button
-                _run = new QPushButton{"run"};
-                layout()->addWidget(_run, 3, 0);
-                connect(_run, SIGNAL(clicked()), this, SLOT(run_script()));
-
+                //save button
                 _save = new QPushButton{"save"};
-                layout()->addWidget(_save, 3, 1);
+                layout()->addWidget(_save, 3, 0);
                 connect(_save, SIGNAL(clicked()), this, SLOT(save_app()));
 
                 setMinimumHeight(layout()->sizeHint().height() + PADDING);
@@ -156,13 +155,16 @@ namespace fire
                 connect(t, SIGNAL(timeout()), this, SLOT(check_mail()));
                 t->start(TIMER_SLEEP);
 
+                auto *t2 = new QTimer(this);
+                connect(t2, SIGNAL(timeout()), this, SLOT(update()));
+                t2->start(TIMER_UPDATE);
+
                 //send script
                 send_script();
 
                 INVARIANT(_session);
                 INVARIANT(_mail);
                 INVARIANT(_sender);
-                INVARIANT(_run);
                 INVARIANT(_save);
                 INVARIANT(_canvas);
                 INVARIANT(_canvas_layout);
@@ -192,7 +194,6 @@ namespace fire
                 INVARIANT(_script);
                 INVARIANT(_session);
                 INVARIANT(_api);
-                INVARIANT(_run);
 
                 //get the code
                 auto code = gui::convert(_script->toPlainText());
@@ -214,7 +215,6 @@ namespace fire
                 INVARIANT(_script);
                 INVARIANT(_session);
                 INVARIANT(_api);
-                INVARIANT(_run);
 
                 //get the code
                 auto code = gui::convert(_script->toPlainText());
@@ -257,6 +257,14 @@ namespace fire
                 _app_service->save_app(*_app);
             }
 
+            void app_editor::update()
+            {
+                auto code = gui::convert(_script->toPlainText());
+                if(code != _prev_code) run_script();
+
+                _prev_code = code;
+            }
+
             void app_editor::check_mail() 
             try
             {
@@ -274,9 +282,16 @@ namespace fire
                         auto c = _contacts.by_id(t.from_id);
                         if(!c) continue;
 
-                        _script->setText(t.text.c_str());
-                        _api->reset_widgets();
-                        _api->run(t.text);
+                        auto code = gui::convert(_script->toPlainText());
+                        if(t.text != code)
+                        {
+                            _prev_code = t.text;
+                            auto cursor = _script->textCursor();
+                            _script->setText(t.text.c_str());
+                            _script->setTextCursor(cursor);
+                            _api->reset_widgets();
+                            _api->run(t.text);
+                        }
                     }
                     else if(m.meta.type == SCRIPT_MESSAGE)
                     {
