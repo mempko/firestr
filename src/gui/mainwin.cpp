@@ -287,9 +287,19 @@ namespace fire
             REQUIRE(_app_service);
 
             _app_menu = new QMenu{tr("&App"), this};
+
+            update_app_menu();
+        }
+
+        void main_window::update_app_menu()
+        {
+            INVARIANT(_app_service);
+            INVARIANT(_app_menu);
+
+            _app_menu->clear();
+
             _app_menu->addAction(_chat_sample_action);
             _app_menu->addAction(_app_editor_action);
-
 
             for( auto p : _app_service->available_apps())
             {
@@ -550,6 +560,12 @@ namespace fire
                     us::event::convert(m, r);
                     contact_disconnected_event(r);
                 }
+                else if(m.meta.type == a::event::APPS_UPDATED)
+                {
+                    a::event::apps_updated r;
+                    a::event::convert(m, r);
+                    apps_updated_event(r);
+                }
                 else
                 {
                     throw std::runtime_error(m.meta.type + " is an unknown message type.");
@@ -769,6 +785,11 @@ namespace fire
             //display alert
             show_alert(w);
             _session_service->broadcast_message(us::event::convert(r));
+        }
+
+        void main_window::apps_updated_event(const app::event::apps_updated&)
+        {
+            update_app_menu();
         }
     }
 }

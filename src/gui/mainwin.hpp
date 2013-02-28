@@ -64,6 +64,7 @@ namespace fire
                 void create_main();
                 void create_menus();
                 void create_app_menu();
+                void update_app_menu();
                 void make_new_user();
                 void setup_services();
                 void save_state();
@@ -82,6 +83,7 @@ namespace fire
                 void new_contact_event(const std::string& id);
                 void contact_connected_event(const user::event::contact_connected&);
                 void contact_disconnected_event(const user::event::contact_disconnected&);
+                void apps_updated_event(const app::event::apps_updated&);
 
             private:
                 QMenu *_main_menu;
