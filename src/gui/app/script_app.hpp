@@ -20,6 +20,7 @@
 
 #include "gui/list.hpp"
 #include "gui/message.hpp"
+#include "gui/app/app_service.hpp"
 #include "session/session.hpp"
 #include "message/mailbox.hpp"
 #include "messages/sender.hpp"
@@ -47,7 +48,7 @@ namespace fire
 
                 public:
                     script_app(app_ptr, session::session_ptr);
-                    script_app(const std::string& address, app_ptr, session::session_ptr);
+                    script_app(const std::string& address, app_ptr, app_service_ptr, session::session_ptr);
                     ~script_app();
 
                 public:
@@ -57,6 +58,7 @@ namespace fire
 
                 public slots:
                     void check_mail();
+                    void clone_app();
 
                 private:
                     void init();
@@ -68,8 +70,14 @@ namespace fire
                     messages::sender_ptr _sender;
                     user::contact_list _contacts;
 
-                    lua_script_api_ptr _api;
                     app_ptr _app;
+                    app_service_ptr _app_service;
+
+                private:
+                    lua_script_api_ptr _api;
+                    QWidget* _canvas;
+                    QGridLayout* _canvas_layout;
+                    QPushButton* _clone;
             };
 
             extern const std::string SCRIPT_APP;
