@@ -429,11 +429,11 @@ namespace fire
 
             if (!ok || g.isEmpty()) return false;
 
-            id = convert(g);
-            if(id == NEW_APP_S) id = "";
+            std::string name = convert(g);
+            if(name == NEW_APP_S) id = "";
             else 
                 for(const auto& a : apps.available_apps())
-                    if(a.second.name == id) { id = a.second.id; break; }
+                    if(a.second.name == name) { id = a.second.id; break; }
 
             return true;
         }
@@ -449,10 +449,13 @@ namespace fire
             std::string id; 
             if(!ask_user_to_select_app(this, *_app_service, id)) return;
 
+            a::app_ptr app;
+
+            //if the app exists, load it
+            if(!id.empty()) app = _app_service->load_app(id);
+
             //create app editor
-            auto t = id.empty() ? 
-                new a::app_editor{_app_service, s->session()} : 
-                new a::app_editor{id, _app_service, s->session()}; 
+            auto t = new a::app_editor{_app_service, s->session(), app};
 
             s->add(t);
 
