@@ -102,7 +102,7 @@ namespace fire
                 {
                     app::app_ptr app{new app::app{u::decode<m::message>(n.data())}};
 
-                    auto c = new a::script_app{n.id(), app, _session};
+                    auto c = new a::script_app{n.id(), app, _app_service, _session};
                     post->add(c->mail());
                     add(c);
                 }

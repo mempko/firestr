@@ -64,15 +64,20 @@ namespace fire
                 INVARIANT_FALSE(_id.empty());
             }
 
-            script_app::script_app(const std::string& id, app_ptr app, s::session_ptr session) :
+            script_app::script_app(
+                    const std::string& id, 
+                    app_ptr app, app_service_ptr app_service, 
+                    s::session_ptr session) :
                 message{},
                 _id{id},
                 _session{session},
                 _app{app},
+                _app_service{app_service},
                 _contacts{session->contacts()}
             {
                 REQUIRE(session);
                 REQUIRE(app);
+                REQUIRE(app_service);
                 REQUIRE_FALSE(id.empty());
 
                 init();
@@ -80,6 +85,7 @@ namespace fire
                 INVARIANT(_api);
                 INVARIANT(_session);
                 INVARIANT(_app);
+                INVARIANT(_app_service);
                 INVARIANT_FALSE(_id.empty());
             }
 
@@ -95,9 +101,19 @@ namespace fire
                 INVARIANT(_session);
                 INVARIANT(_app);
 
+                _clone = new QPushButton("+");
+                _clone->setMaximumSize(12,12);
+
+                connect(_clone, SIGNAL(clicked()), this, SLOT(clone_app()));
+                layout()->addWidget(_clone, 0,1);
+
+                _canvas = new QWidget;
+                _canvas_layout = new QGridLayout{_canvas};
+                layout()->addWidget(_canvas, 0,0,2,1);
+
                 _mail = std::make_shared<m::mailbox>(_id);
                 _sender = std::make_shared<ms::sender>(_session->user_service(), _mail);
-                _api = std::make_shared<lua_script_api>(_contacts, _sender, _session, root(), layout());
+                _api = std::make_shared<lua_script_api>(_contacts, _sender, _session, _canvas, _canvas_layout);
 
                 //run script
                 _api->run(_app->code());
@@ -108,6 +124,7 @@ namespace fire
                 auto *t = new QTimer(this);
                 connect(t, SIGNAL(timeout()), this, SLOT(check_mail()));
                 t->start(TIMER_SLEEP);
+
 
                 INVARIANT(_session);
                 INVARIANT(_mail);
@@ -157,6 +174,12 @@ namespace fire
             {
                 std::cerr << "script_app: unexpected error in check_mail." << std::endl;
             }
+
+            void script_app::clone_app()
+            {
+
+            }
+
         }
     }
 }
