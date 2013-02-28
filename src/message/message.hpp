@@ -28,7 +28,7 @@ namespace fire
 {
     namespace message
     {
-        typedef std::deque<std::string> address;
+        using address = std::deque<std::string>;
         struct metadata
         {
             std::string type;

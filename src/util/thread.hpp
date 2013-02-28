@@ -25,8 +25,8 @@ namespace fire
 {
     namespace util
     {
-        typedef std::unique_ptr<std::thread> thread_uptr;
-        typedef std::lock_guard<std::mutex> mutex_scoped_lock;
+        using thread_uptr = std::unique_ptr<std::thread>;
+        using mutex_scoped_lock = std::lock_guard<std::mutex>;
 
         void sleep_thread(size_t milliseconds);
 

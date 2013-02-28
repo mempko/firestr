@@ -35,17 +35,17 @@ namespace fire
         extern const std::string UDP;
         extern const std::string TCP;
 
-        typedef util::queue<util::bytes> byte_queue;
-        typedef std::unique_ptr<boost::asio::io_service> asio_service_ptr;
-        typedef std::unique_ptr<boost::asio::ip::tcp::resolver> tcp_resolver_ptr;
-        typedef std::unique_ptr<boost::asio::ip::tcp::acceptor> tcp_acceptor_ptr;
-        typedef std::unique_ptr<boost::asio::ip::tcp::socket> tcp_socket_ptr;
+        using byte_queue = util::queue<util::bytes>;
+        using asio_service_ptr = std::unique_ptr<boost::asio::io_service>;
+        using tcp_resolver_ptr = std::unique_ptr<boost::asio::ip::tcp::resolver>;
+        using tcp_acceptor_ptr = std::unique_ptr<boost::asio::ip::tcp::acceptor>;
+        using tcp_socket_ptr = std::unique_ptr<boost::asio::ip::tcp::socket>;
 
         class tcp_connection;
         class udp_connection;
         class connection;
-        typedef util::queue<tcp_connection*> tcp_connection_ptr_queue;
-        typedef util::queue<connection*> connection_ptr_queue;
+        using tcp_connection_ptr_queue = util::queue<tcp_connection*>;
+        using connection_ptr_queue = util::queue<connection*>;
 
         struct endpoint
         {
@@ -60,7 +60,7 @@ namespace fire
             util::bytes data;
         };
 
-        typedef util::queue<endpoint_message> endpoint_queue;
+        using endpoint_queue = util::queue<endpoint_message>;
 
         class connection
         {
@@ -133,12 +133,12 @@ namespace fire
                 friend class tcp_queue;
         };
 
-        typedef std::shared_ptr<tcp_connection> tcp_connection_ptr;
-        typedef std::vector<tcp_connection_ptr> tcp_connections;
+        using tcp_connection_ptr = std::shared_ptr<tcp_connection>;
+        using tcp_connections = std::vector<tcp_connection_ptr>;
 
-        typedef std::unique_ptr<boost::asio::ip::udp::resolver> udp_resolver_ptr;
-        typedef std::unique_ptr<boost::asio::ip::udp::socket> udp_socket_ptr;
-        typedef uint64_t sequence_type;
+        using udp_resolver_ptr = std::unique_ptr<boost::asio::ip::udp::resolver>;
+        using udp_socket_ptr = std::unique_ptr<boost::asio::ip::udp::socket>;
+        using sequence_type = uint64_t;
 
         struct udp_chunk
         {
@@ -150,8 +150,8 @@ namespace fire
             util::bytes data;
         };
 
-        typedef util::queue<udp_chunk> chunk_queue;
-        typedef std::vector<udp_chunk> udp_chunks;
+        using chunk_queue = util::queue<udp_chunk>;
+        using udp_chunks = std::vector<udp_chunk>;
 
         //TODO: need to use endpoint as another indirection
         struct working_udp_chunks
@@ -160,8 +160,8 @@ namespace fire
             boost::dynamic_bitset<> set;
         };
 
-        typedef std::map<sequence_type, working_udp_chunks> working_udp_endpoints;
-        typedef std::map<std::string, working_udp_endpoints> working_udp_messages;
+        using working_udp_endpoints = std::map<sequence_type, working_udp_chunks>;
+        using working_udp_messages = std::map<std::string, working_udp_endpoints>;
 
         class udp_connection
         {
@@ -206,8 +206,8 @@ namespace fire
                 boost::system::error_code _error;
         };
 
-        typedef std::shared_ptr<udp_connection> udp_connection_ptr;
-        typedef std::vector<udp_connection_ptr> udp_connections;
+        using udp_connection_ptr = std::shared_ptr<udp_connection>;
+        using udp_connections = std::vector<udp_connection_ptr>;
 
         struct asio_params
         {
@@ -223,9 +223,9 @@ namespace fire
         };
 
 
-        typedef std::vector<util::bytes>  chunked_message;
-        typedef std::map<size_t,chunked_message> incoming_message_buffers;
-        typedef std::map<std::string, incoming_message_buffers> incoming_messages;
+        using chunked_message = std::vector<util::bytes> ;
+        using incoming_message_buffers = std::map<size_t,chunked_message>;
+        using incoming_messages = std::map<std::string, incoming_message_buffers>;
 
         class udp_queue
         {
@@ -296,8 +296,8 @@ namespace fire
                 friend void tcp_run_thread(tcp_queue*);
         };
 
-        typedef std::shared_ptr<tcp_queue> tcp_queue_ptr;
-        typedef std::shared_ptr<udp_queue> udp_queue_ptr;
+        using tcp_queue_ptr = std::shared_ptr<tcp_queue>;
+        using udp_queue_ptr = std::shared_ptr<udp_queue>;
 
         asio_params parse_params(const address_components& c);
         asio_params::endpoint_type determine_type(const std::string& address);

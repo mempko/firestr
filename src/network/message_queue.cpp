@@ -26,7 +26,7 @@ namespace fire
 {
     namespace network
     {
-        typedef std::vector<std::string> strings;
+        using strings = std::vector<std::string>;
 
         queue_options parse_options(const strings& ss)
         {

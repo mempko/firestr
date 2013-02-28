@@ -64,7 +64,7 @@ namespace fire
                 std::string _ext_port;
         };
 
-        typedef std::shared_ptr<stun_gun> stun_gun_ptr;
+        using stun_gun_ptr = std::shared_ptr<stun_gun>;
     }
 }
 #endif

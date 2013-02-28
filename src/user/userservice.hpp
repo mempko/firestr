@@ -57,9 +57,9 @@ namespace fire
 
         struct register_with_greeters {};
 
-        typedef std::map<std::string, add_request> add_requests;
-        typedef std::set<std::string> sent_requests;
-        typedef std::map<std::string, contact_data> contacts_data;
+        using add_requests = std::map<std::string, add_request>;
+        using sent_requests = std::set<std::string>;
+        using contacts_data = std::map<std::string, contact_data>;
 
         struct user_service_context
         {
@@ -148,8 +148,8 @@ namespace fire
                 friend void greet_thread(user_service*);
         };
 
-        typedef std::shared_ptr<user_service> user_service_ptr;
-        typedef std::weak_ptr<user_service> user_service_wptr;
+        using user_service_ptr = std::shared_ptr<user_service>;
+        using user_service_wptr = std::weak_ptr<user_service>;
 
         namespace event
         {

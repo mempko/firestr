@@ -57,8 +57,8 @@ namespace fire
                 friend void service_thread(service*);
         };
 
-        typedef std::shared_ptr<service> service_ptr;
-        typedef std::weak_ptr<service> service_wptr;
+        using service_ptr = std::shared_ptr<service>;
+        using service_wptr = std::weak_ptr<service>;
     }
 }
 #endif

@@ -268,7 +268,7 @@ namespace fire
             uint16_t offset;
             u::bytes data;
         };
-        typedef std::map<uint16_t, raw_attribute> attributes;
+        using attributes = std::map<uint16_t, raw_attribute>;
 
         attributes read_attribytes(QDataStream& in)
         {

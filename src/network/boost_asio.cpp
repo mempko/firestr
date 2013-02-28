@@ -33,9 +33,9 @@ namespace ba = boost::asio;
 using namespace boost::asio::ip;
 
 namespace so = boost::asio::detail::socket_option; 
-typedef so::integer<IPPROTO_IP, IP_TTL> time_to_live; 
+using time_to_live = so::integer<IPPROTO_IP, IP_TTL>; 
 #ifdef __APPLE__
-typedef so::boolean<SOL_SOCKET, SO_REUSEPORT> reuse_port;
+using reuse_port = so::boolean<SOL_SOCKET, SO_REUSEPORT>;
 #endif
 
 namespace fire

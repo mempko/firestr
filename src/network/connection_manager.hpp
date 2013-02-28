@@ -29,9 +29,9 @@ namespace fire
 {
     namespace network 
     {
-        typedef std::map<std::string, int> assignment_map; 
-        typedef std::vector<tcp_queue_ptr> tcp_connection_pool;
-        typedef std::map<std::string, connection*> connection_map; 
+        using assignment_map = std::map<std::string, int>; 
+        using tcp_connection_pool = std::vector<tcp_queue_ptr>;
+        using connection_map = std::map<std::string, connection*>; 
 
         class connection_manager
         {

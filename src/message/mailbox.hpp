@@ -27,7 +27,7 @@ namespace fire
 {
     namespace message
     {
-        typedef util::queue<message> queue;
+        using queue = util::queue<message>;
 
         class mailbox
         {
@@ -54,8 +54,8 @@ namespace fire
                 queue _out;
         };
 
-        typedef std::shared_ptr<mailbox> mailbox_ptr;
-        typedef std::weak_ptr<mailbox> mailbox_wptr;
+        using mailbox_ptr = std::shared_ptr<mailbox>;
+        using mailbox_wptr = std::weak_ptr<mailbox>;
     }
 }
 #endif

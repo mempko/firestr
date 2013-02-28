@@ -67,8 +67,8 @@ namespace fire
                 user::contact_list _contacts;
         };
 
-        typedef std::shared_ptr<session> session_ptr;
-        typedef std::weak_ptr<session> session_wptr;
+        using session_ptr = std::shared_ptr<session>;
+        using session_wptr = std::weak_ptr<session>;
     }
 }
 
