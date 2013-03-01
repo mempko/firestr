@@ -101,8 +101,10 @@ namespace fire
                 INVARIANT(_session);
                 INVARIANT(_app);
 
+                //root()->setStyleSheet("QWidget {border: 0px;}");
                 _clone = new QPushButton("+");
-                _clone->setMaximumSize(12,12);
+                _clone->setMaximumSize(15,15);
+                _clone->setStyleSheet("border: 0px; color: 'blue';");
 
                 connect(_clone, SIGNAL(clicked()), this, SLOT(clone_app()));
                 layout()->addWidget(_clone, 0,1);
@@ -177,7 +179,34 @@ namespace fire
 
             void script_app::clone_app()
             {
+                INVARIANT(_app_service);
+                INVARIANT(_app);
 
+                bool exists = _app_service->available_apps().count(_app->id());
+                bool overwrite = false;
+                if(exists)
+                {
+                    auto answer = QMessageBox::question(0, 
+                            tr("Update App"), tr("App already exists in your collection, overwrite?"),
+                            QMessageBox::Yes | QMessageBox::No);
+                    overwrite = answer == QMessageBox::Yes;
+                } 
+
+                if(!overwrite)
+                {
+                    QString curr_name = _app->name().c_str();
+                    bool ok;
+                    auto g = QInputDialog::getText(this, tr("Clone App"),
+                            tr("App Name:"), QLineEdit::Normal, curr_name, &ok);
+
+                    if (!ok || g.isEmpty()) return;
+
+                    std::string name = convert(g);
+                    _app->name(name);
+                }
+
+                if(!overwrite && exists) _app_service->clone_app(*_app);
+                else _app_service->save_app(*_app);
             }
 
         }

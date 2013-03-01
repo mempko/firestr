@@ -47,7 +47,7 @@ namespace fire
                     app_metadata_map available_apps() const;
                     app_ptr load_app(const std::string& id) const;
                     bool save_app(const app&);
-                    bool clone_app(const app&);
+                    bool clone_app(app&);
 
                 public:
                     user::user_service_ptr user_service();

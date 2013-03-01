@@ -146,17 +146,16 @@ namespace fire
                 return saved;
             }
 
-            bool app_service::clone_app(const app& a)
+            bool app_service::clone_app(app& a)
             {
-                u::mutex_scoped_lock l(_mutex);
                 INVARIANT_FALSE(_app_home.empty());
                 REQUIRE_FALSE(a.name().empty());
 
-                app ca; //has new id
-                ca.name(a.name());
-                ca.code(a.code());
-
-                return save_app(ca);
+                app na; //make new id
+                na.name(a.name());
+                na.code(a.code());
+                a = na;
+                return save_app(a);
             }
 
             void app_service::fire_apps_updated_event()
