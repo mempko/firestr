@@ -187,7 +187,7 @@ namespace fire
                 if(exists)
                 {
                     auto answer = QMessageBox::question(0, 
-                            tr("Update App"), tr("App already exists in your collection, overwrite?"),
+                            tr("Update App"), tr("App already exists in your collection, update it?"),
                             QMessageBox::Yes | QMessageBox::No);
                     overwrite = answer == QMessageBox::Yes;
                 } 
