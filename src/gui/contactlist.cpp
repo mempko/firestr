@@ -391,12 +391,12 @@ namespace fire
             setLayout(layout);
 
             //create remote add button
-            auto* add_remote = new QPushButton("add using contact file");
+            auto* add_remote = new QPushButton("add using invite file");
             layout->addWidget(add_remote, 0,0); 
             connect(add_remote, SIGNAL(clicked()), this, SLOT(new_remote_contact()));
 
             //create create request button
-            auto* create_request = new QPushButton("create contact file");
+            auto* create_request = new QPushButton("create invite file");
             layout->addWidget(create_request, 1,0); 
             connect(create_request, SIGNAL(clicked()), this, SLOT(create_contact_file()));
 
@@ -442,7 +442,7 @@ namespace fire
             //get file name to load
             std::string home = std::getenv("HOME");
             auto file = QFileDialog::getOpenFileName(this,
-                    tr("Open Contact File"), home.c_str(), tr("Contact File (*.fcontact)"));
+                    tr("Open Invite File"), home.c_str(), tr("Contact File (*.finvite)"));
 
             if(file.isEmpty())
             {
@@ -479,10 +479,10 @@ namespace fire
         {
             //have user select contact file 
             std::string home = std::getenv("HOME");
-            std::string default_file = home + "/" + _service->user().info().name() + ".fcontact";
+            std::string default_file = home + "/" + _service->user().info().name() + ".finvite";
             auto file = QFileDialog::getSaveFileName(this, tr("Save File"),
                     default_file.c_str(),
-                    tr("Contact File (*.fcontact)"));
+                    tr("Invite File (*.finvite)"));
 
             if(file.isEmpty())
             {
