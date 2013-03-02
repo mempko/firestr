@@ -46,38 +46,44 @@ namespace fire
                 const size_t PADDING = 20;
             }
 
-            script_app::script_app(app_ptr app, s::session_ptr session) :
+            script_app::script_app(
+                    app_ptr app, 
+                    app_service_ptr as,
+                    s::session_ptr session) :
                 message{},
                 _id{u::uuid()},
                 _session{session},
                 _app{app},
+                _app_service{as},
                 _contacts{session->contacts()}
             {
                 REQUIRE(session);
                 REQUIRE(app);
+                REQUIRE(as);
 
                 init();
 
                 INVARIANT(_api);
                 INVARIANT(_session);
                 INVARIANT(_app);
+                INVARIANT(_app_service);
                 INVARIANT_FALSE(_id.empty());
             }
 
             script_app::script_app(
                     const std::string& id, 
-                    app_ptr app, app_service_ptr app_service, 
+                    app_ptr app, app_service_ptr as, 
                     s::session_ptr session) :
                 message{},
                 _id{id},
                 _session{session},
                 _app{app},
-                _app_service{app_service},
+                _app_service{as},
                 _contacts{session->contacts()}
             {
                 REQUIRE(session);
                 REQUIRE(app);
-                REQUIRE(app_service);
+                REQUIRE(as);
                 REQUIRE_FALSE(id.empty());
 
                 init();

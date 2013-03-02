@@ -47,7 +47,7 @@ namespace fire
                 Q_OBJECT
 
                 public:
-                    script_app(app_ptr, session::session_ptr);
+                    script_app(app_ptr, app_service_ptr, session::session_ptr);
                     script_app(const std::string& address, app_ptr, app_service_ptr, session::session_ptr);
                     ~script_app();
 
