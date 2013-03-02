@@ -56,6 +56,7 @@ namespace fire
 
             _contact_select = new QComboBox;
             _add_contact = new QPushButton{"+"};
+            _add_contact->setMaximumSize(20,20);
             connect(_add_contact, SIGNAL(clicked()), this, SLOT(add_contact()));
 
             update_contact_select();
