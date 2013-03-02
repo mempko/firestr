@@ -854,6 +854,7 @@ namespace fire
 
             //find contact address
             find_contact(contact);
+            send_ping_request(contact, true);
         }
 
         namespace event
