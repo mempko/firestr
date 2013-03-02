@@ -1,0 +1,76 @@
+===================================================================
+Library Dependencies
+===================================================================
+Qt 4.8
+Boost
+
+===================================================================
+Building Firestr
+===================================================================
+
+Firestr uses CMake for it's meta-build configuration.
+
+> mkdir build
+> cd build
+> cmake 
+> make -j
+
+===================================================================
+Running Firestr
+===================================================================
+
+There are two ways to have two or more instances of Firestr connect
+to each other. 
+
+If you are on a local network and only want to communicate within 
+the local network, you can simply run firestr executable in your
+build directory
+
+When you add a contact, choose the local ip option and simply put
+in the ip/port of the other running instance. The other user will
+have to confirm your request to add their contact. Once confirmed
+you can start communicating and using Firestr.
+
+If you want to communicate over the internet via p2p, you have to 
+first have to add a public firegreet instance to your greeter list
+under the contact menu.
+
+Then you can create an invite file which you can send to the person
+you want to connect with. They can then add you as a contact via the
+invite file. They will then also create an invite file to send to 
+you. After you add them, firestr should automatically connect you
+and your contact via the firegreet service. 
+
+The firegreet service is simply responsible for providing information
+to the parties on their public ip/port after which firestr will 
+initiate a p2p connection.
+
+Once a contact is added, they are saved as your contact and you will
+connect to them the next time you start the application automatically.
+
+You can have multiple contacts and multiple greeters. Once you have
+a contact to communicate with, you can initiate a session and start
+chatting or sharing applications.
+
+Have fun.
+
+===================================================================
+License GPLv3
+===================================================================
+
+Copyright (C) 2012  Maxim Noah Khailo
+ 
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+ 
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+ 
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+

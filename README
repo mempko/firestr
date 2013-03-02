@@ -7,8 +7,8 @@ This is not the web. Firestr in short, is a distributed,
 decentralized way to communicate and share through running programs.
 
 You don't send a message to someone, you send an program, which 
-can have rich content. All progras are wired up together automatically
-providing rich communication, either through text, images, videos, 
+can have rich content. All programs are wired up together automatically
+providing distributed communication, either through text, images, videos, 
 or games.
 
 The source code to all applications is available immediately to 
@@ -19,7 +19,7 @@ Organization
 ===================================================================
 
 This is the reference implementation of the protocol. It uses QT for
-the GUI and Zeromq as the message back-end. Currently the applications
+the GUI and a custom message back-end. Currently the applications
 are written in Lua, but other bindings will be provided in the future. 
 
 The main directory is src. Each subdirectory is a library and
@@ -28,11 +28,10 @@ the main application is in src/firestr
 The project uses CMake as the meta-build configuration.
 
 ===================================================================
-Dependencies
+Build Dependencies
 ===================================================================
-Qt4
-Zeromq
-Lua
+CMake
+Qt 4.8
 Boost
 
 ===================================================================
