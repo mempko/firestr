@@ -51,7 +51,7 @@ po::options_description create_descriptions()
         ("help", "prints help")
         ("home", po::value<std::string>()->default_value(home), "configuration directory")
         ("host", po::value<std::string>()->default_value(host), "host/ip of this machine") 
-        ("port", po::value<std::string>()->default_value(port), "port this machine will recieve messages on");
+        ("port", po::value<std::string>()->default_value(port), "port this machine will receive messages on");
 
     return d;
 }

@@ -142,7 +142,7 @@ namespace fire
                 }
 
                 //the post office address is added here
-                //to the from so that the recieve can send message
+                //to the from so that the receive can send message
                 //back to sender
                 m.meta.from.push_front(_address);
 

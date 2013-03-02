@@ -235,7 +235,7 @@ namespace fire
 
             public:
                 virtual bool send(const endpoint_message& m);
-                virtual bool recieve(endpoint_message& b);
+                virtual bool receive(endpoint_message& b);
 
             private:
                 void bind();
@@ -263,7 +263,7 @@ namespace fire
 
             public:
                 virtual bool send(const util::bytes& b);
-                virtual bool recieve(util::bytes& b);
+                virtual bool receive(util::bytes& b);
 
             public:
                 connection* get_socket() const;
