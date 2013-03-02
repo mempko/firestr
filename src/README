@@ -3,11 +3,10 @@
 Project Overview 
 ===================================================================
 
-The project is layed out as libraries and executables. All of the 
+The project is organized as libraries and executables. All of the 
 executables start with `fire', where `firestr' is the main one.
 
 Each subdirectory has it's own CMakeLists file and README.
-
 
 ===================================================================
 Dependency Graph 
@@ -57,22 +56,28 @@ Dependency Graph
 Component Summary 
 ===================================================================
 
-util     - Place to put things that everything else depends on
+util          - Place to put things that everything else depends on
 
-network  - Library dealing with send bits and blips over the network
+network       - Library dealing with sending bits and blips over the network
 
-message  - Library for sending messages between components and over network
+message       - Library for sending messages between components and over network
 
-messages - Code for various message types that can go over the wire
+messages      - Code for various message types that can go over the wire
 
-service  - Library that simplifies the creation of threaded services.
+service       - Library that simplifies the creation of threaded services.
 
-user     - Library that manages user and contact state and connectivity
+user          - Library that manages user and contact state and connectivity
 
-session  - Library that manages session state and connectivity between users
+session       - Library that manages session state and connectivity between users
 
-gui      - Various widgets which can be combined into an application
+gui           - Various widgets which can be combined into an application
 
-firestr  - Main Application
+firestr       - Main application
+
+firegreet     - Greeter application which helps firestr communicate over NAT
+
+packaged_apps - Example/useful apps
+
+slb           - Lua and the SLB Lua binding library written by Jose L. Hidalgo Valiño
 
 
