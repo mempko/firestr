@@ -416,7 +416,7 @@ namespace fire
             auto t = new a::chat_sample{s->session()};
             s->add(t);
 
-            //add to master post so it can recieve messages
+            //add to master post so it can receive messages
             //from outside world
             _master->add(t->mail());
 
@@ -469,7 +469,7 @@ namespace fire
 
             s->add(t);
 
-            //add to master post so it can recieve messages
+            //add to master post so it can receive messages
             //from outside world
             _master->add(t->mail());
 

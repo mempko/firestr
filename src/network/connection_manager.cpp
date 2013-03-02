@@ -143,20 +143,20 @@ namespace fire
             return _udp_con->send(em);
         }
 
-        bool connection_manager::recieve(endpoint& ep, u::bytes& b)
+        bool connection_manager::receive(endpoint& ep, u::bytes& b)
         {
             u::mutex_scoped_lock l(_mutex);
             INVARIANT(_in);
 
             endpoint_message um;
-            if(_udp_con->recieve(um))
+            if(_udp_con->receive(um))
             {
                 ep = um.ep;
                 b = std::move(um.data);
                 return true;
             }
 
-            if(_in->recieve(b)) 
+            if(_in->receive(b)) 
             {
                 auto s = _in->get_socket();
                 CHECK(s);
@@ -173,7 +173,7 @@ namespace fire
 
                 auto c = _pool[i];
                 CHECK(c);
-                if(c->recieve(b)) 
+                if(c->receive(b)) 
                 {
                     auto s = c->get_socket();
                     CHECK(s);

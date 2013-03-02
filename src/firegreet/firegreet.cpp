@@ -51,7 +51,7 @@ po::options_description create_descriptions()
     d.add_options()
         ("help", "prints help")
         ("host", po::value<std::string>()->default_value(host), "host/ip of this server") 
-        ("port", po::value<std::string>()->default_value(port), "port this server will recieve messages on");
+        ("port", po::value<std::string>()->default_value(port), "port this server will receive messages on");
 
     return d;
 }
@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
     try
     {
         n::endpoint ep;
-        if(!con.recieve(ep, data))
+        if(!con.receive(ep, data))
         {
             u::sleep_thread(THREAD_SLEEP);
             continue;

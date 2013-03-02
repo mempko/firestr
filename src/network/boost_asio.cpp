@@ -495,7 +495,7 @@ namespace fire
             return _out->send(b, _p.block);
         }
 
-        bool tcp_queue::recieve(u::bytes& b)
+        bool tcp_queue::receive(u::bytes& b)
         {
             //if we are blocking, block until we get message
             while(_p.block && !_in_queue.empty()) u::sleep_thread(BLOCK_SLEEP);
@@ -1116,7 +1116,7 @@ namespace fire
             return _con->send(m, _p.block);
         }
 
-        bool udp_queue::recieve(endpoint_message& m)
+        bool udp_queue::receive(endpoint_message& m)
         {
             //if we are blocking, block until we get message
             while(_p.block && !_in_queue.empty()) u::sleep_thread(BLOCK_SLEEP);

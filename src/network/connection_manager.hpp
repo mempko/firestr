@@ -39,7 +39,7 @@ namespace fire
                 connection_manager(size_t size, const std::string& listen_port);
 
             public:
-                bool recieve(endpoint& ep, util::bytes& b);
+                bool receive(endpoint& ep, util::bytes& b);
                 bool send(const std::string& to, const util::bytes& b);
                 bool is_disconnected(const std::string& addr);
 

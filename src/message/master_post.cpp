@@ -46,7 +46,7 @@ namespace fire
                 //get data from outside world
                 u::bytes data;
                 n::endpoint ep;
-                if(!o->_connections.recieve(ep, data))
+                if(!o->_connections.receive(ep, data))
                 {
                     u::sleep_thread(THREAD_SLEEP);
                     continue;

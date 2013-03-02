@@ -40,10 +40,10 @@ namespace fire
                     return send(util::to_bytes(s));
                 }
 
-                bool recieve(std::string& s)
+                bool receive(std::string& s)
                 {
                     util::bytes b;
-                    if(recieve(b)) 
+                    if(receive(b)) 
                     {
                         s = util::to_str(b);
                         return true;
@@ -52,7 +52,7 @@ namespace fire
                 }
                 
                 virtual bool send(const util::bytes&) = 0;
-                virtual bool recieve(util::bytes&) = 0;
+                virtual bool receive(util::bytes&) = 0;
         };
 
         using message_queue_ptr = std::shared_ptr<message_queue>;
