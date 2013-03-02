@@ -494,7 +494,7 @@ namespace fire
             if(!a) return;
 
             //create app widget
-            auto t = new a::script_app{a, s->session()};
+            auto t = new a::script_app{a, _app_service, s->session()};
 
             //add to session
             s->add(t);
