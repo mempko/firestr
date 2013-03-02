@@ -43,6 +43,7 @@ namespace fire
                     app_service(
                             user::user_service_ptr,
                             fire::message::mailbox_ptr event = nullptr);
+
                 public:
                     app_metadata_map available_apps() const;
                     app_ptr load_app(const std::string& id) const;

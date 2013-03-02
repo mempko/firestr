@@ -164,7 +164,6 @@ namespace fire
                 send_event(event::convert(e));
             }
 
-
             namespace event
             {
                 const std::string APPS_UPDATED = "apps_updated";

@@ -107,7 +107,6 @@ namespace fire
                 INVARIANT(_session);
                 INVARIANT(_app);
 
-                //root()->setStyleSheet("QWidget {border: 0px;}");
                 _clone = new QPushButton("+");
                 _clone->setMaximumSize(15,15);
                 _clone->setStyleSheet("border: 0px; color: 'blue';");
@@ -192,10 +191,16 @@ namespace fire
                 bool overwrite = false;
                 if(exists)
                 {
-                    auto answer = QMessageBox::question(0, 
-                            tr("Update App"), tr("App already exists in your collection, update it?"),
-                            QMessageBox::Yes | QMessageBox::No);
-                    overwrite = answer == QMessageBox::Yes;
+                    QMessageBox q(this);
+                    q.setText("Update App?");
+                    q.setInformativeText("App already exists in your collection, update it?");
+                    auto *ub = q.addButton(tr("Update"), QMessageBox::ActionRole);
+                    auto *cb = q.addButton(tr("New Version"), QMessageBox::ActionRole);
+                    auto *canb = q.addButton(QMessageBox::Cancel);
+                    auto ret = q.exec();
+                    if(ret == QMessageBox::Cancel) return;
+
+                    overwrite = q.clickedButton() == ub;
                 } 
 
                 if(!overwrite)
