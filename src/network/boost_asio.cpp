@@ -373,14 +373,19 @@ namespace fire
                 return;
             }
 
-            //read body
-            ba::async_read(*_socket,
-                    _in_buffer,
-                    ba::transfer_at_least(size - _in_buffer.size()),
-                    boost::bind(&tcp_connection::handle_body, this,
-                        ba::placeholders::error,
-                        ba::placeholders::bytes_transferred,
-                        size));
+            if(_in_buffer.size() >= size) 
+                handle_body(boost::system::error_code(), 0, size);
+            else
+            {
+                //read body
+                ba::async_read(*_socket,
+                        _in_buffer,
+                        ba::transfer_at_least(size - _in_buffer.size()),
+                        boost::bind(&tcp_connection::handle_body, this,
+                            ba::placeholders::error,
+                            ba::placeholders::bytes_transferred,
+                            size));
+            }
         }
 
         void tcp_connection::handle_body(const boost::system::error_code& error, size_t transferred, size_t size)
