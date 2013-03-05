@@ -651,6 +651,25 @@ namespace fire
             request_register(gs);
         }
 
+        void user_service::remove_greeter(const std::string& address)
+        {
+            INVARIANT(_user);
+            //parse host/port
+            auto host_port = n::parse_host_port(address);
+            greet_server gs{host_port.first, host_port.second};
+
+            //add greeter
+            greet_servers::iterator g = _user->greeters().end();
+            for(greet_servers::iterator i = _user->greeters().begin(); i != _user->greeters().end(); i++)
+                if(gs.host() == i->host() && gs.port() == i->port())
+                    g = i;
+            if(g == _user->greeters().end()) return;
+           
+            _user->greeters().erase(g);
+
+            save_user(_home, *_user);
+        }
+
         void ping_thread(user_service* s)
         try
         {

@@ -119,6 +119,8 @@ namespace fire
                 greet_server(const std::string& host, const std::string& port) : 
                     _host{host}, _port{port}{}
 
+                greet_server& operator=(const greet_server& o);
+
             public:
                 std::string host() const; 
                 std::string port() const;

@@ -166,7 +166,6 @@ namespace fire
 
             setWindowTitle(tr(title.c_str()));
 
-            //create greeter tab
             INVARIANT(_list);
         }
 
@@ -378,8 +377,22 @@ namespace fire
 
             auto* layout = new QGridLayout{this};
             setLayout(layout);
-            auto label = _server.host() + ":" + _server.port();
-            layout->addWidget( new QLabel{label.c_str()}, 0,0);
+            _address = _server.host() + ":" + _server.port();
+            _label = new QLabel{_address.c_str()};
+            layout->addWidget( _label, 0,0);
+            _rm = new QPushButton("x");
+            _rm->setMaximumSize(20,20);
+            layout->addWidget(_rm, 0,1);
+            connect(_rm, SIGNAL(clicked()), this, SLOT(remove()));
+
+        }
+
+        void greeter_info::remove()
+        {
+            INVARIANT(_service);
+            _service->remove_greeter(_address);
+            _label->setEnabled(false);
+            _rm->setEnabled(false);
         }
 
         add_contact_dialog::add_contact_dialog(user::user_service_ptr s, QWidget* parent) :
