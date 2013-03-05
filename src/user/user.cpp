@@ -440,5 +440,15 @@ namespace fire
             u::mutex_scoped_lock l(_mutex);
             _port = v;
         }
+
+        greet_server& greet_server::operator=(const greet_server& o)
+        {
+            if(&o == this) return *this;
+
+            u::mutex_scoped_lock l(_mutex);
+            _host = o.host();
+            _port = o.port();
+            return *this;
+        }
     }
 }

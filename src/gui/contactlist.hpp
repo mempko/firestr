@@ -79,10 +79,18 @@ namespace fire
             Q_OBJECT
             public:
                 greeter_info(user::user_service_ptr, const user::greet_server& );
+            private slots:
+                void remove();
 
             private:
+                QLabel* _label;
+                QPushButton* _rm;
+
+            private:
+                std::string _address;
                 user::greet_server _server;
                 user::user_service_ptr _service;
+
         };
 
         class greeter_list : public list

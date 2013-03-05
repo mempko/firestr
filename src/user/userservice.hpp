@@ -85,6 +85,7 @@ namespace fire
             public:
                 void attempt_to_add_contact(const std::string& address);
                 void add_greeter(const std::string& address);
+                void remove_greeter(const std::string& address);
                 void send_confirmation(const std::string& id, std::string key = "");
                 void send_rejection(const std::string& id);
                 const add_requests& pending_requests() const;
