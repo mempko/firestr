@@ -22,7 +22,9 @@
 
 #include <QLabel>
 
+#ifndef Q_MOC_RUN
 #include "gui/message.hpp"
+#endif
 
 namespace fire
 {

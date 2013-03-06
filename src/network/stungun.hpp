@@ -17,14 +17,18 @@
 #ifndef FIRESTR_NETWORK_STUNGUN_H
 #define FIRESTR_NETWORK_STUNGUN_H
 
+#ifndef Q_MOC_RUN
 #include "util/bytes.hpp"
+#endif
 
 #include <QObject>
 #include <QtGui>
 #include <QtNetwork>
 #include <string>
 #include <memory>
+#ifndef Q_MOC_RUN
 #include <boost/cstdint.hpp>
+#endif
 
 namespace fire
 {

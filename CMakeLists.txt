@@ -18,7 +18,12 @@ cmake_minimum_required(VERSION 2.6)
 project(firestr)
 
 #use C++11
-ADD_DEFINITIONS(-std=c++0x)
+ADD_DEFINITIONS(-std=c++11)
+SET(CMAKE_CXX_FLAGS -DBOOST_TT_HAS_OPERATOR_HPP_INCLUDED)
+
+SET(CMAKE_C_COMPILER   gcc-4.7)
+SET(CMAKE_CXX_COMPILER g++-4.7)
+
 
 if(APPLE)
     add_definitions(-D_GLIBCXX_USE_NANOSLEEP)

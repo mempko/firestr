@@ -18,11 +18,13 @@
 #ifndef FIRESTR_GUI_SESSION_H
 #define FIRESTR_GUI_SESSION_H
 
+#ifndef Q_MOC_RUN
 #include "gui/messagelist.hpp"
 #include "gui/contactlist.hpp"
 #include "gui/app/app_service.hpp"
 #include "session/session.hpp"
 #include "session/session_service.hpp"
+#endif
 
 #include <QWidget>
 #include <QGridLayout>

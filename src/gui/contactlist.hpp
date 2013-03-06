@@ -18,9 +18,11 @@
 #ifndef FIRESTR_GUI_CONTACT_LIST_H
 #define FIRESTR_GUI_CONTACT_LIST_H
 
+#ifndef Q_MOC_RUN
 #include "gui/list.hpp"
 #include "user/user.hpp"
 #include "user/userservice.hpp"
+#endif
 
 #include <set>
 #include <string>

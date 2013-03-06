@@ -18,6 +18,7 @@
 #ifndef FIRESTR_APP_SCRIPT_APP_H
 #define FIRESTR_APP_SCRIPT_APP_H
 
+#ifndef Q_MOC_RUN
 #include "gui/list.hpp"
 #include "gui/message.hpp"
 #include "gui/app/app_service.hpp"
@@ -26,6 +27,7 @@
 #include "messages/sender.hpp"
 #include "gui/app/lua_script_api.hpp"
 #include "gui/app/app.hpp"
+#endif
 
 #include <QObject>
 #include <QLabel>

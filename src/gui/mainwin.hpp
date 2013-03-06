@@ -19,12 +19,15 @@
 #define FIRESTR_MAINWIN_H
 
 #include <QMainWindow>
+
+#ifndef Q_MOC_RUN
 #include "gui/session.hpp"
 #include "gui/app/app_service.hpp"
 #include "message/postoffice.hpp"
 #include "user/userservice.hpp"
 #include "session/session.hpp"
 #include "session/session_service.hpp"
+#endif
 
 namespace fire
 {

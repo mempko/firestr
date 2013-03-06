@@ -20,11 +20,14 @@
 
 #include <QScrollArea>
 
+
+#ifndef Q_MOC_RUN
 #include "gui/list.hpp"
 #include "gui/message.hpp"
 #include "gui/app/app_service.hpp"
 #include "session/session.hpp"
 #include "messages/new_app.hpp"
+#endif
 
 namespace fire
 {

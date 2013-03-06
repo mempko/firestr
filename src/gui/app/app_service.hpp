@@ -18,11 +18,13 @@
 #ifndef FIRESTR_GUI_APP_SERVICE_H
 #define FIRESTR_GUI_APP_SERVICE_H
 
+#ifndef Q_MOC_RUN
 #include "service/service.hpp"
 #include "message/mailbox.hpp"
 #include "messages/sender.hpp"
 #include "gui/app/app.hpp"
 #include "util/thread.hpp"
+#endif
 
 #include <string>
 #include <map>

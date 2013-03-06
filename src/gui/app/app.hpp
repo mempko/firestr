@@ -18,7 +18,9 @@
 #ifndef FIRESTR_GUI_APP_APP_H
 #define FIRESTR_GUI_APP_APP_H
 
+#ifndef Q_MOC_RUN
 #include "message/message.hpp"
+#endif
 
 #include <string>
 #include <memory>

@@ -21,7 +21,6 @@
 #include "util/dbc.hpp"
 
 #include <fstream>
-
 #include <boost/filesystem.hpp>
 
 namespace bf = boost::filesystem;
