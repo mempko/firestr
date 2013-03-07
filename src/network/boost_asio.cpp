@@ -651,9 +651,18 @@ namespace fire
             CHECK(q);
             CHECK(q->_io);
             while(!q->_done) 
+            try
             {
                 q->_io->run_one();
                 u::sleep_thread(BLOCK_SLEEP);
+            }
+            catch(std::exception& e)
+            {
+                std::cerr << "error in tcp thread. " << e.what() << std::endl;
+            }
+            catch(...)
+            {
+                std::cerr << "unknown error in tcp thread." << std::endl;
             }
         }
 
@@ -760,7 +769,6 @@ namespace fire
         {
             INVARIANT(_socket);
             u::mutex_scoped_lock l(_mutex);
-            std::cerr << "udp_connection closed " << _socket->local_endpoint() << " + " << _socket->remote_endpoint() << " error: " << _error.message() << std::endl;
             _socket->close();
             _writing = false;
         }
@@ -1104,7 +1112,6 @@ namespace fire
 
         udp_queue::~udp_queue()
         {
-            std::cerr << "stopping udp socket on port " << _p.local_port << std::endl;
             INVARIANT(_io);
             _io->stop();
             _done = true;
@@ -1135,9 +1142,18 @@ namespace fire
             CHECK(q);
             CHECK(q->_io);
             while(!q->_done) 
+            try
             {
                 q->_io->run_one();
                 u::sleep_thread(BLOCK_SLEEP);
+            }
+            catch(std::exception& e)
+            {
+                std::cerr << "error in udp thread. " << e.what() << std::endl;
+            }
+            catch(...)
+            {
+                std::cerr << "unknown error in udp thread." << std::endl;
             }
         }
 
