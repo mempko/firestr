@@ -1,6 +1,6 @@
 
 ===================================================================
-Firestr (Pronounced Fire Star)
+Firestr (Pronounced Fire Star) 0.1
 ===================================================================
 
 This is not the web. Firestr in short, is a distributed, 
@@ -13,6 +13,18 @@ or games.
 
 The source code to all applications is available immediately to 
 instantly clone and modify. 
+
+===================================================================
+WARNING
+===================================================================
+
+The software is in development. There is NO security and therefore
+use this AT YOUR OWN RISK.
+
+The software will eventually have only encrypted communication but
+as of now it does not.
+
+If you are a security expert, please contribute.
 
 ===================================================================
 Organization
