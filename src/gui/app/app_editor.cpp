@@ -39,6 +39,11 @@ namespace fire
         namespace app
         {
             const std::string SCRIPT_SAMPLE = "SCRIPT_SAMPLE";
+            const std::string LUA_KEYWORDS = "\\b(app|and|break|do|else|elseif|end|false|for|function|if|in|local|nil|not|or|repeat|return|then|true|until|while)\\b";
+            const std::string LUA_QUOTE = "\".*[^\\\\]\"";
+            const std::string LUA_API_KEYWORDS = "\\b(add|button|callback|canvas|clear|contact|disable|edit|edited_callback|enable|enabled|finished_callback|from|get|label|last_contact|list|message|name|online|place|place_across|print|send|send_to|set|set_text|text|text_edit|total_contacts|when_clicked|when_edited|when_finished|when_message_received)\\b";
+            const std::string LUA_NUMBERS = "[0-9\\.]+";
+            const std::string LUA_OPERATORS = "[=+-\\*\\^:%#~<>\\(\\){}\\[\\];:,]+";
 
             namespace
             {
@@ -140,6 +145,8 @@ namespace fire
                 _script = new QTextEdit;
                 _script->setWordWrapMode(QTextOption::NoWrap);
                 _script->setTabStopWidth(40);
+                _highlighter = new lua_highlighter(_script->document());
+
                 if(_app) _script->setPlainText(_app->code().c_str());
                 layout()->addWidget(_script, 2, 0, 1, 2);
 
@@ -311,6 +318,68 @@ namespace fire
             catch(...)
             {
                 std::cerr << "app_editor: unexpected error in check_mail." << std::endl;
+            }
+
+            lua_highlighter::lua_highlighter(QTextDocument* parent) :
+                QSyntaxHighlighter{parent}
+            {
+                //keywords
+                {
+                    highlight_rule r;
+                    r.format.setForeground(Qt::darkBlue);
+                    r.format.setFontWeight(QFont::Bold);
+                    r.regex = QRegExp{LUA_KEYWORDS.c_str()};
+                    _rules.emplace_back(r);
+                }
+
+                //quote
+                {
+                    highlight_rule r;
+                    r.format.setForeground(Qt::darkGreen);
+                    r.format.setFontWeight(QFont::Bold);
+                    r.regex = QRegExp{LUA_QUOTE.c_str()};
+                    _rules.emplace_back(r);
+                }
+
+                //api
+                {
+                    highlight_rule r;
+                    r.format.setForeground(Qt::darkMagenta);
+                    r.format.setFontWeight(QFont::Bold);
+                    r.regex = QRegExp{LUA_API_KEYWORDS.c_str()};
+                    _rules.emplace_back(r);
+                }
+
+                //numbers
+                {
+                    highlight_rule r;
+                    r.format.setForeground(Qt::darkRed);
+                    r.format.setFontWeight(QFont::Bold);
+                    r.regex = QRegExp{LUA_NUMBERS.c_str()};
+                    _rules.emplace_back(r);
+                }
+
+                //operators
+                {
+                    highlight_rule r;
+                    r.format.setFontWeight(QFont::Bold);
+                    r.regex = QRegExp{LUA_OPERATORS.c_str()};
+                    _rules.emplace_back(r);
+                }
+            }
+
+            void lua_highlighter::highlightBlock(const QString& t)
+            {
+                for(auto& r : _rules)
+                {
+                    int i = t.indexOf(r.regex);
+                    while (i >= 0)  
+                    {
+                        auto size = r.regex.matchedLength();
+                        setFormat(i, size, r.format);
+                        i = t.indexOf(r.regex, i + size);
+                    }
+                }
             }
         }
     }

@@ -34,6 +34,8 @@
 #include <QPushButton>
 #include <QComboBox>
 #include <QSignalMapper>
+#include <QSyntaxHighlighter>
+
 
 #include "slb/SLB.hpp"
 
@@ -45,6 +47,26 @@ namespace fire
     {
         namespace app
         {
+            struct highlight_rule
+            {
+                QTextCharFormat format;
+                QRegExp regex;
+            };
+
+            using highlight_rules = std::vector<highlight_rule>;
+            class lua_highlighter : public QSyntaxHighlighter
+            {
+                Q_OBJECT
+                public:
+                    lua_highlighter(QTextDocument* parent = 0);
+
+                public:
+                    void highlightBlock(const QString&);
+
+                private:
+                    highlight_rules _rules;
+            };
+
             class app_editor : public message
             {
                 Q_OBJECT
@@ -78,6 +100,7 @@ namespace fire
                     user::contact_list _contacts;
 
                     QTextEdit* _script;
+                    lua_highlighter* _highlighter;
                     QPushButton* _save;
                     QWidget* _canvas;
                     QGridLayout* _canvas_layout;
