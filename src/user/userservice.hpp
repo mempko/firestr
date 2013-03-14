@@ -84,6 +84,7 @@ namespace fire
 
             public:
                 void attempt_to_add_contact(const std::string& address);
+                void remove_contact(const std::string& id);
                 void add_greeter(const std::string& address);
                 void remove_greeter(const std::string& address);
                 void send_confirmation(const std::string& id, std::string key = "");
@@ -93,6 +94,7 @@ namespace fire
                 void confirm_contact(const contact_file&);
 
             public:
+                user_info_ptr by_id(const std::string& id) const;
                 bool contact_available(const std::string& id) const;
 
             protected:
@@ -160,7 +162,7 @@ namespace fire
 
             struct new_contact { std::string id; };
             struct contact_connected { std::string id; };
-            struct contact_disconnected { std::string id; };
+            struct contact_disconnected { std::string id; std::string name;};
 
             message::message convert(const new_contact&);
             void convert(const message::message&, new_contact&);

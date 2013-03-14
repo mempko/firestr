@@ -393,7 +393,7 @@ namespace fire
         {
             ENSURE(_user_service);
 
-            contact_list_dialog cl{"contacts", _user_service};
+            contact_list_dialog cl{"contacts", _user_service, false, this};
             cl.exec();
         }
 
@@ -401,7 +401,7 @@ namespace fire
         {
             ENSURE(_user_service);
 
-            contact_list_dialog cl{"contacts", _user_service, true};
+            contact_list_dialog cl{"contacts", _user_service, true, this};
             cl.exec();
         }
 
@@ -768,13 +768,9 @@ namespace fire
         {
             INVARIANT(_user_service);
 
-            //get user
-            auto c = _user_service->user().contacts().by_id(r.id);
-            if(!c) return;
-
             //setup alert widget
             std::stringstream s;
-            s << "<b>" << c->name() << "</b> disconnected" << std::endl;
+            s << "<b>" << r.name << "</b> disconnected" << std::endl;
 
             auto w = new QWidget;
             auto l = new QHBoxLayout;
