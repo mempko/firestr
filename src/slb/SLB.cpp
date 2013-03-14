@@ -1730,7 +1730,14 @@ namespace SLB {
       SLB_CRITICAL_ERROR( getLastError() )
     };
   }
+
   bool Script::safeDoString(const char *o_code, const char *hint)
+  {
+      std::string out;
+      return safeDoString2(o_code, out, hint);
+  }
+
+  bool Script::safeDoString2(const char *o_code, std::string& out, const char *hint)
   {
     SLB_DEBUG_CALL;
     lua_State *L = getState();
