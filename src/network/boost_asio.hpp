@@ -23,6 +23,7 @@
 #include "util/bytes.hpp"
 
 #include <memory>
+#include <unordered_map>
 
 #include <boost/cstdint.hpp>
 #include <boost/asio.hpp>
@@ -142,6 +143,7 @@ namespace fire
 
         struct udp_chunk
         {
+            bool valid;
             std::string host;
             std::string port;
             sequence_type sequence;
@@ -160,8 +162,8 @@ namespace fire
             boost::dynamic_bitset<> set;
         };
 
-        using working_udp_endpoints = std::map<sequence_type, working_udp_chunks>;
-        using working_udp_messages = std::map<std::string, working_udp_endpoints>;
+        using working_udp_endpoints = std::unordered_map<sequence_type, working_udp_chunks>;
+        using working_udp_messages = std::unordered_map<std::string, working_udp_endpoints>;
 
         class udp_connection
         {
