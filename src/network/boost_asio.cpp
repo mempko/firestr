@@ -51,13 +51,13 @@ namespace fire
             const int RETRIES = 3;
             const size_t MAX_UDP_BUFF_SIZE = 1024; //in bytes
             const size_t UDP_CHuNK_SIZE = 508; //in bytes
-            const size_t SEQUENCE_BASE = 0;
-            const size_t CHUNK_TOTAL_BASE = 8;
-            const size_t CHUNK_BASE = 12;
-            const size_t MESSAGE_BASE = 16;
+            const size_t SEQUENCE_BASE = 1;
+            const size_t CHUNK_TOTAL_BASE = SEQUENCE_BASE + 8;
+            const size_t CHUNK_BASE = SEQUENCE_BASE + 12;
+            const size_t MESSAGE_BASE = SEQUENCE_BASE + 16;
 
-            //<sequence num> <chunk total> <chunk>
-            const size_t HEADER_SIZE = sizeof(uint64_t) + sizeof(int) + sizeof(int);
+            //<mark> <sequence num> <chunk total> <chunk>
+            const size_t HEADER_SIZE = SEQUENCE_BASE + sizeof(uint64_t) + sizeof(int) + sizeof(int);
 
             asio_params::connect_mode determine_connection_mode(const queue_options& o)
             {
@@ -350,7 +350,6 @@ namespace fire
                 garbage++;
             }
             if(!in.good()) { start_read(); return;}
-
 
             c = in.get();
             size_t rc = 1;
@@ -893,6 +892,9 @@ namespace fire
             u::bytes r;
             r.resize(HEADER_SIZE + ch.data.size());
 
+            //set mark
+            r[0] = '!';
+
             //write sequence number
             write_be(r, SEQUENCE_BASE, ch.sequence);
 
@@ -916,6 +918,10 @@ namespace fire
             CHECK_GREATER(data_size, 0);
 
             udp_chunk ch;
+            ch.valid = false;
+
+            //read mark
+            if(b[0] != '!') return ch;
 
             //read sequence number
             read_be(b, SEQUENCE_BASE, ch.sequence);
@@ -930,6 +936,7 @@ namespace fire
             ch.data.resize(data_size);
             std::copy(b.begin() + MESSAGE_BASE, b.end(), ch.data.begin());
 
+            ch.valid = true;
             return ch;
         }
 
@@ -1065,21 +1072,29 @@ namespace fire
             std::copy(_in_buffer.begin(), _in_buffer.begin() + transferred, data.begin());
 
             //decode message
-            auto chunk = dencode_udp_wire(data);
+            udp_chunk chunk;
+            chunk.valid = false;
 
-            //add message to in queue if we got complete message
-            endpoint ep = {UDP, _in_endpoint.address().to_string(), boost::lexical_cast<std::string>(_in_endpoint.port())};
+            if(data.size() > HEADER_SIZE) 
+                chunk = dencode_udp_wire(data);
 
-            bool inserted = false;
+            if(chunk.valid)
             {
-                u::mutex_scoped_lock l(_mutex);
-                inserted = insert_chunk(make_address_str(ep), chunk, _in_working, data);
-            }
-            if(inserted)
-            {
-                u::mutex_scoped_lock l(_in_mutex);
-                endpoint_message em = {ep, data};
-                _in_queue.push(em);
+                //add message to in queue if we got complete message
+                endpoint ep = {UDP, _in_endpoint.address().to_string(), boost::lexical_cast<std::string>(_in_endpoint.port())};
+
+                bool inserted = false;
+                {
+                    u::mutex_scoped_lock l(_mutex);
+                    inserted = insert_chunk(make_address_str(ep), chunk, _in_working, data);
+                }
+
+                if(inserted)
+                {
+                    u::mutex_scoped_lock l(_in_mutex);
+                    endpoint_message em = {ep, data};
+                    _in_queue.push(em);
+                }
             }
 
             start_read();

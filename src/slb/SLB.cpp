@@ -1730,6 +1730,7 @@ namespace SLB {
       SLB_CRITICAL_ERROR( getLastError() )
     };
   }
+
   bool Script::safeDoString(const char *o_code, const char *hint)
   {
     SLB_DEBUG_CALL;

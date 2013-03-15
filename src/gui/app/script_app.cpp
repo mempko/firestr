@@ -168,6 +168,10 @@ namespace fire
                 {
                     if(m.meta.type == SCRIPT_MESSAGE)
                     {
+                        auto id = m.meta.extra["from_id"].as_string();
+                        if(!_session->user_service()->by_id(id)) 
+                            continue;
+
                         script_message sm{m, _api.get()};
                         _api->message_recieved(sm);
                     }

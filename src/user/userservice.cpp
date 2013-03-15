@@ -49,7 +49,7 @@ namespace fire
             const std::string PING_REQUEST = "ping_request";
             const std::string REGISTER_WITH_GREETER = "reg_with_greeter";
             const std::string PING = "!";
-            const size_t QUIT_SLEEP = 500; //in milliseconds
+            const size_t QUIT_SLEEP = 1000; //in milliseconds
             const size_t PING_THREAD_SLEEP = 500; //half a second
             const size_t PING_TICKS = 6; //3 seconds
             const size_t PING_THRESH = 3*PING_TICKS; 
@@ -259,10 +259,9 @@ namespace fire
         {
             INVARIANT(_ping_thread);
             send_ping(DISCONNECTED);
-            u::sleep_thread(QUIT_SLEEP);
-
             _done = true;
             _ping_thread->join();
+            u::sleep_thread(QUIT_SLEEP);
         }
 
         void user_service::add_contact_data(user::user_info_ptr u)
@@ -379,7 +378,7 @@ namespace fire
                 convert(m, r);
 
                 auto p = _contacts.find(r.from_id);
-                if(p == _contacts.end()) return;
+                if(p == _contacts.end() || !p->second.contact) return;
 
                 auto& ticks = p->second.last_ping;
                 bool prev_state = available(ticks);
@@ -635,6 +634,18 @@ namespace fire
             mail()->push_outbox(convert(r));
         }
 
+        void user_service::remove_contact(const std::string& id)
+        {
+            INVARIANT(_user);
+            auto c = _user->contacts().by_id(id);
+            if(!c) return;
+
+            fire_contact_disconnected_event(id);
+            _user->contacts().remove(c);
+
+            save_user(_home, *_user);
+        }
+
         void user_service::add_greeter(const std::string& address)
         {
             INVARIANT(_user);
@@ -658,7 +669,7 @@ namespace fire
             auto host_port = n::parse_host_port(address);
             greet_server gs{host_port.first, host_port.second};
 
-            //add greeter
+            //find greeter
             greet_servers::iterator g = _user->greeters().end();
             for(greet_servers::iterator i = _user->greeters().begin(); i != _user->greeters().end(); i++)
                 if(gs.host() == i->host() && gs.port() == i->port())
@@ -691,7 +702,7 @@ namespace fire
                     for(auto& p : s->_contacts)
                     {
                         //skip any offline contacts
-                        if(p.second.state == contact_data::OFFLINE) continue;
+                        if(p.second.state == contact_data::OFFLINE || !p.second.contact) continue;
 
                         auto& ticks = p.second.last_ping;
                         bool prev_state = available(ticks);
@@ -731,11 +742,16 @@ namespace fire
             return boost::lexical_cast<std::string>(generate());
         }
 
+        user_info_ptr user_service::by_id(const std::string& id) const
+        {
+            return _user->contacts().by_id(id);
+        }
+
         bool user_service::contact_available(const std::string& id) const
         {
             u::mutex_scoped_lock l(_ping_mutex);
             auto c = _contacts.find(id);
-            if(c == _contacts.end()) return false;
+            if(c == _contacts.end() || !c->second.contact) return false;
             return c->second.state == contact_data::CONNECTED;
         }
 
@@ -747,7 +763,13 @@ namespace fire
             //send ping message to all connected contacts
             for(auto p : _contacts)
             {
-                if(p.second.state != contact_data::CONNECTED) continue;
+                if(!p.second.contact || p.second.state != contact_data::CONNECTED) continue;
+                if(!_user->contacts().by_id(p.second.contact->id()))
+                {
+                    p.second.contact.reset();
+                    continue;
+                }
+
                 auto c = p.second.contact;
                 CHECK(c);
 
@@ -816,10 +838,12 @@ namespace fire
         void user_service::fire_contact_disconnected_event(const std::string& id)
         {
             auto& cd = _contacts[id];
+            CHECK(cd.contact);
+
             cd.state = contact_data::OFFLINE;
             cd.last_ping = PING_THRESH;
 
-            event::contact_disconnected e{id};
+            event::contact_disconnected e{id, cd.contact->name()};
             send_event(event::convert(e));
 
             ENSURE(cd.state == contact_data::OFFLINE);
@@ -914,6 +938,7 @@ namespace fire
             {
                 m::message m;
                 m.meta.type = CONTACT_DISCONNECTED;
+                m.meta.extra["name"] = c.name;
                 m.data = u::to_bytes(c.id);
                 return m;
             }
@@ -922,6 +947,7 @@ namespace fire
             {
                 REQUIRE_EQUAL(m.meta.type, CONTACT_DISCONNECTED);
                 c.id = u::to_str(m.data);
+                c.name = m.meta.extra["name"].as_string();
             }
         }
     }

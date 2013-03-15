@@ -200,6 +200,8 @@ namespace fire
         {
             INVARIANT(_messages);
             INVARIANT(_session);
+            INVARIANT(_session_service);
+            INVARIANT(_session_service->user_service());
             INVARIANT(_session->mail());
 
             m::message m;
@@ -214,6 +216,18 @@ namespace fire
                 else if(m.meta.type == s::event::SESSION_SYNCED)
                 {
                     update_contacts();
+                }
+                else if(m.meta.type == s::event::CONTACT_REMOVED)
+                {
+                    update_contacts();
+
+                    s::event::contact_removed r;
+                    s::event::convert(m, r);
+
+                    auto c = _session_service->user_service()->by_id(r.contact_id);
+                    if(!c) continue;
+
+                    add(contact_alert(c, "quit session"));
                 }
                 else if(m.meta.type == us::event::CONTACT_CONNECTED)
                 {

@@ -51,7 +51,8 @@ namespace fire
                 user::user_info_ptr p, 
                 user::user_service_ptr s,
                 bool accept_reject,
-                bool compact) :
+                bool compact,
+                bool remove) :
             _contact{p},
             _service{s}
         {
@@ -69,6 +70,14 @@ namespace fire
                     _online = new QLabel{online_text(p, _service).c_str()};
                     _online->setToolTip(p->address().c_str());
                     layout->addWidget(_online, 0,1);
+
+                    if(remove)
+                    {
+                        _rm = new QPushButton("x");
+                        _rm->setMaximumSize(20,20);
+                        layout->addWidget(_rm, 0,2);
+                        connect(_rm, SIGNAL(clicked()), this, SLOT(remove()));
+                    }
                 }
             }
             else
@@ -139,10 +148,30 @@ namespace fire
             _accept->hide();
         }
 
+        void user_info::remove()
+        {
+            INVARIANT(_service);
+            INVARIANT(_contact);
+            INVARIANT(_rm);
+            INVARIANT(_online);
+
+            std::stringstream msg;
+            msg << "Are you sure you want to remove `" << _contact->name() << "'?";
+            auto a = QMessageBox::warning(this, tr("Remove Contact?"), msg.str().c_str(), QMessageBox::Yes | QMessageBox::No);
+            if(a != QMessageBox::Yes) return;
+
+            _service->remove_contact(_contact->id());
+
+            _rm->setEnabled(false);
+            _online->setEnabled(false);
+        }
+
         contact_list_dialog::contact_list_dialog(
                 const std::string& title, 
                 user::user_service_ptr service,
-                bool add_on_start) :
+                bool add_on_start,
+                QWidget* parent) :
+            QDialog{parent},
             _service{service}
         {
             REQUIRE(service);
@@ -234,12 +263,12 @@ namespace fire
             _list->clear();
 
             for(auto u : _service->user().contacts().list())
-                _list->add(new user_info{u, _service, false, true});
+                _list->add(new user_info{u, _service, false, true, true});
 
             auto pending = _service->pending_requests();
 
             for(auto r : pending)
-                _list->add(new user_info{r.second.from, _service, true});
+                _list->add(new user_info{r.second.from, _service, true, true});
 
             _prev_requests = pending.size();
             _prev_contacts = _service->user().contacts().size();
@@ -266,8 +295,9 @@ namespace fire
             _prev_contacts = contacts;
         }
 
-        contact_list::contact_list(user::user_service_ptr service, const user::contact_list& contacts) :
-            _service{service}
+        contact_list::contact_list(user::user_service_ptr service, const user::contact_list& contacts, bool remove) :
+            _service{service},
+            _remove{remove}
         {
             REQUIRE(service);
             for(auto u : contacts.list())
@@ -285,7 +315,7 @@ namespace fire
             INVARIANT(_service);
             if(_contacts.by_id(u->id())) return;
 
-            auto ui = new user_info{u, _service, false, true};
+            auto ui = new user_info{u, _service, false, true, _remove};
             add(ui);
             _contacts.add(u);
             _contact_widgets.push_back(ui);
@@ -365,11 +395,6 @@ namespace fire
             add_greeter(_service->user().greeters().back());
         }
 
-        void greeter_list::remove_greeter()
-        {
-
-        }
-
         greeter_info::greeter_info(user::user_service_ptr service, const user::greet_server& s) :
             _server{s}, _service{service}
         {
@@ -390,6 +415,12 @@ namespace fire
         void greeter_info::remove()
         {
             INVARIANT(_service);
+
+            std::stringstream msg;
+            msg << "Are you sure you want to remove `" << _address << "'?";
+            auto a = QMessageBox::warning(this, tr("Remove Greeter?"), msg.str().c_str(), QMessageBox::Yes | QMessageBox::No);
+            if(a != QMessageBox::Yes) return;
+
             _service->remove_greeter(_address);
             _label->setEnabled(false);
             _rm->setEnabled(false);

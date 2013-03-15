@@ -43,18 +43,21 @@ namespace fire
                         user::user_info_ptr, 
                         user::user_service_ptr,
                         bool accept_reject = false,
-                        bool compact = false);
+                        bool compact = false,
+                        bool remove = false);
 
             public slots:
                 void accept();
                 void reject();
                 void update();
+                void remove();
 
             private:
                 user::user_info_ptr _contact;
                 user::user_service_ptr _service;
                 QPushButton* _accept;
                 QPushButton* _reject;
+                QPushButton* _rm;
                 QLabel* _online;
         };
         using user_info_ptrs = std::vector<user_info*>;
@@ -63,7 +66,7 @@ namespace fire
         {
             Q_OBJECT
             public:
-                contact_list(user::user_service_ptr, const user::contact_list&);
+                contact_list(user::user_service_ptr, const user::contact_list&, bool remove = false);
 
             public slots:
                 void add_contact(user::user_info_ptr);
@@ -74,6 +77,7 @@ namespace fire
                 user::user_service_ptr _service;
                 user::contact_list _contacts;
                 user_info_ptrs _contact_widgets;
+                bool _remove;
         };
 
         class greeter_info : public QWidget
@@ -104,7 +108,6 @@ namespace fire
 
             public slots:
                 void add_greeter();
-                void remove_greeter();
 
             protected:
                 user::user_service_ptr _service;
@@ -117,7 +120,8 @@ namespace fire
                 contact_list_dialog(
                         const std::string& title, 
                         user::user_service_ptr, 
-                        bool add_on_start = false);
+                        bool add_on_start = false,
+                        QWidget* parent = nullptr);
 
             public slots:
                 void new_contact();

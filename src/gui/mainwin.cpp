@@ -72,6 +72,7 @@ namespace fire
             _close_action{0},
             _create_session_action{0},
             _rename_session_action{0},
+            _quit_session_action{0},
             _main_menu{0},
             _app_menu{0},
             _root{0},
@@ -169,6 +170,7 @@ namespace fire
             _sessions = new QTabWidget;
             _layout->addWidget(_sessions);
             _sessions->hide();
+            connect(_sessions, SIGNAL(currentChanged(int)), this, SLOT(tab_changed(int)));
 
             create_alert_screen();
             create_start_screen();
@@ -268,6 +270,7 @@ namespace fire
             _session_menu = new QMenu{tr("&Session"), this};
             _session_menu->addAction(_create_session_action);
             _session_menu->addAction(_rename_session_action);
+            _session_menu->addAction(_quit_session_action);
 
             create_app_menu();
 
@@ -331,6 +334,7 @@ namespace fire
             REQUIRE_FALSE(_close_action);
             REQUIRE_FALSE(_create_session_action);
             REQUIRE_FALSE(_rename_session_action);
+            REQUIRE_FALSE(_quit_session_action);
 
             _about_action = new QAction{tr("&About"), this};
             connect(_about_action, SIGNAL(triggered()), this, SLOT(about()));
@@ -353,11 +357,15 @@ namespace fire
             _rename_session_action = new QAction{tr("&Rename"), this};
             connect(_rename_session_action, SIGNAL(triggered()), this, SLOT(rename_session()));
 
+            _quit_session_action = new QAction{tr("&Quit"), this};
+            connect(_quit_session_action, SIGNAL(triggered()), this, SLOT(quit_session()));
+
             ENSURE(_about_action);
             ENSURE(_close_action);
             ENSURE(_contact_list_action);
             ENSURE(_create_session_action);
             ENSURE(_rename_session_action);
+            ENSURE(_quit_session_action);
         }
 
         void main_window::setup_services()
@@ -393,7 +401,7 @@ namespace fire
         {
             ENSURE(_user_service);
 
-            contact_list_dialog cl{"contacts", _user_service};
+            contact_list_dialog cl{"contacts", _user_service, false, this};
             cl.exec();
         }
 
@@ -401,7 +409,7 @@ namespace fire
         {
             ENSURE(_user_service);
 
-            contact_list_dialog cl{"contacts", _user_service, true};
+            contact_list_dialog cl{"contacts", _user_service, true, this};
             cl.exec();
         }
 
@@ -537,9 +545,20 @@ namespace fire
 
                     new_session_event(r.session_id);
                 }
+                else if(m.meta.type == s::event::QUIT_SESSION)
+                {
+                    s::event::quit_session r;
+                    s::event::convert(m, r);
+
+                    quit_session_event(r.session_id);
+                }
                 else if(m.meta.type == s::event::SESSION_SYNCED)
                 {
                     session_synced_event(m);
+                }
+                else if(m.meta.type == s::event::CONTACT_REMOVED)
+                {
+                    contact_removed_from_session_event(m);
                 }
                 else if(m.meta.type == us::event::NEW_CONTACT)
                 {
@@ -588,6 +607,25 @@ namespace fire
         {
             std::cerr << "main_window: unexpected error in check_mail." << std::endl;
         }
+
+        void main_window::tab_changed(int i)
+        {
+            INVARIANT(_create_session_action);
+            INVARIANT(_rename_session_action);
+            INVARIANT(_quit_session_action);
+            INVARIANT(_sessions);
+            INVARIANT(_app_menu);
+
+            session_widget* s = nullptr;
+
+            if(i != -1) s = dynamic_cast<session_widget*>(_sessions->widget(i));
+
+            bool enabled = s != nullptr;
+
+            _rename_session_action->setEnabled(enabled);
+            _quit_session_action->setEnabled(enabled);
+            _app_menu->setEnabled(enabled);
+        }
         
         void main_window::create_session()
         {
@@ -630,6 +668,24 @@ namespace fire
 
             s->name(name);
             _sessions->setTabText(_sessions->currentIndex(), name);
+        }
+
+        void main_window::quit_session()
+        {
+            REQUIRE(_sessions);
+
+            auto sw = dynamic_cast<session_widget*>(_sessions->currentWidget());
+            if(!sw) return;
+
+            auto s = sw->session();
+            CHECK(s);
+
+            std::stringstream msg;
+            msg << "Are you sure you want to quit the session `" << convert(sw->name()) << "'?";
+            auto a = QMessageBox::warning(this, tr("Quit Session?"), msg.str().c_str(), QMessageBox::Yes | QMessageBox::No);
+            if(a != QMessageBox::Yes) return;
+
+            _session_service->quit_session(s->id());
         }
 
         void main_window::attach_start_screen()
@@ -682,12 +738,49 @@ namespace fire
             std::string name = convert(NEW_SESSION_NAME);
 
             //make default name to be firt person in contact list
-            if(!s->contacts().empty()) name = s->contacts().list()[0]->name();
+            if(!s->contacts().empty()) 
+                name = s->contacts().list()[0]->name();
 
             //create the sessions widget
+            sw->name(name.c_str());
             _sessions->addTab(sw, name.c_str());
 
             ENSURE(_sessions->isVisible());
+        }
+
+        int find_session(QTabWidget* sessions, const std::string& id)
+        {
+            REQUIRE(sessions);
+
+            //find correct tab
+            int ri = -1;
+            for(int i = 0; i < sessions->count(); i++)
+            {
+                auto sw = dynamic_cast<session_widget*>(sessions->widget(i));
+                if(!sw) continue;
+
+                auto s = sw->session();
+                CHECK(s);
+                if(s->id() == id)
+                {
+                    ri = i;
+                    break;
+                }
+            }
+            return ri;
+        }
+
+        void main_window::quit_session_event(const std::string& id)
+        {
+            INVARIANT(_app_service);
+            INVARIANT(_session_service);
+            INVARIANT(_sessions);
+
+            //find correct tab
+            int ri = find_session(_sessions, id);
+            if(ri == -1) return;
+
+            _sessions->removeTab(ri);
         }
 
         void main_window::session_synced_event(const m::message& m)
@@ -702,6 +795,11 @@ namespace fire
 
             CHECK(s->mail());
             s->mail()->push_inbox(m);
+        }
+
+        void main_window::contact_removed_from_session_event(const m::message& e)
+        {
+            _session_service->broadcast_message(e);
         }
 
         void main_window::new_contact_event(const std::string& id)
@@ -768,13 +866,9 @@ namespace fire
         {
             INVARIANT(_user_service);
 
-            //get user
-            auto c = _user_service->user().contacts().by_id(r.id);
-            if(!c) return;
-
             //setup alert widget
             std::stringstream s;
-            s << "<b>" << c->name() << "</b> disconnected" << std::endl;
+            s << "<b>" << r.name << "</b> disconnected" << std::endl;
 
             auto w = new QWidget;
             auto l = new QHBoxLayout;
