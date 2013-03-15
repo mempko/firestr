@@ -106,7 +106,6 @@ namespace fire
 
             public slots:
                 void add_greeter();
-                void remove_greeter();
 
             protected:
                 user::user_service_ptr _service;

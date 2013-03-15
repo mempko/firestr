@@ -680,6 +680,11 @@ namespace fire
             auto s = sw->session();
             CHECK(s);
 
+            std::stringstream msg;
+            msg << "Are you sure you want to quit the session `" << convert(sw->name()) << "'?";
+            auto a = QMessageBox::warning(this, tr("Quit Session?"), msg.str().c_str(), QMessageBox::Yes | QMessageBox::No);
+            if(a != QMessageBox::Yes) return;
+
             _session_service->quit_session(s->id());
         }
 
@@ -733,9 +738,11 @@ namespace fire
             std::string name = convert(NEW_SESSION_NAME);
 
             //make default name to be firt person in contact list
-            if(!s->contacts().empty()) name = s->contacts().list()[0]->name();
+            if(!s->contacts().empty()) 
+                name = s->contacts().list()[0]->name();
 
             //create the sessions widget
+            sw->name(name.c_str());
             _sessions->addTab(sw, name.c_str());
 
             ENSURE(_sessions->isVisible());
