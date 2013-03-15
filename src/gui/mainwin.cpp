@@ -72,6 +72,7 @@ namespace fire
             _close_action{0},
             _create_session_action{0},
             _rename_session_action{0},
+            _quit_session_action{0},
             _main_menu{0},
             _app_menu{0},
             _root{0},
@@ -268,6 +269,7 @@ namespace fire
             _session_menu = new QMenu{tr("&Session"), this};
             _session_menu->addAction(_create_session_action);
             _session_menu->addAction(_rename_session_action);
+            _session_menu->addAction(_quit_session_action);
 
             create_app_menu();
 
@@ -331,6 +333,7 @@ namespace fire
             REQUIRE_FALSE(_close_action);
             REQUIRE_FALSE(_create_session_action);
             REQUIRE_FALSE(_rename_session_action);
+            REQUIRE_FALSE(_quit_session_action);
 
             _about_action = new QAction{tr("&About"), this};
             connect(_about_action, SIGNAL(triggered()), this, SLOT(about()));
@@ -353,11 +356,15 @@ namespace fire
             _rename_session_action = new QAction{tr("&Rename"), this};
             connect(_rename_session_action, SIGNAL(triggered()), this, SLOT(rename_session()));
 
+            _quit_session_action = new QAction{tr("&Quit"), this};
+            connect(_quit_session_action, SIGNAL(triggered()), this, SLOT(quit_session()));
+
             ENSURE(_about_action);
             ENSURE(_close_action);
             ENSURE(_contact_list_action);
             ENSURE(_create_session_action);
             ENSURE(_rename_session_action);
+            ENSURE(_quit_session_action);
         }
 
         void main_window::setup_services()
@@ -537,9 +544,20 @@ namespace fire
 
                     new_session_event(r.session_id);
                 }
+                else if(m.meta.type == s::event::QUIT_SESSION)
+                {
+                    s::event::quit_session r;
+                    s::event::convert(m, r);
+
+                    quit_session_event(r.session_id);
+                }
                 else if(m.meta.type == s::event::SESSION_SYNCED)
                 {
                     session_synced_event(m);
+                }
+                else if(m.meta.type == s::event::CONTACT_REMOVED)
+                {
+                    contact_removed_from_session_event(m);
                 }
                 else if(m.meta.type == us::event::NEW_CONTACT)
                 {
@@ -632,6 +650,19 @@ namespace fire
             _sessions->setTabText(_sessions->currentIndex(), name);
         }
 
+        void main_window::quit_session()
+        {
+            REQUIRE(_sessions);
+
+            auto sw = dynamic_cast<session_widget*>(_sessions->currentWidget());
+            if(!sw) return;
+
+            auto s = sw->session();
+            CHECK(s);
+
+            _session_service->quit_session(s->id());
+        }
+
         void main_window::attach_start_screen()
         {
             INVARIANT(_start_screen);
@@ -690,6 +721,41 @@ namespace fire
             ENSURE(_sessions->isVisible());
         }
 
+        int find_session(QTabWidget* sessions, const std::string& id)
+        {
+            REQUIRE(sessions);
+
+            //find correct tab
+            int ri = -1;
+            for(int i = 0; i < sessions->count(); i++)
+            {
+                auto sw = dynamic_cast<session_widget*>(sessions->widget(i));
+                if(!sw) continue;
+
+                auto s = sw->session();
+                CHECK(s);
+                if(s->id() == id)
+                {
+                    ri = i;
+                    break;
+                }
+            }
+            return ri;
+        }
+
+        void main_window::quit_session_event(const std::string& id)
+        {
+            INVARIANT(_app_service);
+            INVARIANT(_session_service);
+            INVARIANT(_sessions);
+
+            //find correct tab
+            int ri = find_session(_sessions, id);
+            if(ri == -1) return;
+
+            _sessions->removeTab(ri);
+        }
+
         void main_window::session_synced_event(const m::message& m)
         {
             INVARIANT(_session_service);
@@ -702,6 +768,11 @@ namespace fire
 
             CHECK(s->mail());
             s->mail()->push_inbox(m);
+        }
+
+        void main_window::contact_removed_from_session_event(const m::message& e)
+        {
+            _session_service->broadcast_message(e);
         }
 
         void main_window::new_contact_event(const std::string& id)
