@@ -170,6 +170,7 @@ namespace fire
             _sessions = new QTabWidget;
             _layout->addWidget(_sessions);
             _sessions->hide();
+            connect(_sessions, SIGNAL(currentChanged(int)), this, SLOT(tab_changed(int)));
 
             create_alert_screen();
             create_start_screen();
@@ -605,6 +606,25 @@ namespace fire
         catch(...)
         {
             std::cerr << "main_window: unexpected error in check_mail." << std::endl;
+        }
+
+        void main_window::tab_changed(int i)
+        {
+            INVARIANT(_create_session_action);
+            INVARIANT(_rename_session_action);
+            INVARIANT(_quit_session_action);
+            INVARIANT(_sessions);
+            INVARIANT(_app_menu);
+
+            session_widget* s = nullptr;
+
+            if(i != -1) s = dynamic_cast<session_widget*>(_sessions->widget(i));
+
+            bool enabled = s != nullptr;
+
+            _rename_session_action->setEnabled(enabled);
+            _quit_session_action->setEnabled(enabled);
+            _app_menu->setEnabled(enabled);
         }
         
         void main_window::create_session()
