@@ -155,6 +155,11 @@ namespace fire
             INVARIANT(_rm);
             INVARIANT(_online);
 
+            std::stringstream msg;
+            msg << "Are you sure you want to remove `" << _contact->name() << "'?";
+            auto a = QMessageBox::warning(this, tr("Remove Contact?"), msg.str().c_str(), QMessageBox::Yes | QMessageBox::No);
+            if(a != QMessageBox::Yes) return;
+
             _service->remove_contact(_contact->id());
 
             _rm->setEnabled(false);
@@ -390,11 +395,6 @@ namespace fire
             add_greeter(_service->user().greeters().back());
         }
 
-        void greeter_list::remove_greeter()
-        {
-
-        }
-
         greeter_info::greeter_info(user::user_service_ptr service, const user::greet_server& s) :
             _server{s}, _service{service}
         {
@@ -415,6 +415,12 @@ namespace fire
         void greeter_info::remove()
         {
             INVARIANT(_service);
+
+            std::stringstream msg;
+            msg << "Are you sure you want to remove `" << _address << "'?";
+            auto a = QMessageBox::warning(this, tr("Remove Greeter?"), msg.str().c_str(), QMessageBox::Yes | QMessageBox::No);
+            if(a != QMessageBox::Yes) return;
+
             _service->remove_greeter(_address);
             _label->setEnabled(false);
             _rm->setEnabled(false);
