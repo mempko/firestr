@@ -56,6 +56,7 @@ namespace fire
                 void create_session();
                 void create_session(QString id);
                 void rename_session();
+                void quit_session();
                 void load_app_into_session(QString id);
 
             private:
@@ -79,7 +80,9 @@ namespace fire
                 //gui service event handlers
 
                 void new_session_event(const std::string& id);
+                void quit_session_event(const std::string& id);
                 void session_synced_event(const fire::message::message& m);
+                void contact_removed_from_session_event(const fire::message::message& e);
                 void new_contact_event(const std::string& id);
                 void contact_connected_event(const user::event::contact_connected&);
                 void contact_disconnected_event(const user::event::contact_disconnected&);
@@ -94,6 +97,7 @@ namespace fire
                 QMenu *_session_menu;
                 QAction *_create_session_action;
                 QAction *_rename_session_action;
+                QAction *_quit_session_action;
                 QMenu *_app_menu;
                 QAction *_chat_sample_action;
                 QAction *_app_editor_action;

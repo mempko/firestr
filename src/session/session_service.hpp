@@ -45,6 +45,7 @@ namespace fire
                 session_ptr create_session(const std::string& id);
                 session_ptr create_session(user::contact_list&);
                 session_ptr create_session();
+                void quit_session(const std::string& id);
 
             public:
                 session_ptr session_by_id(const std::string&);
@@ -68,8 +69,12 @@ namespace fire
                 virtual void message_recieved(const message::message&);
 
             private:
-                void fire_new_session_event(const std::string id);
-                void fire_session_synced_event(const std::string id);
+                void fire_new_session_event(const std::string& id);
+                void fire_quit_session_event(const std::string& id);
+                void fire_session_synced_event(const std::string& id);
+                void fire_contact_removed(
+                        const std::string& session_id,
+                        const std::string& contact_id);
 
             private:
                 message::post_office_ptr _post;
@@ -93,6 +98,15 @@ namespace fire
             message::message convert(const new_session&);
             void convert(const message::message&, new_session&);
 
+            extern const std::string QUIT_SESSION;
+            struct quit_session
+            {
+                std::string session_id;
+            };
+            message::message convert(const quit_session&);
+            void convert(const message::message&, quit_session&);
+
+
             extern const std::string SESSION_SYNCED;
             struct session_synced
             {
@@ -100,6 +114,15 @@ namespace fire
             };
             message::message convert(const session_synced&);
             void convert(const message::message&, session_synced&);
+
+            extern const std::string CONTACT_REMOVED;
+            struct contact_removed
+            {
+                std::string session_id;
+                std::string contact_id;
+            };
+            message::message convert(const contact_removed&);
+            void convert(const message::message&, contact_removed&);
         }
     }
 }

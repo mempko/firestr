@@ -36,6 +36,7 @@ namespace fire
         {
             const std::string SERVICE_ADDRESS = "session_service";
             const std::string SYNC_SESSION = "sync_session_msg";
+            const std::string QUIT_SESSION = "quit_session_msg";
         }
 
         using contact_ids = std::set<std::string>;
@@ -80,6 +81,31 @@ namespace fire
             u::array a;
             u::decode(m.data, a);
             convert(a, s.ids);
+        }
+
+        struct quit_session_msg
+        {
+            std::string from_id;
+            std::string session_id;
+        };
+
+        m::message convert(const quit_session_msg& s)
+        {
+            REQUIRE_FALSE(s.session_id.empty());
+
+            m::message m;
+            m.meta.type = QUIT_SESSION;
+            m.data = u::to_bytes(s.session_id);
+
+            return m;
+        }
+
+        void convert(const m::message& m, quit_session_msg& s)
+        {
+            REQUIRE_EQUAL(m.meta.type, QUIT_SESSION);
+
+            s.from_id = m.meta.extra["from_id"].as_string();
+            s.session_id = u::to_str(m.data);
         }
 
         session_service::session_service(
@@ -133,6 +159,23 @@ namespace fire
                 }
 
                 sync_session(s.session_id, contacts);
+            }
+            else if(m.meta.type == QUIT_SESSION)
+            {
+                quit_session_msg q;
+                convert(m, q);
+
+                auto c = _user_service->user().contacts().by_id(q.from_id);
+                if(!c) return;
+
+                auto s = session_by_id(q.session_id);
+                if(!s) return;
+
+                c = s->contacts().by_id(q.from_id);
+                if(!c) return;
+
+                s->contacts().remove(c);
+                fire_contact_removed(q.session_id, q.from_id);
             }
             else
             {
@@ -213,6 +256,34 @@ namespace fire
 
             ENSURE(sp);
             return sp;
+        }
+
+        void session_service::quit_session(const std::string& id)
+        {
+            u::mutex_scoped_lock l(_mutex);
+            INVARIANT(_sender);
+            INVARIANT(_post);
+
+            //find session
+            auto s = _sessions.find(id);
+            if(s == _sessions.end()) return;
+
+            CHECK(s->second);
+
+            //send quit message to contacts in the session
+            quit_session_msg ns;
+            ns.session_id = s->second->id(); 
+
+            for(auto c : s->second->contacts().list())
+            {
+                CHECK(c);
+                _sender->send(c->id(), convert(ns));
+            }
+
+            //remove session from map
+            _sessions.erase(s);
+            _post->remove_mailbox(s->second->mail()->address());
+            fire_quit_session_event(id);
         }
 
         session_ptr session_service::session_by_id(const std::string& id)
@@ -311,7 +382,9 @@ namespace fire
         namespace event
         {
             const std::string NEW_SESSION = "new_session_event";
+            const std::string QUIT_SESSION = "quit_session_event";
             const std::string SESSION_SYNCED = "session_synced_event";
+            const std::string CONTACT_REMOVED = "session_contact_removed";
 
             m::message convert(const new_session& s)
             {
@@ -324,6 +397,20 @@ namespace fire
             void convert(const m::message& m, new_session& s)
             {
                 REQUIRE_EQUAL(m.meta.type, NEW_SESSION);
+                s.session_id = u::to_str(m.data);
+            }
+
+            m::message convert(const quit_session& s)
+            {
+                m::message m;
+                m.meta.type = QUIT_SESSION;
+                m.data = u::to_bytes(s.session_id);
+                return m;
+            }
+
+            void convert(const m::message& m, quit_session& s)
+            {
+                REQUIRE_EQUAL(m.meta.type, QUIT_SESSION);
                 s.session_id = u::to_str(m.data);
             }
 
@@ -340,17 +427,47 @@ namespace fire
                 REQUIRE_EQUAL(m.meta.type, SESSION_SYNCED);
                 s.session_id = u::to_str(m.data);
             }
+
+            m::message convert(const contact_removed& s)
+            {
+                m::message m;
+                m.meta.type = CONTACT_REMOVED;
+                m.meta.extra["contact_id"] = s.contact_id;
+                m.data = u::to_bytes(s.session_id);
+                return m;
+            }
+
+            void convert(const m::message& m, contact_removed& s)
+            {
+                REQUIRE_EQUAL(m.meta.type, CONTACT_REMOVED);
+                s.session_id = u::to_str(m.data);
+                s.contact_id = m.meta.extra["contact_id"].as_string();
+            }
         }
 
-        void session_service::fire_new_session_event(const std::string id)
+        void session_service::fire_new_session_event(const std::string& id)
         {
             event::new_session e{id};
             send_event(event::convert(e));
         }
 
-        void session_service::fire_session_synced_event(const std::string id)
+        void session_service::fire_quit_session_event(const std::string& id)
+        {
+            event::quit_session e{id};
+            send_event(event::convert(e));
+        }
+
+        void session_service::fire_session_synced_event(const std::string& id)
         {
             event::session_synced e{id};
+            send_event(event::convert(e));
+        }
+
+        void session_service::fire_contact_removed(
+                const std::string& session_id, 
+                const std::string& contact_id)
+        {
+            event::contact_removed e{session_id, contact_id};
             send_event(event::convert(e));
         }
     }
