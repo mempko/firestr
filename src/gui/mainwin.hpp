@@ -57,6 +57,7 @@ namespace fire
                 void create_session(QString id);
                 void rename_session();
                 void quit_session();
+                void tab_changed(int);
                 void load_app_into_session(QString id);
 
             private:
