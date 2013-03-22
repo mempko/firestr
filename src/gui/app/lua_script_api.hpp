@@ -30,6 +30,7 @@
 #include <QPushButton>
 #include <QComboBox>
 #include <QSignalMapper>
+#include <QGraphicsView>
 
 #include "slb/SLB.hpp"
 
@@ -127,6 +128,55 @@ namespace fire
                 bool is_online() const;
             };
 
+            class draw_view;
+            struct draw_ref : public widget_ref
+            {
+                std::string mouse_released_callback;
+                std::string mouse_pressed_callback;
+                std::string mouse_moved_callback;
+                std::string mouse_dragged_callback;
+
+                void clear();
+                void line(double x1, double y1, double x2, double y2);
+
+                const std::string& get_mouse_released_callback() const { return mouse_released_callback;}
+                const std::string& get_mouse_pressed_callback() const { return mouse_pressed_callback;}
+                const std::string& get_mouse_moved_callback() const { return mouse_moved_callback;}
+                const std::string& get_mouse_dragged_callback() const { return mouse_dragged_callback;}
+                void set_mouse_released_callback(const std::string&);  
+                void set_mouse_pressed_callback(const std::string&);  
+                void set_mouse_moved_callback(const std::string&);  
+                void set_mouse_dragged_callback(const std::string&);  
+                void set_pen(QPen);
+                QPen get_pen() { return pen;}
+
+                void mouse_pressed(int button, int x, int y);
+                void mouse_released(int button, int x, int y);
+                void mouse_moved(int x, int y);
+                void mouse_dragged(int button, int x, int y);
+
+                draw_view* get_view();
+                QPen pen;
+            };
+            using draw_ref_map = std::unordered_map<int, draw_ref>;
+
+            class draw_view : public QGraphicsView
+            {
+                Q_OBJECT
+                public:
+                    draw_view(draw_ref, int width, int height);
+
+                protected:
+                    void mousePressEvent(QMouseEvent*);
+                    void mouseReleaseEvent(QMouseEvent*);
+                    void mouseMoveEvent(QMouseEvent*);
+
+                private:
+                    draw_ref _ref;
+                    int _button;
+            };
+
+
             extern const std::string SCRIPT_MESSAGE;
             class script_message
             {
@@ -188,6 +238,7 @@ namespace fire
                     text_edit_ref_map text_edit_refs;
                     list_ref_map list_refs;
                     canvas_ref_map canvas_refs;
+                    draw_ref_map draw_refs;
 
                     //all widgets referenced are stored here
                     layout_map layouts;
@@ -196,6 +247,9 @@ namespace fire
                     //id functions
                     int ids;
                     int new_id();
+
+                    //error func
+                    void report_error(const std::string& e);
 
                     //================================
                     //API
@@ -206,6 +260,8 @@ namespace fire
                     edit_ref make_edit(const std::string& text);
                     text_edit_ref make_text_edit(const std::string& text);
                     list_ref make_list();
+                    draw_ref make_draw(int width, int height);
+                    QPen make_pen(const std::string& color, int width);
 
                     canvas_ref make_canvas(int r, int c);
                     void place(const widget_ref& w, int r, int c);

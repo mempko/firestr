@@ -4496,6 +4496,20 @@ namespace SLB {
             call(p1);
         }
 
+    template<class P1, class P2>
+        void call(const std::string& f, P1 p1, P2 p2)
+        {
+            LuaCall<void(P1, P2)> call(getState(), f.c_str());
+            call(p1, p2);
+        }
+
+    template<class P1, class P2, class P3>
+        void call(const std::string& f, P1 p1, P2 p2, P3 p3)
+        {
+            LuaCall<void(P1, P2, P3)> call(getState(), f.c_str());
+            call(p1, p2, p3);
+        }
+
         void call(const std::string& f)
         {
             LuaCall<void(void)> call(getState(), f.c_str());
