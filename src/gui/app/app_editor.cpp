@@ -41,7 +41,7 @@ namespace fire
             const std::string SCRIPT_SAMPLE = "SCRIPT_SAMPLE";
             const std::string LUA_KEYWORDS = "\\b(app|and|break|do|else|elseif|end|false|for|function|if|in|local|nil|not|or|repeat|return|then|true|until|while)\\b";
             const std::string LUA_QUOTE = "\".*[^\\\\]\"";
-            const std::string LUA_API_KEYWORDS = "\\b(add|button|callback|canvas|clear|contact|disable|edit|edited_callback|enable|enabled|finished_callback|from|get|label|last_contact|list|message|name|online|place|place_across|print|send|send_to|set|set_text|text|text_edit|total_contacts|when_clicked|when_edited|when_finished|when_message_received)\\b";
+            const std::string LUA_API_KEYWORDS = "\\b(add|button|callback|canvas|clear|contact|disable|edit|edited_callback|enable|enabled|finished_callback|from|get|label|last_contact|list|message|name|online|place|place_across|print|send|send_to|set|set_text|text|text_edit|total_contacts|when_clicked|when_edited|when_finished|when_message_received|draw|line|when_mouse_moved|when_mouse_pressed|when_mouse_released|when_mouse_dragged|clear|pen|get_pen)\\b";
             const std::string LUA_NUMBERS = "[0-9\\.]+";
             const std::string LUA_OPERATORS = "[=+-\\*\\^:%#~<>\\(\\){}\\[\\];:,]+";
 
@@ -50,6 +50,7 @@ namespace fire
                 const size_t TIMER_SLEEP = 100; //in milliseconds
                 const size_t TIMER_UPDATE = 5000; //in milliseconds
                 const size_t PADDING = 20;
+                const size_t MIN_EDIT_HEIGHT = 500;
                 const std::string SCRIPT_CODE_MESSAGE = "script";
             }
 
