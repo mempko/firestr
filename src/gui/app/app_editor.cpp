@@ -144,6 +144,7 @@ namespace fire
 
                 //text edit
                 _script = new QTextEdit;
+                _script->setMinimumHeight(MIN_EDIT_HEIGHT);
                 _script->setWordWrapMode(QTextOption::NoWrap);
                 _script->setTabStopWidth(40);
                 _highlighter = new lua_highlighter(_script->document());
@@ -333,15 +334,6 @@ namespace fire
                     _rules.emplace_back(r);
                 }
 
-                //quote
-                {
-                    highlight_rule r;
-                    r.format.setForeground(Qt::darkGreen);
-                    r.format.setFontWeight(QFont::Bold);
-                    r.regex = QRegExp{LUA_QUOTE.c_str()};
-                    _rules.emplace_back(r);
-                }
-
                 //api
                 {
                     highlight_rule r;
@@ -365,6 +357,15 @@ namespace fire
                     highlight_rule r;
                     r.format.setFontWeight(QFont::Bold);
                     r.regex = QRegExp{LUA_OPERATORS.c_str()};
+                    _rules.emplace_back(r);
+                }
+
+                //quote
+                {
+                    highlight_rule r;
+                    r.format.setForeground(Qt::darkGreen);
+                    r.format.setFontWeight(QFont::Bold);
+                    r.regex = QRegExp{LUA_QUOTE.c_str()};
                     _rules.emplace_back(r);
                 }
             }
