@@ -261,7 +261,6 @@ namespace fire
             send_ping(DISCONNECTED);
             _done = true;
             _ping_thread->join();
-            u::sleep_thread(QUIT_SLEEP);
         }
 
         void user_service::add_contact_data(user::user_info_ptr u)
