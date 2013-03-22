@@ -30,7 +30,6 @@ namespace fire
 
         namespace
         {
-            const double STUN_WAIT = 10; //in milliseconds 
             const double THREAD_SLEEP = 10; //in milliseconds 
             const size_t POOL_SIZE = 20; //small pool size for now
         }
@@ -89,15 +88,19 @@ namespace fire
 
             std::string last_address;
 
-            while(!o->_done)
+            bool sent = false;
+            while(!o->_done || sent)
             try
             {
+                sent = false;
+
                 message m;
                 if(!o->_out.pop(m))
                 {
                     u::sleep_thread(THREAD_SLEEP);
                     continue;
                 }
+                sent = true;
 
                 REQUIRE_GREATER_EQUAL(m.meta.from.size(), 1);
                 REQUIRE_GREATER_EQUAL(m.meta.to.size(), 1);
