@@ -1091,6 +1091,7 @@ namespace fire
                 setScene(new QGraphicsScene{0.0,0.0,width,height});
                 setMinimumSize(width,height);
                 setMouseTracking(true);
+                setRenderHint(QPainter::Antialiasing);
             }
 
             void draw_view::mousePressEvent(QMouseEvent* e)
