@@ -128,6 +128,24 @@ namespace fire
                 INVARIANT(state);
             }
 
+            QWidget* make_output_widget(const std::string& name, const std::string& text)
+            {
+                std::string m = "<b>" + name + "</b>: " + text; 
+                return new QLabel{m.c_str()};
+            }
+
+            QWidget* make_error_widget(const std::string& text)
+            {
+                std::string m = "<b>error:</b> " + text; 
+                return new QLabel{m.c_str()};
+            }
+
+            void lua_script_api::report_error(const std::string& e)
+            {
+                if(!output) return;
+                output->add(make_error_widget(e));
+            }
+
             int lua_script_api::new_id()
             {
                 ids++;
@@ -148,6 +166,8 @@ namespace fire
                     .set("text_edit", &lua_script_api::make_text_edit)
                     .set("list", &lua_script_api::make_list)
                     .set("canvas", &lua_script_api::make_canvas)
+                    .set("draw", &lua_script_api::make_draw)
+                    .set("pen", &lua_script_api::make_pen)
                     .set("place", &lua_script_api::place)
                     .set("place_across", &lua_script_api::place_across)
                     .set("total_contacts", &lua_script_api::total_contacts)
@@ -157,6 +177,9 @@ namespace fire
                     .set("when_message_received", &lua_script_api::set_message_callback)
                     .set("send", &lua_script_api::send_all)
                     .set("send_to", &lua_script_api::send_to);
+
+                SLB::Class<QPen>{"pen", &manager}
+                    .set("set_width", &QPen::setWidth);
 
                 SLB::Class<contact_ref>{"contact", &manager}
                     .set("name", &contact_ref::get_name)
@@ -214,22 +237,27 @@ namespace fire
                     .set("enable", &widget_ref::enable)
                     .set("disable", &widget_ref::disable);
 
+                SLB::Class<draw_ref>{"draw", &manager}
+                    .set("mouse_moved_callback", &draw_ref::get_mouse_moved_callback)
+                    .set("mouse_pressed_callback", &draw_ref::get_mouse_pressed_callback)
+                    .set("mouse_released_callback", &draw_ref::get_mouse_released_callback)
+                    .set("mouse_dragged_callback", &draw_ref::get_mouse_dragged_callback)
+                    .set("when_mouse_moved", &draw_ref::set_mouse_moved_callback)
+                    .set("when_mouse_pressed", &draw_ref::set_mouse_pressed_callback)
+                    .set("when_mouse_released", &draw_ref::set_mouse_released_callback)
+                    .set("when_mouse_dragged", &draw_ref::set_mouse_dragged_callback)
+                    .set("enabled", &widget_ref::enabled)
+                    .set("enable", &widget_ref::enable)
+                    .set("disable", &widget_ref::disable)
+                    .set("clear", &draw_ref::clear)
+                    .set("line", &draw_ref::line)
+                    .set("pen", &draw_ref::set_pen)
+                    .set("get_pen", &draw_ref::get_pen);
+
                 state = std::make_shared<SLB::Script>(&manager);
                 state->set("app", this);
 
                 ENSURE(state);
-            }
-
-            QWidget* make_output_widget(const std::string& name, const std::string& text)
-            {
-                std::string m = "<b>" + name + "</b>: " + text; 
-                return new QLabel{m.c_str()};
-            }
-
-            QWidget* make_error_widget(const std::string& text)
-            {
-                std::string m = "<b>error:</b> " + text; 
-                return new QLabel{m.c_str()};
             }
 
             std::string lua_script_api::execute(const std::string& s)
@@ -317,16 +345,13 @@ namespace fire
             }
             catch(std::exception& e)
             {
-                if(!output) return;
-
                 std::stringstream s;
-                s << "error in message callback: " << e.what();
-                output->add(make_error_widget(s.str()));
+                s << "error in message_received: " << e.what();
+                report_error(s.str());
             }
             catch(...)
             {
-                if(!output) return;
-                output->add(make_error_widget("error in message callback: unknown"));
+                report_error("error in message_received: unknown");
             }
 
             void lua_script_api::set_message_callback(const std::string& a)
@@ -854,6 +879,252 @@ namespace fire
                 if(!l) return;
 
                 l->clear();
+            }
+
+            QPen lua_script_api::make_pen(const std::string& color, int width)
+            try
+            {
+                QPen p{QColor{color.c_str()}};
+                p.setWidth(width);
+                return p;
+            }
+            catch(std::exception& e)
+            {
+                std::stringstream s;
+                s << "error in make_pen: " << e.what();
+                report_error(s.str());
+            }
+            catch(...)
+            {
+                report_error("error in make_pen: unknown");
+            }
+
+            draw_ref lua_script_api::make_draw(int width, int height)
+            {
+                INVARIANT(canvas);
+
+                //create edit reference
+                draw_ref ref;
+                ref.id = new_id();
+                ref.api = this;
+
+                //create edit widget
+                auto w = new draw_view{ref, width, height};
+
+                //add ref and widget to maps
+                draw_refs[ref.id] = ref;
+                widgets[ref.id] = w;
+
+                ENSURE_FALSE(ref.id == 0);
+                ENSURE(ref.api);
+                return ref;
+            }
+
+            void draw_ref::set_mouse_released_callback(const std::string& c)
+            {
+                INVARIANT(api);
+
+                auto rp = api->draw_refs.find(id);
+                if(rp == api->draw_refs.end()) return;
+
+                rp->second.mouse_released_callback = c;
+                mouse_released_callback = c;
+            }  
+
+            void draw_ref::set_mouse_pressed_callback(const std::string& c)
+            {
+                INVARIANT(api);
+
+                auto rp = api->draw_refs.find(id);
+                if(rp == api->draw_refs.end()) return;
+
+                rp->second.mouse_pressed_callback = c;
+                mouse_pressed_callback = c;
+            }  
+
+            void draw_ref::set_mouse_moved_callback(const std::string& c)
+            {
+                INVARIANT(api);
+
+                auto rp = api->draw_refs.find(id);
+                if(rp == api->draw_refs.end()) return;
+
+                rp->second.mouse_moved_callback = c;
+                mouse_moved_callback = c;
+            }  
+
+            void draw_ref::set_mouse_dragged_callback(const std::string& c)
+            {
+                INVARIANT(api);
+
+                auto rp = api->draw_refs.find(id);
+                if(rp == api->draw_refs.end()) return;
+
+                rp->second.mouse_dragged_callback = c;
+                mouse_dragged_callback = c;
+            }  
+
+            void draw_ref::set_pen(QPen p)
+            {
+                INVARIANT(api);
+
+                auto rp = api->draw_refs.find(id);
+                if(rp == api->draw_refs.end()) return;
+
+                rp->second.pen = p;
+                pen = p;
+            }
+
+            void draw_ref::mouse_pressed(int button, int x, int y)
+            try
+            {
+                INVARIANT(api);
+                if(mouse_pressed_callback.empty()) return;
+
+                api->state->call(mouse_pressed_callback, button, x, y);
+            }
+            catch(std::exception& e)
+            {
+                std::stringstream s;
+                s << "error in mouse_pressed: " << e.what();
+                api->report_error(s.str());
+            }
+            catch(...)
+            {
+                api->report_error("error in mouse_pressed: unknown");
+            }
+
+            void draw_ref::mouse_released(int button, int x, int y)
+            try
+            {
+                INVARIANT(api);
+                if(mouse_released_callback.empty()) return;
+
+                api->state->call(mouse_released_callback, button, x, y);
+            }
+            catch(std::exception& e)
+            {
+                std::stringstream s;
+                s << "error in mouse_released: " << e.what();
+                api->report_error(s.str());
+            }
+            catch(...)
+            {
+                api->report_error("error in mouse_released: unknown");
+            }
+
+            void draw_ref::mouse_moved(int x, int y)
+            try
+            {
+                INVARIANT(api);
+                if(mouse_moved_callback.empty()) return;
+
+                api->state->call(mouse_moved_callback, x, y);
+            }
+            catch(std::exception& e)
+            {
+                std::stringstream s;
+                s << "error in mouse_moved: " << e.what();
+                api->report_error(s.str());
+            }
+            catch(...)
+            {
+                api->report_error("error in mouse_moved: unknown");
+            }
+
+            void draw_ref::mouse_dragged(int button, int x, int y)
+            try
+            {
+                INVARIANT(api);
+                if(mouse_dragged_callback.empty()) return;
+
+                api->state->call(mouse_dragged_callback, button, x, y);
+            }
+            catch(std::exception& e)
+            {
+                std::stringstream s;
+                s << "error in mouse_dragged: " << e.what();
+                api->report_error(s.str());
+            }
+            catch(...)
+            {
+                api->report_error("error in mouse_dragged: unknown");
+            }
+
+            draw_view* draw_ref::get_view()
+            {
+                INVARIANT(api);
+
+                auto dp = api->draw_refs.find(id);
+                if(dp == api->draw_refs.end()) return nullptr;
+
+                auto w = get_widget<draw_view>(id, api->widgets);
+                if(w) CHECK(w->scene());
+                return w;
+            }
+
+            void draw_ref::line(double x1, double y1, double x2, double y2)
+            {
+                INVARIANT(api);
+
+                auto w = get_view();
+                if(!w) return;
+
+                auto sp1 = w->mapToScene(x1,y1);
+                auto sp2 = w->mapToScene(x2,y2);
+                w->scene()->addLine(sp1.x(), sp1.y(), sp2.x(), sp2.y(), pen);
+            }
+
+            void draw_ref::clear()
+            {
+                INVARIANT(api);
+
+                auto w = get_view();
+                if(!w) return;
+
+                w->scene()->clear();
+            }
+
+            draw_view::draw_view(draw_ref ref, int width, int height) : 
+                QGraphicsView(), _ref{ref}, _button{0}
+            {
+                setScene(new QGraphicsScene{0.0,0.0,width,height});
+                setMinimumSize(width,height);
+                setMouseTracking(true);
+                setRenderHint(QPainter::Antialiasing);
+            }
+
+            void draw_view::mousePressEvent(QMouseEvent* e)
+            {
+                if(!e) return;
+
+                auto ref = _ref.api->draw_refs.find(_ref.id);
+                if(ref == _ref.api->draw_refs.end()) return;
+
+                _button = e->button();
+                ref->second.mouse_pressed(e->button(), e->pos().x(), e->pos().y());
+
+            }
+            void draw_view::mouseReleaseEvent(QMouseEvent* e)
+            {
+                if(!e) return;
+
+                auto ref = _ref.api->draw_refs.find(_ref.id);
+                if(ref == _ref.api->draw_refs.end()) return;
+
+                _button = 0;
+                ref->second.mouse_released(e->button(), e->pos().x(), e->pos().y());
+            }
+
+            void draw_view::mouseMoveEvent(QMouseEvent* e)
+            {
+                if(!e) return;
+
+                auto ref = _ref.api->draw_refs.find(_ref.id);
+                if(ref == _ref.api->draw_refs.end()) return;
+
+                ref->second.mouse_moved(e->pos().x(), e->pos().y());
+                if(_button != 0) ref->second.mouse_dragged(_button, e->pos().x(), e->pos().y());
             }
         }
     }
