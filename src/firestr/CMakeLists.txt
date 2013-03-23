@@ -29,12 +29,38 @@ QT4_WRAP_UI(moc_forms ${forms})
 QT4_ADD_RESOURCES(moc_resources ${resources})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-add_executable(
-    firestr
-    ${src}
-    ${moc_headers}
-    ${moc_forms}
-    ${moc_resources})
+if(APPLE)
+    set(PROGNAME firestr)
+    set(MACOSX_BUNDLE_SHORT_VERSION_STRING 0.1)
+    set(MACOSX_BUNDLE_VERSION 0.1)
+    set(MACOSX_BUNDLE_LONG_VERSION Version 0.1)
+    set(MAXOSX_BUNDLE_NAME firestr)
+    set(MAXOSX_BUNDLE_GUI_IDENTIFIER firestr)
+    set(MAXOSX_BUNDLE_INFO_STRING firestr)
+    set(MAXOSX_BUNDLE_COPYRIGHT "(C) 2013 Maxim Noah Khailo")
+
+    add_executable(
+        firestr
+        MACOSX_BUNDLE
+        ${src}
+        ${moc_headers}
+        ${moc_forms}
+        ${moc_resources})
+    add_custom_command(TARGET firestr POST_BUILD
+        command mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/firestr.app/Contents/Resources
+        command cp -p ${CMAKE_CURRENT_BINARY_DIR}/firestr.app/Contents/MacOS
+        command cp *.qm ${CMAKE_CURRENT_BINARY_DIR}/firestr.app/Contents/Resources/)
+    
+        
+
+else(APPLE)
+    add_executable(
+        firestr
+        ${src}
+        ${moc_headers}
+        ${moc_forms}
+        ${moc_resources})
+endif(APPLE)
 
 target_link_libraries(
     firestr
