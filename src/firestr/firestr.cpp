@@ -59,7 +59,7 @@ po::options_description create_descriptions()
 po::variables_map parse_options(int argc, char* argv[], po::options_description& desc)
 {
     po::variables_map v;
-    po::store(po::parse_command_line(argc, argv, desc), v);
+    po::store(po::command_line_parser(argc, argv).options(desc).allow_unregistered().run(), v);
     po::notify(v);
 
     return v;
