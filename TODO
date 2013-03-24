@@ -1,10 +1,11 @@
 Ideas
 
-- Two types of sessions, public and private
+- Two types of sessions, public and private (They cannot be TRULY private if you want everyone authenticated.  If you make authentication optional, then the ones that authenticated gained nothing, it was just an annoyance.  So for the purpose of this, I'm going to assume that by 'public' you mean 'group, where every member of the group authenticated successfully.'
+
 --public ones can be joined from the outside. 
     This is to allow a sort of persistent presence. To allow things
-    like status updates and other magic. 
+    like status updates and other magic. (At this moment the content is released from any access control, and it cannot be reintroduced back into the system, as who knows what happened to the file when it wasn't under control)
 
-- When authenticating first time, encrypt authentication request using passwords. 
-  For the paranoid, they can tell each other the passwords to decrypt the request and get the public key,
-  in case they are worried about spoofing.
+- When authenticating first time, encrypt authentication request using passwords.   (use GPG, that's what it's for)
+  For the paranoid, they can tell each other the passwords to decrypt the request and get the public key,  
+  in case they are worried about spoofing.  (no, seriously, use GPG ;) )
