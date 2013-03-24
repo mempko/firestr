@@ -1,4 +1,3 @@
-
 ===================================================================
 Firestr (Pronounced Fire Star) 0.1
 ===================================================================
@@ -6,20 +5,20 @@ Firestr (Pronounced Fire Star) 0.1
 This is not the web. Firestr in short, is a distributed, 
 decentralized way to communicate and share through running programs.
 
-You don't send a message to someone, you send an program, which 
-can have rich content. All programs are wired up together automatically
+You don't send a message to someone, you send an program (RPC style or fully embedded code and data in some sort of bundle?), which 
+can have rich content (VERY rich, alongside with viruses, malware, spyware, worms, etc...) . All programs are wired up together automatically
 providing distributed communication, either through text, images, videos, 
-or games.
+or games. (Do you really want to be responsible for distributing other people's code?  this is a legal nightmare, before we dive into the technical bits)
 
 The source code to all applications is available immediately to 
-instantly clone and modify. 
+instantly clone and modify. ( so ARBITRARY code modification... like mailing your shadow file, or opening a socket to a remote command and control program)
 
 ===================================================================
 WARNING
 ===================================================================
 
-The software is in development. There is NO security and therefore
-use this AT YOUR OWN RISK.
+The software is in development. There is NO security (correct) and therefore
+use this AT YOUR OWN RISK. (as this is a malware distribution system so far)
 
 The software will eventually have only encrypted communication but
 as of now it does not.
