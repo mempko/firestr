@@ -20,6 +20,8 @@
 #include "gui/unknown_message.hpp"
 #include "gui/util.hpp"
 
+#include "util/log.hpp"
+
 #include <QtGui>
 
 namespace s = fire::session;
@@ -248,11 +250,11 @@ namespace fire
         }
         catch(std::exception& e)
         {
-            std::cerr << "session: error in check_mail. " << e.what() << std::endl;
+            LOG << "session: error in check_mail. " << e.what() << std::endl;
         }
         catch(...)
         {
-            std::cerr << "session: unexpected error in check_mail." << std::endl;
+            LOG << "session: unexpected error in check_mail." << std::endl;
         }
     }
 }

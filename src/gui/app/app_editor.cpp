@@ -21,6 +21,7 @@
 #include "gui/util.hpp"
 #include "util/uuid.hpp"
 #include "util/dbc.hpp"
+#include "util/log.hpp"
 
 #include <QTimer>
 
@@ -309,17 +310,17 @@ namespace fire
                     }
                     else
                     {
-                        std::cerr << "app_editor recieved unknown message `" << m.meta.type << "'" << std::endl;
+                        LOG << "app_editor recieved unknown message `" << m.meta.type << "'" << std::endl;
                     }
                 }
             }
             catch(std::exception& e)
             {
-                std::cerr << "app_editor: error in check_mail. " << e.what() << std::endl;
+                LOG << "app_editor: error in check_mail. " << e.what() << std::endl;
             }
             catch(...)
             {
-                std::cerr << "app_editor: unexpected error in check_mail." << std::endl;
+                LOG << "app_editor: unexpected error in check_mail." << std::endl;
             }
 
             lua_highlighter::lua_highlighter(QTextDocument* parent) :

@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "util/dbc.hpp"
+#include "util/log.hpp"
 
 namespace fire 
 {
@@ -23,7 +24,7 @@ namespace fire
     {
         void raise(const char * msg) 
         {
-            std::cerr << msg << std::endl;
+            LOG << msg << std::endl;
             exit(1);
         }
 

@@ -20,6 +20,7 @@
 #include "util/mencode.hpp"
 #include "util/string.hpp"
 #include "util/dbc.hpp"
+#include "util/log.hpp"
 
 #include <stdexcept>
 #include <sstream>
@@ -77,7 +78,7 @@ namespace fire
             auto s = t.substr(0,3);
             if(s == TCP) m = asio_params::tcp;
             else if(s == UDP) m = asio_params::udp;
-            else std::cerr << "unknown transport: `" << s << "', using UDP " << std::endl;
+            else LOG << "unknown transport: `" << s << "', using UDP " << std::endl;
 
             return m;
         }
@@ -134,7 +135,7 @@ namespace fire
         {
             INVARIANT(_socket);
             u::mutex_scoped_lock l(_mutex);
-            std::cerr << "tcp_connection closed " << _socket->local_endpoint() << " + " << _socket->remote_endpoint() << " error: " << _error.message() << std::endl;
+            LOG << "tcp_connection closed " << _socket->local_endpoint() << " + " << _socket->remote_endpoint() << " error: " << _error.message() << std::endl;
             _socket->close();
             _state = disconnected;
             _writing = false;
@@ -183,7 +184,7 @@ namespace fire
 
             if(error)
             {
-                std::cerr << "error binding to port " << port << ": " << error.message() << std::endl;
+                LOG << "error binding to port " << port << ": " << error.message() << std::endl;
                 _error = error;
                 _state = disconnected;
             }
@@ -227,7 +228,7 @@ namespace fire
             {
                 u::mutex_scoped_lock l(_mutex);
                 _state = connected;
-                std::cerr << "new out tcp_connection " << _socket->local_endpoint() << " -> " << _socket->remote_endpoint() << ": " << error.message() << std::endl;
+                LOG << "new out tcp_connection " << _socket->local_endpoint() << " -> " << _socket->remote_endpoint() << ": " << error.message() << std::endl;
                 start_read();
 
                 //if we have called send already before we connected,
@@ -239,7 +240,7 @@ namespace fire
             {
                 if(_retries > 0)
                 {
-                    std::cerr << "retrying (" << (RETRIES - _retries) << "/" << RETRIES << ")..." << std::endl;
+                    LOG << "retrying (" << (RETRIES - _retries) << "/" << RETRIES << ")..." << std::endl;
                     {
                         u::mutex_scoped_lock l(_mutex);
                         _retries--;
@@ -258,7 +259,7 @@ namespace fire
             }
 
             if(error)
-                std::cerr << "error connecting to `" << _ep.address << ":" << _ep.port << "' : " << error.message() << std::endl;
+                LOG << "error connecting to `" << _ep.address << ":" << _ep.port << "' : " << error.message() << std::endl;
         }
 
         u::bytes encode_tcp_wire(const u::bytes data)
@@ -540,11 +541,11 @@ namespace fire
         }
         catch(std::exception& e)
         {
-            std::cerr << "error in delayed connecting `" << _p.local_port << "' : " << e.what() << std::endl;
+            LOG << "error in delayed connecting `" << _p.local_port << "' : " << e.what() << std::endl;
         }
         catch(...)
         {
-            std::cerr << "error in delayed connecting `" << _p.local_port << "' : unknown error." << std::endl;
+            LOG << "error in delayed connecting `" << _p.local_port << "' : unknown error." << std::endl;
         }
 
         void tcp_queue::connect()
@@ -570,11 +571,11 @@ namespace fire
         }
         catch(std::exception& e)
         {
-            std::cerr << "error connecting to `" << _p.host << ":" << _p.port << "' : " << e.what() << std::endl;
+            LOG << "error connecting to `" << _p.host << ":" << _p.port << "' : " << e.what() << std::endl;
         }
         catch(...)
         {
-            std::cerr << "error connecting to `" << _p.host << ":" << _p.port << "' : unknown error." << std::endl;
+            LOG << "error connecting to `" << _p.host << ":" << _p.port << "' : unknown error." << std::endl;
         }
 
         void tcp_queue::accept()
@@ -614,10 +615,10 @@ namespace fire
 
             if(error) 
             {
-                std::cerr << "error accept " << nc->socket().local_endpoint() << " -> " << nc->socket().remote_endpoint() << ": " << error.message() << std::endl;
+                LOG << "error accept " << nc->socket().local_endpoint() << " -> " << nc->socket().remote_endpoint() << ": " << error.message() << std::endl;
                 return;
             }
-            std::cerr << "new in tcp_connection " << nc->socket().remote_endpoint() << " " << error.message() << std::endl;
+            LOG << "new in tcp_connection " << nc->socket().remote_endpoint() << " " << error.message() << std::endl;
 
             _in_connections.push_back(nc);
             nc->update_endpoint();
@@ -657,11 +658,11 @@ namespace fire
             }
             catch(std::exception& e)
             {
-                std::cerr << "error in tcp thread. " << e.what() << std::endl;
+                LOG << "error in tcp thread. " << e.what() << std::endl;
             }
             catch(...)
             {
-                std::cerr << "unknown error in tcp thread." << std::endl;
+                LOG << "unknown error in tcp thread." << std::endl;
             }
         }
 
@@ -971,7 +972,7 @@ namespace fire
             _out_queue.pop_front();
             _error = error;
 
-            if(error) std::cerr << "error sending chunk, " << _out_queue.size() << " remaining..." << std::endl;
+            if(error) LOG << "error sending chunk, " << _out_queue.size() << " remaining..." << std::endl;
 
             //if we are done sending finish the async write chain
             if(_out_queue.empty()) 
@@ -987,7 +988,7 @@ namespace fire
 
         void udp_connection::bind(const std::string& port)
         {
-            std::cerr << "bind udp port " << port << std::endl;
+            LOG << "bind udp port " << port << std::endl;
             INVARIANT(_socket);
             auto p = boost::lexical_cast<short unsigned int>(port);
 
@@ -996,7 +997,7 @@ namespace fire
             _socket->bind(udp::endpoint(udp::v4(), p), _error);
 
             if(_error)
-                std::cerr << "error binding udp to port " << p << ": " << _error.message() << std::endl;
+                LOG << "error binding udp to port " << p << ": " << _error.message() << std::endl;
 
             start_read();
         }
@@ -1060,7 +1061,7 @@ namespace fire
             {
                 u::mutex_scoped_lock l(_mutex);
                 _error = error;
-                std::cerr << "error getting message of size " << transferred  << ". " << error.message() << std::endl;
+                LOG << "error getting message of size " << transferred  << ". " << error.message() << std::endl;
                 start_read();
                 return;
             }
@@ -1164,11 +1165,11 @@ namespace fire
             }
             catch(std::exception& e)
             {
-                std::cerr << "error in udp thread. " << e.what() << std::endl;
+                LOG << "error in udp thread. " << e.what() << std::endl;
             }
             catch(...)
             {
-                std::cerr << "unknown error in udp thread." << std::endl;
+                LOG << "unknown error in udp thread." << std::endl;
             }
         }
 

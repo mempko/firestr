@@ -18,6 +18,7 @@
 #include "network/boost_asio.hpp"
 #include "util/bytes.hpp"
 #include "util/dbc.hpp"
+#include "util/log.hpp"
 
 #include <sstream>
 
@@ -69,16 +70,16 @@ namespace fire
             }
             catch(std::exception& e)
             {
-                std::cerr << "error recieving message: " << e.what() << std::endl;
+                LOG << "error recieving message: " << e.what() << std::endl;
             }
             catch(...)
             {
-                std::cerr << "error recieving message: unknown error." << std::endl;
+                LOG << "error recieving message: unknown error." << std::endl;
             }
         }
         catch(...)
         {
-            std::cerr << "exit: master_post::in_thread" << std::endl;
+            LOG << "exit: master_post::in_thread" << std::endl;
         }
 
         void out_thread(master_post_office* o)
@@ -116,16 +117,16 @@ namespace fire
             }
             catch(std::exception& e)
             {
-                std::cerr << "error sending message to " << last_address << ": " << e.what() << std::endl;
+                LOG << "error sending message to " << last_address << ": " << e.what() << std::endl;
             }
             catch(...)
             {
-                std::cerr << "error sending message to " << last_address << ": unknown error." << std::endl;
+                LOG << "error sending message to " << last_address << ": unknown error." << std::endl;
             }
         }
         catch(...)
         {
-            std::cerr << "exit: master_post::out_thread" << std::endl;
+            LOG << "exit: master_post::out_thread" << std::endl;
         }
 
         master_post_office::master_post_office(

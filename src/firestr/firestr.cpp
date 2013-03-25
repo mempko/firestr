@@ -20,6 +20,8 @@
 #include "gui/mainwin.hpp"
 #include "network/util.hpp"
 
+#include "util/log.hpp"
+
 #include <string>
 #include <cstdlib>
 
@@ -88,6 +90,8 @@ int main(int argc, char *argv[])
     c.home = vm["home"].as<std::string>();
     c.host = vm["host"].as<std::string>();
     c.port = vm["port"].as<std::string>();
+
+    CREATE_LOG(c.home);
 
     if(!user_setup(c.home)) return 0;
 

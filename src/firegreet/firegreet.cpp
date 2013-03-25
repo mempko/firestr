@@ -27,6 +27,7 @@
 #include "util/thread.hpp"
 #include "util/bytes.hpp"
 #include "util/dbc.hpp"
+#include "util/log.hpp"
 
 namespace po = boost::program_options;
 namespace ip = boost::asio::ip;
@@ -89,7 +90,7 @@ void register_user(n::connection_manager& con, const n::endpoint& ep, const ms::
     user_info i = {r.id(), local, ext, r.response_service_address(), ep};
     m[i.id] = i;
 
-    std::cerr << "registered " << i.id << " " << i.ext.ip << ":" << i.ext.port << std::endl;
+    LOG << "registered " << i.id << " " << i.ext.ip << ":" << i.ext.port << std::endl;
 }
 
 void send_response(n::connection_manager& con, const ms::greet_find_response& r, const user_info& u)
@@ -99,7 +100,7 @@ void send_response(n::connection_manager& con, const ms::greet_find_response& r,
     auto address = n::make_tcp_address(u.ext.ip, u.ext.port); 
     m.meta.to = {address, u.response_service_address};
 
-    std::cerr << "sending reply to " << address << std::endl;
+    LOG << "sending reply to " << address << std::endl;
     con.send(n::make_address_str(u.ep), u::encode(m));
 }
 
@@ -119,7 +120,7 @@ void find_user(n::connection_manager& con, const n::endpoint& ep,  const ms::gre
 
     auto& i = up->second;
 
-    std::cerr << "found match " << f.id << " " << f.ext.ip << ":" << f.ext.port << " <==> " <<  i.id << " " << i.ext.ip << ":" << i.ext.port << std::endl;
+    LOG << "found match " << f.id << " " << f.ext.ip << ":" << f.ext.port << " <==> " <<  i.id << " " << i.ext.ip << ":" << i.ext.port << std::endl;
 
     //send response to both clients
     ms::greet_find_response fr{true, i.id, i.local,  i.ext};
@@ -131,6 +132,8 @@ void find_user(n::connection_manager& con, const n::endpoint& ep,  const ms::gre
 
 int main(int argc, char *argv[])
 {
+    CREATE_LOG("./");
+
     auto desc = create_descriptions();
     auto vm = parse_options(argc, argv, desc);
     if(vm.count("help"))
@@ -177,12 +180,12 @@ int main(int argc, char *argv[])
     }
     catch(std::exception& e)
     {
-        std::cerr << "error parsing message: " << e.what() << std::endl;
-        std::cerr << "message: " << u::to_str(data) << std::endl;
+        LOG << "error parsing message: " << e.what() << std::endl;
+        LOG << "message: " << u::to_str(data) << std::endl;
     }
     catch(...)
     {
-        std::cerr << "unknown error parsing message: " << std::endl;
-        std::cerr << "message: " << u::to_str(data) << std::endl;
+        LOG << "unknown error parsing message: " << std::endl;
+        LOG << "message: " << u::to_str(data) << std::endl;
     }
 }
