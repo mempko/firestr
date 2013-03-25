@@ -17,6 +17,7 @@
 
 #include "service/service.hpp"
 #include "util/dbc.hpp"
+#include "util/log.hpp"
 
 #include <stdexcept>
 
@@ -51,16 +52,16 @@ namespace fire
             }
             catch(std::exception& e)
             {
-                std::cerr << "Error recieving message for mailbox " << s->_address << ". " << e.what() << std::endl;
+                LOG << "Error recieving message for mailbox " << s->_address << ". " << e.what() << std::endl;
             }
             catch(...)
             {
-                std::cerr << "Unknown error recieving message for mailbox " << s->_address << std::endl;
+                LOG << "Unknown error recieving message for mailbox " << s->_address << std::endl;
             }
         }
         catch(...)
         {
-            std::cerr << "exit: service::service_thread" << std::endl;
+            LOG << "exit: service::service_thread" << std::endl;
         }
 
 

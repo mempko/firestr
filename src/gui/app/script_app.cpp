@@ -21,6 +21,7 @@
 #include "gui/util.hpp"
 #include "util/uuid.hpp"
 #include "util/dbc.hpp"
+#include "util/log.hpp"
 
 #include <QTimer>
 
@@ -179,11 +180,11 @@ namespace fire
             }
             catch(std::exception& e)
             {
-                std::cerr << "script_app: error in check_mail. " << e.what() << std::endl;
+                LOG << "script_app: error in check_mail. " << e.what() << std::endl;
             }
             catch(...)
             {
-                std::cerr << "script_app: unexpected error in check_mail." << std::endl;
+                LOG << "script_app: unexpected error in check_mail." << std::endl;
             }
 
             void script_app::clone_app()

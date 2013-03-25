@@ -18,6 +18,7 @@
 #include "network/connection_manager.hpp"
 
 #include "util/dbc.hpp"
+#include "util/log.hpp"
 
 #include <boost/lexical_cast.hpp>
 
@@ -113,11 +114,11 @@ namespace fire
         }
         catch(std::exception& e)
         {
-            std::cerr << "error connecting to `" << address << "'. " << e.what() << std::endl; 
+            LOG << "error connecting to `" << address << "'. " << e.what() << std::endl; 
         }
         catch(...)
         {
-            std::cerr << "unknown error connecting to `" << address << "'." << std::endl; 
+            LOG << "unknown error connecting to `" << address << "'." << std::endl; 
         }
 
         bool connection_manager::send(const std::string& to, const u::bytes& b)
@@ -154,11 +155,11 @@ namespace fire
         }
         catch(std::exception& e)
         {
-            std::cerr << "error sending message to `" << to << "' (" << b.size() << " bytes). " << e.what() << std::endl; 
+            LOG << "error sending message to `" << to << "' (" << b.size() << " bytes). " << e.what() << std::endl; 
         }
         catch(...)
         {
-            std::cerr << "unknown error sending message to `" << to << "' (" << b.size() << " bytes)." << std::endl; 
+            LOG << "unknown error sending message to `" << to << "' (" << b.size() << " bytes)." << std::endl; 
         }
 
         bool connection_manager::receive(endpoint& ep, u::bytes& b)

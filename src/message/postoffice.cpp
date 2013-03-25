@@ -17,6 +17,7 @@
 
 #include "message/postoffice.hpp"
 #include "util/dbc.hpp"
+#include "util/log.hpp"
 
 namespace fire
 {
@@ -58,16 +59,16 @@ namespace fire
             catch(std::exception& e)
             {
                 INVARIANT(o);
-                std::cerr << "Error sending message in post_office `" << o->address() << "'. " << e.what() << std::endl; 
+                LOG << "Error sending message in post_office `" << o->address() << "'. " << e.what() << std::endl; 
             }
             catch(...)
             {
-                std::cerr << "Unexpected error sending message in post_office `" << o->address() << "'." << std::endl; 
+                LOG << "Unexpected error sending message in post_office `" << o->address() << "'." << std::endl; 
             }
         }
         catch(...)
         {
-            std::cerr << "exit: postoffice::send_thread" << std::endl;
+            LOG << "exit: postoffice::send_thread" << std::endl;
         }
          
         post_office::post_office() :
