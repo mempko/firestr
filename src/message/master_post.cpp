@@ -18,6 +18,7 @@
 #include "network/boost_asio.hpp"
 #include "util/bytes.hpp"
 #include "util/dbc.hpp"
+#include "util/log.hpp"
 
 #include <sstream>
 
@@ -30,7 +31,6 @@ namespace fire
 
         namespace
         {
-            const double STUN_WAIT = 10; //in milliseconds 
             const double THREAD_SLEEP = 10; //in milliseconds 
             const size_t POOL_SIZE = 20; //small pool size for now
         }
@@ -70,16 +70,16 @@ namespace fire
             }
             catch(std::exception& e)
             {
-                std::cerr << "error recieving message: " << e.what() << std::endl;
+                LOG << "error recieving message: " << e.what() << std::endl;
             }
             catch(...)
             {
-                std::cerr << "error recieving message: unknown error." << std::endl;
+                LOG << "error recieving message: unknown error." << std::endl;
             }
         }
         catch(...)
         {
-            std::cerr << "exit: master_post::in_thread" << std::endl;
+            LOG << "exit: master_post::in_thread" << std::endl;
         }
 
         void out_thread(master_post_office* o)
@@ -89,15 +89,19 @@ namespace fire
 
             std::string last_address;
 
-            while(!o->_done)
+            bool sent = false;
+            while(!o->_done || sent)
             try
             {
+                sent = false;
+
                 message m;
                 if(!o->_out.pop(m))
                 {
                     u::sleep_thread(THREAD_SLEEP);
                     continue;
                 }
+                sent = true;
 
                 REQUIRE_GREATER_EQUAL(m.meta.from.size(), 1);
                 REQUIRE_GREATER_EQUAL(m.meta.to.size(), 1);
@@ -113,16 +117,16 @@ namespace fire
             }
             catch(std::exception& e)
             {
-                std::cerr << "error sending message to " << last_address << ": " << e.what() << std::endl;
+                LOG << "error sending message to " << last_address << ": " << e.what() << std::endl;
             }
             catch(...)
             {
-                std::cerr << "error sending message to " << last_address << ": unknown error." << std::endl;
+                LOG << "error sending message to " << last_address << ": unknown error." << std::endl;
             }
         }
         catch(...)
         {
-            std::cerr << "exit: master_post::out_thread" << std::endl;
+            LOG << "exit: master_post::out_thread" << std::endl;
         }
 
         master_post_office::master_post_office(

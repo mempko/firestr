@@ -22,6 +22,7 @@
 #include "util/uuid.hpp"
 #include "util/string.hpp"
 #include "util/dbc.hpp"
+#include "util/log.hpp"
 
 #include <stdexcept>
 #include <ctime>
@@ -261,7 +262,6 @@ namespace fire
             send_ping(DISCONNECTED);
             _done = true;
             _ping_thread->join();
-            u::sleep_thread(QUIT_SLEEP);
         }
 
         void user_service::add_contact_data(user::user_info_ptr u)
@@ -346,7 +346,7 @@ namespace fire
         void user_service::do_regiser_with_greeter(const std::string& server)
         {
             //regiser with greeter
-            std::cerr << "sending greet message to " << server << std::endl;
+            LOG << "sending greet message to " << server << std::endl;
             ms::greet_register gr
             {
                 _user->info().id(), 
@@ -408,7 +408,7 @@ namespace fire
                 auto c = _user->contacts().by_id(r.from_id);
                 if(!c) return;
 
-                std::cerr << "got ping request from: " << c->address() << " updated: " << r.from_ip << ":" << r.from_port << std::endl;
+                LOG << "got ping request from: " << c->address() << " updated: " << r.from_ip << ":" << r.from_port << std::endl;
 
                 //update contact address to the one specified
                 //if it is different.
@@ -475,7 +475,7 @@ namespace fire
                 ms::greet_find_response rs{m};
                 if(!rs.found()) return;
 
-                std::cerr << "got greet response: " << rs.external().ip << ":" << rs.external().port << std::endl;
+                LOG << "got greet response: " << rs.external().ip << ":" << rs.external().port << std::endl;
 
                 //send ping request using new local and remote address
                 auto c = _user->contacts().by_id(rs.id());
@@ -511,7 +511,7 @@ namespace fire
 
             if(c->address() == a) return;
 
-            std::cerr << "updating address from: " << c->address() << " to: " << a << std::endl;
+            LOG << "updating address from: " << c->address() << " to: " << a << std::endl;
             c->address(a);
             save_user(_home, *_user);
         }
@@ -721,16 +721,16 @@ namespace fire
             }
             catch(std::exception& e)
             {
-                std::cerr << "Error in ping thread: " << e.what() << std::endl;
+                LOG << "Error in ping thread: " << e.what() << std::endl;
             }
             catch(...)
             {
-                std::cerr << "Unexpected error in ping thread." << std::endl;
+                LOG << "Unexpected error in ping thread." << std::endl;
             }
         }
         catch(...)
         {
-            std::cerr << "exit: user_service::ping_thread" << std::endl;
+            LOG << "exit: user_service::ping_thread" << std::endl;
         }
 
         std::string random_port(size_t seed)

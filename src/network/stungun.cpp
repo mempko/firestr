@@ -18,6 +18,7 @@
 #include "network/stungun.hpp"
 #include "util/bytes.hpp"
 #include "util/dbc.hpp"
+#include "util/log.hpp"
 
 #include <iostream>
 #include <random>
@@ -173,12 +174,12 @@ namespace fire
         }
         catch(std::exception& e)
         {
-            std::cerr << "stun error: " << e.what() << std::endl;
+            LOG << "stun error: " << e.what() << std::endl;
             _state = stun_failed;
         }
         catch(...)
         {
-            std::cerr << "stun error: stun failed for unknown reason" << std::endl;
+            LOG << "stun error: stun failed for unknown reason" << std::endl;
             _state = stun_failed;
         }
 
@@ -381,7 +382,7 @@ namespace fire
         { 
             INVARIANT(_socket);
 
-            std::cerr << "got stun response!" << std::endl;
+            LOG << "got stun response!" << std::endl;
             QByteArray datagram;
 
             do 
@@ -420,12 +421,12 @@ namespace fire
         }
         catch(std::exception& e)
         {
-            std::cerr << "stun error: " << e.what() << std::endl;
+            LOG << "stun error: " << e.what() << std::endl;
             _state = stun_failed;
         }
         catch(...)
         {
-            std::cerr << "stun error: stun failed for unknown reason" << std::endl;
+            LOG << "stun error: stun failed for unknown reason" << std::endl;
             _state = stun_failed;
         }
 
@@ -434,16 +435,16 @@ namespace fire
             switch (e) 
             {
                 case QAbstractSocket::RemoteHostClosedError:
-                    std::cerr << "error: host closed" << std::endl;
+                    LOG << "error: host closed" << std::endl;
                     break;
                 case QAbstractSocket::HostNotFoundError:
-                    std::cerr << "error: host not found" << std::endl;
+                    LOG << "error: host not found" << std::endl;
                     break;
                 case QAbstractSocket::ConnectionRefusedError:
-                    std::cerr << "error: connection refused" << std::endl;
+                    LOG << "error: connection refused" << std::endl;
                     break;
                 default:
-                    std::cerr << "error: " << _socket->errorString().toUtf8().constData() << std::endl;
+                    LOG << "error: " << _socket->errorString().toUtf8().constData() << std::endl;
             }
             _state = stun_failed;
         }

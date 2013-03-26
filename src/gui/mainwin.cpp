@@ -33,6 +33,7 @@
 #include "util/mencode.hpp"
 #include "util/bytes.hpp"
 #include "util/dbc.hpp"
+#include "util/log.hpp"
 
 #include <sstream>
 #include <stdexcept>
@@ -592,20 +593,20 @@ namespace fire
             }
             catch(std::exception& e)
             {
-                std::cerr << "Error recieving message in `" << _mail->address() << "'. " << e.what() << std::endl;
+                LOG << "Error recieving message in `" << _mail->address() << "'. " << e.what() << std::endl;
             }
             catch(...)
             {
-                std::cerr << "Unexpected error recieving message in `" << _mail->address() << "'" << std::endl;
+                LOG << "Unexpected error recieving message in `" << _mail->address() << "'" << std::endl;
             }
         }
         catch(std::exception& e)
         {
-            std::cerr << "main_window: error in check_mail. " << e.what() << std::endl;
+            LOG << "main_window: error in check_mail. " << e.what() << std::endl;
         }
         catch(...)
         {
-            std::cerr << "main_window: unexpected error in check_mail." << std::endl;
+            LOG << "main_window: unexpected error in check_mail." << std::endl;
         }
 
         void main_window::tab_changed(int i)

@@ -20,6 +20,8 @@
 #include "gui/mainwin.hpp"
 #include "network/util.hpp"
 
+#include "util/log.hpp"
+
 #include <string>
 #include <cstdlib>
 
@@ -59,7 +61,7 @@ po::options_description create_descriptions()
 po::variables_map parse_options(int argc, char* argv[], po::options_description& desc)
 {
     po::variables_map v;
-    po::store(po::parse_command_line(argc, argv, desc), v);
+    po::store(po::command_line_parser(argc, argv).options(desc).allow_unregistered().run(), v);
     po::notify(v);
 
     return v;
@@ -88,6 +90,8 @@ int main(int argc, char *argv[])
     c.home = vm["home"].as<std::string>();
     c.host = vm["host"].as<std::string>();
     c.port = vm["port"].as<std::string>();
+
+    CREATE_LOG(c.home);
 
     if(!user_setup(c.home)) return 0;
 
