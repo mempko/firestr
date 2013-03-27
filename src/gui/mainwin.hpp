@@ -37,6 +37,7 @@ namespace fire
             std::string home;
             std::string host;
             std::string port;
+            bool debug;
         };
 
         class main_window : public QMainWindow
@@ -59,6 +60,7 @@ namespace fire
                 void quit_session();
                 void tab_changed(int);
                 void load_app_into_session(QString id);
+                void show_debug_window();
 
             private:
                 void setup_post();
@@ -102,6 +104,8 @@ namespace fire
                 QMenu *_app_menu;
                 QAction *_chat_sample_action;
                 QAction *_app_editor_action;
+                QMenu *_debug_menu;
+                QAction *_debug_window_action;
 
                 QTabWidget* _sessions;
                 QWidget* _start_screen;

@@ -77,6 +77,11 @@ namespace fire
             return *_stream;
         }
 
+        const std::string& log::path()
+        {
+            return _log_file;
+        }
+
         void log::create_log(const std::string& home)
         {
             REQUIRE_FALSE(_log);

@@ -53,7 +53,8 @@ po::options_description create_descriptions()
         ("help", "prints help")
         ("home", po::value<std::string>()->default_value(home), "configuration directory")
         ("host", po::value<std::string>()->default_value(host), "host/ip of this machine") 
-        ("port", po::value<std::string>()->default_value(port), "port this machine will receive messages on");
+        ("port", po::value<std::string>()->default_value(port), "port this machine will receive messages on")
+        ("debug", "if set, turns on the debug menu");
 
     return d;
 }
@@ -90,6 +91,7 @@ int main(int argc, char *argv[])
     c.home = vm["home"].as<std::string>();
     c.host = vm["host"].as<std::string>();
     c.port = vm["port"].as<std::string>();
+    c.debug = vm.count("debug");
 
     CREATE_LOG(c.home);
 
