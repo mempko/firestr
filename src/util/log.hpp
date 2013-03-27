@@ -37,6 +37,7 @@ namespace fire
 
             public:
                 std::ostream& stream();
+                const std::string& path();
 
             private:
                 std::string _log_file;
@@ -55,5 +56,6 @@ namespace fire
 
 #define LOG if(fire::util::log::inst()) fire::util::log::inst()->stream() 
 #define CREATE_LOG(PATH) fire::util::log::create_log((PATH))
+#define LOG_PATH fire::util::log::inst()->path()
 
 #endif
