@@ -22,16 +22,16 @@
 #include "util/thread.hpp"
 
 #include <string>
-#include <map>
+#include <unordered_map>
 #include <vector>
 
 namespace fire 
 {
     namespace network 
     {
-        using assignment_map = std::map<std::string, int>; 
+        using assignment_map = std::unordered_map<std::string, int>; 
         using tcp_connection_pool = std::vector<tcp_queue_ptr>;
-        using connection_map = std::map<std::string, connection*>; 
+        using connection_map = std::unordered_map<std::string, connection*>; 
 
         class connection_manager
         {

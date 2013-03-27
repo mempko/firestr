@@ -18,7 +18,7 @@
 #define FIRESTR_MESSAGE_POSTOFFICE_H
 
 #include <string>
-#include <map>
+#include <unordered_map>
 #include <memory>
 #include <thread>
 
@@ -67,8 +67,8 @@ namespace fire
                 virtual bool send_outside(const message&);
 
             protected:
-                using mailboxes = std::map<std::string, mailbox_wptr>;
-                using post_offices = std::map<std::string, post_office_wptr>;
+                using mailboxes = std::unordered_map<std::string, mailbox_wptr>;
+                using post_offices = std::unordered_map<std::string, post_office_wptr>;
 
                 std::string _address;
                 mailboxes _boxes;
