@@ -21,6 +21,20 @@ namespace fire
 {
     namespace message
     {
+        mailbox_stats::mailbox_stats() :
+            in_count{0},
+            out_count{0},
+            on{false}
+        {
+        }
+
+
+        void mailbox_stats::reset()
+        {
+            in_count = 0;
+            out_count = 0;
+        }
+
         mailbox::mailbox() : 
             _address{}, _in{}, _out{}
         {
@@ -43,6 +57,7 @@ namespace fire
 
         void mailbox::push_inbox(const message& m)
         {
+            if(_stats.on) _stats.in_count++;
             _in.push(m);
         }
 
@@ -53,6 +68,7 @@ namespace fire
 
         void mailbox::push_outbox(const message& m)
         {
+            if(_stats.on) _stats.out_count++;
             _out.push(m);
         }
 
@@ -69,6 +85,21 @@ namespace fire
         size_t mailbox::out_size() const
         {
             return _out.size();
+        }
+
+        const mailbox_stats mailbox::stats() const
+        {
+            return _stats;
+        }
+
+        void mailbox::stats(bool on)
+        {
+            _stats.on = on;
+        }
+
+        void mailbox::reset_stats()
+        {
+            _stats.reset();
         }
     }
 }
