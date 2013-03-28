@@ -60,5 +60,15 @@ namespace fire
         {
             return _out.pop(m);
         }
+
+        size_t mailbox::in_size() const
+        {
+            return _in.size();
+        }
+
+        size_t mailbox::out_size() const
+        {
+            return _out.size();
+        }
     }
 }

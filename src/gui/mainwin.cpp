@@ -439,11 +439,14 @@ namespace fire
 
         void main_window::show_debug_window()
         {
-            ENSURE(_context.debug);
-            ENSURE(_debug_menu);
-            ENSURE(_debug_window_action);
+            REQUIRE(_context.debug);
+            REQUIRE(_debug_menu);
+            REQUIRE(_debug_window_action);
+            REQUIRE(_master);
+            REQUIRE(_user_service);
+            REQUIRE(_session_service);
 
-            auto db = new debug_win{_user_service, _session_service};
+            auto db = new debug_win{_master,_user_service, _session_service};
             db->setAttribute(Qt::WA_DeleteOnClose);
             db->show();
             db->raise();

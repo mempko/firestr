@@ -33,6 +33,8 @@ namespace fire
         using post_office_ptr = std::shared_ptr<post_office>;
         using post_office_wptr = std::weak_ptr<post_office>;
         using thread_uptr = std::unique_ptr<std::thread>;
+        using mailboxes = std::unordered_map<std::string, mailbox_wptr>;
+        using post_offices = std::unordered_map<std::string, post_office_wptr>;
 
         class post_office
         {
@@ -52,11 +54,14 @@ namespace fire
                 bool add(mailbox_wptr);
                 bool has(mailbox_wptr) const;
                 void remove_mailbox(const std::string&);
+                const mailboxes& boxes() const;
+
 
             public:
                 bool add(post_office_wptr);
                 bool has(post_office_wptr) const;
                 void remove_post_office(const std::string&);
+                const post_offices& offices() const;
 
             public:
                 post_office* parent() ;
@@ -67,8 +72,6 @@ namespace fire
                 virtual bool send_outside(const message&);
 
             protected:
-                using mailboxes = std::unordered_map<std::string, mailbox_wptr>;
-                using post_offices = std::unordered_map<std::string, post_office_wptr>;
 
                 std::string _address;
                 mailboxes _boxes;
