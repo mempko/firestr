@@ -44,6 +44,7 @@ namespace fire
             Q_OBJECT
             public:
                 mailbox_debug(fire::message::mailbox_wptr m);
+                ~mailbox_debug();
 
             public slots:
                 void update_graph();

@@ -29,6 +29,17 @@ namespace fire
     {
         using queue = util::queue<message>;
 
+        struct mailbox_stats
+        {
+            mailbox_stats();
+
+            size_t in_count;
+            size_t out_count;
+            bool on;
+
+            void reset();
+        };
+
         class mailbox
         {
             public:
@@ -48,6 +59,11 @@ namespace fire
                 bool pop_outbox(message&);
 
             public:
+                const mailbox_stats stats() const;
+                void stats(bool);
+                void reset_stats();
+
+            public:
                 size_t in_size() const;
                 size_t out_size() const;
 
@@ -56,6 +72,7 @@ namespace fire
                 std::string _address;
                 queue _in;
                 queue _out;
+                mailbox_stats _stats;
         };
 
         using mailbox_ptr = std::shared_ptr<mailbox>;

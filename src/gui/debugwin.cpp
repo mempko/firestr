@@ -42,6 +42,7 @@ namespace fire
             const std::size_t UPDATE_LOG = 1000;
             const std::size_t UPDATE_MAILBOXES = 1000;
             const std::size_t GRAPH_WIDTH = 500;
+            const std::size_t GRAPH_STEP = 2;
         }
 
         void init_scene(QGraphicsView& v)
@@ -66,6 +67,8 @@ namespace fire
             auto mb = m.lock();
             if(!mb) return;
 
+            mb->stats(true);
+
             auto label = new QLabel{mb->address().c_str()};
             layout->addWidget(label, 0,0,2,1);
 
@@ -83,6 +86,14 @@ namespace fire
             t->start(UPDATE_GRAPH);
         }
 
+        mailbox_debug::~mailbox_debug()
+        {
+            auto mb = _mailbox.lock();
+            if(!mb) return;
+
+            mb->stats(false);
+        }
+
         void draw_graph(QGraphicsView& v, int px, int py, int x, int y, size_t& max_y, const QPen& pen)
         {
             REQUIRE(v.scene());
@@ -91,7 +102,7 @@ namespace fire
             auto s = v.scene();
             s->addLine(px, -py, x, -y, pen);
 
-            v.fitInView(x-GRAPH_WIDTH,-int(max_y),GRAPH_WIDTH, max_y); 
+            v.fitInView(x-GRAPH_WIDTH,-int(max_y),GRAPH_WIDTH, max_y+2); 
         }
 
         void mailbox_debug::update_graph()
@@ -103,10 +114,12 @@ namespace fire
             if(!mb) return;
 
             auto px = _x;
-            _x++;
+            _x+=GRAPH_STEP;
 
-            auto in_y = mb->in_size();
-            auto out_y = mb->out_size();
+            const auto& stats = mb->stats();
+            auto in_y = stats.in_count;
+            auto out_y = stats.out_count;
+            mb->reset_stats();
 
             draw_graph(*_in_graph, px, _prev_in_y, _x, in_y, _in_max, QPen{QColor{"red"}});
             draw_graph(*_out_graph, px, _prev_out_y, _x, out_y, _out_max, QPen{QColor{"green"}});
