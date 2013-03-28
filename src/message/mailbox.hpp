@@ -47,6 +47,10 @@ namespace fire
                 void push_outbox(const message&);
                 bool pop_outbox(message&);
 
+            public:
+                size_t in_size() const;
+                size_t out_size() const;
+
             private:
 
                 std::string _address;
