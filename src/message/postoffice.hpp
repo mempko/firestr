@@ -18,7 +18,7 @@
 #define FIRESTR_MESSAGE_POSTOFFICE_H
 
 #include <string>
-#include <map>
+#include <unordered_map>
 #include <memory>
 #include <thread>
 
@@ -33,6 +33,8 @@ namespace fire
         using post_office_ptr = std::shared_ptr<post_office>;
         using post_office_wptr = std::weak_ptr<post_office>;
         using thread_uptr = std::unique_ptr<std::thread>;
+        using mailboxes = std::unordered_map<std::string, mailbox_wptr>;
+        using post_offices = std::unordered_map<std::string, post_office_wptr>;
 
         class post_office
         {
@@ -52,23 +54,29 @@ namespace fire
                 bool add(mailbox_wptr);
                 bool has(mailbox_wptr) const;
                 void remove_mailbox(const std::string&);
+                const mailboxes& boxes() const;
+
 
             public:
                 bool add(post_office_wptr);
                 bool has(post_office_wptr) const;
                 void remove_post_office(const std::string&);
+                const post_offices& offices() const;
 
             public:
                 post_office* parent() ;
                 const post_office* parent() const;
                 void parent(post_office*); 
 
+            public:
+                const mailbox_stats& outside_stats() const;
+                mailbox_stats& outside_stats();
+                void outside_stats(bool);
+
             protected:
                 virtual bool send_outside(const message&);
 
             protected:
-                using mailboxes = std::map<std::string, mailbox_wptr>;
-                using post_offices = std::map<std::string, post_office_wptr>;
 
                 std::string _address;
                 mailboxes _boxes;
@@ -78,6 +86,7 @@ namespace fire
                 bool _done;
                 mutable std::mutex _box_m;
                 mutable std::mutex _post_m;
+                mailbox_stats _outside_stats;
 
             protected:
                 friend void send_thread(post_office*);

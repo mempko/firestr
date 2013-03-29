@@ -206,6 +206,12 @@ namespace fire
             _boxes.erase(n);
         }
 
+        const mailboxes& post_office::boxes() const
+        {
+            std::lock_guard<std::mutex> lock(_box_m);
+            return _boxes;
+        }
+
         bool post_office::add(post_office_wptr p)
         {
             std::lock_guard<std::mutex> lock(_post_m);
@@ -239,6 +245,12 @@ namespace fire
             _offices.erase(n);
         }
 
+        const post_offices& post_office::offices() const
+        {
+            std::lock_guard<std::mutex> lock(_box_m);
+            return _offices;
+        }
+
         post_office* post_office::parent() 
         { 
             return _parent; 
@@ -260,6 +272,21 @@ namespace fire
         {
             //subclasses need to implement this
             return false;
+        }
+
+        const mailbox_stats& post_office::outside_stats() const
+        {
+            return _outside_stats;
+        }
+
+        mailbox_stats& post_office::outside_stats() 
+        {
+            return _outside_stats;
+        }
+
+        void post_office::outside_stats(bool on)
+        {
+            _outside_stats.on = on;
         }
     }
 }

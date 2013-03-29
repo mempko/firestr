@@ -49,6 +49,7 @@ namespace fire
         namespace
         {
             const size_t BLOCK_SLEEP = 10;
+            const size_t THREAD_SLEEP = 40;
             const int RETRIES = 3;
             const size_t MAX_UDP_BUFF_SIZE = 1024; //in bytes
             const size_t UDP_CHuNK_SIZE = 508; //in bytes
@@ -653,8 +654,8 @@ namespace fire
             while(!q->_done) 
             try
             {
-                q->_io->run_one();
-                u::sleep_thread(BLOCK_SLEEP);
+                q->_io->poll();
+                u::sleep_thread(THREAD_SLEEP);
             }
             catch(std::exception& e)
             {
@@ -1160,8 +1161,8 @@ namespace fire
             while(!q->_done) 
             try
             {
-                q->_io->run_one();
-                u::sleep_thread(BLOCK_SLEEP);
+                q->_io->poll();
+                u::sleep_thread(THREAD_SLEEP);
             }
             catch(std::exception& e)
             {

@@ -21,6 +21,24 @@ namespace fire
 {
     namespace message
     {
+        mailbox_stats::mailbox_stats() :
+            in_push_count{0},
+            out_push_count{0},
+            in_pop_count{0},
+            out_pop_count{0},
+            on{false}
+        {
+        }
+
+
+        void mailbox_stats::reset()
+        {
+            in_push_count = 0;
+            out_push_count = 0;
+            in_pop_count = 0;
+            out_pop_count = 0;
+        }
+
         mailbox::mailbox() : 
             _address{}, _in{}, _out{}
         {
@@ -43,22 +61,53 @@ namespace fire
 
         void mailbox::push_inbox(const message& m)
         {
+            if(_stats.on) _stats.in_push_count++;
             _in.push(m);
         }
 
         bool mailbox::pop_inbox(message& m)
         {
-            return _in.pop(m);
+            const bool p = _in.pop(m);
+            if(_stats.on && p) _stats.in_pop_count++;
+            return p;
         }
 
         void mailbox::push_outbox(const message& m)
         {
+            if(_stats.on) _stats.out_push_count++;
             _out.push(m);
         }
 
         bool mailbox::pop_outbox(message& m)
         {
-            return _out.pop(m);
+            bool p = _out.pop(m);
+            if(_stats.on && p) _stats.out_pop_count++;
+            return p;
+        }
+
+        size_t mailbox::in_size() const
+        {
+            return _in.size();
+        }
+
+        size_t mailbox::out_size() const
+        {
+            return _out.size();
+        }
+
+        const mailbox_stats& mailbox::stats() const
+        {
+            return _stats;
+        }
+
+        mailbox_stats& mailbox::stats() 
+        {
+            return _stats;
+        }
+
+        void mailbox::stats(bool on)
+        {
+            _stats.on = on;
         }
     }
 }

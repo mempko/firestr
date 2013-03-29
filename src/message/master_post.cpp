@@ -51,6 +51,8 @@ namespace fire
                     u::sleep_thread(THREAD_SLEEP);
                     continue;
                 }
+                if(o->_outside_stats.on) o->_outside_stats.in_push_count++;
+
 
                 //parse message
                 std::stringstream s(u::to_str(data));
@@ -67,6 +69,7 @@ namespace fire
 
                 //send message to interal component
                 o->send(m);
+                if(o->_outside_stats.on) o->_outside_stats.in_pop_count++;
             }
             catch(std::exception& e)
             {
@@ -101,6 +104,7 @@ namespace fire
                     u::sleep_thread(THREAD_SLEEP);
                     continue;
                 }
+
                 sent = true;
 
                 REQUIRE_GREATER_EQUAL(m.meta.from.size(), 1);
@@ -114,6 +118,8 @@ namespace fire
                 u::bytes data = u::to_bytes(s.str());
 
                 o->_connections.send(outside_queue_address, data);
+
+                if(o->_outside_stats.on) o->_outside_stats.out_pop_count++;
             }
             catch(std::exception& e)
             {
@@ -158,6 +164,7 @@ namespace fire
 
         bool master_post_office::send_outside(const message& m)
         {
+            if(_outside_stats.on) _outside_stats.out_push_count++;
             _out.push(m);
             return true;
         }

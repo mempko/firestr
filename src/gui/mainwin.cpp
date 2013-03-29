@@ -21,6 +21,7 @@
 #include "gui/app/script_app.hpp"
 
 #include "gui/contactlist.hpp"
+#include "gui/debugwin.hpp"
 #include "gui/message.hpp"
 #include "gui/session.hpp"
 #include "gui/util.hpp"
@@ -74,8 +75,11 @@ namespace fire
             _create_session_action{0},
             _rename_session_action{0},
             _quit_session_action{0},
+            _debug_window_action{0},
             _main_menu{0},
+            _contact_menu{0},
             _app_menu{0},
+            _debug_menu{0},
             _root{0},
             _layout{0},
             _sessions{0},
@@ -253,6 +257,9 @@ namespace fire
         void main_window::create_menus()
         {
             REQUIRE_FALSE(_main_menu);
+            REQUIRE_FALSE(_app_menu);
+            REQUIRE_FALSE(_contact_menu);
+            REQUIRE_FALSE(_debug_menu);
             REQUIRE(_about_action);
             REQUIRE(_close_action);
             REQUIRE(_contact_list_action);
@@ -275,10 +282,18 @@ namespace fire
 
             create_app_menu();
 
+            if(_context.debug)
+            {
+                CHECK(_debug_window_action);
+                _debug_menu = new QMenu{tr("&Debug"), this};
+                _debug_menu->addAction(_debug_window_action);
+            }
+
             menuBar()->addMenu(_main_menu);
             menuBar()->addMenu(_contact_menu);
             menuBar()->addMenu(_session_menu);
             menuBar()->addMenu(_app_menu);
+            if(_debug_menu) menuBar()->addMenu(_debug_menu);
 
             ENSURE(_main_menu);
             ENSURE(_contact_menu);
@@ -336,6 +351,7 @@ namespace fire
             REQUIRE_FALSE(_create_session_action);
             REQUIRE_FALSE(_rename_session_action);
             REQUIRE_FALSE(_quit_session_action);
+            REQUIRE_FALSE(_debug_window_action);
 
             _about_action = new QAction{tr("&About"), this};
             connect(_about_action, SIGNAL(triggered()), this, SLOT(about()));
@@ -361,12 +377,19 @@ namespace fire
             _quit_session_action = new QAction{tr("&Quit"), this};
             connect(_quit_session_action, SIGNAL(triggered()), this, SLOT(quit_session()));
 
+            if(_context.debug)
+            {
+                _debug_window_action = new QAction{tr("&Debug Window"), this};
+                connect(_debug_window_action, SIGNAL(triggered()), this, SLOT(show_debug_window()));
+            }
+
             ENSURE(_about_action);
             ENSURE(_close_action);
             ENSURE(_contact_list_action);
             ENSURE(_create_session_action);
             ENSURE(_rename_session_action);
             ENSURE(_quit_session_action);
+            ENSURE(!_context.debug || _debug_window_action);
         }
 
         void main_window::setup_services()
@@ -412,6 +435,22 @@ namespace fire
 
             contact_list_dialog cl{"contacts", _user_service, true, this};
             cl.exec();
+        }
+
+        void main_window::show_debug_window()
+        {
+            REQUIRE(_context.debug);
+            REQUIRE(_debug_menu);
+            REQUIRE(_debug_window_action);
+            REQUIRE(_master);
+            REQUIRE(_user_service);
+            REQUIRE(_session_service);
+
+            auto db = new debug_win{_master,_user_service, _session_service};
+            db->setAttribute(Qt::WA_DeleteOnClose);
+            db->show();
+            db->raise();
+            db->activateWindow();
         }
 
         void main_window::make_chat_sample()
