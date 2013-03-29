@@ -39,15 +39,19 @@ namespace fire
 {
     namespace gui
     {
-        class mailbox_debug : public QWidget
+        class queue_debug : public QWidget
         {
             Q_OBJECT
             public:
-                mailbox_debug(fire::message::mailbox_wptr m);
-                ~mailbox_debug();
+                queue_debug(fire::message::mailbox_wptr m);
+                queue_debug(const std::string& name, fire::message::mailbox_stats&);
+                ~queue_debug();
 
             public slots:
                 void update_graph();
+
+            private:
+                void init_gui();
 
             private:
                 QGraphicsView* _in_graph;
@@ -55,10 +59,14 @@ namespace fire
                 size_t _in_max;
                 size_t _out_max;
                 size_t _x;
-                size_t _prev_in_y;
-                size_t _prev_out_y;
+                size_t _prev_in_push;
+                size_t _prev_out_push;
+                size_t _prev_in_pop;
+                size_t _prev_out_pop;
                 QLabel* _name;
+                std::string _name_s;
                 fire::message::mailbox_wptr _mailbox;
+                fire::message::mailbox_stats* _mailbox_stats;
         };
 
         using added_mailboxes = std::set<std::string>;
@@ -76,6 +84,13 @@ namespace fire
             public slots:
                 void update_log();
                 void update_mailboxes();
+
+            private slots:
+                void closeEvent(QCloseEvent*);
+
+            private:
+                void save_state();
+                void restore_state();
 
             private:
                 QTextEdit* _log;

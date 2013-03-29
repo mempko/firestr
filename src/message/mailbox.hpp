@@ -33,8 +33,10 @@ namespace fire
         {
             mailbox_stats();
 
-            size_t in_count;
-            size_t out_count;
+            size_t in_push_count;
+            size_t in_pop_count;
+            size_t out_push_count;
+            size_t out_pop_count;
             bool on;
 
             void reset();
@@ -59,9 +61,9 @@ namespace fire
                 bool pop_outbox(message&);
 
             public:
-                const mailbox_stats stats() const;
+                const mailbox_stats& stats() const;
+                mailbox_stats& stats();
                 void stats(bool);
-                void reset_stats();
 
             public:
                 size_t in_size() const;

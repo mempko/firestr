@@ -27,6 +27,7 @@
 #include <QGridLayout>
 #include <QFileInfo>
 #include <QTimer>
+#include <QSettings>
 
 namespace us = fire::user;
 namespace s = fire::session;
@@ -53,24 +54,50 @@ namespace fire
             ENSURE(v.scene());
         }
 
-        mailbox_debug::mailbox_debug(m::mailbox_wptr m) :
-            _mailbox{m},
+        queue_debug::queue_debug(const std::string& name, m::mailbox_stats& stats) :
+            _mailbox{},
+            _mailbox_stats{&stats},
+            _name_s{name},
             _in_max{0},
             _out_max{0},
             _x{0},
-            _prev_in_y{0},
-            _prev_out_y{0}
+            _prev_in_push{0},
+            _prev_out_push{0},
+            _prev_in_pop{0},
+            _prev_out_pop{0}
         {
-            auto* layout = new QGridLayout{this};
-            setLayout(layout);
+            REQUIRE(_mailbox_stats);
+            _mailbox_stats->on = true;
+            init_gui();
+        }
 
+        queue_debug::queue_debug(m::mailbox_wptr m) :
+            _mailbox{m},
+            _mailbox_stats{nullptr},
+            _in_max{0},
+            _out_max{0},
+            _x{0},
+            _prev_in_push{0},
+            _prev_out_push{0},
+            _prev_in_pop{0},
+            _prev_out_pop{0}
+        {
             auto mb = m.lock();
             if(!mb) return;
 
             mb->stats(true);
+            _name_s = mb->address();
 
-            auto label = new QLabel{mb->address().c_str()};
-            layout->addWidget(label, 0,0,2,1);
+            init_gui();
+        }
+
+        void queue_debug::init_gui()
+        {
+            auto* layout = new QGridLayout{this};
+            setLayout(layout);
+
+            _name = new QLabel{_name_s.c_str()};
+            layout->addWidget(_name, 0,0,2,1);
 
             _in_graph = new QGraphicsView;
             _out_graph = new QGraphicsView;
@@ -86,12 +113,11 @@ namespace fire
             t->start(UPDATE_GRAPH);
         }
 
-        mailbox_debug::~mailbox_debug()
+        queue_debug::~queue_debug()
         {
             auto mb = _mailbox.lock();
-            if(!mb) return;
-
-            mb->stats(false);
+            if(mb) mb->stats(false);
+            if(_mailbox_stats) _mailbox_stats->on = false;
         }
 
         void draw_graph(QGraphicsView& v, int px, int py, int x, int y, size_t& max_y, const QPen& pen)
@@ -105,27 +131,40 @@ namespace fire
             v.fitInView(x-GRAPH_WIDTH,-int(max_y),GRAPH_WIDTH, max_y+2); 
         }
 
-        void mailbox_debug::update_graph()
+        void queue_debug::update_graph()
         {
             INVARIANT(_in_graph);
             INVARIANT(_out_graph);
 
-            auto mb = _mailbox.lock();
-            if(!mb) return;
-
             auto px = _x;
             _x+=GRAPH_STEP;
 
-            const auto& stats = mb->stats();
-            auto in_y = stats.in_count;
-            auto out_y = stats.out_count;
-            mb->reset_stats();
+            m::mailbox_stats* stats = nullptr; 
+            
+            if(_mailbox_stats) stats = _mailbox_stats;
+            else
+            {
+                auto mb = _mailbox.lock();
+                if(!mb) return;
+                stats = &(mb->stats());
+            }
 
-            draw_graph(*_in_graph, px, _prev_in_y, _x, in_y, _in_max, QPen{QColor{"red"}});
-            draw_graph(*_out_graph, px, _prev_out_y, _x, out_y, _out_max, QPen{QColor{"green"}});
+            CHECK(stats);
+            auto in_push = stats->in_push_count;
+            auto in_pop = stats->in_pop_count;
+            auto out_push = stats->out_push_count;
+            auto out_pop = stats->out_pop_count;
+            stats->reset();
+
+            draw_graph(*_in_graph, px, _prev_in_push, _x, in_push, _in_max, QPen{QColor{"red"}});
+            draw_graph(*_in_graph, px, _prev_in_pop, _x, in_pop, _in_max, QPen{QColor{"orange"}});
+            draw_graph(*_out_graph, px, _prev_out_push, _x, out_push, _out_max, QPen{QColor{"green"}});
+            draw_graph(*_out_graph, px, _prev_out_pop, _x, out_pop, _out_max, QPen{QColor{"blue"}});
                     
-            _prev_in_y = in_y;
-            _prev_out_y = out_y;
+            _prev_in_push = in_push;
+            _prev_in_pop = in_pop;
+            _prev_out_push = out_push;
+            _prev_out_pop = out_pop;
         }
 
         debug_win::debug_win(
@@ -144,28 +183,38 @@ namespace fire
             REQUIRE(us);
             REQUIRE(ss);
 
+            //main layout
             auto* layout = new QVBoxLayout{this};
             setLayout(layout);
             auto* tabs = new QTabWidget{this};
             layout->addWidget(tabs);
 
+            //create log tab
             auto* log_tab = new QWidget;
             auto* log_layout = new QGridLayout{log_tab};
 
             _log = new QTextEdit;
             log_layout->addWidget(_log, 0,0);
 
+            //create mailbox tab
             auto* mailbox_tab = new QWidget;
             auto* mailbox_layout = new QGridLayout{mailbox_tab};
             _mailboxes = new list;
             mailbox_layout->addWidget(_mailboxes, 0,0);
 
+            //add tabs
             tabs->addTab(log_tab, "log");
             tabs->addTab(mailbox_tab, "mailboxes");
 
+            //add outside message queue to mailboxes tab
+            auto outside = new queue_debug{"outside", _post->outside_stats()};
+            _mailboxes->add(outside);
+
+            //fill tabs with data 
             update_mailboxes();
             update_log();
 
+            //setup timers
             auto *t = new QTimer(this);
             connect(t, SIGNAL(timeout()), this, SLOT(update_log()));
             t->start(UPDATE_LOG);
@@ -173,6 +222,8 @@ namespace fire
             auto *t2 = new QTimer(this);
             connect(t2, SIGNAL(timeout()), this, SLOT(update_mailboxes()));
             t2->start(UPDATE_MAILBOXES);
+
+            restore_state();
 
             ENSURE(_log);
             ENSURE(_post);
@@ -186,7 +237,7 @@ namespace fire
             {
                 if(added.count(m.first)) continue;
 
-                auto mb = new mailbox_debug{m.second};
+                auto mb = new queue_debug{m.second};
                 l.add(mb);
                 added.insert(m.first);
             }
@@ -234,6 +285,23 @@ namespace fire
             }
 
             _log_last_modified = modified;
+        }
+
+        void debug_win::closeEvent(QCloseEvent *event)
+        {
+            save_state();
+        }
+
+        void debug_win::save_state()
+        {
+            QSettings settings("mempko", "firestr");
+            settings.setValue("debug_win/geometry", saveGeometry());
+        }
+
+        void debug_win::restore_state()
+        {
+            QSettings settings("mempko", "firestr");
+            restoreGeometry(settings.value("debug_win/geometry").toByteArray());
         }
     }
 }

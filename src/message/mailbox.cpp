@@ -22,8 +22,10 @@ namespace fire
     namespace message
     {
         mailbox_stats::mailbox_stats() :
-            in_count{0},
-            out_count{0},
+            in_push_count{0},
+            out_push_count{0},
+            in_pop_count{0},
+            out_pop_count{0},
             on{false}
         {
         }
@@ -31,8 +33,10 @@ namespace fire
 
         void mailbox_stats::reset()
         {
-            in_count = 0;
-            out_count = 0;
+            in_push_count = 0;
+            out_push_count = 0;
+            in_pop_count = 0;
+            out_pop_count = 0;
         }
 
         mailbox::mailbox() : 
@@ -57,24 +61,28 @@ namespace fire
 
         void mailbox::push_inbox(const message& m)
         {
-            if(_stats.on) _stats.in_count++;
+            if(_stats.on) _stats.in_push_count++;
             _in.push(m);
         }
 
         bool mailbox::pop_inbox(message& m)
         {
-            return _in.pop(m);
+            const bool p = _in.pop(m);
+            if(_stats.on && p) _stats.in_pop_count++;
+            return p;
         }
 
         void mailbox::push_outbox(const message& m)
         {
-            if(_stats.on) _stats.out_count++;
+            if(_stats.on) _stats.out_push_count++;
             _out.push(m);
         }
 
         bool mailbox::pop_outbox(message& m)
         {
-            return _out.pop(m);
+            bool p = _out.pop(m);
+            if(_stats.on && p) _stats.out_pop_count++;
+            return p;
         }
 
         size_t mailbox::in_size() const
@@ -87,7 +95,12 @@ namespace fire
             return _out.size();
         }
 
-        const mailbox_stats mailbox::stats() const
+        const mailbox_stats& mailbox::stats() const
+        {
+            return _stats;
+        }
+
+        mailbox_stats& mailbox::stats() 
         {
             return _stats;
         }
@@ -95,11 +108,6 @@ namespace fire
         void mailbox::stats(bool on)
         {
             _stats.on = on;
-        }
-
-        void mailbox::reset_stats()
-        {
-            _stats.reset();
         }
     }
 }

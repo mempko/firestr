@@ -68,6 +68,11 @@ namespace fire
                 const post_office* parent() const;
                 void parent(post_office*); 
 
+            public:
+                const mailbox_stats& outside_stats() const;
+                mailbox_stats& outside_stats();
+                void outside_stats(bool);
+
             protected:
                 virtual bool send_outside(const message&);
 
@@ -81,6 +86,7 @@ namespace fire
                 bool _done;
                 mutable std::mutex _box_m;
                 mutable std::mutex _post_m;
+                mailbox_stats _outside_stats;
 
             protected:
                 friend void send_thread(post_office*);

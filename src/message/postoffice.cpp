@@ -273,5 +273,20 @@ namespace fire
             //subclasses need to implement this
             return false;
         }
+
+        const mailbox_stats& post_office::outside_stats() const
+        {
+            return _outside_stats;
+        }
+
+        mailbox_stats& post_office::outside_stats() 
+        {
+            return _outside_stats;
+        }
+
+        void post_office::outside_stats(bool on)
+        {
+            _outside_stats.on = on;
+        }
     }
 }
