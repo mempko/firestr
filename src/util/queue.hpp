@@ -20,6 +20,7 @@
 #include <deque>
 #include <thread>
 #include <mutex>
+#include <condition_variable>
 
 #include "util/dbc.hpp"
 
@@ -36,8 +37,8 @@ namespace fire
         template<class t>
         struct in_queue 
         {
-            virtual bool pop(t& v) = 0;
-            virtual t pop() = 0;
+            virtual bool pop(t& v, bool block = false) = 0;
+            virtual t pop(bool block = false) = 0;
         };
 
         template<class t>
@@ -61,8 +62,18 @@ namespace fire
                     ENSURE_GREATER(_q.size(), 0);
                 }
 
-                virtual bool pop(t& v)
+                virtual bool pop(t& v, bool block = false)
                 {
+                    if(block)
+                    {
+                        std::unique_lock<std::mutex> lock(_m);
+                        while(_q.empty()) _c.wait(lock);
+                        v = std::move(_q.front());
+                        _q.pop_front();
+
+                        return true;
+                    }
+
                     std::lock_guard<std::mutex> lock(_m);
                     if(_q.empty()) return false;
 
@@ -70,10 +81,20 @@ namespace fire
                     _q.pop_front();
 
                     return true;
+
                 }
 
-                virtual t pop()
+                virtual t pop(bool block = false)
                 {
+                    if(block)
+                    {
+                        std::unique_lock<std::mutex> lock(_m);
+                        while(_q.empty()) _c.wait(lock);
+                        t v = std::move(_q.front());
+                        _q.pop_front();
+                        return v;
+                    }
+
                     std::lock_guard<std::mutex> lock(_m);
                     REQUIRE_FALSE(_q.empty());
 
@@ -83,8 +104,18 @@ namespace fire
                     return v;
                 }
 
-                virtual void pop_front()
+                virtual void pop_front(bool block = false)
                 {
+                    if(block)
+                    {
+                        std::unique_lock<std::mutex> lock(_m);
+                        while(_q.empty()) _c.wait(lock);
+
+                        REQUIRE_FALSE(_q.empty());
+                        _q.pop_front();
+                        return;
+                    }
+
                     std::lock_guard<std::mutex> lock(_m);
                     REQUIRE_FALSE(_q.empty());
                     _q.pop_front();
@@ -112,6 +143,7 @@ namespace fire
             private:
                 std::deque<t> _q;
                 mutable std::mutex _m;
+                mutable std::condition_variable _c;
         };
     }
 }
