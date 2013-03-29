@@ -18,9 +18,11 @@
 #ifndef FIRESTR_DEBUGWIN_H
 #define FIRESTR_DEBUGWIN_H
 
+#ifndef Q_MOC_RUN
 #include "user/userservice.hpp"
 #include "session/session_service.hpp"
 #include "message/postoffice.hpp"
+#endif
 
 #include "gui/list.hpp"
 
