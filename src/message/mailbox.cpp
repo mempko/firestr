@@ -65,9 +65,9 @@ namespace fire
             _in.push(m);
         }
 
-        bool mailbox::pop_inbox(message& m)
+        bool mailbox::pop_inbox(message& m, bool block)
         {
-            const bool p = _in.pop(m);
+            const bool p = _in.pop(m, block);
             if(_stats.on && p) _stats.in_pop_count++;
             return p;
         }
@@ -78,9 +78,9 @@ namespace fire
             _out.push(m);
         }
 
-        bool mailbox::pop_outbox(message& m)
+        bool mailbox::pop_outbox(message& m, bool block)
         {
-            bool p = _out.pop(m);
+            bool p = _out.pop(m, block);
             if(_stats.on && p) _stats.out_pop_count++;
             return p;
         }
