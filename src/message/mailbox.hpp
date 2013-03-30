@@ -55,11 +55,11 @@ namespace fire
 
             public:
                 void push_inbox(const message&);
-                bool pop_inbox(message&);
+                bool pop_inbox(message&, bool wait = false);
 
             public:
                 void push_outbox(const message&);
-                bool pop_outbox(message&);
+                bool pop_outbox(message&, bool wait = false);
 
             public:
                 const mailbox_stats& stats() const;
