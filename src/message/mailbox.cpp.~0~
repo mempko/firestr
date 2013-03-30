@@ -49,17 +49,6 @@ namespace fire
         {
         }
 
-        mailbox::~mailbox()
-        {
-            done();
-        }
-
-        void mailbox::done()
-        {
-            _in.done();
-            _out.done();
-        }
-
         const std::string& mailbox::address() const
         {
             return _address;

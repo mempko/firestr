@@ -99,11 +99,8 @@ namespace fire
                 sent = false;
 
                 message m;
-                if(!o->_out.pop(m))
-                {
-                    u::sleep_thread(THREAD_SLEEP);
+                if(!o->_out.pop(m, true))
                     continue;
-                }
 
                 sent = true;
 
@@ -158,6 +155,7 @@ namespace fire
             INVARIANT(_out_thread);
 
             _done = true;
+            _out.done();
             _in_thread->join();
             _out_thread->join();
         }

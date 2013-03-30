@@ -484,6 +484,7 @@ namespace fire
             INVARIANT(_io);
             _io->stop();
             _done = true;
+            if(_p.block) _in_queue.done();
             if(_p.wait > 0) u::sleep_thread(_p.wait);
             if(_out) _out->close();
             if(_run_thread) _run_thread->join();
@@ -503,11 +504,8 @@ namespace fire
 
         bool tcp_queue::receive(u::bytes& b)
         {
-            //if we are blocking, block until we get message
-            while(_p.block && !_in_queue.empty()) u::sleep_thread(BLOCK_SLEEP);
-
             //return true if we got message
-            return _in_queue.pop(b);
+            return _in_queue.pop(b, _p.block);
         }
 
         void tcp_queue::connect(const std::string& host, const std::string& port)
@@ -1132,6 +1130,7 @@ namespace fire
             INVARIANT(_io);
             _io->stop();
             _done = true;
+            if(_p.block) _in_queue.done();
             if(_p.wait > 0) u::sleep_thread(_p.wait);
             if(_con) _con->close();
             if(_run_thread) _run_thread->join();
@@ -1147,11 +1146,8 @@ namespace fire
 
         bool udp_queue::receive(endpoint_message& m)
         {
-            //if we are blocking, block until we get message
-            while(_p.block && !_in_queue.empty()) u::sleep_thread(BLOCK_SLEEP);
-
             //return true if we got message
-            return _in_queue.pop(m);
+            return _in_queue.pop(m, _p.block);
         }
 
         void udp_run_thread(udp_queue* q)

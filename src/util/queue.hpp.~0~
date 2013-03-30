@@ -57,7 +57,6 @@ namespace fire
                 {
                     std::lock_guard<std::mutex> lock(_m);
                     _q.push_back(v);
-                    _c.notify_one();
 
                     ENSURE_GREATER(_q.size(), 0);
                 }
@@ -81,6 +80,7 @@ namespace fire
                     t v = std::move(_q.front());
                     _q.pop_front();
 
+                    return v;
                 }
 
                 virtual void pop_front()
@@ -107,13 +107,6 @@ namespace fire
                 { 
                     std::lock_guard<std::mutex> lock(_m);
                     return _q.empty();
-                }
-
-                virtual void done()
-                {
-                    std::lock_guard<std::mutex> lock(_m);
-                    _done = true;
-                    _c.notify_all();
                 }
 
             private:
