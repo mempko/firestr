@@ -279,7 +279,6 @@ namespace fire
             std::string l;
             while(std::getline(i, l))
             {
-                std::cerr << l << std::endl;
                 _log->append(l.c_str());
                 _log_last_file_pos = i.tellg();
             }
