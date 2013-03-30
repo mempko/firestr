@@ -43,11 +43,9 @@ namespace fire
             try
             {
                 m::message m;
-                if(!s->_mail->pop_inbox(m))
-                {
-                    u::sleep_thread(THREAD_SLEEP);
+                if(!s->_mail->pop_inbox(m, true))
                     continue;
-                }
+
                 s->message_recieved(m);
             }
             catch(std::exception& e)
@@ -86,8 +84,10 @@ namespace fire
         service::~service()
         {
             INVARIANT(_thread);
+            INVARIANT(_mail);
 
             _done = true;
+            _mail->done();
             _thread->join();
         }
 
