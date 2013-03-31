@@ -295,6 +295,8 @@ namespace fire
             menuBar()->addMenu(_app_menu);
             if(_debug_menu) menuBar()->addMenu(_debug_menu);
 
+            tab_changed(-1);
+
             ENSURE(_main_menu);
             ENSURE(_contact_menu);
             ENSURE(_app_menu);
