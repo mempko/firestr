@@ -124,6 +124,7 @@ namespace fire
             public slots:
                 void new_contact();
                 void update();
+                void create_contact_file();
 
             protected:
                 void init_contacts_tab(QWidget* tab, QGridLayout* layout, bool add_on_start);
@@ -148,7 +149,6 @@ namespace fire
             public slots:
                 void new_local_contact();
                 void new_remote_contact();
-                void create_contact_file();
 
             private:
                 user::user_service_ptr _service;
