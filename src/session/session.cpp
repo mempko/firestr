@@ -34,7 +34,8 @@ namespace fire
                 m::post_office_wptr pp) :
             _id{u::uuid()},
             _user_service{s},
-            _parent_post{pp}
+            _parent_post{pp},
+            _initiated_by_user{true}
         {
             init();
         }
@@ -45,7 +46,8 @@ namespace fire
                 m::post_office_wptr pp) :
             _id{id},
             _user_service{s},
-            _parent_post{pp}
+            _parent_post{pp},
+            _initiated_by_user{false}
         {
             init();
         }
@@ -76,6 +78,16 @@ namespace fire
         {
             ENSURE_FALSE(_id.empty());
             return _id;
+        }
+
+        bool session::initiated_by_user() const
+        {
+            return _initiated_by_user;
+        }
+
+        void session::initiated_by_user(bool v)
+        {
+            _initiated_by_user = v;
         }
 
         m::post_office_wptr session::parent_post()
