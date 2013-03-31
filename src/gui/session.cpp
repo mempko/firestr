@@ -226,6 +226,8 @@ namespace fire
                     s::event::contact_removed r;
                     s::event::convert(m, r);
 
+                    if(r.session_id != _session->id()) continue;
+
                     auto c = _session_service->user_service()->by_id(r.contact_id);
                     if(!c) continue;
 
