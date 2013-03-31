@@ -237,13 +237,22 @@ namespace fire
         session_ptr session_service::create_session(const std::string& id)
         {
             us::users nobody;
-            return sync_session(id, nobody);
+            auto sp = sync_session(id, nobody);
+            CHECK(sp);
+
+            sp->initiated_by_user(true);
+
+            ENSURE(sp);
+            return sp;
         }
 
         session_ptr session_service::create_session(user::contact_list& contacts)
         {
             std::string id = u::uuid();
             auto sp = sync_session(id, contacts);
+            CHECK(sp);
+
+            sp->initiated_by_user(true);
 
             ENSURE(sp);
             return sp;

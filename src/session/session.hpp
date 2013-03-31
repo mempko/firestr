@@ -48,6 +48,8 @@ namespace fire
 
             public:
                 const std::string& id() const;
+                bool initiated_by_user() const;
+                void initiated_by_user(bool);
 
             public:
                 message::post_office_wptr parent_post();
@@ -65,6 +67,7 @@ namespace fire
                 user::user_service_ptr _user_service;
                 messages::sender_ptr _sender;
                 user::contact_list _contacts;
+                bool _initiated_by_user;
         };
 
         using session_ptr = std::shared_ptr<session>;

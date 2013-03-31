@@ -787,6 +787,10 @@ namespace fire
             sw->name(name.c_str());
             _sessions->addTab(sw, name.c_str());
 
+            //switch to new tab if initiated by user
+            if(s->initiated_by_user()) 
+                _sessions->setCurrentIndex(_sessions->count()-1);
+
             ENSURE(_sessions->isVisible());
         }
 
