@@ -215,6 +215,11 @@ namespace fire
             layout->addWidget(add_new, 2,0); 
             connect(add_new, SIGNAL(clicked()), this, SLOT(new_contact()));
 
+            //create create invite button
+            auto* invite = new QPushButton("create invite");
+            layout->addWidget(invite, 2,1); 
+            connect(invite, SIGNAL(clicked()), this, SLOT(create_contact_file()));
+
             //create id label
             std::string id = _service->user().info().id(); 
             auto* id_label = new QLabel("your id");
@@ -253,6 +258,7 @@ namespace fire
             auto* add_new = new QPushButton("add");
             layout->addWidget(add_new, 1,0); 
             connect(add_new, SIGNAL(clicked()), gl, SLOT(add_greeter()));
+
         }
 
         void contact_list_dialog::update_contacts()
@@ -435,18 +441,13 @@ namespace fire
             setLayout(layout);
 
             //create remote add button
-            auto* add_remote = new QPushButton("add using invite file");
+            auto* add_remote = new QPushButton("add using invite");
             layout->addWidget(add_remote, 0,0); 
             connect(add_remote, SIGNAL(clicked()), this, SLOT(new_remote_contact()));
 
-            //create create request button
-            auto* create_request = new QPushButton("create invite file");
-            layout->addWidget(create_request, 1,0); 
-            connect(create_request, SIGNAL(clicked()), this, SLOT(create_contact_file()));
-
             //create local add button
             auto* add_local = new QPushButton("add using local ip");
-            layout->addWidget(add_local, 2,0); 
+            layout->addWidget(add_local, 1,0); 
             connect(add_local, SIGNAL(clicked()), this, SLOT(new_local_contact()));
         }
 
@@ -519,7 +520,7 @@ namespace fire
             accept();
         }
 
-        void add_contact_dialog::create_contact_file()
+        void contact_list_dialog::create_contact_file()
         {
             //have user select contact file 
             std::string home = std::getenv("HOME");
@@ -529,10 +530,7 @@ namespace fire
                     tr("Invite File (*.finvite)"));
 
             if(file.isEmpty())
-            {
-                reject();
                 return;
-            }
 
             //user chooses greeter
             auto total_greeters = _service->user().greeters().size();
@@ -553,13 +551,7 @@ namespace fire
 
             //save contact file
             usr::contact_file cf{ _service->user().info(), greeter};
-            if(!usr::save_contact_file(convert(file), cf))
-            {
-                reject();
-                return;
-            }
-
-            accept();
+            usr::save_contact_file(convert(file), cf);
         }
     }
 }
