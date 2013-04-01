@@ -150,7 +150,7 @@ namespace fire
         void encode_b(std::ostream& o, const b& v)
         {
             o << lexical_cast<std::string>(v.size()) << ':';
-            for(auto c : v) o << c;
+            o.write(&v[0], v.size()); 
         }
 
         void encode(std::ostream& o, const bytes& v) { encode_b(o, v); }

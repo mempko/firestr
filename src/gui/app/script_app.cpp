@@ -169,8 +169,10 @@ namespace fire
                 {
                     if(m.meta.type == SCRIPT_MESSAGE)
                     {
+                        bool local = m.meta.extra.has("local_app_id");
                         auto id = m.meta.extra["from_id"].as_string();
-                        if(!_session->user_service()->by_id(id)) 
+
+                        if(!local && !_session->user_service()->by_id(id)) 
                             continue;
 
                         script_message sm{m, _api.get()};

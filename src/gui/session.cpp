@@ -213,7 +213,8 @@ namespace fire
                 //TODO: use factory class to create gui from messages
                 if(m.meta.type == ms::NEW_APP)
                 {
-                    _messages->add_new_app(m);
+                    auto id = _messages->add_new_app(m);
+                    _session->add_app_id(id);
                 }
                 else if(m.meta.type == s::event::SESSION_SYNCED)
                 {
@@ -225,6 +226,8 @@ namespace fire
 
                     s::event::contact_removed r;
                     s::event::convert(m, r);
+
+                    if(r.session_id != _session->id()) continue;
 
                     auto c = _session_service->user_service()->by_id(r.contact_id);
                     if(!c) continue;

@@ -20,6 +20,7 @@
 #include "gui/app/lua_script_api.hpp"
 #include "gui/util.hpp"
 #include "util/dbc.hpp"
+#include "util/log.hpp"
 
 #include <QTimer>
 
@@ -52,6 +53,9 @@ namespace fire
                 REQUIRE_EQUAL(m.meta.type, SCRIPT_MESSAGE);
 
                 _from_id = m.meta.extra["from_id"].as_string();
+                if(m.meta.extra.has("local_app_id")) 
+                    _local_app_id = m.meta.extra["local_app_id"].as_string();
+
                 u::decode(m.data, _v);
 
                 INVARIANT(_api);
@@ -67,6 +71,7 @@ namespace fire
 
             std::string script_message::get(const std::string& k) const
             {
+                if(!_v.has(k)) return "";
                 return _v[k].as_string();
             }
 
@@ -89,7 +94,7 @@ namespace fire
                 INVARIANT(_api);
 
                 auto c = _api->contacts.by_id(_from_id);
-                if(!c) return empty_contact_ref(*_api);
+                if(!c || is_local()) return empty_contact_ref(*_api);
 
                 contact_ref r;
                 r.id = 0;
@@ -98,6 +103,36 @@ namespace fire
 
                 ENSURE_EQUAL(r.api, _api);
                 ENSURE_FALSE(r.user_id.empty());
+                return r;
+            }
+
+            bool script_message::is_local() const
+            {
+                return !_local_app_id.empty();
+            }
+
+            app_ref empty_app_ref(lua_script_api& api)
+            {
+                app_ref e;
+                e.api = &api;
+                e.id = 0;
+                e.app_id = "0";
+                return e;
+            }
+
+            app_ref script_message::app() const
+            {
+                INVARIANT(_api);
+
+                if(!is_local()) return empty_app_ref(*_api);
+
+                app_ref r;
+                r.id = 0;
+                r.app_id = _local_app_id;
+                r.api = _api;
+
+                ENSURE_EQUAL(r.api, _api);
+                ENSURE_FALSE(r.app_id.empty());
                 return r;
             }
 
@@ -173,10 +208,14 @@ namespace fire
                     .set("total_contacts", &lua_script_api::total_contacts)
                     .set("last_contact", &lua_script_api::last_contact)
                     .set("contact", &lua_script_api::get_contact)
+                    .set("total_apps", &lua_script_api::total_apps)
+                    .set("app", &lua_script_api::get_app)
                     .set("message", &lua_script_api::make_message)
                     .set("when_message_received", &lua_script_api::set_message_callback)
+                    .set("when_local_message_received", &lua_script_api::set_local_message_callback)
                     .set("send", &lua_script_api::send_all)
-                    .set("send_to", &lua_script_api::send_to);
+                    .set("send_to", &lua_script_api::send_to)
+                    .set("send_local", &lua_script_api::send_local);
 
                 SLB::Class<QPen>{"pen", &manager}
                     .set("set_width", &QPen::setWidth);
@@ -185,10 +224,16 @@ namespace fire
                     .set("name", &contact_ref::get_name)
                     .set("online", &contact_ref::is_online);
 
+                SLB::Class<app_ref>{"app", &manager}
+                    .set("id", &app_ref::get_id)
+                    .set("send", &app_ref::send);
+
                 SLB::Class<script_message>{"script_message", &manager}
                     .set("from", &script_message::from)
                     .set("get", &script_message::get)
-                    .set("set", &script_message::set);
+                    .set("set", &script_message::set)
+                    .set("is_local", &script_message::is_local)
+                    .set("app", &script_message::app);
 
                 SLB::Class<canvas_ref>{"canvas", &manager}
                     .set("place", &canvas_ref::place)
@@ -329,7 +374,11 @@ namespace fire
                 INVARIANT(session);
                 INVARIANT(session->user_service());
 
-                if(!output) return;
+                if(!output) 
+                {
+                    LOG << "script: " << a << std::endl;
+                    return;
+                }
 
                 auto self = session->user_service()->user().info().name();
                 output->add(make_output_widget(self, a));
@@ -339,9 +388,17 @@ namespace fire
             try
             {
                 INVARIANT(state);
-                if(message_callback.empty()) return;
 
-                state->call(message_callback, m);
+                if(m.is_local())
+                {
+                    if(local_message_callback.empty()) return;
+                    state->call(local_message_callback, m);
+                }
+                else
+                {
+                    if(message_callback.empty()) return;
+                    state->call(message_callback, m);
+                }
             }
             catch(std::exception& e)
             {
@@ -357,6 +414,11 @@ namespace fire
             void lua_script_api::set_message_callback(const std::string& a)
             {
                 message_callback = a;
+            }
+
+            void lua_script_api::set_local_message_callback(const std::string& a)
+            {
+                local_message_callback = a;
             }
 
             script_message lua_script_api::make_message()
@@ -425,6 +487,50 @@ namespace fire
                 INVARIANT(api->session);
 
                 return api->session->user_service()->contact_available(user_id);
+            }
+
+            size_t lua_script_api::total_apps() const
+            {
+                INVARIANT(session);
+
+                return session->app_ids().size();
+            }
+
+            app_ref lua_script_api::get_app(size_t i)
+            {
+                INVARIANT(session);
+                const auto& ids = session->app_ids();
+                if(i >= ids.size()) return empty_app_ref(*this);
+
+                auto id = ids[i];
+
+                app_ref r;
+                r.id = 0;
+                r.app_id = id;
+                r.api = this;
+
+                ENSURE_EQUAL(r.api, this);
+                ENSURE_FALSE(r.app_id.empty());
+                return r;
+            }
+
+            std::string app_ref::get_id() const
+            {
+                return app_id;
+            }
+
+            void app_ref::send(const script_message& m)
+            {
+                INVARIANT(api);
+                INVARIANT(api->sender);
+                api->sender->send_to_local_app(app_id, m); 
+            }
+
+            void lua_script_api::send_local(const script_message& m)
+            {
+                INVARIANT(session);
+                for(const auto& id : session->app_ids())
+                    sender->send_to_local_app(id, m);
             }
 
             canvas_ref lua_script_api::make_canvas(int r, int c)

@@ -295,6 +295,8 @@ namespace fire
             menuBar()->addMenu(_app_menu);
             if(_debug_menu) menuBar()->addMenu(_debug_menu);
 
+            tab_changed(-1);
+
             ENSURE(_main_menu);
             ENSURE(_contact_menu);
             ENSURE(_app_menu);
@@ -463,6 +465,7 @@ namespace fire
             //create chat sample
             auto t = new a::chat_sample{s->session()};
             s->add(t);
+            s->session()->add_app_id(t->mail()->address());
 
             //add to master post so it can receive messages
             //from outside world
@@ -516,6 +519,7 @@ namespace fire
             auto t = new a::app_editor{_app_service, s->session(), app};
 
             s->add(t);
+            s->session()->add_app_id(t->mail()->address());
 
             //add to master post so it can receive messages
             //from outside world
@@ -546,6 +550,7 @@ namespace fire
 
             //add to session
             s->add(t);
+            s->session()->add_app_id(t->mail()->address());
 
             //add widget mailbox to master
             _master->add(t->mail());
@@ -561,11 +566,11 @@ namespace fire
         {
             QMessageBox::about(this, tr("About Firestr"),
                     tr("<p><b>Firestr</b> allows you to communicate with people via multimedia "
-                        "applications. Write, close, modify, and send people programs which "
+                        "applications. Write, clone, modify, and send people programs which "
                         "communicate with each other automatically, in a distributed way.</p>"
                         "<p>This is not the web, but it is on the internet.<br> "
                         "This is not a chat program, but a way for programs to chat.<br> "
-                        "This is not a way to share code, but a way to share running software.</p> "
+                        "This is not just a way to share code, but a way to share running software.</p> "
                         "<p>This program is created by <b>Maxim Noah Khailo</b> and is liscensed as GPLv3</p>"));
         }
 
@@ -784,6 +789,10 @@ namespace fire
             //create the sessions widget
             sw->name(name.c_str());
             _sessions->addTab(sw, name.c_str());
+
+            //switch to new tab if initiated by user
+            if(s->initiated_by_user()) 
+                _sessions->setCurrentIndex(_sessions->count()-1);
 
             ENSURE(_sessions->isVisible());
         }

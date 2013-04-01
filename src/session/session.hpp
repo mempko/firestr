@@ -27,11 +27,13 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace fire
 {
     namespace session
     {
+        using app_mailbox_ids = std::vector<std::string>;
         class session 
         {
             public:
@@ -48,12 +50,18 @@ namespace fire
 
             public:
                 const std::string& id() const;
+                bool initiated_by_user() const;
+                void initiated_by_user(bool);
 
             public:
                 message::post_office_wptr parent_post();
                 message::mailbox_ptr mail();
                 messages::sender_ptr sender();
                 user::user_service_ptr user_service();
+
+            public:
+                const app_mailbox_ids& app_ids() const;
+                void add_app_id(const std::string& id);
 
             private:
                 void init();
@@ -65,6 +73,8 @@ namespace fire
                 user::user_service_ptr _user_service;
                 messages::sender_ptr _sender;
                 user::contact_list _contacts;
+                app_mailbox_ids _app_mailbox_ids;
+                bool _initiated_by_user;
         };
 
         using session_ptr = std::shared_ptr<session>;

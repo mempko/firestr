@@ -47,6 +47,7 @@ namespace fire
             public:
                 mailbox();
                 mailbox(const std::string&);
+                ~mailbox();
 
             public:
                 const std::string& address() const;
@@ -54,11 +55,11 @@ namespace fire
 
             public:
                 void push_inbox(const message&);
-                bool pop_inbox(message&);
+                bool pop_inbox(message&, bool wait = false);
 
             public:
                 void push_outbox(const message&);
-                bool pop_outbox(message&);
+                bool pop_outbox(message&, bool wait = false);
 
             public:
                 const mailbox_stats& stats() const;
@@ -68,6 +69,9 @@ namespace fire
             public:
                 size_t in_size() const;
                 size_t out_size() const;
+
+            public:
+                void done();
 
             private:
 

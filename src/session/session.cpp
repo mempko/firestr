@@ -34,7 +34,8 @@ namespace fire
                 m::post_office_wptr pp) :
             _id{u::uuid()},
             _user_service{s},
-            _parent_post{pp}
+            _parent_post{pp},
+            _initiated_by_user{true}
         {
             init();
         }
@@ -45,7 +46,8 @@ namespace fire
                 m::post_office_wptr pp) :
             _id{id},
             _user_service{s},
-            _parent_post{pp}
+            _parent_post{pp},
+            _initiated_by_user{false}
         {
             init();
         }
@@ -78,6 +80,16 @@ namespace fire
             return _id;
         }
 
+        bool session::initiated_by_user() const
+        {
+            return _initiated_by_user;
+        }
+
+        void session::initiated_by_user(bool v)
+        {
+            _initiated_by_user = v;
+        }
+
         m::post_office_wptr session::parent_post()
         {
             return _parent_post;
@@ -99,6 +111,17 @@ namespace fire
         {
             ENSURE(_user_service);
             return _user_service;
+        }
+
+        const app_mailbox_ids& session::app_ids() const
+        {
+            return _app_mailbox_ids;
+        }
+
+        void session::add_app_id(const std::string& id)
+        {
+            REQUIRE_FALSE(id.empty());
+            _app_mailbox_ids.push_back(id);
         }
 
         bool session::send(const std::string& to, const message::message& m)
