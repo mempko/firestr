@@ -176,6 +176,13 @@ namespace fire
                     int _button;
             };
 
+            class script_message;
+            struct app_ref : public basic_ref
+            {
+                std::string app_id;
+                std::string get_id() const;
+                void send(const script_message&); 
+            };
 
             extern const std::string SCRIPT_MESSAGE;
             class script_message
@@ -189,9 +196,12 @@ namespace fire
                     std::string get(const std::string&) const;
                     void set(const std::string&, const std::string&);
                     contact_ref from() const;
+                    bool is_local() const;
+                    app_ref app() const;
 
                 private:
                     std::string _from_id;
+                    std::string _local_app_id;
                     util::dict _v;
                     lua_script_api* _api;
             };
@@ -224,6 +234,7 @@ namespace fire
                     session::session_ptr session;
                     messages::sender_ptr sender;
                     std::string message_callback;
+                    std::string local_message_callback;
 
                     //util
                     void bind();
@@ -268,14 +279,19 @@ namespace fire
                     void place_across(const widget_ref& w, int r, int c, int row_span, int col_span);
 
                     void set_message_callback(const std::string& a);
+                    void set_local_message_callback(const std::string& a);
 
                     script_message make_message();
                     void send_all(const script_message&);
                     void send_to(const contact_ref&, const script_message&); 
+                    void send_local(const script_message& m);
 
                     size_t total_contacts() const;
                     int last_contact() const;
                     contact_ref get_contact(size_t);
+
+                    size_t total_apps() const;
+                    app_ref get_app(size_t);
 
                     public slots:
                         void button_clicked(int id);

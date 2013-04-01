@@ -43,7 +43,7 @@ namespace fire
                 app::app_service_ptr app_service();
 
             public slots:
-                void add_new_app(const messages::new_app&); 
+                std::string add_new_app(const messages::new_app&); 
                 void add(message*);
                 void add(QWidget*);
 

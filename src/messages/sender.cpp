@@ -41,11 +41,27 @@ namespace fire
             auto contact = _service->user().contacts().by_id(to);
             if(!contact) return false;
 
-            auto my_id = _service->user().info().id();
+            const auto& my_id = _service->user().info().id();
             m.meta.to = {contact->address(), _mail->address()};
             m.meta.extra["from_id"] = my_id;
 
             _mail->push_outbox(m);
+            return true;
+        }
+
+        bool sender::send_to_local_app(const std::string& id, message::message m)
+        {
+            INVARIANT(_service);
+            INVARIANT(_mail);
+
+            const auto& my_id = _service->user().info().id();
+
+            m.meta.to = {id};
+            m.meta.extra["from_id"] = my_id;
+            m.meta.extra["local_app_id"] = _mail->address();
+
+            _mail->push_outbox(m);
+
             return true;
         }
 
