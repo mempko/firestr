@@ -113,6 +113,17 @@ namespace fire
             return _user_service;
         }
 
+        const app_mailbox_ids& session::app_ids() const
+        {
+            return _app_mailbox_ids;
+        }
+
+        void session::add_app_id(const std::string& id)
+        {
+            REQUIRE_FALSE(id.empty());
+            _app_mailbox_ids.push_back(id);
+        }
+
         bool session::send(const std::string& to, const message::message& m)
         {
             INVARIANT(_sender);

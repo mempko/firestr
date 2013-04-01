@@ -73,7 +73,7 @@ namespace fire
             return _app_service;
         }
 
-        void message_list::add_new_app(const ms::new_app& n) 
+        std::string message_list::add_new_app(const ms::new_app& n) 
         {
             INVARIANT(_session);
             INVARIANT(_app_service);
@@ -111,6 +111,8 @@ namespace fire
             {
                 add(new unknown_message{"unknown app type `" + n.type() + "'"});
             }
+
+            return n.id();
         }
     }
 }
