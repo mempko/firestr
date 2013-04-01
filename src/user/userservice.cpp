@@ -408,22 +408,23 @@ namespace fire
                 auto c = _user->contacts().by_id(r.from_id);
                 if(!c) return;
 
-                LOG << "got ping request from: " << c->address() << " updated: " << r.from_ip << ":" << r.from_port << std::endl;
+                //we are already connected to this contact
+                //send ping and return
+                if(contact_available(c->id())) 
+                {
+                    LOG << "got connection request from: " << c->name() << " (" << c->address() << "), already connected. " << std::endl;
+                    if(r.send_back) send_ping_request(c, false);
+                    return;
+                }
+
+                LOG << "got connection request from: " << c->name() << " (" << c->address() << "), sending ping back " << std::endl;
 
                 //update contact address to the one specified
                 //if it is different.
                 update_contact_address(c->id(), r.from_ip, r.from_port);
 
-                //we are already connected to this contact
-                //send ping and return
-                if(contact_available(c->id())) 
-                {
-                    if(r.send_back) send_ping_request(c, false);
-                    return;
-                }
-
                 fire_contact_connected_event(c->id());
-                send_ping_request(c);
+                if(r.send_back) send_ping_request(c, false);
             }
             else if(m.meta.type == ADD_REQUEST)
             {
@@ -482,6 +483,9 @@ namespace fire
                 if(c) 
                 {
                     CHECK(_contacts.count(c->id()));
+
+                    if(_contacts[c->id()].state == contact_data::CONNECTED) return;
+
                     _contacts[c->id()].state = contact_data::ONLINE;
 
                     auto local = n::make_udp_address(rs.local().ip, rs.local().port);
