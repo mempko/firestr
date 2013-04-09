@@ -172,7 +172,7 @@ namespace fire
             _layout = new QVBoxLayout{_root};
 
             //create the sessions widget
-            _sessions = new QTabWidget;
+            _sessions = new MainTabs;
             _layout->addWidget(_sessions);
             _sessions->hide();
             connect(_sessions, SIGNAL(currentChanged(int)), this, SLOT(tab_changed(int)));
@@ -660,6 +660,7 @@ namespace fire
             INVARIANT(_quit_session_action);
             INVARIANT(_sessions);
             INVARIANT(_app_menu);
+            INVARIANT(_sessions);
 
             session_widget* s = nullptr;
 
@@ -670,6 +671,9 @@ namespace fire
             _rename_session_action->setEnabled(enabled);
             _quit_session_action->setEnabled(enabled);
             _app_menu->setEnabled(enabled);
+
+            if(i == _alert_tab_index && i != -1)
+                _sessions->setTabTextColor(_alert_tab_index, QColor{"black"});
         }
         
         void main_window::create_session()
@@ -759,10 +763,13 @@ namespace fire
                 CHECK(_sessions->isVisible());
 
                 _alert_screen->show();
-                _sessions->addTab(_alert_screen, "alert");
+                _alert_tab_index = _sessions->addTab(_alert_screen, "alert");
             }
 
+            CHECK_RANGE(_alert_tab_index, 0, _sessions->count());
+
             _alerts->add(a);
+            _sessions->setTabTextColor(_alert_tab_index, QColor{"red"});
 
             ENSURE(_sessions->isVisible());
         }

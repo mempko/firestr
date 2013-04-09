@@ -25,12 +25,24 @@
 #include "user/userservice.hpp"
 #include "session/session.hpp"
 #include "session/session_service.hpp"
+#include "util/dbc.hpp"
 
 namespace fire
 {
     namespace gui
     {
         user::local_user_ptr setup_user(const std::string& home);
+
+        class MainTabs : public QTabWidget
+        {
+            Q_OBJECT
+            public:
+                void setTabTextColor(int i, const QColor& c) 
+                { 
+                    INVARIANT(tabBar());
+                    tabBar()->setTabTextColor(i, c);
+                }
+        };
 
         struct main_window_context
         {
@@ -107,12 +119,13 @@ namespace fire
                 QMenu *_debug_menu;
                 QAction *_debug_window_action;
 
-                QTabWidget* _sessions;
+                MainTabs* _sessions;
                 QWidget* _start_screen;
                 bool _start_screen_attached;
 
                 QWidget* _alert_screen;
                 list* _alerts;
+                int _alert_tab_index;
 
                 QWidget* _root;
                 QVBoxLayout* _layout;
