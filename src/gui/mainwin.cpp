@@ -35,6 +35,7 @@
 #include "util/bytes.hpp"
 #include "util/dbc.hpp"
 #include "util/log.hpp"
+#include "util/time.hpp"
 
 #include <sstream>
 #include <stdexcept>
@@ -752,6 +753,13 @@ namespace fire
             ENSURE(_sessions->isVisible());
         }
 
+        std::string formatted_timestamp()
+        {
+            std::stringstream s;
+            s << "<font color='green'>" << u::timestamp() << "</font>";
+            return s.str();
+        }
+
         void main_window::show_alert(QWidget* a)
         {
             REQUIRE(a);
@@ -768,7 +776,17 @@ namespace fire
 
             CHECK_RANGE(_alert_tab_index, 0, _sessions->count());
 
-            _alerts->add(a);
+            //create timestamp and put it to left of widget 
+            auto w = new QWidget;
+            auto l = new QHBoxLayout;
+            w->setLayout(l);
+
+            auto t = new QLabel{formatted_timestamp().c_str()};
+            l->addWidget(t);
+            l->addWidget(a);
+
+            //add alert to list
+            _alerts->add(w);
             _sessions->setTabTextColor(_alert_tab_index, QColor{"red"});
 
             ENSURE(_sessions->isVisible());
