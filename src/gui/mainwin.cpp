@@ -672,8 +672,8 @@ namespace fire
             _quit_session_action->setEnabled(enabled);
             _app_menu->setEnabled(enabled);
 
-            if(i == _alert_tab_index && i != -1)
-                _sessions->setTabTextColor(_alert_tab_index, QColor{"black"});
+            if(i != -1 && (i == _alert_tab_index || enabled))
+                _sessions->setTabTextColor(i, QColor{"black"});
         }
         
         void main_window::create_session()
@@ -795,11 +795,14 @@ namespace fire
 
             //create the sessions widget
             sw->name(name.c_str());
-            _sessions->addTab(sw, name.c_str());
+            auto tab_index = _sessions->addTab(sw, name.c_str());
+
 
             //switch to new tab if initiated by user
             if(s->initiated_by_user()) 
                 _sessions->setCurrentIndex(_sessions->count()-1);
+            else
+                _sessions->setTabTextColor(tab_index, QColor{"red"});
 
             ENSURE(_sessions->isVisible());
         }
