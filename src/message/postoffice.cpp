@@ -124,21 +124,20 @@ namespace fire
             if(meta.to.size() > 1)
             {
                 {std::lock_guard<std::mutex> lock(_post_m);
+                    const auto& to = meta.to.front();
+                    auto p = _offices.find(to);
 
-                    for(auto p : _offices)
+                    if(p != _offices.end())
                     {
-                        auto wp = p.second;
-                        auto sp = wp.lock();
-                        if(!sp) continue;
+                        auto wp = p->second;
+                        if(auto sp = wp.lock())
+                        {
+                            message cp = m;
+                            cp.meta.to.pop_front();
+                            cp.meta.from.push_front(_address);
 
-                        auto to = meta.to.front();
-                        if(to != p.first) continue;
-
-                        message cp = m;
-                        cp.meta.to.pop_front();
-                        cp.meta.from.push_front(_address);
-
-                        if(sp->send(cp)) return true;
+                            if(sp->send(cp)) return true;
+                        }
                     }
                 }
 
@@ -156,18 +155,17 @@ namespace fire
             CHECK_EQUAL(meta.to.size(), 1);
 
             {std::lock_guard<std::mutex> lock(_box_m);
+                const auto& to = meta.to.front();
+                auto p = _boxes.find(to);
 
-                for(auto p : _boxes)
+                if(p != _boxes.end())
                 {
-                    auto wb = p.second;
-                    auto sb = wb.lock();
-                    if(!sb) continue;
-
-                    auto to = meta.to.front();
-                    if(to != p.first) continue;
-
-                    sb->push_inbox(m);
-                    return true;
+                    auto wb = p->second;
+                    if(auto sb = wb.lock())
+                    {
+                        sb->push_inbox(m);
+                        return true;
+                    }
                 }
             }
 
