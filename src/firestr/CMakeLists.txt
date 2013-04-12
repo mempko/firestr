@@ -35,7 +35,6 @@ if(APPLE)
     set(MACOSX_BUNDLE_VERSION 0.1)
     set(MACOSX_BUNDLE_LONG_VERSION Version 0.1)
     set(MAXOSX_BUNDLE_NAME firestr)
-    set(MAXOSX_BUNDLE_GUI_IDENTIFIER firestr)
     set(MAXOSX_BUNDLE_INFO_STRING firestr)
     set(MAXOSX_BUNDLE_COPYRIGHT "(C) 2013 Maxim Noah Khailo")
 
