@@ -56,7 +56,7 @@ namespace fire
                 QPushButton* _accept;
                 QPushButton* _reject;
                 QPushButton* _rm;
-                QLabel* _online;
+                QLabel* _user_text;
         };
         using user_info_ptrs = std::vector<user_info*>;
 
