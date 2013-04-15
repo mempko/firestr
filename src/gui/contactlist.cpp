@@ -25,6 +25,7 @@
 #include <QLabel>
 
 #include <cstdlib>
+#include <sstream>
 
 namespace u = fire::util;
 namespace usr = fire::user;
@@ -38,13 +39,18 @@ namespace fire
             const size_t TIMER_SLEEP = 200;//in milliseconds
         }
 
-        std::string online_text(
+        std::string user_text(
                 user::user_info_ptr c, 
                 user::user_service_ptr s)
         {
             REQUIRE(c);
             REQUIRE(s);
-            return s->contact_available(c->id()) ? "online" : "offline";
+
+            bool online = s->contact_available(c->id());
+
+            std::stringstream ss;
+            ss << "<font color='" << (online ? "green" : "red") << "'>" << c->name() << "</font>";
+            return ss.str();
         }
 
         user_info::user_info(
@@ -62,22 +68,18 @@ namespace fire
             auto* layout = new QGridLayout{this};
             setLayout(layout);
 
+            _user_text = new QLabel{user_text(p, _service).c_str()};
+            _user_text->setToolTip(p->address().c_str());
+
             if(compact)
             {
-                layout->addWidget( new QLabel{p->name().c_str()}, 0,0);
-                if(!accept_reject)
+                layout->addWidget(_user_text, 0,0);
+                if(!accept_reject && remove)
                 {
-                    _online = new QLabel{online_text(p, _service).c_str()};
-                    _online->setToolTip(p->address().c_str());
-                    layout->addWidget(_online, 0,1);
-
-                    if(remove)
-                    {
-                        _rm = new QPushButton("x");
-                        _rm->setMaximumSize(20,20);
-                        layout->addWidget(_rm, 0,2);
-                        connect(_rm, SIGNAL(clicked()), this, SLOT(remove()));
-                    }
+                    _rm = new QPushButton("x");
+                    _rm->setMaximumSize(20,20);
+                    layout->addWidget(_rm, 0,1);
+                    connect(_rm, SIGNAL(clicked()), this, SLOT(remove()));
                 }
             }
             else
@@ -86,11 +88,6 @@ namespace fire
                 layout->addWidget( new QLabel{p->name().c_str()}, 0,1);
                 layout->addWidget( new QLabel{"Address:"}, 1,0);
                 layout->addWidget( new QLabel{p->address().c_str()}, 1,1);
-                if(!accept_reject)
-                {
-                    _online = new QLabel{online_text(p, _service).c_str()};
-                    layout->addWidget(_online, 2,0);
-                }
             }
 
             if(accept_reject)
@@ -107,15 +104,16 @@ namespace fire
 
             layout->setContentsMargins(2,2,2,2);
             ENSURE(_contact);
+            ENSURE(_user_text);
         }
 
         void user_info::update()
         {
             INVARIANT(_service);
             INVARIANT(_contact);
-            INVARIANT(_online);
+            INVARIANT(_user_text);
 
-            _online->setText(online_text(_contact, _service).c_str());
+            _user_text->setText(user_text(_contact, _service).c_str());
         }
 
         void user_info::accept()
@@ -153,7 +151,7 @@ namespace fire
             INVARIANT(_service);
             INVARIANT(_contact);
             INVARIANT(_rm);
-            INVARIANT(_online);
+            INVARIANT(_user_text);
 
             std::stringstream msg;
             msg << "Are you sure you want to remove `" << _contact->name() << "'?";
@@ -163,7 +161,7 @@ namespace fire
             _service->remove_contact(_contact->id());
 
             _rm->setEnabled(false);
-            _online->setEnabled(false);
+            _user_text->setEnabled(false);
         }
 
         contact_list_dialog::contact_list_dialog(
