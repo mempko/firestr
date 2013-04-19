@@ -37,10 +37,13 @@ first have to add a public firegreet instance to your greeter list
 under the contact menu.
 
 Then you can create an invite file which you can send to the person
-you want to connect with. They can then add you as a contact via the
-invite file. They will then also create an invite file to send to 
-you. After you add them, firestr should automatically connect you
-and your contact via the firegreet service. 
+you want to connect with. (translate to security geek speak:  offer
+your public key) They can then add you as a contact via the
+invite file (add to 'known_hosts' equivalent if you're familiar 
+with SSH). They will then also create an invite file to send to 
+you. (they must give you their public key). After you add them, 
+firestr should automatically connect you and your contact via the
+firegreet service.  (this is to be done best with some sort of SSL)
 
 The firegreet service is simply responsible for providing information
 to the parties on their public ip/port after which firestr will 
@@ -48,6 +51,8 @@ initiate a p2p connection.
 
 Once a contact is added, they are saved as your contact and you will
 connect to them the next time you start the application automatically.
+(you also want to check a key/cert revokation list in case it's gone
+funky)
 
 You can have multiple contacts and multiple greeters. Once you have
 a contact to communicate with, you can initiate a session and start
