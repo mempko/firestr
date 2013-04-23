@@ -789,6 +789,8 @@ namespace fire
             _alerts->add(w);
             _sessions->setTabTextColor(_alert_tab_index, QColor{"red"});
 
+            QApplication::alert(this);
+
             ENSURE(_sessions->isVisible());
         }
 
@@ -820,7 +822,10 @@ namespace fire
             if(s->initiated_by_user()) 
                 _sessions->setCurrentIndex(_sessions->count()-1);
             else
+            {
                 _sessions->setTabTextColor(tab_index, QColor{"red"});
+                QApplication::alert(this);
+            }
 
             ENSURE(_sessions->isVisible());
         }
