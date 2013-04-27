@@ -50,7 +50,7 @@ namespace fire
         {
             const size_t BLOCK_SLEEP = 10;
             const size_t THREAD_SLEEP = 40;
-            const int RETRIES = 3;
+            const int RETRIES = 0;
             const size_t MAX_UDP_BUFF_SIZE = 1024; //in bytes
             const size_t UDP_CHuNK_SIZE = 508; //in bytes
             const size_t SEQUENCE_BASE = 1;
