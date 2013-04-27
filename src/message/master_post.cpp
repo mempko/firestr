@@ -32,6 +32,7 @@ namespace fire
         namespace
         {
             const double THREAD_SLEEP = 10; //in milliseconds 
+            const double QUIT_SLEEP = 50; //in milliseconds 
             const size_t POOL_SIZE = 20; //small pool size for now
         }
 
@@ -117,6 +118,7 @@ namespace fire
                 o->_connections.send(outside_queue_address, data);
 
                 if(o->_outside_stats.on) o->_outside_stats.out_pop_count++;
+                if(o->_done) u::sleep_thread(QUIT_SLEEP);
             }
             catch(std::exception& e)
             {

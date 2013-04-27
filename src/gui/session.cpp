@@ -222,8 +222,6 @@ namespace fire
                 }
                 else if(m.meta.type == s::event::CONTACT_REMOVED)
                 {
-                    update_contacts();
-
                     s::event::contact_removed r;
                     s::event::convert(m, r);
 
@@ -233,6 +231,7 @@ namespace fire
                     if(!c) continue;
 
                     add(contact_alert(c, "quit session"));
+                    update_contacts();
                 }
                 else if(m.meta.type == us::event::CONTACT_CONNECTED)
                 {
@@ -240,6 +239,13 @@ namespace fire
                 }
                 else if(m.meta.type == us::event::CONTACT_DISCONNECTED)
                 {
+                    us::event::contact_disconnected r;
+                    us::event::convert(m, r);
+
+                    auto c = _session->contacts().by_id(r.id);
+                    if(!c) continue;
+
+                    add(contact_alert(c, "disconnected"));
                     update_contacts();
                 }
                 else

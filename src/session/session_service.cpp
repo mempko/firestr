@@ -125,7 +125,7 @@ namespace fire
             INVARIANT(_post);
             INVARIANT(_user_service);
             INVARIANT(_sender);
-        }
+        }        
 
         void session_service::message_recieved(const message::message& m)
         {
