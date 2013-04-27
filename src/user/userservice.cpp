@@ -50,16 +50,11 @@ namespace fire
             const std::string PING_REQUEST = "ping_request";
             const std::string REGISTER_WITH_GREETER = "reg_with_greeter";
             const std::string PING = "!";
-            const size_t QUIT_SLEEP = 1000; //in milliseconds
             const size_t PING_THREAD_SLEEP = 500; //half a second
             const size_t PING_TICKS = 6; //3 seconds
-            const size_t PING_THRESH = 3*PING_TICKS; 
+            const size_t PING_THRESH = 10*PING_TICKS; 
             const char CONNECTED = 'c';
             const char DISCONNECTED = 'd';
-            const size_t GREET_THREAD_SLEEP = 200; 
-            const size_t STUN_WAIT_THRESH = 25;
-            const size_t MIN_PORT = 55000;
-            const size_t MAX_PORT = 65535;
         }
 
         struct ping 
@@ -248,8 +243,8 @@ namespace fire
             for(auto c : _user->contacts().list())
                 add_contact_data(c);
 
-            init_greet();
             init_ping();
+            init_greet();
 
             INVARIANT(_user);
             INVARIANT(mail());
@@ -296,14 +291,14 @@ namespace fire
         {
             INVARIANT(_user);
 
-            //register with greeter
-            for(const auto& g : _user->greeters())
-                request_register(g);
-
             //send ping requests for all contacts
             //to handle local contacts on a network using 
             //last known ip/port
             send_ping_requests();
+
+            //register with greeter
+            for(const auto& g : _user->greeters())
+                request_register(g);
         }
 
         void user_service::request_register(const greet_server& g)
@@ -417,7 +412,7 @@ namespace fire
                     return;
                 }
 
-                LOG << "got connection request from: " << c->name() << " (" << c->address() << "), sending ping back " << std::endl;
+                LOG << "got connection request from: " << c->name() << " ( old: " << c->address() << ", new: " << r.from_ip << ":" << r.from_port << "), sending ping back " << std::endl;
 
                 //update contact address to the one specified
                 //if it is different.
@@ -493,8 +488,8 @@ namespace fire
 
                     //send ping request via local network and external
                     //network. First one to arrive gets to be connection
-                    send_ping_request(local, c);
-                    send_ping_request(external, c);
+                    send_ping_request(local);
+                    send_ping_request(external);
                 }
             }
             else
@@ -737,15 +732,6 @@ namespace fire
             LOG << "exit: user_service::ping_thread" << std::endl;
         }
 
-        std::string random_port(size_t seed)
-        {
-            std::uniform_int_distribution<size_t> distribution(MIN_PORT, MAX_PORT);
-            std::mt19937 engine; 
-            engine.seed(seed + std::time(0));
-            auto generate = std::bind(distribution, engine);
-            return boost::lexical_cast<std::string>(generate());
-        }
-
         user_info_ptr user_service::by_id(const std::string& id) const
         {
             return _user->contacts().by_id(id);
@@ -790,7 +776,7 @@ namespace fire
                 send_ping_request(c);
         }
 
-        void user_service::send_ping_request(const std::string& address, us::user_info_ptr c, bool send_back)
+        void user_service::send_ping_request(const std::string& address, bool send_back)
         {
             INVARIANT(_user);
             INVARIANT(mail());
@@ -806,10 +792,12 @@ namespace fire
 
         void user_service::send_ping_request(us::user_info_ptr c, bool send_back)
         {
+            REQUIRE(c);
             INVARIANT(_user);
             INVARIANT(mail());
 
-            send_ping_request(c->address(), c, send_back);
+            LOG << "sending connection request to " << c->name() << " (" << c->id() << ", " << c->address() << ")" << std::endl;
+            send_ping_request(c->address(), send_back);
         }
 
         void user_service::fire_new_contact_event(const std::string& id)
