@@ -20,7 +20,7 @@
 
 #include <string>
 #include <memory>
-#include <map>
+#include <unordered_map>
 #include <vector>
 
 #include "util/thread.hpp"
@@ -81,7 +81,7 @@ namespace fire
         using user_info_ptr = std::shared_ptr<user_info>;
         using user_info_wptr = std::weak_ptr<user_info>;
         using users = std::vector<user_info_ptr>;
-        using user_map = std::map<std::string, size_t>;
+        using user_map = std::unordered_map<std::string, size_t>;
 
         class contact_list
         {
