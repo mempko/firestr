@@ -23,7 +23,7 @@
 #include "session/session.hpp"
 #include "message/mailbox.hpp"
 #include "messages/sender.hpp"
-#include "gui/app/lua_script_api.hpp"
+#include "gui/lua/api.hpp"
 #include "gui/app/app_service.hpp"
 
 #include <QObject>
@@ -104,7 +104,7 @@ namespace fire
                     QGridLayout* _canvas_layout;
                     list* _output;
 
-                    lua_script_api_ptr _api;
+                    lua::lua_api_ptr _api;
                     app_ptr _app;
                     std::string _prev_code;
             };

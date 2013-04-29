@@ -32,6 +32,7 @@ namespace ms = fire::messages;
 namespace us = fire::user;
 namespace s = fire::session;
 namespace u = fire::util;
+namespace l = fire::gui::lua;
 
 namespace fire
 {
@@ -141,7 +142,7 @@ namespace fire
 
                 _mail = std::make_shared<m::mailbox>(_id);
                 _sender = std::make_shared<ms::sender>(_session->user_service(), _mail);
-                _api = std::make_shared<lua_script_api>(_contacts, _sender, _session, _canvas, _canvas_layout, _output);
+                _api = std::make_shared<l::lua_api>(_contacts, _sender, _session, _canvas, _canvas_layout, _output);
 
                 //text edit
                 _script = new QTextEdit;
@@ -303,9 +304,9 @@ namespace fire
                             _api->run(t.text);
                         }
                     }
-                    else if(m.meta.type == SCRIPT_MESSAGE)
+                    else if(m.meta.type == l::SCRIPT_MESSAGE)
                     {
-                        script_message sm{m, _api.get()};
+                        l::script_message sm{m, _api.get()};
                         _api->message_recieved(sm);
                     }
                     else
