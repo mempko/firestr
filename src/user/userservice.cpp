@@ -877,6 +877,12 @@ namespace fire
             INVARIANT(_user);
             INVARIANT(mail());
 
+            //check to make sure user isn't already added
+            //and that user isn't self
+            auto id = cf.contact.id();
+            if(id == _user->info().id() || _user->contacts().by_id(id))
+                return;
+
             user_info_ptr contact{new user_info{cf.contact}};
 
             //add user
