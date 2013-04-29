@@ -663,6 +663,8 @@ namespace fire
             INVARIANT(_app_menu);
             INVARIANT(_sessions);
 
+            _alert_tab_index = _sessions->indexOf(_alert_screen);
+
             session_widget* s = nullptr;
 
             if(i != -1) s = dynamic_cast<session_widget*>(_sessions->widget(i));
