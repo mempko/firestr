@@ -244,6 +244,7 @@ namespace fire
                     void run(const std::string&);
                     void reset_widgets();
                     void message_recieved(const script_message&);
+                    void send_to_helper(user::user_info_ptr, const script_message&); 
 
                     button_ref_map button_refs;
                     label_ref_map label_refs;

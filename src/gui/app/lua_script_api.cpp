@@ -426,24 +426,36 @@ namespace fire
                 return {this};
             }
 
+            void lua_script_api::send_to_helper(us::user_info_ptr c, const script_message& m)
+            {
+                REQUIRE(c);
+                if(!session->user_service()->contact_available(c->id()) || session->contacts().by_id(c->id()) != c)
+                {
+                    contacts.remove(c);
+                    return;
+                }
+
+                sender->send(c->id(), m); 
+            }
+
             void lua_script_api::send_all(const script_message& m)
             {
                 INVARIANT(sender);
                 for(auto c : contacts.list())
                 {
                     CHECK(c);
-                    sender->send(c->id(), m); 
+                    send_to_helper(c, m);
                 }
             }
 
             void lua_script_api::send_to(const contact_ref& cr, const script_message& m)
             {
                 INVARIANT(sender);
+                INVARIANT(session);
 
                 auto c = contacts.by_id(cr.user_id);
                 if(!c) return;
-
-                sender->send(c->id(), m); 
+                send_to_helper(c, m);
             }
 
             size_t lua_script_api::total_contacts() const
