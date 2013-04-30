@@ -32,6 +32,7 @@ namespace ms = fire::messages;
 namespace us = fire::user;
 namespace s = fire::session;
 namespace u = fire::util;
+namespace l = fire::gui::lua;
 
 namespace fire
 {
@@ -121,7 +122,7 @@ namespace fire
 
                 _mail = std::make_shared<m::mailbox>(_id);
                 _sender = std::make_shared<ms::sender>(_session->user_service(), _mail);
-                _api = std::make_shared<lua_script_api>(_contacts, _sender, _session, _canvas, _canvas_layout);
+                _api = std::make_shared<l::lua_api>(_contacts, _sender, _session, _canvas, _canvas_layout);
 
                 //run script
                 _api->run(_app->code());
@@ -167,7 +168,7 @@ namespace fire
                 m::message m;
                 while(_mail->pop_inbox(m))
                 {
-                    if(m.meta.type == SCRIPT_MESSAGE)
+                    if(m.meta.type == l::SCRIPT_MESSAGE)
                     {
                         bool local = m.meta.extra.has("local_app_id");
                         auto id = m.meta.extra["from_id"].as_string();
@@ -175,7 +176,7 @@ namespace fire
                         if(!local && !_session->user_service()->by_id(id)) 
                             continue;
 
-                        script_message sm{m, _api.get()};
+                        l::script_message sm{m, _api.get()};
                         _api->message_recieved(sm);
                     }
                 }

@@ -25,7 +25,7 @@
 #include "session/session.hpp"
 #include "message/mailbox.hpp"
 #include "messages/sender.hpp"
-#include "gui/app/lua_script_api.hpp"
+#include "gui/lua/api.hpp"
 #include "gui/app/app.hpp"
 #endif
 
@@ -76,7 +76,7 @@ namespace fire
                     app_service_ptr _app_service;
 
                 private:
-                    lua_script_api_ptr _api;
+                    lua::lua_api_ptr _api;
                     QWidget* _canvas;
                     QGridLayout* _canvas_layout;
                     QPushButton* _clone;

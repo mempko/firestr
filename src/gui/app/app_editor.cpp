@@ -32,6 +32,7 @@ namespace ms = fire::messages;
 namespace us = fire::user;
 namespace s = fire::session;
 namespace u = fire::util;
+namespace l = fire::gui::lua;
 
 namespace fire
 {
@@ -42,7 +43,7 @@ namespace fire
             const std::string SCRIPT_SAMPLE = "SCRIPT_SAMPLE";
             const std::string LUA_KEYWORDS = "\\b(app|and|break|do|else|elseif|end|false|for|function|if|in|local|nil|not|or|repeat|return|then|true|until|while)\\b";
             const std::string LUA_QUOTE = "\".*[^\\\\]\"";
-            const std::string LUA_API_KEYWORDS = "\\b(add|button|callback|canvas|clear|contact|disable|edit|edited_callback|enable|enabled|finished_callback|from|get|label|last_contact|list|message|name|online|place|place_across|print|send|send_to|set|set_text|text|text_edit|total_contacts|when_clicked|when_edited|when_finished|when_message_received|draw|line|when_mouse_moved|when_mouse_pressed|when_mouse_released|when_mouse_dragged|clear|pen|get_pen|when_local_message_received|is_local|send_local)\\b";
+            const std::string LUA_API_KEYWORDS = "\\b(add|button|callback|canvas|clear|contact|disable|edit|edited_callback|enable|enabled|finished_callback|from|get|label|last_contact|list|message|name|online|place|place_across|print|send|send_to|set|set_text|text|text_edit|total_contacts|when_clicked|when_edited|when_finished|when_message_received|draw|line|when_mouse_moved|when_mouse_pressed|when_mouse_released|when_mouse_dragged|clear|pen|get_pen|when_local_message_received|is_local|send_local|timer|interval|stop|start|running|when_triggered)\\b";
             const std::string LUA_NUMBERS = "[0-9\\.]+";
             const std::string LUA_OPERATORS = "[=+-\\*\\^:%#~<>\\(\\){}\\[\\];:,]+";
 
@@ -141,7 +142,7 @@ namespace fire
 
                 _mail = std::make_shared<m::mailbox>(_id);
                 _sender = std::make_shared<ms::sender>(_session->user_service(), _mail);
-                _api = std::make_shared<lua_script_api>(_contacts, _sender, _session, _canvas, _canvas_layout, _output);
+                _api = std::make_shared<l::lua_api>(_contacts, _sender, _session, _canvas, _canvas_layout, _output);
 
                 //text edit
                 _script = new QTextEdit;
@@ -303,9 +304,9 @@ namespace fire
                             _api->run(t.text);
                         }
                     }
-                    else if(m.meta.type == SCRIPT_MESSAGE)
+                    else if(m.meta.type == l::SCRIPT_MESSAGE)
                     {
-                        script_message sm{m, _api.get()};
+                        l::script_message sm{m, _api.get()};
                         _api->message_recieved(sm);
                     }
                     else
