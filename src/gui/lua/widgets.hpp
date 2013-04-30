@@ -136,6 +136,20 @@ namespace fire
                     draw_ref _ref;
                     int _button;
             };
+
+            struct timer_ref : public basic_ref
+            {
+                bool running();
+                void stop();
+                void start();
+                void set_interval(int msec);
+                std::string callback;
+
+                const std::string& get_callback() const { return callback;}
+                void set_callback(const std::string&);  
+            };
+            using timer_ref_map = std::unordered_map<int, timer_ref>;
+
         }
     }
 }

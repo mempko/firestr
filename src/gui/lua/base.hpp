@@ -36,6 +36,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <thread>
 
 namespace fire
 {

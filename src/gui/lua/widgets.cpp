@@ -42,6 +42,7 @@ namespace fire
             std::string button_ref::get_text() const
             {
                 INVARIANT(api);
+                std::lock_guard<std::mutex> lock(api->mutex);
 
                 auto rp = api->button_refs.find(id);
                 if(rp == api->button_refs.end()) return "";
@@ -55,6 +56,7 @@ namespace fire
             void button_ref::set_text(const std::string& t)
             {
                 INVARIANT(api);
+                std::lock_guard<std::mutex> lock(api->mutex);
 
                 auto rp = api->button_refs.find(id);
                 if(rp == api->button_refs.end()) return;
@@ -68,6 +70,7 @@ namespace fire
             void button_ref::set_callback(const std::string& c)
             {
                 INVARIANT(api);
+                std::lock_guard<std::mutex> lock(api->mutex);
 
                 auto rp = api->button_refs.find(id);
                 if(rp == api->button_refs.end()) return;
@@ -79,6 +82,7 @@ namespace fire
             std::string label_ref::get_text() const
             {
                 INVARIANT(api);
+                std::lock_guard<std::mutex> lock(api->mutex);
 
                 auto rp = api->label_refs.find(id);
                 if(rp == api->label_refs.end()) return "";
@@ -92,6 +96,7 @@ namespace fire
             void label_ref::set_text(const std::string& t)
             {
                 INVARIANT(api);
+                std::lock_guard<std::mutex> lock(api->mutex);
 
                 auto rp = api->label_refs.find(id);
                 if(rp == api->label_refs.end()) return;
@@ -105,6 +110,7 @@ namespace fire
             std::string edit_ref::get_text() const
             {
                 INVARIANT(api);
+                std::lock_guard<std::mutex> lock(api->mutex);
 
                 auto rp = api->edit_refs.find(id);
                 if(rp == api->edit_refs.end()) return "";
@@ -118,6 +124,7 @@ namespace fire
             void edit_ref::set_text(const std::string& t)
             {
                 INVARIANT(api);
+                std::lock_guard<std::mutex> lock(api->mutex);
 
                 auto rp = api->edit_refs.find(id);
                 if(rp == api->edit_refs.end()) return;
@@ -131,6 +138,7 @@ namespace fire
             void edit_ref::set_edited_callback(const std::string& c)
             {
                 INVARIANT(api);
+                std::lock_guard<std::mutex> lock(api->mutex);
 
                 auto rp = api->edit_refs.find(id);
                 if(rp == api->edit_refs.end()) return;
@@ -142,6 +150,7 @@ namespace fire
             void edit_ref::set_finished_callback(const std::string& c)
             {
                 INVARIANT(api);
+                std::lock_guard<std::mutex> lock(api->mutex);
 
                 auto rp = api->edit_refs.find(id);
                 if(rp == api->edit_refs.end()) return;
@@ -153,6 +162,7 @@ namespace fire
             std::string text_edit_ref::get_text() const
             {
                 INVARIANT(api);
+                std::lock_guard<std::mutex> lock(api->mutex);
 
                 auto rp = api->text_edit_refs.find(id);
                 if(rp == api->text_edit_refs.end()) return "";
@@ -166,6 +176,7 @@ namespace fire
             void text_edit_ref::set_text(const std::string& t)
             {
                 INVARIANT(api);
+                std::lock_guard<std::mutex> lock(api->mutex);
 
                 auto rp = api->text_edit_refs.find(id);
                 if(rp == api->text_edit_refs.end()) return;
@@ -179,6 +190,7 @@ namespace fire
             void text_edit_ref::set_edited_callback(const std::string& c)
             {
                 INVARIANT(api);
+                std::lock_guard<std::mutex> lock(api->mutex);
 
                 auto rp = api->text_edit_refs.find(id);
                 if(rp == api->text_edit_refs.end()) return;
@@ -192,6 +204,7 @@ namespace fire
                 REQUIRE_FALSE(wr.id == 0);
                 INVARIANT(api);
                 INVARIANT_FALSE(id == 0);
+                std::lock_guard<std::mutex> lock(api->mutex);
 
                 auto l = get_widget<gui::list>(id, api->widgets);
                 if(!l) return;
@@ -206,6 +219,7 @@ namespace fire
             {
                 INVARIANT(api);
                 INVARIANT_FALSE(id == 0);
+                std::lock_guard<std::mutex> lock(api->mutex);
 
                 auto l = get_widget<gui::list>(id, api->widgets);
                 if(!l) return;
@@ -223,6 +237,7 @@ namespace fire
             {
                 INVARIANT(api);
                 INVARIANT_FALSE(id == 0);
+                std::lock_guard<std::mutex> lock(api->mutex);
 
                 auto l = get_layout(id, api->layouts);
                 if(!l) return;
@@ -237,6 +252,7 @@ namespace fire
             {
                 INVARIANT(api);
                 INVARIANT_FALSE(id == 0);
+                std::lock_guard<std::mutex> lock(api->mutex);
 
                 auto l = get_layout(id, api->layouts);
                 if(!l) return;
@@ -250,6 +266,7 @@ namespace fire
             void draw_ref::set_mouse_released_callback(const std::string& c)
             {
                 INVARIANT(api);
+                std::lock_guard<std::mutex> lock(api->mutex);
 
                 auto rp = api->draw_refs.find(id);
                 if(rp == api->draw_refs.end()) return;
@@ -261,6 +278,7 @@ namespace fire
             void draw_ref::set_mouse_pressed_callback(const std::string& c)
             {
                 INVARIANT(api);
+                std::lock_guard<std::mutex> lock(api->mutex);
 
                 auto rp = api->draw_refs.find(id);
                 if(rp == api->draw_refs.end()) return;
@@ -272,6 +290,7 @@ namespace fire
             void draw_ref::set_mouse_moved_callback(const std::string& c)
             {
                 INVARIANT(api);
+                std::lock_guard<std::mutex> lock(api->mutex);
 
                 auto rp = api->draw_refs.find(id);
                 if(rp == api->draw_refs.end()) return;
@@ -283,6 +302,7 @@ namespace fire
             void draw_ref::set_mouse_dragged_callback(const std::string& c)
             {
                 INVARIANT(api);
+                std::lock_guard<std::mutex> lock(api->mutex);
 
                 auto rp = api->draw_refs.find(id);
                 if(rp == api->draw_refs.end()) return;
@@ -294,6 +314,7 @@ namespace fire
             void draw_ref::set_pen(QPen p)
             {
                 INVARIANT(api);
+                std::lock_guard<std::mutex> lock(api->mutex);
 
                 auto rp = api->draw_refs.find(id);
                 if(rp == api->draw_refs.end()) return;
@@ -381,6 +402,7 @@ namespace fire
             draw_view* draw_ref::get_view()
             {
                 INVARIANT(api);
+                std::lock_guard<std::mutex> lock(api->mutex);
 
                 auto dp = api->draw_refs.find(id);
                 if(dp == api->draw_refs.end()) return nullptr;
@@ -425,6 +447,8 @@ namespace fire
             {
                 if(!e) return;
 
+                INVARIANT(_ref.api);
+
                 auto ref = _ref.api->draw_refs.find(_ref.id);
                 if(ref == _ref.api->draw_refs.end()) return;
 
@@ -435,6 +459,8 @@ namespace fire
             void draw_view::mouseReleaseEvent(QMouseEvent* e)
             {
                 if(!e) return;
+
+                INVARIANT(_ref.api);
 
                 auto ref = _ref.api->draw_refs.find(_ref.id);
                 if(ref == _ref.api->draw_refs.end()) return;
@@ -447,11 +473,76 @@ namespace fire
             {
                 if(!e) return;
 
+                INVARIANT(_ref.api);
+
                 auto ref = _ref.api->draw_refs.find(_ref.id);
                 if(ref == _ref.api->draw_refs.end()) return;
 
                 ref->second.mouse_moved(e->pos().x(), e->pos().y());
                 if(_button != 0) ref->second.mouse_dragged(_button, e->pos().x(), e->pos().y());
+            }
+
+            QTimer* get_timer(int id, timer_map& m)
+            {
+                auto wp = m.find(id);
+                if(wp == m.end()) return nullptr;
+
+                CHECK(wp->second);
+                return wp->second;
+            }
+
+            bool timer_ref::running()
+            {
+                INVARIANT(api);
+                std::lock_guard<std::mutex> lock(api->mutex);
+
+                auto t = get_timer(id, api->timers);
+                return t ? t->isActive() : false;
+            }
+
+            void timer_ref::stop()
+            {
+                INVARIANT(api);
+                std::lock_guard<std::mutex> lock(api->mutex);
+
+                auto t = get_timer(id, api->timers);
+                if(!t) return;
+
+                t->stop();
+            }
+
+            void timer_ref::start()
+            {
+                INVARIANT(api);
+                std::lock_guard<std::mutex> lock(api->mutex);
+
+                auto t = get_timer(id, api->timers);
+                if(!t) return;
+
+                t->start();
+            }
+
+            void timer_ref::set_interval(int msec)
+            {
+                INVARIANT(api);
+                std::lock_guard<std::mutex> lock(api->mutex);
+
+                auto t = get_timer(id, api->timers);
+                if(!t) return;
+
+                t->setInterval(msec);
+            }
+
+            void timer_ref::set_callback(const std::string& c)  
+            {
+                INVARIANT(api);
+                std::lock_guard<std::mutex> lock(api->mutex);
+
+                auto rp = api->timer_refs.find(id);
+                if(rp == api->timer_refs.end()) return;
+
+                rp->second.callback = c;
+                callback = c;
             }
         }
     }
