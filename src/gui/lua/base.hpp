@@ -76,6 +76,16 @@ namespace fire
             };
             contact_ref empty_contact_ref(lua_api& api);
 
+            struct file_data 
+            {
+                std::string name;
+                std::string data;
+                bool good = false;
+                std::string get_name() const;
+                std::string get_data() const;
+                bool is_good() const;
+            };
+
             extern const std::string SCRIPT_MESSAGE;
             class script_message
             {

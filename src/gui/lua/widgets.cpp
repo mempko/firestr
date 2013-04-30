@@ -56,14 +56,17 @@ namespace fire
             void button_ref::set_text(const std::string& t)
             {
                 INVARIANT(api);
-                std::lock_guard<std::mutex> lock(api->mutex);
+                QPushButton* button = nullptr;
+                {
+                    std::lock_guard<std::mutex> lock(api->mutex);
 
-                auto rp = api->button_refs.find(id);
-                if(rp == api->button_refs.end()) return;
+                    auto rp = api->button_refs.find(id);
+                    if(rp == api->button_refs.end()) return;
 
-                auto button = get_widget<QPushButton>(id, api->widgets);
+                    button = get_widget<QPushButton>(id, api->widgets);
+                }
+
                 CHECK(button);
-
                 button->setText(t.c_str());
             }
 
@@ -96,14 +99,17 @@ namespace fire
             void label_ref::set_text(const std::string& t)
             {
                 INVARIANT(api);
-                std::lock_guard<std::mutex> lock(api->mutex);
+                QLabel* l = nullptr;
+                {
+                    std::lock_guard<std::mutex> lock(api->mutex);
 
-                auto rp = api->label_refs.find(id);
-                if(rp == api->label_refs.end()) return;
+                    auto rp = api->label_refs.find(id);
+                    if(rp == api->label_refs.end()) return;
 
-                auto l = get_widget<QLabel>(id, api->widgets);
+                    l = get_widget<QLabel>(id, api->widgets);
+                }
+
                 CHECK(l);
-
                 l->setText(t.c_str());
             }
 
@@ -124,14 +130,18 @@ namespace fire
             void edit_ref::set_text(const std::string& t)
             {
                 INVARIANT(api);
-                std::lock_guard<std::mutex> lock(api->mutex);
 
-                auto rp = api->edit_refs.find(id);
-                if(rp == api->edit_refs.end()) return;
+                QLineEdit* edit = nullptr;
+                {
+                    std::lock_guard<std::mutex> lock(api->mutex);
 
-                auto edit = get_widget<QLineEdit>(id, api->widgets);
+                    auto rp = api->edit_refs.find(id);
+                    if(rp == api->edit_refs.end()) return;
+
+                    edit = get_widget<QLineEdit>(id, api->widgets);
+                }
+
                 CHECK(edit);
-
                 edit->setText(t.c_str());
             }
 
@@ -176,21 +186,23 @@ namespace fire
             void text_edit_ref::set_text(const std::string& t)
             {
                 INVARIANT(api);
-                std::lock_guard<std::mutex> lock(api->mutex);
+                QTextEdit* edit = nullptr;
+                {
+                    std::lock_guard<std::mutex> lock(api->mutex);
 
-                auto rp = api->text_edit_refs.find(id);
-                if(rp == api->text_edit_refs.end()) return;
+                    auto rp = api->text_edit_refs.find(id);
+                    if(rp == api->text_edit_refs.end()) return;
 
-                auto edit = get_widget<QTextEdit>(id, api->widgets);
+                    edit = get_widget<QTextEdit>(id, api->widgets);
+                }
+
                 CHECK(edit);
-
                 edit->setText(t.c_str());
             }
 
             void text_edit_ref::set_edited_callback(const std::string& c)
             {
                 INVARIANT(api);
-                std::lock_guard<std::mutex> lock(api->mutex);
 
                 auto rp = api->text_edit_refs.find(id);
                 if(rp == api->text_edit_refs.end()) return;
@@ -204,14 +216,21 @@ namespace fire
                 REQUIRE_FALSE(wr.id == 0);
                 INVARIANT(api);
                 INVARIANT_FALSE(id == 0);
-                std::lock_guard<std::mutex> lock(api->mutex);
 
-                auto l = get_widget<gui::list>(id, api->widgets);
-                if(!l) return;
+                gui::list* l = nullptr;
+                QWidget* w = nullptr;
+                {
+                    std::lock_guard<std::mutex> lock(api->mutex);
 
-                auto w = get_widget<QWidget>(wr.id, api->widgets);
-                if(!w) return;
+                    l = get_widget<gui::list>(id, api->widgets);
+                    if(!l) return;
 
+                    w = get_widget<QWidget>(wr.id, api->widgets);
+                    if(!w) return;
+                }
+
+                CHECK(l);
+                CHECK(w);
                 l->add(w);
             }
 
@@ -219,11 +238,16 @@ namespace fire
             {
                 INVARIANT(api);
                 INVARIANT_FALSE(id == 0);
-                std::lock_guard<std::mutex> lock(api->mutex);
 
-                auto l = get_widget<gui::list>(id, api->widgets);
-                if(!l) return;
+                gui::list* l = nullptr;
+                {
+                    std::lock_guard<std::mutex> lock(api->mutex);
 
+                    l = get_widget<gui::list>(id, api->widgets);
+                    if(!l) return;
+                }
+
+                CHECK(l);
                 l->clear();
             }
 
@@ -237,13 +261,22 @@ namespace fire
             {
                 INVARIANT(api);
                 INVARIANT_FALSE(id == 0);
-                std::lock_guard<std::mutex> lock(api->mutex);
 
-                auto l = get_layout(id, api->layouts);
-                if(!l) return;
+                QGridLayout* l = nullptr;
+                QWidget* w = nullptr;
 
-                auto w = get_widget<QWidget>(wr.id, api->widgets);
-                if(!w) return;
+                {
+                    std::lock_guard<std::mutex> lock(api->mutex);
+
+                    l = get_layout(id, api->layouts);
+                    if(!l) return;
+
+                    w = get_widget<QWidget>(wr.id, api->widgets);
+                    if(!w) return;
+                }
+
+                CHECK(l);
+                CHECK(w);
 
                 l->addWidget(w, r, c);
             }
@@ -252,13 +285,21 @@ namespace fire
             {
                 INVARIANT(api);
                 INVARIANT_FALSE(id == 0);
-                std::lock_guard<std::mutex> lock(api->mutex);
+                QGridLayout* l = nullptr;
+                QWidget* w = nullptr;
 
-                auto l = get_layout(id, api->layouts);
-                if(!l) return;
+                {
+                    std::lock_guard<std::mutex> lock(api->mutex);
 
-                auto w = get_widget<QWidget>(wr.id, api->widgets);
-                if(!w) return;
+                    l = get_layout(id, api->layouts);
+                    if(!l) return;
+
+                    w = get_widget<QWidget>(wr.id, api->widgets);
+                    if(!w) return;
+                }
+
+                CHECK(l);
+                CHECK(w);
 
                 l->addWidget(w, r, c, row_span, col_span);
             }
