@@ -50,6 +50,8 @@ namespace fire
             bool widget_ref::enabled()
             {
                 INVARIANT(api);
+                std::lock_guard<std::mutex> lock(api->mutex);
+
                 auto w = get_widget<QWidget>(id, api->widgets);
                 return w ? w->isEnabled() : false;
             }
@@ -57,12 +59,16 @@ namespace fire
             void widget_ref::enable()
             {
                 INVARIANT(api);
+                std::lock_guard<std::mutex> lock(api->mutex);
+
                 set_enabled(id, api->widgets, true);
             }
 
             void widget_ref::disable()
             {
                 INVARIANT(api);
+                std::lock_guard<std::mutex> lock(api->mutex);
+
                 set_enabled(id, api->widgets, false);
             }
 
@@ -75,6 +81,7 @@ namespace fire
             {
                 INVARIANT(api);
                 INVARIANT(api->sender);
+
                 api->sender->send_to_local_app(app_id, m); 
             }
 
@@ -92,7 +99,7 @@ namespace fire
             {
                 INVARIANT(api);
                 INVARIANT(api->session);
-
+                std::lock_guard<std::mutex> lock(api->mutex);
                 return api->session->user_service()->contact_available(user_id);
             }
 
@@ -150,6 +157,7 @@ namespace fire
             contact_ref script_message::from() const
             {
                 INVARIANT(_api);
+                std::lock_guard<std::mutex> lock(_api->mutex);
 
                 auto c = _api->contacts.by_id(_from_id);
                 if(!c || is_local()) return empty_contact_ref(*_api);

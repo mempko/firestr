@@ -30,6 +30,7 @@ namespace fire
             using script_ptr = std::shared_ptr<SLB::Script>;
             using widget_map = std::unordered_map<int, QWidget*>;
             using layout_map = std::unordered_map<int, QGridLayout*>;
+            using timer_map = std::unordered_map<int, QTimer*>;
 
             class lua_api : public QObject
             {
@@ -43,12 +44,17 @@ namespace fire
                             QGridLayout* lay,
                             list* out = nullptr);
 
+                    ~lua_api();
+
                 public:
+                    //misc
                     list* output;
                     QWidget* canvas;
                     QGridLayout* layout;
                     SLB::Manager manager;
                     script_ptr state;
+                    std::mutex mutex;
+
 
                     //message
                     user::contact_list contacts;
@@ -72,10 +78,12 @@ namespace fire
                     list_ref_map list_refs;
                     canvas_ref_map canvas_refs;
                     draw_ref_map draw_refs;
+                    timer_ref_map timer_refs;
 
                     //all widgets referenced are stored here
                     layout_map layouts;
                     widget_map widgets;
+                    timer_map timers;
 
                     //id functions
                     int ids;
@@ -95,6 +103,7 @@ namespace fire
                     list_ref make_list();
                     draw_ref make_draw(int width, int height);
                     QPen make_pen(const std::string& color, int width);
+                    timer_ref make_timer(int msec, const std::string& callback);
 
                     canvas_ref make_canvas(int r, int c);
                     void place(const widget_ref& w, int r, int c);
@@ -120,6 +129,7 @@ namespace fire
                         void edit_edited(int id);
                         void edit_finished(int id);
                         void text_edit_edited(int id);
+                        void timer_triggered(int id);
             };
 
             using lua_api_ptr = std::shared_ptr<lua_api>;

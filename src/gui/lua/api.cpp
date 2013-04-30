@@ -65,6 +65,11 @@ namespace fire
                 INVARIANT(state);
             }
 
+            lua_api::~lua_api()
+            {
+                reset_widgets();
+            }
+
             QWidget* make_output_widget(const std::string& name, const std::string& text)
             {
                 std::string m = "<b>" + name + "</b>: " + text; 
@@ -79,7 +84,11 @@ namespace fire
 
             void lua_api::report_error(const std::string& e)
             {
-                if(!output) return;
+                if(!output) 
+                {
+                    LOG << "script error: " << e << std::endl;
+                    return;
+                }
                 output->add(make_error_widget(e));
             }
 
@@ -105,6 +114,7 @@ namespace fire
                     .set("canvas", &lua_api::make_canvas)
                     .set("draw", &lua_api::make_draw)
                     .set("pen", &lua_api::make_pen)
+                    .set("timer", &lua_api::make_timer)
                     .set("place", &lua_api::place)
                     .set("place_across", &lua_api::place_across)
                     .set("total_contacts", &lua_api::total_contacts)
@@ -201,6 +211,13 @@ namespace fire
                     .set("pen", &draw_ref::set_pen)
                     .set("get_pen", &draw_ref::get_pen);
 
+                SLB::Class<timer_ref>{"timer_ref", &manager}
+                    .set("running", &timer_ref::running)
+                    .set("start", &timer_ref::start)
+                    .set("stop", &timer_ref::stop)
+                    .set("interval", &timer_ref::set_interval)
+                    .set("when_triggered", &timer_ref::set_callback);
+
                 state = std::make_shared<SLB::Script>(&manager);
                 state->set("app", this);
 
@@ -208,16 +225,26 @@ namespace fire
             }
 
             std::string lua_api::execute(const std::string& s)
+            try
             {
                 REQUIRE_FALSE(s.empty());
                 INVARIANT(state);
 
                 return state->safeDoString(s.c_str()) ? "" : state->getLastError();
             }
+            catch(std::exception& e)
+            {
+                return e.what();
+            }
+            catch(...)
+            {
+                return "unknown";
+            }
 
             void lua_api::reset_widgets()
             {
                 INVARIANT(layout);
+                std::lock_guard<std::mutex> lock(mutex);
 
                 //clear widgets
                 QLayoutItem *c = 0;
@@ -230,13 +257,24 @@ namespace fire
                     delete c;
                 } 
 
+                for(auto& t : timers)
+                {
+                    if(t.second) 
+                    {
+                        t.second->stop();
+                        delete t.second;
+                    }
+                }
+
                 if(output) output->clear();
                 button_refs.clear();
                 edit_refs.clear();
                 text_edit_refs.clear();
                 list_refs.clear();
+                timer_refs.clear();
                 canvas_refs.clear();
                 widgets.clear();
+                timers.clear();
 
                 ENSURE_EQUAL(layout->count(), 0);
             }
@@ -252,6 +290,7 @@ namespace fire
             //API implementation 
             void lua_api::print(const std::string& a)
             {
+                std::lock_guard<std::mutex> lock(mutex);
                 INVARIANT(session);
                 INVARIANT(session->user_service());
 
@@ -400,6 +439,7 @@ namespace fire
             {
                 INVARIANT(layout);
                 INVARIANT(canvas);
+                std::lock_guard<std::mutex> lock(mutex);
 
                 //create button reference
                 canvas_ref ref;
@@ -427,6 +467,7 @@ namespace fire
             void lua_api::place(const widget_ref& wr, int r, int c)
             {
                 INVARIANT(layout);
+                std::lock_guard<std::mutex> lock(mutex);
 
                 auto w = get_widget<QWidget>(wr.id, widgets);
                 if(!w) return;
@@ -437,6 +478,7 @@ namespace fire
             void lua_api::place_across(const widget_ref& wr, int r, int c, int row_span, int col_span)
             {
                 INVARIANT(layout);
+                std::lock_guard<std::mutex> lock(mutex);
 
                 auto w = get_widget<QWidget>(wr.id, widgets);
                 if(!w) return;
@@ -447,6 +489,7 @@ namespace fire
             button_ref lua_api::make_button(const std::string& text)
             {
                 INVARIANT(canvas);
+                std::lock_guard<std::mutex> lock(mutex);
 
                 //create button reference
                 button_ref ref;
@@ -476,10 +519,14 @@ namespace fire
             {
                 INVARIANT(state);
 
-                auto rp = button_refs.find(id);
-                if(rp == button_refs.end()) return;
+                std::string callback;
+                {
+                    std::lock_guard<std::mutex> lock(mutex);
+                    auto rp = button_refs.find(id);
+                    if(rp == button_refs.end()) return;
 
-                const auto& callback = rp->second.callback;
+                    callback = rp->second.callback;
+                }
                 if(callback.empty()) return;
 
                 run(callback);
@@ -488,6 +535,7 @@ namespace fire
             label_ref lua_api::make_label(const std::string& text)
             {
                 INVARIANT(canvas);
+                std::lock_guard<std::mutex> lock(mutex);
 
                 //create edit reference
                 label_ref ref;
@@ -509,6 +557,7 @@ namespace fire
             edit_ref lua_api::make_edit(const std::string& text)
             {
                 INVARIANT(canvas);
+                std::lock_guard<std::mutex> lock(mutex);
 
                 //create edit reference
                 edit_ref ref;
@@ -544,10 +593,14 @@ namespace fire
             {
                 INVARIANT(state);
 
-                auto rp = edit_refs.find(id);
-                if(rp == edit_refs.end()) return;
+                std::string callback;
+                {
+                    std::lock_guard<std::mutex> lock(mutex);
+                    auto rp = edit_refs.find(id);
+                    if(rp == edit_refs.end()) return;
 
-                const auto& callback = rp->second.edited_callback;
+                    callback = rp->second.edited_callback;
+                }
                 if(callback.empty()) return;
 
                 run(callback);
@@ -557,10 +610,14 @@ namespace fire
             {
                 INVARIANT(state);
 
-                auto rp = edit_refs.find(id);
-                if(rp == edit_refs.end()) return;
+                std::string callback;
+                {
+                    std::lock_guard<std::mutex> lock(mutex);
+                    auto rp = edit_refs.find(id);
+                    if(rp == edit_refs.end()) return;
 
-                const auto& callback = rp->second.finished_callback;
+                    callback = rp->second.finished_callback;
+                }
                 if(callback.empty()) return;
 
                 run(callback);
@@ -569,6 +626,7 @@ namespace fire
             text_edit_ref lua_api::make_text_edit(const std::string& text)
             {
                 INVARIANT(canvas);
+                std::lock_guard<std::mutex> lock(mutex);
 
                 //create edit reference
                 text_edit_ref ref;
@@ -598,10 +656,14 @@ namespace fire
             {
                 INVARIANT(state);
 
-                auto rp = text_edit_refs.find(id);
-                if(rp == text_edit_refs.end()) return;
+                std::string callback;
+                {
+                    std::lock_guard<std::mutex> lock(mutex);
+                    auto rp = text_edit_refs.find(id);
+                    if(rp == text_edit_refs.end()) return;
 
-                const auto& callback = rp->second.edited_callback;
+                    callback = rp->second.edited_callback;
+                }
                 if(callback.empty()) return;
 
                 run(callback);
@@ -610,6 +672,7 @@ namespace fire
             list_ref lua_api::make_list()
             {
                 INVARIANT(canvas);
+                std::lock_guard<std::mutex> lock(mutex);
 
                 //create edit reference
                 list_ref ref;
@@ -632,6 +695,7 @@ namespace fire
             QPen lua_api::make_pen(const std::string& color, int width)
             try
             {
+                std::lock_guard<std::mutex> lock(mutex);
                 QPen p{QColor{color.c_str()}};
                 p.setWidth(width);
                 return p;
@@ -650,6 +714,7 @@ namespace fire
             draw_ref lua_api::make_draw(int width, int height)
             {
                 INVARIANT(canvas);
+                std::lock_guard<std::mutex> lock(mutex);
 
                 //create edit reference
                 draw_ref ref;
@@ -667,6 +732,57 @@ namespace fire
                 ENSURE(ref.api);
                 return ref;
             }
+
+            timer_ref lua_api::make_timer(int msec, const std::string& callback)
+            {
+                INVARIANT(canvas);
+                std::lock_guard<std::mutex> lock(mutex);
+
+                //create edit reference
+                timer_ref ref;
+                ref.id = new_id();
+                ref.api = this;
+                ref.callback = callback;
+
+                //create timer 
+                auto t = new QTimer;
+
+                //map timer to C++ callback
+                auto timer_mapper = new QSignalMapper{canvas};
+                timer_mapper->setMapping(t, ref.id);
+
+                connect(t, SIGNAL(timeout()), timer_mapper, SLOT(map()));
+                connect(timer_mapper, SIGNAL(mapped(int)), this, SLOT(timer_triggered(int)));
+
+                //add ref and widget to maps
+                timer_refs[ref.id] = ref;
+                timers[ref.id] = t;
+
+                //start timer
+                t->start(msec);
+
+                ENSURE_FALSE(ref.id == 0);
+                ENSURE(ref.api);
+                return ref;
+            }
+
+            void lua_api::timer_triggered(int id)
+            {
+                INVARIANT(state);
+
+                std::string callback;
+                {
+                    std::lock_guard<std::mutex> lock(mutex);
+
+                    auto t = timer_refs.find(id);
+                    if(t == timer_refs.end()) return;
+                    callback = t->second.callback;
+                }
+
+                if(callback.empty()) return;
+                run(callback);
+            }
+
         }
     }
 }
