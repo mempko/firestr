@@ -22,15 +22,21 @@
 #include "util/dbc.hpp"
 #include "util/log.hpp"
 
+#include <boost/filesystem.hpp>
+
 #include <QTimer>
 
 #include <functional>
+#include <cstdlib>
+#include <fstream>
+#include <regex>
 
 namespace m = fire::message;
 namespace ms = fire::messages;
 namespace us = fire::user;
 namespace s = fire::session;
 namespace u = fire::util;
+namespace bf = boost::filesystem;
 
 namespace fire
 {
@@ -38,6 +44,7 @@ namespace fire
     {
         namespace lua
         {
+
             lua_api::lua_api(
                     const us::contact_list& con,
                     ms::sender_ptr sndr,
@@ -127,7 +134,9 @@ namespace fire
                     .set("when_local_message_received", &lua_api::set_local_message_callback)
                     .set("send", &lua_api::send_all)
                     .set("send_to", &lua_api::send_to)
-                    .set("send_local", &lua_api::send_local);
+                    .set("send_local", &lua_api::send_local)
+                    .set("save_file", &lua_api::save_file)
+                    .set("open_file", &lua_api::open_file);
 
                 SLB::Class<QPen>{"pen", &manager}
                     .set("set_width", &QPen::setWidth);
@@ -217,6 +226,11 @@ namespace fire
                     .set("stop", &timer_ref::stop)
                     .set("interval", &timer_ref::set_interval)
                     .set("when_triggered", &timer_ref::set_callback);
+
+                SLB::Class<file_data>{"file_data", &manager}
+                    .set("good", &file_data::is_good)
+                    .set("name", &file_data::get_name)
+                    .set("data", &file_data::get_data);
 
                 state = std::make_shared<SLB::Script>(&manager);
                 state->set("app", this);
@@ -781,6 +795,54 @@ namespace fire
 
                 if(callback.empty()) return;
                 run(callback);
+            }
+
+            file_data lua_api::open_file()
+            {
+                INVARIANT(canvas);
+
+                std::string home = std::getenv("HOME");
+                auto file = QFileDialog::getOpenFileName(canvas, tr("Open File"), home.c_str());
+                if(file.isEmpty()) return file_data{};
+
+                auto sf = convert(file);
+                bf::path p = sf;
+
+                std::ifstream f(sf.c_str());
+                if(!f) return file_data{};
+
+                LOG << "reading file: " << sf << std::endl;
+                std::string data{std::istream_iterator<char>(f), std::istream_iterator<char>()};
+                LOG << "done reading file: " << sf << std::endl;
+
+                file_data fd;
+                fd.name = p.filename().string();
+                fd.data = std::move(data);
+                fd.good = true;
+                return fd;
+            }
+
+            std::string sanatize(const std::string& s)
+            {
+                const std::regex SANATIZE_PATH_REGEX("[\\\\\\/\\:]");  //matches \, /, and :
+                return std::regex_replace (s, SANATIZE_PATH_REGEX ,std::string{"_"});
+            }
+
+            bool lua_api::save_file(const std::string& suggested_name, const std::string& data)
+            {
+                if(data.empty()) return false;
+
+                std::string home = std::getenv("HOME");
+                std::string suggested_path = home + "/" + sanatize(suggested_name);
+                auto file = QFileDialog::getSaveFileName(canvas, tr("Save File"), suggested_path.c_str());
+                if(file.isEmpty()) return false;
+
+                auto fs = convert(file);
+                std::ofstream o(fs.c_str());
+                if(!o) return false;
+
+                o.write(data.c_str(), data.size());
+                return true;
             }
 
         }

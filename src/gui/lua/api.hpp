@@ -95,6 +95,8 @@ namespace fire
                     //================================
                     //API
                     //================================
+
+                    //gui
                     void print(const std::string& a);
                     button_ref make_button(const std::string& title);
                     label_ref make_label(const std::string& text);
@@ -109,6 +111,7 @@ namespace fire
                     void place(const widget_ref& w, int r, int c);
                     void place_across(const widget_ref& w, int r, int c, int row_span, int col_span);
 
+                    //messages
                     void set_message_callback(const std::string& a);
                     void set_local_message_callback(const std::string& a);
 
@@ -117,12 +120,18 @@ namespace fire
                     void send_to(const contact_ref&, const script_message&); 
                     void send_local(const script_message& m);
 
+                    //contacts
                     size_t total_contacts() const;
                     int last_contact() const;
                     contact_ref get_contact(size_t);
 
+                    //apps
                     size_t total_apps() const;
                     app_ref get_app(size_t);
+
+                    //file
+                    file_data open_file();
+                    bool save_file(const std::string& suggested_name, const std::string& data);
 
                     public slots:
                         void button_clicked(int id);
