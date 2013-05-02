@@ -73,10 +73,19 @@ namespace fire
             };
             using text_edit_ref_map = std::unordered_map<int, text_edit_ref>;
 
-            struct list_ref : public widget_ref
+            class list_ref : public widget_ref
             {
-                void add(const widget_ref& r);
-                void clear();
+                public:
+                    void add(const widget_ref& r);
+                    void remove(const widget_ref& r);
+                    size_t size() const;
+                    void clear();
+
+                private:
+                    using list_widget = std::pair<list*, QWidget*>;
+                    list* get_list() const;
+                    list_widget get_both(const widget_ref& r);
+
             };
             using list_ref_map = std::unordered_map<int, list_ref>;
 

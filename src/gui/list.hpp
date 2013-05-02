@@ -36,6 +36,10 @@ namespace fire
 
             public slots:
                 virtual void add(QWidget*);
+                virtual void remove(QWidget*);
+                virtual void remove(size_t);
+                virtual QWidget* get(size_t) const;
+                virtual size_t size() const;
                 virtual void clear();
                 virtual void scroll_to_bottom(int min, int max);
 

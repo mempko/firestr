@@ -103,6 +103,21 @@ namespace fire
                 return api->session->user_service()->contact_available(user_id);
             }
 
+            std::string file_data::get_name() const
+            {
+                return name;
+            }
+
+            std::string file_data::get_data() const
+            {
+                return data;
+            }
+ 
+            bool file_data::is_good() const
+            {
+                return good;
+            }
+
             const std::string SCRIPT_MESSAGE = "script_msg";
             script_message::script_message(lua_api* api) : 
                 _from_id{}, _v{}, _api{api} 

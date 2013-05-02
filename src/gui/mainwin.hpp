@@ -76,6 +76,7 @@ namespace fire
                 void tab_changed(int);
                 void load_app_into_session(QString id);
                 void show_debug_window();
+                void remove_alert(QWidget*);
 
             private:
                 void setup_post();
