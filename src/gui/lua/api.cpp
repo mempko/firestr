@@ -23,13 +23,13 @@
 #include "util/log.hpp"
 
 #include <boost/filesystem.hpp>
+#include <boost/regex.hpp>
 
 #include <QTimer>
 
 #include <functional>
 #include <cstdlib>
 #include <fstream>
-#include <regex>
 
 namespace m = fire::message;
 namespace ms = fire::messages;
@@ -44,6 +44,10 @@ namespace fire
     {
         namespace lua
         {
+            namespace
+            {
+                const std::string SANATIZE_REPLACE = "_";
+            }
 
             lua_api::lua_api(
                     const us::contact_list& con,
@@ -811,9 +815,7 @@ namespace fire
                 std::ifstream f(sf.c_str());
                 if(!f) return file_data{};
 
-                LOG << "reading file: " << sf << std::endl;
                 std::string data{std::istream_iterator<char>(f), std::istream_iterator<char>()};
-                LOG << "done reading file: " << sf << std::endl;
 
                 file_data fd;
                 fd.name = p.filename().string();
@@ -824,8 +826,8 @@ namespace fire
 
             std::string sanatize(const std::string& s)
             {
-                const std::regex SANATIZE_PATH_REGEX("[\\\\\\/\\:]");  //matches \, /, and :
-                return std::regex_replace (s, SANATIZE_PATH_REGEX ,std::string{"_"});
+                const boost::regex SANATIZE_PATH_REGEX("[\\\\\\/\\:]");  //matches \, /, and :
+                return boost::regex_replace (s, SANATIZE_PATH_REGEX , SANATIZE_REPLACE);
             }
 
             bool lua_api::save_file(const std::string& suggested_name, const std::string& data)
@@ -842,6 +844,7 @@ namespace fire
                 if(!o) return false;
 
                 o.write(data.c_str(), data.size());
+                LOG << "saved: " << fs << std::endl;
                 return true;
             }
 

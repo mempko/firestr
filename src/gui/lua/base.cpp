@@ -105,7 +105,7 @@ namespace fire
 
             std::string file_data::get_name() const
             {
-                return data;
+                return name;
             }
 
             std::string file_data::get_data() const
