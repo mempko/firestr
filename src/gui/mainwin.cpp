@@ -766,6 +766,7 @@ namespace fire
         {
             REQUIRE(a);
             INVARIANT(_alert_screen);
+            INVARIANT(_alerts);
 
             if(!_alert_screen->isVisible())
             {
@@ -784,8 +785,16 @@ namespace fire
             w->setLayout(l);
 
             auto t = new QLabel{formatted_timestamp().c_str()};
+            auto x = new QPushButton{"x"};
+            x->setMaximumSize(20,20);
             l->addWidget(t);
             l->addWidget(a);
+            l->addWidget(x);
+
+            auto mapper = new QSignalMapper{this};
+            mapper->setMapping(x, w);
+            connect(x, SIGNAL(clicked()), mapper, SLOT(map()));
+            connect(mapper, SIGNAL(mapped(QWidget*)), this, SLOT(remove_alert(QWidget*)));
 
             //add alert to list
             _alerts->add(w);
@@ -794,6 +803,13 @@ namespace fire
             QApplication::alert(this);
 
             ENSURE(_sessions->isVisible());
+        }
+
+        void main_window::remove_alert(QWidget* a)
+        {
+            REQUIRE(a);
+            INVARIANT(_alerts);
+            _alerts->remove(a);
         }
 
         void main_window::new_session_event(const std::string& id)
