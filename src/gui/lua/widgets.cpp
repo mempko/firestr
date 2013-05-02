@@ -211,27 +211,71 @@ namespace fire
                 edited_callback = c;
             }
 
+            list* list_ref::get_list() const
+            {
+                std::lock_guard<std::mutex> lock(api->mutex);
+                return get_widget<gui::list>(id, api->widgets);
+            }
+
+
+            list_ref::list_widget list_ref::get_both(const widget_ref& r)
+            {
+                std::lock_guard<std::mutex> lock(api->mutex);
+
+                auto l = get_widget<gui::list>(id, api->widgets);
+                auto w = get_widget<QWidget>(r.id, api->widgets);
+
+                return std::make_pair(l, w);
+            }
+
             void list_ref::add(const widget_ref& wr)
             {
                 REQUIRE_FALSE(wr.id == 0);
                 INVARIANT(api);
                 INVARIANT_FALSE(id == 0);
 
-                gui::list* l = nullptr;
-                QWidget* w = nullptr;
-                {
-                    std::lock_guard<std::mutex> lock(api->mutex);
+                auto f = get_both(wr);
 
-                    l = get_widget<gui::list>(id, api->widgets);
-                    if(!l) return;
+                gui::list* l = f.first;
+                if(!l) return;
 
-                    w = get_widget<QWidget>(wr.id, api->widgets);
-                    if(!w) return;
-                }
+                QWidget* w = f.second;
+                if(!w) return;
 
                 CHECK(l);
                 CHECK(w);
                 l->add(w);
+            }
+
+            void list_ref::remove(const widget_ref& wr)
+            {
+                REQUIRE_FALSE(wr.id == 0);
+                INVARIANT(api);
+                INVARIANT_FALSE(id == 0);
+
+                auto f = get_both(wr);
+
+                auto l = f.first;
+                if(!l) return;
+
+                auto w = f.second;
+                if(!w) return;
+
+                CHECK(l);
+                CHECK(w);
+                l->remove(w);
+            }
+
+            size_t list_ref::size() const
+            {
+                INVARIANT(api);
+                INVARIANT_FALSE(id == 0);
+
+                auto l = get_list();
+                if(!l) return 0;
+
+                CHECK(l);
+                return l->size();
             }
 
             void list_ref::clear()
@@ -239,13 +283,8 @@ namespace fire
                 INVARIANT(api);
                 INVARIANT_FALSE(id == 0);
 
-                gui::list* l = nullptr;
-                {
-                    std::lock_guard<std::mutex> lock(api->mutex);
-
-                    l = get_widget<gui::list>(id, api->widgets);
-                    if(!l) return;
-                }
+                gui::list* l = get_list();
+                if(!l) return;
 
                 CHECK(l);
                 l->clear();
