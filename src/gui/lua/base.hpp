@@ -18,11 +18,13 @@
 #ifndef FIRESTR_APP_LUA_BASE_H
 #define FIRESTR_APP_LUA_BASE_H
 
+#ifndef Q_MOC_RUN
 #include "gui/list.hpp"
 #include "gui/message.hpp"
 #include "session/session.hpp"
 #include "message/mailbox.hpp"
 #include "messages/sender.hpp"
+#endif
 
 #include <QObject>
 #include <QLabel>
