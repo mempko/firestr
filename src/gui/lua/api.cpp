@@ -202,6 +202,8 @@ namespace fire
 
                 SLB::Class<list_ref>{"list_ref", &manager}
                     .set("add", &list_ref::add)
+                    .set("remove", &list_ref::remove)
+                    .set("size", &list_ref::size)
                     .set("clear", &list_ref::clear)
                     .set("enabled", &widget_ref::enabled)
                     .set("enable", &widget_ref::enable)
