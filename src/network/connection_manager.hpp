@@ -47,6 +47,7 @@ namespace fire
                 tcp_queue_ptr connect(const std::string& address);
 
             private:
+                enum receive_state { IN_UDP, IN_TCP, OUT_TCP, DONE} _rstate;
                 assignment_map _out;
                 tcp_connection_pool _pool;
                 std::string _local_port;
