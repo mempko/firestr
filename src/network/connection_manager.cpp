@@ -32,7 +32,7 @@ namespace fire
             _pool(size),
             _local_port{local_port},
             _next_available{0},
-            _rstate{receive_state::IN_UDP}
+            _rstate{receive_state::IN_UDP1}
         {
             //create listen socket
 #ifdef __APPLE__
@@ -163,6 +163,25 @@ namespace fire
             LOG << "unknown error sending message to `" << to << "' (" << b.size() << " bytes)." << std::endl; 
         }
 
+        void connection_manager::transition_udp_state()
+        {
+            auto ps = _rstate; 
+            switch(_rstate)
+            {
+                case receive_state::IN_UDP1: _rstate = receive_state::IN_UDP2; break;
+                case receive_state::IN_UDP2: _rstate = receive_state::IN_UDP3; break;
+                case receive_state::IN_UDP3: _rstate = receive_state::IN_UDP4; break;
+                case receive_state::IN_UDP4: _rstate = receive_state::IN_UDP5; break;
+                case receive_state::IN_UDP5: _rstate = receive_state::IN_UDP6; break;
+                case receive_state::IN_UDP6: _rstate = receive_state::IN_UDP7; break;
+                case receive_state::IN_UDP7: _rstate = receive_state::IN_UDP8; break;
+                case receive_state::IN_UDP8: _rstate = receive_state::IN_TCP; break;
+            }
+
+            ENSURE(ps != receive_state::IN_UDP8 || _rstate == receive_state::IN_TCP) 
+            ENSURE(_rstate != ps);
+        }
+
         bool connection_manager::receive(endpoint& ep, u::bytes& b)
         {
             u::mutex_scoped_lock l(_mutex);
@@ -172,22 +191,31 @@ namespace fire
             //or returned with a message in OUT_TCP case, we
             //reset to IN_UPD and start over
             if(_rstate == receive_state::DONE) 
-                _rstate = receive_state::IN_UDP;
+                _rstate = receive_state::IN_UDP1;
 
             while(_rstate != receive_state::DONE)
             {
                 switch(_rstate)
                 {
-                    case receive_state::IN_UDP:
+                    case receive_state::IN_UDP1:
+                    case receive_state::IN_UDP2:
+                    case receive_state::IN_UDP3:
+                    case receive_state::IN_UDP4:
+                    case receive_state::IN_UDP5:
+                    case receive_state::IN_UDP6:
+                    case receive_state::IN_UDP7:
+                    case receive_state::IN_UDP8:
                         {
-                            _rstate = receive_state::IN_TCP;
                             endpoint_message um;
                             if(_udp_con->receive(um))
                             {
+                                transition_udp_state();
+
                                 ep = um.ep;
                                 b = std::move(um.data);
                                 return true;
                             }
+                            _rstate = receive_state::IN_TCP;
                         }
                         break;
 
@@ -228,7 +256,7 @@ namespace fire
                 }
             }
 
-            REQUIRE(_rstate == receive_state::DONE);
+            ENSURE(_rstate == receive_state::DONE);
             return false;
         }
 
