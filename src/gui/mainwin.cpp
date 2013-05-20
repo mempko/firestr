@@ -880,7 +880,9 @@ namespace fire
             int ri = find_session(_sessions, id);
             if(ri == -1) return;
 
+            QWidget* w = _sessions->widget(ri);
             _sessions->removeTab(ri);
+            if(w) delete w;
         }
 
         void main_window::session_synced_event(const m::message& m)
