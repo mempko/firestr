@@ -225,10 +225,6 @@ namespace fire
         };
 
 
-        using chunked_message = std::vector<util::bytes> ;
-        using incoming_message_buffers = std::map<size_t,chunked_message>;
-        using incoming_messages = std::map<std::string, incoming_message_buffers>;
-
         class udp_queue
         {
             public:
@@ -248,7 +244,6 @@ namespace fire
                 util::thread_uptr _run_thread;
 
                 udp_connection_ptr _con;
-                incoming_messages _incoming;
                 endpoint_queue _in_queue;
                 mutable std::mutex _mutex;
                 bool _done;
