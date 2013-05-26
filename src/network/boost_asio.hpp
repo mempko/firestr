@@ -155,7 +155,6 @@ namespace fire
         using chunk_queue = util::queue<udp_chunk>;
         using udp_chunks = std::vector<udp_chunk>;
 
-        //TODO: need to use endpoint as another indirection
         struct working_udp_chunks
         {
             udp_chunks chunks;
