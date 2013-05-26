@@ -1169,6 +1169,5 @@ namespace fire
                 LOG << "unknown error in udp thread." << std::endl;
             }
         }
-
     }
 }
