@@ -99,7 +99,10 @@ namespace fire
 
             script_app::~script_app()
             {
+                INVARIANT(_app);
                 INVARIANT(_session);
+
+                LOG << "closed app " << _app->name() << "(" << _app->id() << ")" << std::endl;
             }
 
             void script_app::init()
