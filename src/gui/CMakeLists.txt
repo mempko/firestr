@@ -24,9 +24,9 @@ file(GLOB forms *.ui app/*.ui lua/*.ui)
 file(GLOB resources *.qrc app/*.qrc lua/*.qrc)
 
 #qt specific
-QT4_WRAP_CPP(moc_headers ${headers})
-QT4_WRAP_UI(moc_forms ${forms})
-QT4_ADD_RESOURCES(moc_resources ${resources})
+QT5_WRAP_CPP(moc_headers ${headers})
+QT5_WRAP_UI(moc_forms ${forms})
+QT5_ADD_RESOURCES(moc_resources ${resources})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 add_library(fire_gui STATIC
