@@ -20,7 +20,7 @@
 #include "gui/util.hpp"
 #include "util/dbc.hpp"
 
-#include <QtGui>
+#include <QtWidgets>
 #include <QGridLayout>
 #include <QLabel>
 

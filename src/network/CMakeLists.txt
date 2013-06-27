@@ -22,7 +22,7 @@ file(GLOB src *.cpp)
 file(GLOB headers *.hpp)
 
 #qt specific
-QT4_WRAP_CPP(moc_headers stungun.hpp OPTIONS -DBOOST_TT_HAS_OPERATOR_HPP_INCLUDED)
+QT5_WRAP_CPP(moc_headers ${headers})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 add_library(fire_network STATIC

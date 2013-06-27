@@ -24,9 +24,9 @@ file(GLOB forms *.ui)
 file(GLOB resources *.qrc)
 
 #qt specific
-QT4_WRAP_CPP(moc_headers ${headers} OPTIONS "-DBOOST_TT_HAS_OPERATOR_HPP_INCLUDED")
-QT4_WRAP_UI(moc_forms ${forms} OPTIONS "-DBOOST_TT_HAS_OPERATOR_HPP_INCLUDED")
-QT4_ADD_RESOURCES(moc_resources ${resources} OPTIONS "-DBOOST_TT_HAS_OPERATOR_HPP_INCLUDED")
+QT5_WRAP_CPP(moc_headers ${headers})
+QT5_WRAP_UI(moc_forms ${forms})
+QT5_ADD_RESOURCES(moc_resources ${resources})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 if(APPLE)
@@ -61,6 +61,8 @@ else(APPLE)
         ${moc_resources})
 endif(APPLE)
 
+qt5_use_modules(firestr Widgets Network)
+
 target_link_libraries(
     firestr
     fire_gui
@@ -73,7 +75,6 @@ target_link_libraries(
     fire_util
     fire_slb
     ${Boost_LIBRARIES}
-    ${QT_LIBRARIES}
     ${MISC_LIBRARIES})
 
 add_dependencies(
@@ -86,3 +87,5 @@ add_dependencies(
     fire_network
     fire_util
     fire_slb)
+
+install(TARGETS firestr DESTINATION bin)

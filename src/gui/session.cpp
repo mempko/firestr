@@ -22,7 +22,7 @@
 
 #include "util/log.hpp"
 
-#include <QtGui>
+#include <QtWidgets>
 
 namespace s = fire::session;
 namespace m = fire::message;

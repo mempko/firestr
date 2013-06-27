@@ -22,13 +22,15 @@ file(GLOB src *.cpp)
 file(GLOB headers *.hpp)
 
 #qt specific
-QT4_WRAP_CPP(moc_headers ${headers} OPTIONS "-DBOOST_TT_HAS_OPERATOR_HPP_INCLUDED")
+QT5_WRAP_CPP(moc_headers ${headers})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 add_executable(
     firegreet
     ${src}
     ${moc_headers})
+
+qt5_use_modules(firegreet Widgets Network)
 
 target_link_libraries(
     firegreet
@@ -39,7 +41,6 @@ target_link_libraries(
     fire_network
     fire_util
     ${Boost_LIBRARIES}
-    ${QT_LIBRARIES}
     ${MISC_LIBRARIES})
 
 add_dependencies(
@@ -49,3 +50,5 @@ add_dependencies(
     fire_message
     fire_network
     fire_util)
+
+install(TARGETS firegreet DESTINATION bin)
