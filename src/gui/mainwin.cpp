@@ -40,7 +40,7 @@
 #include <sstream>
 #include <stdexcept>
 
-#include <QtGui>
+#include <QtWidgets>
 #include <QSignalMapper>
 
 namespace m = fire::message;

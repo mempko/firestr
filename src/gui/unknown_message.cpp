@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <QtGui>
+#include <QtWidgets>
 
 #include "gui/unknown_message.hpp"
 #include "util/dbc.hpp"

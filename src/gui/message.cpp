@@ -1,4 +1,4 @@
-#include <QtGui>
+#include <QtWidgets>
 
 #include "gui/message.hpp"
 #include "util/dbc.hpp"

@@ -20,7 +20,7 @@
 #include "util/bytes.hpp"
 
 #include <QObject>
-#include <QtGui>
+#include <QtWidgets>
 #include <QtNetwork>
 #include <string>
 #include <memory>

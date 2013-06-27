@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <QtGui>
+#include <QtWidgets>
 
 #include "gui/lua/widgets.hpp"
 #include "gui/lua/api.hpp"
