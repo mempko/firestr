@@ -50,3 +50,5 @@ add_dependencies(
     fire_message
     fire_network
     fire_util)
+
+install(TARGETS firegreet DESTINATION bin)

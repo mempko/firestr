@@ -87,3 +87,5 @@ add_dependencies(
     fire_network
     fire_util
     fire_slb)
+
+install(TARGETS firestr DESTINATION bin)
