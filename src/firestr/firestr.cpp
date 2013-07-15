@@ -28,6 +28,8 @@
 #include <boost/asio/ip/host_name.hpp>
 #include <boost/program_options.hpp>
 
+#include <botan/botan.h>
+
 namespace po = boost::program_options;
 namespace ip = boost::asio::ip;
 namespace fg = fire::gui;
@@ -83,6 +85,8 @@ int main(int argc, char *argv[])
         std::cout << desc << std::endl;
         return 1;
     }
+
+    Botan::LibraryInitializer init;
 
     QApplication a{argc, argv};
 
