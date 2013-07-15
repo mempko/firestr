@@ -29,6 +29,8 @@
 #include "util/dbc.hpp"
 #include "util/log.hpp"
 
+#include <botan/botan.h>
+
 namespace po = boost::program_options;
 namespace ip = boost::asio::ip;
 namespace n = fire::network;
@@ -134,6 +136,7 @@ int main(int argc, char *argv[])
 {
     CREATE_LOG("./");
 
+
     auto desc = create_descriptions();
     auto vm = parse_options(argc, argv, desc);
     if(vm.count("help"))
@@ -145,7 +148,9 @@ int main(int argc, char *argv[])
     auto host = vm["host"].as<std::string>();
     auto port = vm["port"].as<std::string>();
 
-    //it is import the tcp_connection manager is created before
+    Botan::LibraryInitializer init;
+
+    //it is important the tcp_connection manager is created before
     //the input tcp_connection is made. This is because tcp on
     //linux requires that binds to the same port are made before
     //a listen is made.
