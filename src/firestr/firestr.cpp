@@ -70,12 +70,6 @@ po::variables_map parse_options(int argc, char* argv[], po::options_description&
     return v;
 }
 
-bool user_setup(const std::string& home)
-{
-    auto user = fg::setup_user(home);
-    return user != nullptr;
-}
-
 int main(int argc, char *argv[])
 {
     auto desc = create_descriptions();
@@ -99,7 +93,8 @@ int main(int argc, char *argv[])
 
     CREATE_LOG(c.home);
 
-    if(!user_setup(c.home)) return 0;
+    c.user = fg::setup_user(c.home);
+    if(!c.user) return 0;
 
     fg::main_window w{c};
 

@@ -47,6 +47,7 @@ namespace fire
             d["address"] = u.address();
             d["name"] = u.name();
             d["id"] = u.id();
+            d["pkey"] = u.key().key();
 
             return d;
         }
@@ -57,7 +58,8 @@ namespace fire
             {
                 d["address"].as_string(),
                 d["name"].as_string(),
-                d["id"].as_string()
+                d["id"].as_string(),
+                d["pkey"].as_string()
             };
         }
 
@@ -158,6 +160,12 @@ namespace fire
             return l.string();
         }
 
+        std::string get_local_private_key_file(const bf::path& home_dir)
+        {
+            bf::path l = home_dir / "private_key";
+            return l.string();
+        }
+
         std::string get_local_contacts_file(const bf::path& home_dir)
         {
             bf::path l = home_dir / "contacts";
@@ -170,18 +178,33 @@ namespace fire
             return l.string();
         }
 
-        local_user_ptr load_user(const std::string& home_dir)
+        bool user_created(const std::string& home_dir)
+        {
+            return bf::exists(get_local_user_file(home_dir));
+        }
+
+        local_user_ptr load_user(const std::string& home_dir, const std::string& passphrase)
         {
             auto local_user_file = get_local_user_file(home_dir);
+            auto local_prv_key_file = get_local_private_key_file(home_dir);
             auto local_contacts_file = get_local_contacts_file(home_dir);
             auto local_greaters_file = get_local_greeters_file(home_dir);
 
+            //load user info
             std::ifstream info_in(local_user_file.c_str());
             if(!info_in.good()) return {};
 
             user_info info;
             info_in >> info; 
 
+            //load private key
+            std::ifstream key_in(local_prv_key_file.c_str());
+            if(!key_in.good()) return {};
+
+            auto prv_key = u::decode(key_in, passphrase);
+            CHECK(prv_key);
+
+            //load contacts
             users us;
             std::ifstream contacts_in(local_contacts_file.c_str());
             if(contacts_in.good()) 
@@ -189,6 +212,7 @@ namespace fire
                 contacts_in >> us;
             }
 
+            //load greeters
             greet_servers greeters;
             std::ifstream greeters_in(local_greaters_file.c_str());
             if(greeters_in.good()) 
@@ -197,7 +221,7 @@ namespace fire
             }
 
             contact_list contacts{us};
-            local_user_ptr lu{new local_user{info, contacts, greeters}};
+            local_user_ptr lu{new local_user{info, contacts, greeters, prv_key}};
 
             ENSURE(lu);
             return lu;
@@ -208,6 +232,7 @@ namespace fire
             create_home_directory(home_dir);
 
             auto local_user_file = get_local_user_file(home_dir);
+            auto local_prv_key_file = get_local_private_key_file(home_dir);
             auto local_contacts_file = get_local_contacts_file(home_dir);
             auto local_greaters_file = get_local_greeters_file(home_dir);
 
@@ -217,6 +242,15 @@ namespace fire
                     throw std::runtime_error{"unable to save `" + local_user_file + "'"};
 
                 info_out << lu.info();
+            }
+
+            if(!bf::exists(local_prv_key_file))
+            {
+                std::ofstream key_out(local_prv_key_file.c_str());
+                if(!key_out.good()) 
+                    throw std::runtime_error{"unable to save `" + local_prv_key_file + "'"};
+
+                u::encode(key_out, lu.private_key());
             }
 
             {
@@ -257,24 +291,31 @@ namespace fire
         local_user::local_user(
                 const user_info& i, 
                 const contact_list& c,
-                const greet_servers& g) : 
+                const greet_servers& g,
+                u::private_key_ptr pk) : 
             _info{i},
             _contacts{c},
-            _greet_servers{g}
+            _greet_servers{g},
+            _prv_key{pk}
         {
+            REQUIRE(pk);
+            INVARIANT(_prv_key);
         }
 
-        local_user::local_user(const std::string& name) : 
-            _info{"local", name, util::uuid()}, 
+        local_user::local_user(const std::string& name, u::private_key_ptr pk) : 
+            _info{"local", name, util::uuid(), pk->public_key()}, 
             _contacts{},
-            _greet_servers{}
+            _greet_servers{},
+            _prv_key{pk}
         {
+            REQUIRE(pk);
             REQUIRE_FALSE(name.empty());
 
             INVARIANT_EQUAL(_info.address(), "local");
             INVARIANT_FALSE(_info.name().empty());
             INVARIANT_FALSE(_info.id().empty());
-            ENSURE(_contacts.empty());
+            INVARIANT(_contacts.empty());
+            INVARIANT(_prv_key);
         }
 
         contact_list::contact_list(const users& cs)
@@ -399,6 +440,12 @@ namespace fire
             return _address;
         }
 
+        const u::public_key& user_info::key() const 
+        {
+            u::mutex_scoped_lock l(_mutex);
+            return _pkey;
+        }
+
         void user_info::name(const std::string& v) 
         {
             u::mutex_scoped_lock l(_mutex);
@@ -415,6 +462,12 @@ namespace fire
         {
             u::mutex_scoped_lock l(_mutex);
             _id = v;
+        }
+
+        void user_info::key(const u::public_key& v) 
+        {
+            u::mutex_scoped_lock l(_mutex);
+            _pkey = v;
         }
 
         std::string greet_server::host() const

@@ -15,11 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "util/security.hpp"
+#include "util/mencode.hpp"
 #include "util/dbc.hpp"
 
 #include <sstream>
 #include <exception>
 
+#include <botan/botan.h>
 #include <botan/dsa.h>
 #include <botan/rng.h>
 
@@ -74,35 +76,106 @@ namespace fire
 
             if(!_k) throw std::invalid_argument{"Invalid Password"};
 
-            ENSURE(_k);
-            ENSURE_FALSE(_encrypted_private_key.empty());
+            INVARIANT(_k);
+            INVARIANT_FALSE(_encrypted_private_key.empty());
         }
 
         const std::string& private_key::encrypted_private_key() const
         {
+            INVARIANT(_k);
             ENSURE_FALSE(_encrypted_private_key.empty());
             return _encrypted_private_key;
         }
 
         const std::string& private_key::public_key() const
         {
+            INVARIANT(_k);
+            ENSURE_FALSE(_public_key.empty());
             return _public_key;
         }
+
+        public_key::public_key() : 
+            _ks{}, _k{}
+        {}
 
         public_key::public_key(const std::string& key) : 
             _ks{key}
         {
-            REQUIRE_FALSE(_ks.empty());
-            //TODO: creat key from string 
+            REQUIRE_FALSE(key.empty());
+
+            b::DataSource_Memory ds{reinterpret_cast<const b::byte*>(&_ks[0]), _ks.size()};
+            _k.reset(b::X509::load_key(ds));
+
+            INVARIANT(_k);
+            INVARIANT_FALSE(_ks.empty());
         }
 
         public_key::public_key(const private_key& pkey) : 
-            public_key(pkey.public_key()) {}
+            public_key(pkey.public_key()) 
+        {
+            INVARIANT(_k);
+            INVARIANT_FALSE(_ks.empty());
+        }
+
+        public_key::public_key(const public_key& pk) : 
+            public_key(pk.key()) 
+        {
+            INVARIANT(_k);
+            INVARIANT_FALSE(_ks.empty());
+        }
+
+        public_key& public_key::operator=(const public_key& o)
+        {
+            if(&o == this) return *this;
+
+            _ks = o._ks;
+            b::DataSource_Memory ds{reinterpret_cast<const b::byte*>(&_ks[0]), _ks.size()};
+            _k.reset(b::X509::load_key(ds));
+
+            ENSURE(_k);
+            ENSURE_NOT_EQUAL(_k, o._k);
+            ENSURE_FALSE(_ks.empty());
+            ENSURE_EQUAL(_ks, o._ks);
+            return *this;
+        }
+
+        bool public_key::valid() const
+        {
+            return _k != nullptr;
+        }
 
         const std::string& public_key::key() const
         {
+            INVARIANT(_k);
             ENSURE_FALSE(_ks.empty());
             return _ks;
+        }
+
+        void encode(std::ostream& out, const private_key& k)
+        {
+            value v = k.encrypted_private_key();
+            out << v;
+        }
+
+        private_key_ptr decode(std::istream& in, const std::string& passphrase)
+        {
+            value encrypted_private_key;
+            in >> encrypted_private_key;
+
+            return std::make_shared<private_key>(encrypted_private_key.as_string(), passphrase);
+        }
+
+        void encode(std::ostream& out, const public_key& k)
+        {
+            value v = k.key();
+            out << v;
+        }
+
+        public_key decode(std::istream& in, const public_key& k)
+        {
+            value v;
+            in >> v;
+            return {v.as_string()};
         }
     }
 }

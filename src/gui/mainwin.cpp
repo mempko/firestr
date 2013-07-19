@@ -118,21 +118,61 @@ namespace fire
             QMainWindow::closeEvent(event);
         }
 
+        us::local_user_ptr load_user(const std::string& home)
+        {
+            //loop if wrong password
+            //load user throws error if the pass is wrong
+            bool error = true;
+            while(error)
+            try
+            {
+                bool ok = false;
+                std::string pass = "";
+
+                auto p = QInputDialog::getText(
+                        0, 
+                        "Enter Password",
+                        "Password",
+                        QLineEdit::Password, pass.c_str(), &ok);
+
+                if(ok && !p.isEmpty()) pass = convert(p);
+                else return {};
+
+                auto user = us::load_user(home, pass);
+                error = false;
+                return user;
+            }
+            catch(...) {}
+
+            return {};
+        }
+
         us::local_user_ptr make_new_user(const std::string& home)
         {
             bool ok = false;
-            std::string name = "me";
+            std::string name = "your name here";
 
             auto r = QInputDialog::getText(
                     0, 
-                    "Welcome!",
-                    "Select User Name:",
+                    "New User",
+                    "Select User Name",
                     QLineEdit::Normal, name.c_str(), &ok);
 
             if(ok && !r.isEmpty()) name = convert(r);
             else return {};
 
-            auto user = std::make_shared<us::local_user>(name);
+            std::string pass = "";
+            auto p = QInputDialog::getText(
+                    0, 
+                    "Create Password",
+                    "Password",
+                    QLineEdit::Password, pass.c_str(), &ok);
+
+            if(ok && !p.isEmpty()) pass = convert(p);
+            else return {};
+
+            auto key = std::make_shared<u::private_key>(pass);
+            auto user = std::make_shared<us::local_user>(name, key);
             us::save_user(home, *user);
 
             ENSURE(user);
@@ -141,8 +181,7 @@ namespace fire
 
         us::local_user_ptr setup_user(const std::string& home)
         {
-            auto user = us::load_user(home);
-            return user ? user : make_new_user(home);
+            return us::user_created(home) ? load_user(home) : make_new_user(home);
         }
 
         void main_window::setup_post()
@@ -402,12 +441,14 @@ namespace fire
             REQUIRE_FALSE(_app_service);
             REQUIRE(_master);
             REQUIRE(_mail);
+            REQUIRE(_context.user);
 
             us::user_service_context uc
             {
                 _context.home,
                 _context.host,
                 _context.port,
+                _context.user,
                 _mail,
             };
 

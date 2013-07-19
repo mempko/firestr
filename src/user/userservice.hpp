@@ -66,6 +66,7 @@ namespace fire
             std::string home;
             std::string host;
             std::string port;
+            local_user_ptr user;
             message::mailbox_ptr events;
         };
 

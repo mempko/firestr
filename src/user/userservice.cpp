@@ -229,6 +229,7 @@ namespace fire
 
         user_service::user_service(user_service_context& c) :
             s::service{SERVICE_ADDRESS, c.events},
+            _user{c.user},
             _home{c.home},
             _in_host{c.host},
             _in_port{c.port},
@@ -236,7 +237,6 @@ namespace fire
         {
             REQUIRE_FALSE(c.home.empty());
 
-            _user = load_user(_home); 
             if(!_user) throw std::runtime_error{"no user found at `" + _home + "'"};
             update_address(n::make_udp_address(c.host, c.port));
 
