@@ -14,13 +14,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef FIRESTR_SEC_H
-#define FIRESTR_SEC_H
+#ifndef FIRESTR_UTIL_SEC_H
+#define FIRESTR_UTIL_SEC_H
 
-#include <botan/botan.h>
-
-#include <istream>
+#include <iostream>
 #include <memory>
+
+namespace Botan
+{
+    class Private_Key; 
+    class Public_Key; 
+}
 
 namespace fire  
 {
@@ -49,16 +53,30 @@ namespace fire
         class public_key
         {
             public:
+                public_key();
                 public_key(const std::string& key);
                 public_key(const private_key& pkey);
+                public_key(const public_key&);
+            public:
+                public_key& operator=(const public_key&);
 
             public:
+                bool valid() const;
                 const std::string& key() const;
 
             private:
                 std::string _ks;
                 pub_key_ptr _k;
         };
+
+        using private_key_ptr = std::shared_ptr<private_key>;
+        using public_key_ptr = std::shared_ptr<public_key>;
+
+        void encode(std::ostream& out, const private_key& u);
+        private_key_ptr decode(std::istream& in, const std::string& passphrase);
+
+        void encode(std::ostream& out, const public_key&);
+        public_key decode(std::istream& in, const public_key&);
     }
 }
 
