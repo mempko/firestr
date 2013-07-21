@@ -22,8 +22,10 @@
 #include <exception>
 
 #include <botan/botan.h>
-#include <botan/dsa.h>
+
+#include <botan/rsa.h>
 #include <botan/rng.h>
+#include <botan/look_pk.h>
 
 namespace b = Botan;
 
@@ -33,7 +35,8 @@ namespace fire
     {
         namespace
         {
-            const std::string DL_GROUP = "dsa/jce/1024";
+            const size_t RSA_SIZE = 1024;
+            const std::string EME_SCHEME = "EME1(SHA-256)";
         }
 
         void validate_passphrase(const std::string& passphrase)
@@ -47,9 +50,8 @@ namespace fire
             validate_passphrase(passphrase);
 
             b::AutoSeeded_RNG r;
-            b::DL_Group g{DL_GROUP};
 
-            _k.reset(new b::DSA_PrivateKey{r, g});
+            _k.reset(new b::RSA_PrivateKey{r, RSA_SIZE});
             _public_key = b::X509::PEM_encode(*_k);
             _encrypted_private_key = b::PKCS8::PEM_encode(*_k, r, passphrase);
 
@@ -157,7 +159,7 @@ namespace fire
             out << v;
         }
 
-        private_key_ptr decode(std::istream& in, const std::string& passphrase)
+        private_key_ptr decode_private_key(std::istream& in, const std::string& passphrase)
         {
             value encrypted_private_key;
             in >> encrypted_private_key;
@@ -171,11 +173,31 @@ namespace fire
             out << v;
         }
 
-        public_key decode(std::istream& in, const public_key& k)
+        public_key decode_public_key(std::istream& in)
         {
             value v;
             in >> v;
             return {v.as_string()};
+        }
+
+        bytes private_key::decrypt(const bytes& b) const
+        {
+            INVARIANT(_k);
+
+            b::PK_Decryptor_EME d{*_k, EME_SCHEME};
+            auto r = d.decrypt(reinterpret_cast<const unsigned char*>(b.data()), b.size());
+            return {std::begin(r), std::end(r)};
+        }
+
+        bytes public_key::encrypt(const bytes& b) const
+        {
+            INVARIANT(_k);
+
+            b::PK_Encryptor_EME e{*_k, EME_SCHEME};
+
+            b::AutoSeeded_RNG r;
+            auto c = e.encrypt(reinterpret_cast<const unsigned char*>(b.data()), b.size(), r);
+            return {std::begin(c), std::end(c)};
         }
     }
 }

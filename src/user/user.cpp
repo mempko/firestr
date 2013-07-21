@@ -201,7 +201,7 @@ namespace fire
             std::ifstream key_in(local_prv_key_file.c_str());
             if(!key_in.good()) return {};
 
-            auto prv_key = u::decode(key_in, passphrase);
+            auto prv_key = u::decode_private_key(key_in, passphrase);
             CHECK(prv_key);
 
             //load contacts
