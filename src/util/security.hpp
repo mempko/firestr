@@ -20,6 +20,8 @@
 #include <iostream>
 #include <memory>
 
+#include "util/bytes.hpp"
+
 namespace Botan
 {
     class Private_Key; 
@@ -44,6 +46,9 @@ namespace fire
                 const std::string& encrypted_private_key() const;
                 const std::string& public_key() const;
 
+            public:
+                bytes decrypt(const bytes&) const;
+
             private:
                 prv_key_ptr _k;
                 std::string _encrypted_private_key;
@@ -64,6 +69,9 @@ namespace fire
                 bool valid() const;
                 const std::string& key() const;
 
+            public:
+                bytes encrypt(const bytes&) const;
+
             private:
                 std::string _ks;
                 pub_key_ptr _k;
@@ -73,10 +81,10 @@ namespace fire
         using public_key_ptr = std::shared_ptr<public_key>;
 
         void encode(std::ostream& out, const private_key& u);
-        private_key_ptr decode(std::istream& in, const std::string& passphrase);
+        private_key_ptr decode_private_key(std::istream& in, const std::string& passphrase);
 
         void encode(std::ostream& out, const public_key&);
-        public_key decode(std::istream& in, const public_key&);
+        public_key decode_public_key(std::istream& in);
     }
 }
 
