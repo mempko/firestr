@@ -113,15 +113,15 @@ namespace fire
             return _user_service;
         }
 
-        const app_mailbox_ids& session::app_ids() const
+        const apps& session::app_list() const
         {
-            return _app_mailbox_ids;
+            return _apps;
         }
 
-        void session::add_app_id(const std::string& id)
+        void session::add_app(const std::string& id, const message::message& m)
         {
             REQUIRE_FALSE(id.empty());
-            _app_mailbox_ids.push_back(id);
+            _apps.push_back({id, m});
         }
 
         bool session::send(const std::string& to, const message::message& m)
