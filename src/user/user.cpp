@@ -26,6 +26,7 @@
 
 namespace bf = boost::filesystem;
 namespace u = fire::util;
+namespace sc = fire::security;
 
 namespace fire
 {
@@ -201,7 +202,7 @@ namespace fire
             std::ifstream key_in(local_prv_key_file.c_str());
             if(!key_in.good()) return {};
 
-            auto prv_key = u::decode_private_key(key_in, passphrase);
+            auto prv_key = sc::decode_private_key(key_in, passphrase);
             CHECK(prv_key);
 
             //load contacts
@@ -250,7 +251,7 @@ namespace fire
                 if(!key_out.good()) 
                     throw std::runtime_error{"unable to save `" + local_prv_key_file + "'"};
 
-                u::encode(key_out, lu.private_key());
+                sc::encode(key_out, lu.private_key());
             }
 
             {
@@ -292,7 +293,7 @@ namespace fire
                 const user_info& i, 
                 const contact_list& c,
                 const greet_servers& g,
-                u::private_key_ptr pk) : 
+                sc::private_key_ptr pk) : 
             _info{i},
             _contacts{c},
             _greet_servers{g},
@@ -302,7 +303,7 @@ namespace fire
             INVARIANT(_prv_key);
         }
 
-        local_user::local_user(const std::string& name, u::private_key_ptr pk) : 
+        local_user::local_user(const std::string& name, sc::private_key_ptr pk) : 
             _info{"local", name, util::uuid(), pk->public_key()}, 
             _contacts{},
             _greet_servers{},
@@ -440,7 +441,7 @@ namespace fire
             return _address;
         }
 
-        const u::public_key& user_info::key() const 
+        const sc::public_key& user_info::key() const 
         {
             u::mutex_scoped_lock l(_mutex);
             return _pkey;
@@ -464,7 +465,7 @@ namespace fire
             _id = v;
         }
 
-        void user_info::key(const u::public_key& v) 
+        void user_info::key(const sc::public_key& v) 
         {
             u::mutex_scoped_lock l(_mutex);
             _pkey = v;

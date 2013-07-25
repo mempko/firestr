@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "util/security.hpp"
+#include "security/security.hpp"
 #include "util/mencode.hpp"
 #include "util/dbc.hpp"
 
@@ -28,10 +28,11 @@
 #include <botan/look_pk.h>
 
 namespace b = Botan;
+namespace u = fire::util;
 
 namespace fire 
 {
-    namespace util 
+    namespace security 
     {
         namespace
         {
@@ -155,13 +156,13 @@ namespace fire
 
         void encode(std::ostream& out, const private_key& k)
         {
-            value v = k.encrypted_private_key();
+            u::value v = k.encrypted_private_key();
             out << v;
         }
 
         private_key_ptr decode_private_key(std::istream& in, const std::string& passphrase)
         {
-            value encrypted_private_key;
+            u::value encrypted_private_key;
             in >> encrypted_private_key;
 
             return std::make_shared<private_key>(encrypted_private_key.as_string(), passphrase);
@@ -169,18 +170,18 @@ namespace fire
 
         void encode(std::ostream& out, const public_key& k)
         {
-            value v = k.key();
+            u::value v = k.key();
             out << v;
         }
 
         public_key decode_public_key(std::istream& in)
         {
-            value v;
+            u::value v;
             in >> v;
             return {v.as_string()};
         }
 
-        bytes private_key::decrypt(const bytes& b) const
+        u::bytes private_key::decrypt(const u::bytes& b) const
         {
             INVARIANT(_k);
 
@@ -189,7 +190,7 @@ namespace fire
             return {std::begin(r), std::end(r)};
         }
 
-        bytes public_key::encrypt(const bytes& b) const
+        u::bytes public_key::encrypt(const u::bytes& b) const
         {
             INVARIANT(_k);
 

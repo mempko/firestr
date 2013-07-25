@@ -39,6 +39,7 @@ target_link_libraries(
     fire_service
     fire_message
     fire_network
+    fire_security
     fire_util
     ${Boost_LIBRARIES}
     ${MISC_LIBRARIES})
@@ -49,6 +50,7 @@ add_dependencies(
     fire_user
     fire_message
     fire_network
+    fire_security
     fire_util)
 
 install(TARGETS firegreet DESTINATION bin)

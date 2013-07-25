@@ -1,0 +1,22 @@
+
+===================================================================
+security library
+===================================================================
+
+This library deals with security of messages. It provides the means
+of encryption and manages with secrets.
+
+===================================================================
+dependencies
+===================================================================
+
+botan
+
+===================================================================
+file summary
+===================================================================
+
+security   - Implements the main security API. Provides 
+             encryption/decryption functions.
+
+
