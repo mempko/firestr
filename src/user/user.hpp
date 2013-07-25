@@ -23,7 +23,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "util/security.hpp"
+#include "security/security.hpp"
 #include "util/thread.hpp"
 #include "util/dbc.hpp"
 
@@ -41,7 +41,7 @@ namespace fire
                         const std::string& address, 
                         const std::string& name, 
                         const std::string& id,
-                        const util::public_key& pub_key) :
+                        const security::public_key& pub_key) :
                     _address{address}, _name{name}, _id{id}, _pkey{pub_key} 
                 {
                     REQUIRE_FALSE(address.empty());
@@ -70,19 +70,19 @@ namespace fire
                 std::string name() const;
                 std::string id() const;
                 std::string address() const;
-                const util::public_key& key() const;
+                const security::public_key& key() const;
 
 
                 void name(const std::string& v);
                 void address(const std::string& v);
                 void id(const std::string& v);
-                void key(const util::public_key& v);
+                void key(const security::public_key& v);
 
             private:
                 std::string _address;
                 std::string _name;
                 std::string _id;
-                util::public_key _pkey;
+                security::public_key _pkey;
                 mutable std::mutex _mutex;
         };
 
@@ -150,9 +150,9 @@ namespace fire
                         const user_info& i, 
                         const contact_list& c,
                         const greet_servers& g,
-                        util::private_key_ptr);
+                        security::private_key_ptr);
 
-                local_user(const std::string& name, util::private_key_ptr); 
+                local_user(const std::string& name, security::private_key_ptr); 
 
             public:
                 const user_info& info() const { return _info;}
@@ -164,13 +164,13 @@ namespace fire
                 const greet_servers& greeters() const { return _greet_servers;}
                 greet_servers& greeters() { return _greet_servers;}
 
-                const util::private_key& private_key() const { return *_prv_key;}
+                const security::private_key& private_key() const { return *_prv_key;}
 
             private:
                 user_info _info;
                 contact_list _contacts;
                 greet_servers _greet_servers;
-                util::private_key_ptr _prv_key;
+                security::private_key_ptr _prv_key;
         };
 
         using local_user_ptr = std::shared_ptr<local_user>;

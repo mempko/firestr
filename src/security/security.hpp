@@ -14,8 +14,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef FIRESTR_UTIL_SEC_H
-#define FIRESTR_UTIL_SEC_H
+#ifndef FIRESTR_SECURITY_SEC_H
+#define FIRESTR_SECURITY_SEC_H
 
 #include <iostream>
 #include <memory>
@@ -30,7 +30,7 @@ namespace Botan
 
 namespace fire  
 {
-    namespace util 
+    namespace security 
     {
         using prv_key_ptr = std::shared_ptr<Botan::Private_Key>;
         using pub_key_ptr = std::shared_ptr<Botan::Public_Key>;
@@ -47,7 +47,7 @@ namespace fire
                 const std::string& public_key() const;
 
             public:
-                bytes decrypt(const bytes&) const;
+                util::bytes decrypt(const util::bytes&) const;
 
             private:
                 prv_key_ptr _k;
@@ -70,7 +70,7 @@ namespace fire
                 const std::string& key() const;
 
             public:
-                bytes encrypt(const bytes&) const;
+                util::bytes encrypt(const util::bytes&) const;
 
             private:
                 std::string _ks;

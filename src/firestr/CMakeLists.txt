@@ -72,6 +72,7 @@ target_link_libraries(
     fire_service
     fire_message
     fire_network
+    fire_security
     fire_util
     fire_slb
     ${Boost_LIBRARIES}
@@ -85,6 +86,7 @@ add_dependencies(
     fire_user
     fire_message
     fire_network
+    fire_security
     fire_util
     fire_slb)
 

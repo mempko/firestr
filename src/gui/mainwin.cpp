@@ -50,6 +50,7 @@ namespace us = fire::user;
 namespace s = fire::session;
 namespace a = fire::gui::app;
 namespace n = fire::network;
+namespace sc = fire::security;
 
 namespace fire
 {
@@ -171,7 +172,7 @@ namespace fire
             if(ok && !p.isEmpty()) pass = convert(p);
             else return {};
 
-            auto key = std::make_shared<u::private_key>(pass);
+            auto key = std::make_shared<sc::private_key>(pass);
             auto user = std::make_shared<us::local_user>(name, key);
             us::save_user(home, *user);
 
