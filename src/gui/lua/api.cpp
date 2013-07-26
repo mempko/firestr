@@ -427,20 +427,20 @@ namespace fire
             {
                 INVARIANT(session);
 
-                return session->app_list().size();
+                return session->app_ids().size();
             }
 
             app_ref lua_api::get_app(size_t i)
             {
                 INVARIANT(session);
-                const auto& apps = session->app_list();
-                if(i >= apps.size()) return empty_app_ref(*this);
+                const auto& ids = session->app_ids();
+                if(i >= ids.size()) return empty_app_ref(*this);
 
-                auto app = apps[i];
+                auto id = ids[i];
 
                 app_ref r;
                 r.id = 0;
-                r.app_id = app.mailbox_id;
+                r.app_id = id;
                 r.api = this;
 
                 ENSURE_EQUAL(r.api, this);
@@ -451,8 +451,8 @@ namespace fire
             void lua_api::send_local(const script_message& m)
             {
                 INVARIANT(session);
-                for(const auto& app : session->app_list())
-                    sender->send_to_local_app(app.mailbox_id, m);
+                for(const auto& id : session->app_ids())
+                    sender->send_to_local_app(id, m);
             }
 
             canvas_ref lua_api::make_canvas(int r, int c)
