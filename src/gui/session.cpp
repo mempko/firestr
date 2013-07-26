@@ -214,7 +214,7 @@ namespace fire
                 if(m.meta.type == ms::NEW_APP)
                 {
                     auto id = _messages->add_new_app(m);
-                    _session->add_app(id, m);
+                    _session->add_app_id(id);
                 }
                 else if(m.meta.type == s::event::SESSION_SYNCED)
                 {

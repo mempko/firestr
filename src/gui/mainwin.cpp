@@ -507,21 +507,17 @@ namespace fire
 
             //create chat sample
             auto t = new a::chat_sample{s->session()};
-
-            //create app message
-            ms::new_app n{t->id(), t->type()}; 
-            m::message nm = n;
-
-            //add to session
             s->add(t);
-            s->session()->add_app(t->mail()->address(), nm);
+            s->session()->add_app_id(t->mail()->address());
 
             //add to master post so it can receive messages
             //from outside world
             _master->add(t->mail());
 
-            //send to all users in session
-            s->session()->send(nm);
+            //send new app message to contacts in session
+            ms::new_app n{t->id(), t->type()}; 
+
+            s->session()->send(n);
         }
 
         bool ask_user_to_select_app(QWidget* w, const a::app_service& apps, std::string& id)
@@ -565,19 +561,17 @@ namespace fire
             //create app editor
             auto t = new a::app_editor{_app_service, s->session(), app};
 
-            //create app message
-            ms::new_app n{t->id(), t->type()}; 
-            m::message nm = n;
-
             s->add(t);
-            s->session()->add_app(t->mail()->address(), nm);
+            s->session()->add_app_id(t->mail()->address());
 
             //add to master post so it can receive messages
             //from outside world
             _master->add(t->mail());
 
-            //send app to all users
-            s->session()->send(nm);
+            //send new app message to contacts in session
+            ms::new_app n{t->id(), t->type()}; 
+
+            s->session()->send(n);
         }
 
         void main_window::load_app_into_session(QString qid)
@@ -597,20 +591,18 @@ namespace fire
             //create app widget
             auto t = new a::script_app{a, _app_service, s->session()};
 
-            //create app message that will send to user.
-            m::message app_message = *a;
-            ms::new_app n{t->id(), t->type(), u::encode(app_message)}; 
-            m::message nm = n;
-
             //add to session
             s->add(t);
-            s->session()->add_app(t->mail()->address(), nm);
+            s->session()->add_app_id(t->mail()->address());
 
             //add widget mailbox to master
             _master->add(t->mail());
 
-            //send app to all users
-            s->session()->send(nm);
+            //send new app message to contacts in session
+            m::message app_message = *a;
+            ms::new_app n{t->id(), t->type(), u::encode(app_message)}; 
+
+            s->session()->send(n);
         }
 
         void main_window::about()

@@ -33,13 +33,7 @@ namespace fire
 {
     namespace session
     {
-        struct app_metadata
-        {
-            std::string mailbox_id;
-            message::message app_message;
-        };
-        using apps = std::vector<app_metadata>;
-
+        using app_mailbox_ids = std::vector<std::string>;
         class session 
         {
             public:
@@ -66,8 +60,8 @@ namespace fire
                 user::user_service_ptr user_service();
 
             public:
-                const apps& app_list() const;
-                void add_app(const std::string& id, const message::message&);
+                const app_mailbox_ids& app_ids() const;
+                void add_app_id(const std::string& id);
 
             private:
                 void init();
@@ -79,7 +73,7 @@ namespace fire
                 user::user_service_ptr _user_service;
                 messages::sender_ptr _sender;
                 user::contact_list _contacts;
-                apps _apps;
+                app_mailbox_ids _app_mailbox_ids;
                 bool _initiated_by_user;
         };
 
