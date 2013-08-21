@@ -36,6 +36,7 @@ namespace n = fire::network;
 namespace u = fire::util;
 namespace us = fire::user;
 namespace s = fire::service;
+namespace sc = fire::security;
 
 namespace fire
 {
@@ -233,6 +234,7 @@ namespace fire
             _home{c.home},
             _in_host{c.host},
             _in_port{c.port},
+            _session_library{c.session_library},
             _done{false}
         {
             REQUIRE_FALSE(c.home.empty());
@@ -247,6 +249,7 @@ namespace fire
             init_greet();
 
             INVARIANT(_user);
+            INVARIANT(_session_library);
             INVARIANT(mail());
             ENSURE(_ping_thread);
         }
@@ -501,12 +504,17 @@ namespace fire
         void user_service::update_contact_address(const std::string& id, const std::string& ip, const std::string& port)
         {
             INVARIANT(_user);
+            INVARIANT(_session_library);
             u::mutex_scoped_lock l(_mutex);
 
             auto c = _user->contacts().by_id(id);
             if(!c) return;
 
             auto a = n::make_udp_address(ip, port);
+
+            sc::session s;
+            s.key = c->key();
+            _session_library->add_session(a, s);
 
             if(c->address() == a) return;
 

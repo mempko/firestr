@@ -17,6 +17,7 @@
 #include "security/security.hpp"
 #include "util/mencode.hpp"
 #include "util/dbc.hpp"
+#include "util/log.hpp"
 
 #include <sstream>
 #include <exception>
@@ -186,19 +187,41 @@ namespace fire
             INVARIANT(_k);
 
             b::PK_Decryptor_EME d{*_k, EME_SCHEME};
-            auto r = d.decrypt(reinterpret_cast<const unsigned char*>(b.data()), b.size());
-            return {std::begin(r), std::end(r)};
+
+            u::bytes rs;
+            std::stringstream s(u::to_str(b));
+            u::bytes bs;
+            s >> bs;
+            while(!bs.empty())
+            {
+                auto r = d.decrypt(reinterpret_cast<const unsigned char*>(bs.data()), bs.size());
+                rs.insert(rs.end(), std::begin(r), std::end(r));
+
+                s >> bs;
+            }
+            return rs;
         }
 
         u::bytes public_key::encrypt(const u::bytes& b) const
         {
             INVARIANT(_k);
+            INVARIANT_FALSE(_ks.empty());
+
+            std::stringstream rs;
 
             b::PK_Encryptor_EME e{*_k, EME_SCHEME};
 
             b::AutoSeeded_RNG r;
-            auto c = e.encrypt(reinterpret_cast<const unsigned char*>(b.data()), b.size(), r);
-            return {std::begin(c), std::end(c)};
+            size_t advance = 0;
+            while(advance < b.size())
+            {
+                size_t size = std::min(e.maximum_input_size(), b.size()-advance);
+                auto c = e.encrypt(reinterpret_cast<const unsigned char*>(b.data())+advance, size, r);
+                u::bytes bs{std::begin(c), std::end(c)};
+                rs << bs;
+                advance+=size;
+            }
+            return u::to_bytes(rs.str());
         }
     }
 }

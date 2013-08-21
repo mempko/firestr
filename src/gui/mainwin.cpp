@@ -189,14 +189,22 @@ namespace fire
         {
             REQUIRE(!_master);
 
+            //setup the session library which will handle security sessions
+            //with contacts
+            _session_library = std::make_shared<sc::session_library>(_context.user->private_key());
+
             //create post office to handle incoming and outgoing messages
-            _master = std::make_shared<m::master_post_office>(_context.host, _context.port);
+            _master = std::make_shared<m::master_post_office>(
+                    _context.host, 
+                    _context.port, 
+                    _session_library);
 
             //create mailbox just for gui specific messages.
-            //This mailbox is not connected to a post as only internally accessible
+            //This mailbox is not connected to a post and is only internally accessible
             _mail = std::make_shared<m::mailbox>(GUI_MAIL);
             INVARIANT(_master);
             INVARIANT(_mail);
+            INVARIANT(_session_library);
         }
 
         void main_window::create_main()
@@ -443,6 +451,7 @@ namespace fire
             REQUIRE(_master);
             REQUIRE(_mail);
             REQUIRE(_context.user);
+            REQUIRE(_session_library);
 
             us::user_service_context uc
             {
@@ -451,6 +460,7 @@ namespace fire
                 _context.port,
                 _context.user,
                 _mail,
+                _session_library,
             };
 
             _user_service = std::make_shared<us::user_service>(uc);
@@ -463,6 +473,7 @@ namespace fire
 
             ENSURE(_user_service);
             ENSURE(_session_service);
+            ENSURE(_session_library);
             ENSURE(_app_service);
         }
 

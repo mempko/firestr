@@ -21,6 +21,7 @@
 #include "user/user.hpp"
 #include "service/service.hpp"
 #include "network/message_queue.hpp"
+#include "security/security_library.hpp"
 #include "util/thread.hpp"
 
 #include <map>
@@ -68,6 +69,7 @@ namespace fire
             std::string port;
             local_user_ptr user;
             message::mailbox_ptr events;
+            security::session_library_ptr session_library;
         };
 
         class user_service : public service::service
@@ -144,6 +146,10 @@ namespace fire
                 //greet
                 std::string _in_host;
                 std::string _in_port;
+
+                //stores session security information for 
+                //a connection with a user
+                security::session_library_ptr _session_library;
 
                 bool _done;
 
