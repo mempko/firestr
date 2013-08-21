@@ -397,7 +397,10 @@ namespace std
 
     std::istream& operator>>(std::istream& i, fire::util::bytes& v)
     {
-        v = fire::util::decode_value(i).as_bytes();
+        if(!i.good()) {v.clear(); return i;}
+        auto vv = fire::util::decode_value(i);
+        if(vv.is_bytes()) v = vv.as_bytes();
+        else v.clear();
         return i;
     }
 }

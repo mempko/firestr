@@ -25,6 +25,7 @@
 #include "user/userservice.hpp"
 #include "session/session.hpp"
 #include "session/session_service.hpp"
+#include "security/security_library.hpp"
 #include "util/dbc.hpp"
 
 namespace fire
@@ -135,6 +136,7 @@ namespace fire
             private:
                 fire::message::post_office_ptr _master;
                 fire::message::mailbox_ptr _mail;
+                fire::security::session_library_ptr _session_library;
                 user::user_service_ptr _user_service;
                 session::session_service_ptr _session_service;
                 app::app_service_ptr _app_service;
