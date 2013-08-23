@@ -27,6 +27,7 @@
 #include <botan/rsa.h>
 #include <botan/rng.h>
 #include <botan/look_pk.h>
+#include <botan/dh.h>
 
 namespace b = Botan;
 namespace u = fire::util;
@@ -39,6 +40,9 @@ namespace fire
         {
             const size_t RSA_SIZE = 1024;
             const std::string EME_SCHEME = "EME1(SHA-256)";
+            const b::DL_Group SHARED_DOMAIN{"modp/ietf/2048"};
+            const std::string KEY_AGREEMENT_ALGO = "KDF2(SHA-256)";
+            const std::string SESSION_PARAM = "dummy session param";
         }
 
         void validate_passphrase(const std::string& passphrase)
@@ -222,6 +226,52 @@ namespace fire
                 advance+=size;
             }
             return u::to_bytes(rs.str());
+        }
+
+        dh_secret::dh_secret()
+        {
+            b::AutoSeeded_RNG r;
+            _pkey = std::make_shared<b::DH_PrivateKey>(r, SHARED_DOMAIN);
+            ENSURE(_pkey);
+        }
+
+        util::bytes dh_secret::public_value() const
+        {
+            INVARIANT(_pkey);
+            auto p = _pkey->public_value();
+            return {std::begin(p), std::end(p)};
+        }
+
+        void dh_secret::create_symmetric_key(const util::bytes& pv)
+        {
+            INVARIANT(_pkey);
+
+            b::PK_Key_Agreement k{*_pkey, KEY_AGREEMENT_ALGO};
+            _skey = 
+                std::make_shared<b::SymmetricKey>(
+                        k.derive_key(
+                            32, 
+                            reinterpret_cast<const unsigned char*>(pv.data()), pv.size(),
+                            SESSION_PARAM));
+
+            ENSURE(_skey);
+        }
+
+        bool dh_secret::ready() const
+        {
+            return _skey != nullptr;
+        }
+
+        util::bytes dh_secret::encrypt(const util::bytes&) const
+        {
+            REQUIRE(ready());
+
+        }
+
+        util::bytes dh_secret::decrypt(const util::bytes&) const
+        {
+            REQUIRE(ready());
+
         }
     }
 }
