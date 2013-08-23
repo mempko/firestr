@@ -26,6 +26,9 @@ namespace Botan
 {
     class Private_Key; 
     class Public_Key; 
+    class OctetString;
+    typedef OctetString SymmetricKey; 
+    class DH_PrivateKey;
 }
 
 namespace fire  
@@ -85,6 +88,28 @@ namespace fire
 
         void encode(std::ostream& out, const public_key&);
         public_key decode_public_key(std::istream& in);
+
+        using symmetric_key_ptr = std::shared_ptr<Botan::SymmetricKey>;
+        using dh_private_key_ptr = std::shared_ptr<Botan::DH_PrivateKey>;
+        class dh_secret
+        {
+            public:
+                dh_secret();
+
+            public:
+                util::bytes public_value() const;
+                void create_symmetric_key(const util::bytes& public_val);
+
+            public:
+                bool ready() const;
+                util::bytes encrypt(const util::bytes&) const;
+                util::bytes decrypt(const util::bytes&) const;
+
+            private:
+                dh_private_key_ptr _pkey;
+                symmetric_key_ptr _skey;
+        };
+
     }
 }
 
