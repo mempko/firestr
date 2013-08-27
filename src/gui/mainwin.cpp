@@ -143,7 +143,10 @@ namespace fire
                 error = false;
                 return user;
             }
-            catch(...) {}
+            catch(std::exception& e) 
+            {
+                LOG << "Error loading user: " << e.what() << std::endl;
+            }
 
             return {};
         }
