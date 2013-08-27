@@ -33,7 +33,7 @@ namespace fire
 
         struct session
         {
-            shared_secret secret;
+            dh_secret shared_secret;
             public_key key;
         };
 
@@ -53,8 +53,9 @@ namespace fire
                 util::bytes decrypt(const id&, const util::bytes&) const;
 
             public:
-                void add_session(const id&, const session&);
+                session& get_session(const id&);
                 void remove_session(const id&);
+                void create_shared_secret(const id&, const util::bytes& public_val);
 
             private:
                 util::bytes encrypt_assymetric(session_map::const_iterator, const util::bytes&) const;

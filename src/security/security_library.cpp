@@ -31,6 +31,15 @@ namespace fire
 
         session_library::session_library(const private_key& pk) : _pk(pk) {}
 
+        u::bytes append_prefix(char p, const u::bytes& bs)
+        {
+            u::bytes rs;
+            rs.reserve(bs.size() + 1);
+            rs.push_back(p);
+            rs.insert(rs.end(), bs.begin(), bs.end());
+            return rs;
+        }
+
         u::bytes session_library::encrypt_assymetric(session_map::const_iterator s, const u::bytes& bs) const
         {
             if(bs.empty()) return {};
@@ -38,13 +47,7 @@ namespace fire
             if(s == _s.end()) return {};
 
             auto es = s->second.key.encrypt(bs);
-
-            //add encryption prefix and encrypted bytes
-            u::bytes rs;
-            rs.reserve(es.size() + 1);
-            rs.push_back(encryption_type::assymetric);
-            rs.insert(rs.end(), es.begin(), es.end());
-            return rs;
+            return append_prefix(encryption_type::assymetric, es);
         }
 
         u::bytes session_library::encrypt_assymetric(const id& i, const u::bytes& bs) const
@@ -55,19 +58,16 @@ namespace fire
 
         u::bytes session_library::encrypt_plaintext(const u::bytes& bs) const
         {
-            u::bytes rs;
-            rs.reserve(bs.size() + 1);
-            rs.push_back(encryption_type::plaintext);
-            rs.insert(rs.end(), bs.begin(), bs.end());
-            return rs;
+            return append_prefix(encryption_type::plaintext, bs);
         }
 
         u::bytes session_library::encrypt_symmetric(session_map::const_iterator s, const u::bytes& bs) const
         {
             if(s == _s.end()) return {};
+            REQUIRE(s->second.shared_secret.ready());
 
-            CHECK(false && "not supported");
-            return {};
+            auto es = s->second.shared_secret.encrypt(bs);
+            return append_prefix(encryption_type::symmetric, es);
         }
 
         u::bytes session_library::encrypt_symmetric(const id& i, const u::bytes& bs) const
@@ -81,7 +81,7 @@ namespace fire
             auto s = _s.find(i);
             if(s == _s.end()) return encrypt_plaintext(bs); 
 
-            if(s->second.secret.empty())
+            if(!s->second.shared_secret.ready())
             {
                 return encrypt_assymetric(s, bs);
             }
@@ -94,6 +94,8 @@ namespace fire
             if(bs.size() < 2) return {};
 
             u::bytes ds;
+            auto message_start = bs.begin();
+            message_start++;
 
             switch(bs[0])
             {
@@ -106,19 +108,17 @@ namespace fire
                     break;
                 case encryption_type::symmetric: 
                     {
-                        CHECK(false && "not supported");
-
                         u::mutex_scoped_lock l(_mutex);
                         auto s = _s.find(i);
                         if(s == _s.end()) return {};
+                        if(!s->second.shared_secret.ready()) return {};
+                        u::bytes cb{message_start, bs.end()};
+                        ds = s->second.shared_secret.decrypt(cb);
                     }
                     break;
                 case encryption_type::assymetric: 
                     {
                         //decrypt message, skipping encryption type prefix
-                        auto message_start = bs.begin();
-                        message_start++;
-
                         u::bytes cb{message_start, bs.end()};
                         ds = _pk.decrypt(cb);
                     }
@@ -130,17 +130,27 @@ namespace fire
             return ds;
         }
 
-        void session_library::add_session(const id& i, const session& s)
+        session& session_library::get_session(const id& i)
         {
             u::mutex_scoped_lock l(_mutex);
-            _s.insert({i,s});
-            LOG << "adding security session: " << i << std::endl;
+            if(!_s.count(i)) LOG << "creating security session for: " << i << std::endl;
+            return _s[i];
         }
 
         void session_library::remove_session(const id& i)
         {
             u::mutex_scoped_lock l(_mutex);
             _s.erase(i);
+        }
+
+        void session_library::create_shared_secret(const id& i, const util::bytes& public_val)
+        {
+            u::mutex_scoped_lock l(_mutex);
+            auto s = _s.find(i);
+            if(s == _s.end()) return;
+
+            s->second.shared_secret.create_symmetric_key(public_val);
+            ENSURE(s->second.shared_secret.ready());
         }
 
     }
