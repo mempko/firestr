@@ -91,6 +91,7 @@ namespace fire
             std::string from_id;
             std::string from_ip;
             std::string from_port;
+            u::bytes public_secret;
             int send_back;
         };
 
@@ -101,6 +102,7 @@ namespace fire
             m.meta.to = {r.to, SERVICE_ADDRESS};
             m.meta.extra["from_id"] = r.from_id;
             m.meta.extra["send_back"] = r.send_back;
+            m.meta.extra["public_secret"] = r.public_secret;
 
             return m;
         }
@@ -112,6 +114,7 @@ namespace fire
             r.from_id = m.meta.extra["from_id"].as_string();
             r.from_ip = m.meta.extra["from_ip"].as_string();
             r.from_port = m.meta.extra["from_port"].as_string();
+            r.public_secret = m.meta.extra["public_secret"].as_bytes();
             r.send_back = m.meta.extra["send_back"];
         }
 
@@ -367,6 +370,21 @@ namespace fire
 
         bool available(size_t ticks) { return ticks <= PING_THRESH; }
 
+        void user_service::setup_security_session(
+                const std::string& address, 
+                const sc::public_key& key, 
+                const u::bytes& public_val)
+        {
+            REQUIRE_FALSE(address.empty());
+            INVARIANT(_session_library);
+
+            auto& s = _session_library->get_session(address);
+            s.key = key;
+            s.shared_secret.create_symmetric_key(public_val);
+
+            ENSURE(s.shared_secret.ready()); 
+        }
+
         void user_service::message_recieved(const message::message& m)
         {
             if(m.meta.type == PING)
@@ -423,6 +441,10 @@ namespace fire
 
                 fire_contact_connected_event(c->id());
                 if(r.send_back) send_ping_request(c, false);
+
+                //update session to use DH 
+                auto address = n::make_udp_address(r.from_ip, r.from_port);
+                setup_security_session(address, c->key(), r.public_secret);
             }
             else if(m.meta.type == ADD_REQUEST)
             {
@@ -512,9 +534,8 @@ namespace fire
 
             auto a = n::make_udp_address(ip, port);
 
-            sc::session s;
+            auto& s = _session_library->get_session(a);
             s.key = c->key();
-            _session_library->add_session(a, s);
 
             if(c->address() == a) return;
 
@@ -789,13 +810,20 @@ namespace fire
             INVARIANT(_user);
             INVARIANT(mail());
 
+            auto& s = _session_library->get_session(address);
             ping_request a
             {
                 address, 
                 _user->info().id(), "", "", //the ip and port will be filled in on other side
+                s.shared_secret.public_value(),
                 send_back
             };
-            mail()->push_outbox(convert(a));
+
+            //we need to force using PK encryption here because of DH timing
+            //to setup the shared key
+            auto m = convert(a);
+            m.meta.force = m::metadata::security::assymetric;
+            mail()->push_outbox(m);
         }
 
         void user_service::send_ping_request(us::user_info_ptr c, bool send_back)
@@ -805,6 +833,8 @@ namespace fire
             INVARIANT(mail());
 
             LOG << "sending connection request to " << c->name() << " (" << c->id() << ", " << c->address() << ")" << std::endl;
+            auto& s = _session_library->get_session(c->address());
+            s.key = c->key();
             send_ping_request(c->address(), send_back);
         }
 

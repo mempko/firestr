@@ -40,9 +40,10 @@ namespace fire
         {
             const size_t RSA_SIZE = 1024;
             const std::string EME_SCHEME = "EME1(SHA-256)";
-            const b::DL_Group SHARED_DOMAIN{"modp/ietf/2048"};
             const std::string KEY_AGREEMENT_ALGO = "KDF2(SHA-256)";
-            const std::string SESSION_PARAM = "dummy session param";
+            const std::string SESSION_PARAM = "firestr";
+            const std::string CYPHER = "AES-128/CBC";
+            const std::string SHARED_DOMAIN = "modp/ietf/2048";
         }
 
         void validate_passphrase(const std::string& passphrase)
@@ -106,13 +107,23 @@ namespace fire
             _ks{}, _k{}
         {}
 
-        public_key::public_key(const std::string& key) : 
-            _ks{key}
+        void public_key::set(const std::string& key) 
         {
             REQUIRE_FALSE(key.empty());
 
             b::DataSource_Memory ds{reinterpret_cast<const b::byte*>(&_ks[0]), _ks.size()};
             _k.reset(b::X509::load_key(ds));
+
+            INVARIANT(_k);
+            INVARIANT_FALSE(_ks.empty());
+        }
+
+        public_key::public_key(const std::string& key) : 
+            _ks{key}
+        {
+            REQUIRE_FALSE(key.empty());
+
+            set(key);
 
             INVARIANT(_k);
             INVARIANT_FALSE(_ks.empty());
@@ -125,9 +136,12 @@ namespace fire
             INVARIANT_FALSE(_ks.empty());
         }
 
-        public_key::public_key(const public_key& pk) : 
-            public_key(pk.key()) 
+        public_key::public_key(const public_key& pk) : _k{}, _ks{pk._ks}
         {
+            if(!pk._k) return;
+
+            set(pk.key());
+
             INVARIANT(_k);
             INVARIANT_FALSE(_ks.empty());
         }
@@ -231,12 +245,25 @@ namespace fire
         dh_secret::dh_secret()
         {
             b::AutoSeeded_RNG r;
-            _pkey = std::make_shared<b::DH_PrivateKey>(r, SHARED_DOMAIN);
+            b::DL_Group sd{SHARED_DOMAIN};
+            _pkey = std::make_shared<b::DH_PrivateKey>(r, sd);
             ENSURE(_pkey);
+        }
+
+        dh_secret::dh_secret(const dh_secret& o) : 
+            _pkey{o._pkey}, _skey{o._skey} {}
+
+        dh_secret& dh_secret::operator=(const dh_secret& o)
+        {
+            if(&o == this) return *this;
+            u::mutex_scoped_lock l(_mutex);
+            _pkey = o._pkey;
+            _skey = o._skey;
         }
 
         util::bytes dh_secret::public_value() const
         {
+            u::mutex_scoped_lock l(_mutex);
             INVARIANT(_pkey);
             auto p = _pkey->public_value();
             return {std::begin(p), std::end(p)};
@@ -244,13 +271,14 @@ namespace fire
 
         void dh_secret::create_symmetric_key(const util::bytes& pv)
         {
+            u::mutex_scoped_lock l(_mutex);
             INVARIANT(_pkey);
 
             b::PK_Key_Agreement k{*_pkey, KEY_AGREEMENT_ALGO};
             _skey = 
                 std::make_shared<b::SymmetricKey>(
                         k.derive_key(
-                            32, 
+                            16, 
                             reinterpret_cast<const unsigned char*>(pv.data()), pv.size(),
                             SESSION_PARAM));
 
@@ -259,19 +287,33 @@ namespace fire
 
         bool dh_secret::ready() const
         {
+            u::mutex_scoped_lock l(_mutex);
             return _skey != nullptr;
         }
 
-        util::bytes dh_secret::encrypt(const util::bytes&) const
+        util::bytes dh_secret::encrypt(const util::bytes& bs) const
         {
             REQUIRE(ready());
-
+            u::mutex_scoped_lock l(_mutex);
+            b::Pipe p{b::get_cipher(CYPHER, *_skey, b::ENCRYPTION)};
+            p.start_msg();
+            p.write(reinterpret_cast<const unsigned char*>(bs.data()), bs.size());
+            p.end_msg();
+              
+            auto e = p.read_all(0);
+            return {std::begin(e), std::end(e)};
         }
 
-        util::bytes dh_secret::decrypt(const util::bytes&) const
+        util::bytes dh_secret::decrypt(const util::bytes& bs) const
         {
             REQUIRE(ready());
-
+            u::mutex_scoped_lock l(_mutex);
+            b::Pipe p{b::get_cipher(CYPHER, *_skey, b::DECRYPTION)};
+            p.start_msg();
+            p.write(reinterpret_cast<const unsigned char*>(bs.data()), bs.size());
+            p.end_msg();
+            auto e = p.read_all(0);
+            return {std::begin(e), std::end(e)};
         }
     }
 }

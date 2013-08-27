@@ -66,6 +66,9 @@ namespace fire
                 message m;
                 s >> m;
 
+                //skip bad message
+                if(m.meta.to.empty()) continue;
+
                 //insert the from_ip, from_port
                 m.meta.extra["from_protocol"] = ep.protocol;
                 m.meta.extra["from_ip"] = ep.address;
@@ -124,7 +127,10 @@ namespace fire
                 u::bytes data = u::to_bytes(s.str());
 
                 //encrypt message
-                data = o->_session_library->encrypt(outside_queue_address, data);
+                if(m.meta.force == metadata::security::assymetric)
+                    data = o->_session_library->encrypt_assymetric(outside_queue_address, data);
+                else 
+                    data = o->_session_library->encrypt(outside_queue_address, data);
 
                 //send message over wire
                 o->_connections.send(outside_queue_address, data);

@@ -21,6 +21,7 @@
 #include <memory>
 
 #include "util/bytes.hpp"
+#include "util/thread.hpp"
 
 namespace Botan
 {
@@ -76,6 +77,9 @@ namespace fire
                 util::bytes encrypt(const util::bytes&) const;
 
             private:
+                void set(const std::string& key);
+
+            private:
                 std::string _ks;
                 pub_key_ptr _k;
         };
@@ -91,10 +95,13 @@ namespace fire
 
         using symmetric_key_ptr = std::shared_ptr<Botan::SymmetricKey>;
         using dh_private_key_ptr = std::shared_ptr<Botan::DH_PrivateKey>;
+
         class dh_secret
         {
             public:
                 dh_secret();
+                dh_secret(const dh_secret&);
+                dh_secret& operator=(const dh_secret&);
 
             public:
                 util::bytes public_value() const;
@@ -108,6 +115,7 @@ namespace fire
             private:
                 dh_private_key_ptr _pkey;
                 symmetric_key_ptr _skey;
+                mutable std::mutex _mutex;
         };
 
     }
