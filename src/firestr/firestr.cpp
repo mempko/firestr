@@ -28,6 +28,8 @@
 #include <boost/asio/ip/host_name.hpp>
 #include <boost/program_options.hpp>
 
+#include <botan/botan.h>
+
 namespace po = boost::program_options;
 namespace ip = boost::asio::ip;
 namespace fg = fire::gui;
@@ -68,12 +70,6 @@ po::variables_map parse_options(int argc, char* argv[], po::options_description&
     return v;
 }
 
-bool user_setup(const std::string& home)
-{
-    auto user = fg::setup_user(home);
-    return user != nullptr;
-}
-
 int main(int argc, char *argv[])
 {
     auto desc = create_descriptions();
@@ -83,6 +79,8 @@ int main(int argc, char *argv[])
         std::cout << desc << std::endl;
         return 1;
     }
+
+    Botan::LibraryInitializer init;
 
     QApplication a{argc, argv};
 
@@ -95,7 +93,8 @@ int main(int argc, char *argv[])
 
     CREATE_LOG(c.home);
 
-    if(!user_setup(c.home)) return 0;
+    c.user = fg::setup_user(c.home);
+    if(!c.user) return 0;
 
     fg::main_window w{c};
 

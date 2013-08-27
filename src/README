@@ -16,6 +16,10 @@ Dependency Graph
             ------------|     util      |-----
             |           -----------------    |
             |             |        |         |
+            |           -----------------    |
+            |           |    security   |    |
+            |           -----------------    |
+            |             |        |         |
     -----------------     |        |         |
     |    network    |     |        |         |
     -----------------     |        |         |
@@ -57,6 +61,8 @@ Component Summary
 ===================================================================
 
 util          - Place to put things that everything else depends on
+
+security      - Library dealing with keeping the communication secure
 
 network       - Library dealing with sending bits and blips over the network
 

@@ -50,10 +50,12 @@ add_definitions(${Qt5Network_DEFINITIONS})
 set(CMAKE_CXX_FLAGS "${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
 
 #setup misc
+include_directories(/usr/include/botan-1.10/)
+
 if(APPLE)
-    set(MISC_LIBRARIES libuuid.dylib libpthread.dylib)
+    set(MISC_LIBRARIES libuuid.dylib libpthread.dylib libbotan-1.10.a libcrypto.so libgmp.so)
 else()
-    set(MISC_LIBRARIES libuuid.so libpthread.so librt.so)
+    set(MISC_LIBRARIES libuuid.so libpthread.so librt.so libbotan-1.10.a libcrypto.so libgmp.so)
 endif()
 
 add_subdirectory(src)

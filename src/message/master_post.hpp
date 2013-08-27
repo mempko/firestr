@@ -18,8 +18,12 @@
 #define FIRESTR_MESSAGE_MASERT_POSTOFFICE_H
 
 #include "message/postoffice.hpp"
+
 #include "network/connection_manager.hpp"
 #include "network/stungun.hpp"
+
+#include "security/security_library.hpp"
+
 #include "util/thread.hpp"
 
 #include <memory>
@@ -34,7 +38,8 @@ namespace fire
             public:
                 master_post_office(
                         const std::string& in_host,
-                        const std::string& in_port);
+                        const std::string& in_port,
+                        security::session_library_ptr);
                 virtual ~master_post_office();
 
             protected:
@@ -49,6 +54,7 @@ namespace fire
                 util::thread_uptr _out_thread;
                 queue _out;
                 network::connection_manager _connections;
+                security::session_library_ptr _session_library;
 
             private:
                 friend void in_thread(master_post_office* o);

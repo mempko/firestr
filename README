@@ -18,11 +18,12 @@ instantly clone and modify.
 WARNING
 ===================================================================
 
-The software is in development. There is NO security and therefore
-use this AT YOUR OWN RISK.
+The software is in development. The security of the software has
+not been audited so use AT YOUR OWN RISK.
 
-The software will eventually have only encrypted communication but
-as of now it does not.
+While all current P2P communication is encrypted, the communication
+to the greeters is not. So you can expose you unique ID if you use
+the software.
 
 If you are a security expert, please contribute.
 
@@ -46,6 +47,7 @@ gcc 4.7
 CMake
 Qt 5 
 Boost
+Botan 1.10
 
 ===================================================================
 License GPLv3

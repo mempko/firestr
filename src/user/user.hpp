@@ -23,6 +23,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "security/security.hpp"
 #include "util/thread.hpp"
 #include "util/dbc.hpp"
 
@@ -34,21 +35,23 @@ namespace fire
         {
             public:
                 user_info() :
-                    _address{}, _name{}, _id{} {}
+                    _address{}, _name{}, _id{}, _pkey{} {}
 
                 user_info(
                         const std::string& address, 
                         const std::string& name, 
-                        const std::string& id) :
-                    _address{address}, _name{name}, _id{id} 
+                        const std::string& id,
+                        const security::public_key& pub_key) :
+                    _address{address}, _name{name}, _id{id}, _pkey{pub_key} 
                 {
                     REQUIRE_FALSE(address.empty());
                     REQUIRE_FALSE(name.empty());
                     REQUIRE_FALSE(id.empty());
+                    REQUIRE_FALSE(pub_key.key().empty());
                 }
 
                 user_info(const user_info& o) :
-                    _address{o._address}, _name{o._name}, _id{o._id} {}
+                    _address{o._address}, _name{o._name}, _id{o._id}, _pkey{o._pkey} {}
 
                 user_info& operator=(const user_info& o)
                 {
@@ -59,6 +62,7 @@ namespace fire
                     _name = o._name;
                     _id = o._id;
                     _address = o._address;
+                    _pkey = o._pkey;
                     return *this;
                 }
 
@@ -66,15 +70,19 @@ namespace fire
                 std::string name() const;
                 std::string id() const;
                 std::string address() const;
+                const security::public_key& key() const;
+
 
                 void name(const std::string& v);
                 void address(const std::string& v);
                 void id(const std::string& v);
+                void key(const security::public_key& v);
 
             private:
                 std::string _address;
                 std::string _name;
                 std::string _id;
+                security::public_key _pkey;
                 mutable std::mutex _mutex;
         };
 
@@ -141,9 +149,10 @@ namespace fire
                 local_user(
                         const user_info& i, 
                         const contact_list& c,
-                        const greet_servers& g);
+                        const greet_servers& g,
+                        security::private_key_ptr);
 
-                local_user(const std::string& name); 
+                local_user(const std::string& name, security::private_key_ptr); 
 
             public:
                 const user_info& info() const { return _info;}
@@ -155,17 +164,21 @@ namespace fire
                 const greet_servers& greeters() const { return _greet_servers;}
                 greet_servers& greeters() { return _greet_servers;}
 
+                const security::private_key& private_key() const { return *_prv_key;}
+
             private:
                 user_info _info;
                 contact_list _contacts;
                 greet_servers _greet_servers;
+                security::private_key_ptr _prv_key;
         };
 
         using local_user_ptr = std::shared_ptr<local_user>;
         using local_user_wptr = std::weak_ptr<local_user>;
 
         //load and save local user info to disk
-        local_user_ptr load_user(const std::string& home_dir);
+        bool user_created(const std::string& home_dir);
+        local_user_ptr load_user(const std::string& home_dir, const std::string& passphrase);
         void save_user(const std::string& home_dir, const local_user&);
 
         //loads and saves a contact

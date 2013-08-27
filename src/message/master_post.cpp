@@ -22,12 +22,14 @@
 
 #include <sstream>
 
+namespace n = fire::network;
+namespace u = fire::util;
+namespace sc = fire::security;
+
 namespace fire
 {
     namespace message
     {
-        namespace n = fire::network;
-        namespace u = fire::util;
 
         namespace
         {
@@ -40,6 +42,7 @@ namespace fire
         try
         {
             REQUIRE(o);
+            REQUIRE(o->_session_library);
 
             while(!o->_done)
             try
@@ -54,11 +57,17 @@ namespace fire
                 }
                 if(o->_outside_stats.on) o->_outside_stats.in_push_count++;
 
+                //construct address as session id and decrypt message
+                auto sid = n::make_address_str(ep);
+                data = o->_session_library->decrypt(sid, data);
 
                 //parse message
                 std::stringstream s(u::to_str(data));
                 message m;
                 s >> m;
+
+                //skip bad message
+                if(m.meta.to.empty()) continue;
 
                 //insert the from_ip, from_port
                 m.meta.extra["from_protocol"] = ep.protocol;
@@ -99,6 +108,7 @@ namespace fire
             {
                 sent = false;
 
+                //get message from queue
                 message m;
                 if(!o->_out.pop(m, true))
                     continue;
@@ -111,10 +121,18 @@ namespace fire
                 const std::string outside_queue_address = m.meta.to.front();
                 last_address = outside_queue_address;
 
+                //encode message
                 std::stringstream s;
                 s << m;
                 u::bytes data = u::to_bytes(s.str());
 
+                //encrypt message
+                if(m.meta.force == metadata::security::assymetric)
+                    data = o->_session_library->encrypt_assymetric(outside_queue_address, data);
+                else 
+                    data = o->_session_library->encrypt(outside_queue_address, data);
+
+                //send message over wire
                 o->_connections.send(outside_queue_address, data);
 
                 if(o->_outside_stats.on) o->_outside_stats.out_pop_count++;
@@ -136,10 +154,12 @@ namespace fire
 
         master_post_office::master_post_office(
                 const std::string& in_host,
-                const std::string& in_port) : 
+                const std::string& in_port,
+                sc::session_library_ptr sl) : 
             _in_host{in_host},
             _in_port{in_port},
-            _connections{POOL_SIZE, in_port}
+            _connections{POOL_SIZE, in_port},
+            _session_library{sl}
         {
             _address = n::make_udp_address(_in_host,_in_port);
 
