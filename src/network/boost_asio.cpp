@@ -924,12 +924,15 @@ namespace fire
             if(b[0] != '!') return ch;
 
             //read sequence number
+            if(b.size() < SEQUENCE_BASE + sizeof(uint64_t)) return ch;
             read_be(b, SEQUENCE_BASE, ch.sequence);
 
             //write total chunks 
+            if(b.size() < CHUNK_TOTAL_BASE + sizeof(uint64_t)) return ch;
             read_be(b, CHUNK_TOTAL_BASE, ch.total_chunks);
 
             //read chunk number
+            if(b.size() < CHUNK_BASE + sizeof(uint64_t)) return ch;
             read_be(b, CHUNK_BASE, ch.chunk);
 
             //copy message
