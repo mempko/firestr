@@ -1021,6 +1021,8 @@ namespace fire
             {
                 if(c.total_chunks == 0) return false;
 
+                //TODO: decide max chunks to prevent malformed message
+                //taking all memory 
                 wm.chunks.resize(c.total_chunks);
                 wm.set.resize(c.total_chunks);
             }
@@ -1034,7 +1036,7 @@ namespace fire
             wm.chunks[c.chunk] = c;
             wm.set[c.chunk] = 1;
 
-            //if message is not complete return false
+            //if message is not complete return 
             if(wm.set.count() != wm.chunks.size()) return false;
 
             //get total size
