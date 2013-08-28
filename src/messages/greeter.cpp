@@ -24,9 +24,56 @@ namespace fire
 {
     namespace messages
     {
+        const std::string GREET_KEY_REQUEST = "greet_key_request";
+        const std::string GREET_KEY_RESPONSE = "greet_key_response";
         const std::string GREET_REGISTER = "greet_register";
         const std::string GREET_FIND_REQUEST = "greet_request";
         const std::string GREET_FIND_RESPONSE = "greet_response";
+
+        greet_key_request::greet_key_request( const std::string& response_service_address) :
+            _response_service_address{response_service_address} { }
+
+        greet_key_request::greet_key_request(const m::message& m)
+        {
+            REQUIRE_EQUAL(m.meta.type, GREET_KEY_REQUEST);
+
+            _response_service_address = m.meta.extra["response_address"].as_string();
+        }
+
+        greet_key_request::operator message::message() const
+        {
+            m::message m;
+            m.meta.type = GREET_KEY_REQUEST;
+            m.meta.extra["response_address"] = _response_service_address;
+            return m;
+        }
+
+        const std::string& greet_key_request::response_service_address() const
+        {
+            return _response_service_address;
+        }
+
+        greet_key_response::greet_key_response(const u::bytes& key) :
+            _pub_key(key) {}
+
+        greet_key_response::greet_key_response(const m::message& m)
+        {
+            REQUIRE_EQUAL(m.meta.type, GREET_KEY_RESPONSE);
+            _pub_key = m.meta.extra["pub_key"].as_bytes();
+        }
+
+        greet_key_response::operator message::message() const
+        {
+            m::message m;
+            m.meta.type = GREET_KEY_RESPONSE;
+            m.meta.extra["pub_key"] = _pub_key;
+            return m;
+        }
+
+        const u::bytes& greet_key_response::key() const
+        {
+            return _pub_key;
+        }
 
         greet_register::greet_register(
                 const std::string& id,
