@@ -76,6 +76,7 @@ namespace fire
                 greet_register(
                         const std::string& id,
                         const greet_endpoint& local,
+                        const std::string& pbkey,
                         const std::string& response_service_address);
 
             public:
@@ -85,11 +86,13 @@ namespace fire
             public:
                 const std::string& id() const;
                 const greet_endpoint& local() const;
+                const std::string& pub_key() const;
                 const std::string& response_service_address() const;
 
             private:
                 std::string _id;
                 greet_endpoint _local;
+                std::string _pub_key;
                 std::string _response_service_address;
         };
 

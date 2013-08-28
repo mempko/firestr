@@ -27,7 +27,7 @@
 #include "network/connection_manager.hpp"
 #include "message/message.hpp"
 #include "messages/greeter.hpp"
-#include "security/security.hpp"
+#include "security/security_library.hpp"
 #include "util/thread.hpp"
 #include "util/bytes.hpp"
 #include "util/dbc.hpp"
@@ -89,10 +89,16 @@ struct user_info
 };
 using user_info_map = std::map<std::string, user_info>;
 
-void register_user(n::connection_manager& con, const n::endpoint& ep, const ms::greet_register& r, user_info_map& m)
+void register_user(
+        n::connection_manager& con, 
+        sc::session_library& sec, 
+        const n::endpoint& ep, 
+        const ms::greet_register& r, 
+        user_info_map& m)
 {
+    auto address = n::make_address_str(ep);
     if(r.id().empty()) return;
-    if(con.is_disconnected(n::make_address_str(ep))) return;
+    if(con.is_disconnected(address)) return;
 
     //use user specified ip, otherwise use socket ip
     ms::greet_endpoint local = r.local();
@@ -101,21 +107,37 @@ void register_user(n::connection_manager& con, const n::endpoint& ep, const ms::
     user_info i = {r.id(), local, ext, r.response_service_address(), ep};
     m[i.id] = i;
 
+    auto& session = sec.get_session(address);
+    session.key = sc::public_key{r.pub_key()};
+
     LOG << "registered " << i.id << " " << i.ext.ip << ":" << i.ext.port << std::endl;
 }
 
-void send_response(n::connection_manager& con, const ms::greet_find_response& r, const user_info& u)
+void send_response(
+        n::connection_manager& con, 
+        sc::session_library& sec, 
+        const ms::greet_find_response& r, 
+        const user_info& u)
 {
     m::message m = r;
 
-    auto address = n::make_tcp_address(u.ext.ip, u.ext.port); 
+    auto address = n::make_address_str(u.ep); 
     m.meta.to = {address, u.response_service_address};
 
     LOG << "sending reply to " << address << std::endl;
-    con.send(n::make_address_str(u.ep), u::encode(m));
+
+    auto data = u::encode(m);
+    data = sec.encrypt(address, data);
+
+    con.send(address, data);
 }
 
-void find_user(n::connection_manager& con, const n::endpoint& ep,  const ms::greet_find_request& r, user_info_map& users)
+void find_user(
+        n::connection_manager& con, 
+        sc::session_library& sec, 
+        const n::endpoint& ep, 
+        const ms::greet_find_request& r, 
+        user_info_map& users)
 {
     //find from user
     auto fup = users.find(r.from_id());
@@ -135,10 +157,10 @@ void find_user(n::connection_manager& con, const n::endpoint& ep,  const ms::gre
 
     //send response to both clients
     ms::greet_find_response fr{true, i.id, i.local,  i.ext};
-    send_response(con, fr, f);
+    send_response(con, sec, fr, f);
 
     ms::greet_find_response ir{true, f.id, f.local,  f.ext};
-    send_response(con, ir, i);
+    send_response(con, sec, ir, i);
 }
 
 void send_pub_key(
@@ -240,6 +262,7 @@ int main(int argc, char *argv[])
     //linux requires that binds to the same port are made before
     //a listen is made.
     n::connection_manager con{POOL_SIZE, port};
+    sc::session_library sec_session{*pkey};
     user_info_map users;
 
     u::bytes data;
@@ -253,6 +276,10 @@ int main(int argc, char *argv[])
             continue;
         }
 
+        //decrypt message
+        auto sid = n::make_address_str(ep);
+        data = sec_session.decrypt(sid, data);
+
         //parse message
         m::message m;
         u::decode(data, m);
@@ -260,12 +287,12 @@ int main(int argc, char *argv[])
         if(m.meta.type == ms::GREET_REGISTER)
         {
             ms::greet_register r{m};
-            register_user(con, ep, r, users);
+            register_user(con, sec_session, ep, r, users);
         }
         else if(m.meta.type == ms::GREET_FIND_REQUEST)
         {
             ms::greet_find_request r{m};
-            find_user(con, ep, r, users);
+            find_user(con, sec_session,  ep, r, users);
         }
         else if(m.meta.type == ms::GREET_KEY_REQUEST)
         {

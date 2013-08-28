@@ -78,9 +78,11 @@ namespace fire
         greet_register::greet_register(
                 const std::string& id,
                 const greet_endpoint& local,
+                const std::string& pbkey,
                 const std::string& response_service_address) :
             _id{id},
             _local(local),
+            _pub_key(pbkey),
             _response_service_address{response_service_address}
         {
         }
@@ -92,6 +94,7 @@ namespace fire
             _id = m.meta.extra["from_id"].as_string();
             _local.ip = m.meta.extra["loc_ip"].as_string();
             _local.port = m.meta.extra["loc_port"].as_string();
+            _pub_key = m.meta.extra["pub_key"].as_string();
             _response_service_address = m.meta.extra["response_address"].as_string();
         }
 
@@ -102,6 +105,7 @@ namespace fire
             m.meta.extra["from_id"] = _id;
             m.meta.extra["loc_ip"] = _local.ip;
             m.meta.extra["loc_port"] = _local.port;
+            m.meta.extra["pub_key"] = _pub_key;
             m.meta.extra["response_address"] = _response_service_address;
             return m;
         }
@@ -114,6 +118,11 @@ namespace fire
         const greet_endpoint& greet_register::local() const
         {
             return _local;
+        }
+
+        const std::string& greet_register::pub_key() const
+        {
+            return _pub_key;
         }
 
         const std::string& greet_register::response_service_address() const
