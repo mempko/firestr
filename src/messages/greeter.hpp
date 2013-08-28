@@ -26,6 +26,8 @@ namespace fire
 {
     namespace messages
     {
+        extern const std::string GREET_KEY_REQUEST;
+        extern const std::string GREET_KEY_RESPONSE;
         extern const std::string GREET_REGISTER;
         extern const std::string GREET_FIND_REQUEST;
         extern const std::string GREET_FIND_RESPONSE;
@@ -34,6 +36,38 @@ namespace fire
         {
             std::string ip;
             std::string port;
+        };
+
+        class greet_key_request
+        {
+            public:
+                greet_key_request(const std::string& response_service_address);
+
+            public:
+                greet_key_request(const message::message&);
+                operator message::message() const;
+
+            public:
+                const std::string& response_service_address() const;
+
+            private:
+                std::string _response_service_address;
+        };
+
+        class greet_key_response
+        {
+            public:
+                greet_key_response(const util::bytes& key);
+
+            public:
+                greet_key_response(const message::message&);
+                operator message::message() const;
+
+            public:
+                const util::bytes& key() const;
+
+            private:
+                util::bytes _pub_key;
         };
 
         class greet_register
