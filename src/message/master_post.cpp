@@ -62,9 +62,8 @@ namespace fire
                 data = o->_session_library->decrypt(sid, data);
 
                 //parse message
-                std::stringstream s(u::to_str(data));
                 message m;
-                s >> m;
+                u::decode(data, m);
 
                 //skip bad message
                 if(m.meta.to.empty()) continue;
