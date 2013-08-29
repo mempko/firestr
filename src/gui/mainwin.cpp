@@ -99,16 +99,26 @@ namespace fire
             INVARIANT(_main_menu);
         }
 
+        std::string app_id(const us::local_user& l)
+        {
+            return "firestr-" + l.info().id();
+        }
+
         void main_window::save_state()
         {
-            QSettings settings("mempko", "firestr");
+            INVARIANT(_context.user);
+            auto id = app_id(*_context.user);
+            QSettings settings("mempko", id.c_str());
             settings.setValue("main_window/geometry", saveGeometry());
             settings.setValue("main_window/state", saveState());
         }
 
         void main_window::restore_state()
         {
-            QSettings settings("mempko", "firestr");
+            INVARIANT(_context.user);
+            auto id = app_id(*_context.user);
+
+            QSettings settings("mempko", id.c_str());
             restoreGeometry(settings.value("main_window/geometry").toByteArray());
             restoreState(settings.value("main_window/state").toByteArray());
         }
