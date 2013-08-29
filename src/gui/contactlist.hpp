@@ -40,21 +40,16 @@ namespace fire
                 user_info(
                         user::user_info_ptr, 
                         user::user_service_ptr,
-                        bool accept_reject = false,
                         bool compact = false,
                         bool remove = false);
 
             public slots:
-                void accept();
-                void reject();
                 void update();
                 void remove();
 
             private:
                 user::user_info_ptr _contact;
                 user::user_service_ptr _service;
-                QPushButton* _accept;
-                QPushButton* _reject;
                 QPushButton* _rm;
                 QLabel* _user_text;
         };
@@ -136,22 +131,7 @@ namespace fire
                 user::user_service_ptr _service;
                 greeter_list* _greeters;
 
-                size_t _prev_requests;
                 size_t _prev_contacts;
-        };
-
-        class add_contact_dialog : public QDialog
-        {
-            Q_OBJECT
-            public:
-                add_contact_dialog(user::user_service_ptr, QWidget* parent = nullptr);
-
-            public slots:
-                void new_local_contact();
-                void new_remote_contact();
-
-            private:
-                user::user_service_ptr _service;
         };
     }
 }

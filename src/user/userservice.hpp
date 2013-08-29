@@ -33,13 +33,6 @@ namespace fire
 {
     namespace user
     {
-        struct add_request
-        {
-            std::string to;
-            std::string key;
-            user_info_ptr from;
-        };
-
         struct contact_data
         {
             enum state { OFFLINE, ONLINE, CONNECTED} state;
@@ -58,8 +51,6 @@ namespace fire
 
         struct register_with_greeters {};
 
-        using add_requests = std::map<std::string, add_request>;
-        using sent_requests = std::set<std::string>;
         using contacts_data = std::map<std::string, contact_data>;
 
         struct user_service_context
@@ -86,15 +77,11 @@ namespace fire
                 const std::string& in_port() const;
 
             public:
-                void attempt_to_add_contact(const std::string& address);
+                void confirm_contact(const contact_file&);
                 void remove_contact(const std::string& id);
+
                 void add_greeter(const std::string& address);
                 void remove_greeter(const std::string& address);
-                void send_confirmation(const std::string& id, std::string key = "");
-                void send_rejection(const std::string& id);
-                const add_requests& pending_requests() const;
-
-                void confirm_contact(const contact_file&);
 
             public:
                 user_info_ptr by_id(const std::string& id) const;
@@ -106,14 +93,9 @@ namespace fire
             private:
                 void add_greeter(const std::string& host, const std::string& port, const std::string& pub_key);
                 void update_address(const std::string& address);
-                void confirm_contact(user_info_ptr contact);
                 void update_contact_address(const std::string& id, const std::string& ip, const std::string& port);
                 void find_contact_with_greeter(user_info_ptr c, const std::string& greeter);
                 void find_contact(user_info_ptr c);
-
-            private:
-                sent_requests _sent_requests;
-                add_requests _pending_requests;
 
             private:
                 local_user_ptr _user;
@@ -122,7 +104,6 @@ namespace fire
                 std::mutex _mutex;
 
             private:
-                void fire_new_contact_event(const std::string& id);
                 void fire_contact_connected_event(const std::string& id);
                 void fire_contact_disconnected_event(const std::string& id);
 
@@ -168,16 +149,11 @@ namespace fire
 
         namespace event
         {
-            extern const std::string NEW_CONTACT;
             extern const std::string CONTACT_CONNECTED;
             extern const std::string CONTACT_DISCONNECTED;
 
-            struct new_contact { std::string id; };
             struct contact_connected { std::string id; };
             struct contact_disconnected { std::string id; std::string name;};
-
-            message::message convert(const new_contact&);
-            void convert(const message::message&, new_contact&);
 
             message::message convert(const contact_connected&);
             void convert(const message::message&, contact_connected&);

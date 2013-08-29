@@ -662,13 +662,6 @@ namespace fire
                 {
                     contact_removed_from_session_event(m);
                 }
-                else if(m.meta.type == us::event::NEW_CONTACT)
-                {
-                    us::event::new_contact r;
-                    us::event::convert(m, r);
-
-                    new_contact_event(r.id);
-                }
                 else if(m.meta.type == us::event::CONTACT_CONNECTED)
                 {
                     us::event::contact_connected r;
@@ -958,33 +951,6 @@ namespace fire
         void main_window::contact_removed_from_session_event(const m::message& e)
         {
             _session_service->broadcast_message(e);
-        }
-
-        void main_window::new_contact_event(const std::string& id)
-        {
-            INVARIANT(_user_service);
-            auto p = _user_service->pending_requests().find(id);
-            if(p == _user_service->pending_requests().end()) return;
-
-            auto c = p->second.from;
-            CHECK(c);
-
-            std::stringstream s;
-            s << "<b>" << c->name() << "</b> wants to connect " << std::endl;
-
-            auto w = new QWidget;
-            auto l = new QHBoxLayout;
-            w->setLayout(l);
-
-            auto t = new QLabel{s.str().c_str()};
-            auto b = new QPushButton{"contact list"};
-
-            l->addWidget(t);
-            l->addWidget(b);
-
-            connect(b, SIGNAL(clicked()), this, SLOT(show_contact_list()));
-
-            show_alert(w);
         }
 
         void main_window::contact_connected_event(const us::event::contact_connected& r)
