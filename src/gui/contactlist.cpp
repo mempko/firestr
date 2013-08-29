@@ -57,7 +57,6 @@ namespace fire
         user_info::user_info(
                 us::user_info_ptr p, 
                 us::user_service_ptr s,
-                bool accept_reject,
                 bool compact,
                 bool remove) :
             _contact{p},
@@ -75,7 +74,7 @@ namespace fire
             if(compact)
             {
                 layout->addWidget(_user_text, 0,0);
-                if(!accept_reject && remove)
+                if(remove)
                 {
                     _rm = new QPushButton("x");
                     _rm->setMaximumSize(20,20);
@@ -91,18 +90,6 @@ namespace fire
                 layout->addWidget( new QLabel{p->address().c_str()}, 1,1);
             }
 
-            if(accept_reject)
-            {
-                //create add button
-                _accept = new QPushButton("accept");
-                _reject = new QPushButton("reject");
-                layout->addWidget(_accept, 3,0); 
-                layout->addWidget(_reject, 3,1); 
-
-                connect(_accept, SIGNAL(clicked()), this, SLOT(accept()));
-                connect(_reject, SIGNAL(clicked()), this, SLOT(reject()));
-            }
-
             layout->setContentsMargins(2,2,2,2);
             ENSURE(_contact);
             ENSURE(_user_text);
@@ -115,36 +102,6 @@ namespace fire
             INVARIANT(_user_text);
 
             _user_text->setText(user_text(_contact, _service).c_str());
-        }
-
-        void user_info::accept()
-        {
-            REQUIRE(_service);
-            REQUIRE(_accept);
-            REQUIRE(_reject);
-            INVARIANT(_contact);
-
-            _service->send_confirmation(_contact->id());
-
-            _accept->setText("accepted");
-            _accept->setEnabled(false);
-            _reject->setEnabled(false);
-            _reject->hide();
-        }
-
-        void user_info::reject()
-        {
-            REQUIRE(_service);
-            REQUIRE(_accept);
-            REQUIRE(_reject);
-            INVARIANT(_contact);
-
-            _service->send_rejection(_contact->id());
-
-            _reject->setText("rejected");
-            _reject->setEnabled(false);
-            _accept->setEnabled(false);
-            _accept->hide();
         }
 
         void user_info::remove()
@@ -268,35 +225,54 @@ namespace fire
             _list->clear();
 
             for(auto u : _service->user().contacts().list())
-                _list->add(new user_info{u, _service, false, true, true});
+                _list->add(new user_info{u, _service, true, true});
 
-            auto pending = _service->pending_requests();
-
-            for(auto r : pending)
-                _list->add(new user_info{r.second.from, _service, true, true});
-
-            _prev_requests = pending.size();
             _prev_contacts = _service->user().contacts().size();
+        }
+
+        std::string greet_address(const us::greet_server& s)
+        {
+            return s.host() + ":" + s.port();
         }
 
         void contact_list_dialog::new_contact()
         {
             INVARIANT(_service);
-            auto d = new add_contact_dialog{_service, this};
-            d->setWindowModality(Qt::ApplicationModal);
-            auto r = d->exec();
-            if(r == QDialog::Accepted) accept();
+
+            //get file name to load
+            std::string home = std::getenv("HOME");
+            auto file = QFileDialog::getOpenFileName(this,
+                    tr("Open Invite File"), home.c_str(), tr("Invite File (*.finvite)"));
+
+            if(file.isEmpty()) { return;}
+
+            //load contact file
+            us::contact_file cf;
+            if(!us::load_contact_file(convert(file), cf)) { return; }
+
+            //add greeter
+            if(!cf.greeter.empty())
+            {
+                bool found = false;
+                for(const auto& s : _service->user().greeters())
+                {
+                    auto a = greet_address(s);
+                    if(a == cf.greeter) {found = true; break;}
+                }
+                if(found) cf.greeter = "";
+            }
+
+            //add contact
+            _service->confirm_contact(cf);
         }
 
         void contact_list_dialog::update()
         {
-            size_t pending_requests = _service->pending_requests().size();
             size_t contacts = _service->user().contacts().size();
-            if(pending_requests == _prev_requests && contacts == _prev_contacts) 
+            if(contacts == _prev_contacts) 
                 return;
 
             update_contacts();
-            _prev_requests = pending_requests;
             _prev_contacts = contacts;
         }
 
@@ -320,7 +296,7 @@ namespace fire
             INVARIANT(_service);
             if(_contacts.by_id(u->id())) return;
 
-            auto ui = new user_info{u, _service, false, true, _remove};
+            auto ui = new user_info{u, _service, true, _remove};
             add(ui);
             _contacts.add(u);
             _contact_widgets.push_back(ui);
@@ -433,94 +409,6 @@ namespace fire
             _rm->setEnabled(false);
         }
 
-        add_contact_dialog::add_contact_dialog(us::user_service_ptr s, QWidget* parent) :
-            _service{s}, QDialog{parent}
-        {
-            INVARIANT(_service);
-
-            auto* layout = new QGridLayout{this};
-            setLayout(layout);
-
-            //create remote add button
-            auto* add_remote = new QPushButton("add using invite");
-            layout->addWidget(add_remote, 0,0); 
-            connect(add_remote, SIGNAL(clicked()), this, SLOT(new_remote_contact()));
-
-            //create local add button
-            auto* add_local = new QPushButton("add using local ip");
-            layout->addWidget(add_local, 1,0); 
-            connect(add_local, SIGNAL(clicked()), this, SLOT(new_local_contact()));
-        }
-
-        void add_contact_dialog::new_local_contact()
-        {
-            INVARIANT(_service);
-
-            bool ok = false;
-            std::string address = "<host>:6060";
-
-            auto r = QInputDialog::getText(
-                    0, 
-                    "Add New Contact",
-                    "Contact Address or ID",
-                    QLineEdit::Normal, address.c_str(), &ok);
-
-            if(ok && !r.isEmpty()) address = convert(r);
-            else 
-            {
-                reject();
-                return;
-            }
-
-            _service->attempt_to_add_contact(address);
-            accept();
-        }
-
-        std::string address(const us::greet_server& s)
-        {
-            return s.host() + ":" + s.port();
-        }
-
-        void add_contact_dialog::new_remote_contact()
-        {
-            INVARIANT(_service);
-
-            //get file name to load
-            std::string home = std::getenv("HOME");
-            auto file = QFileDialog::getOpenFileName(this,
-                    tr("Open Invite File"), home.c_str(), tr("Contact File (*.finvite)"));
-
-            if(file.isEmpty())
-            {
-                reject();
-                return;
-            }
-
-            //load contact file
-            us::contact_file cf;
-            if(!us::load_contact_file(convert(file), cf))
-            {
-                reject();
-                return;
-            }
-
-            //add greeter
-            if(!cf.greeter.empty())
-            {
-                bool found = false;
-                for(const auto& s : _service->user().greeters())
-                {
-                    auto a = address(s);
-                    if(a == cf.greeter) {found = true; break;}
-                }
-                if(found) cf.greeter = "";
-            }
-
-            //add contact
-            _service->confirm_contact(cf);
-            accept();
-        }
-
         void contact_list_dialog::create_contact_file()
         {
             //have user select contact file 
@@ -536,12 +424,12 @@ namespace fire
             //user chooses greeter
             auto total_greeters = _service->user().greeters().size();
             std::string greeter;
-            if(total_greeters == 1) greeter = address(_service->user().greeters().front());
+            if(total_greeters == 1) greeter = greet_address(_service->user().greeters().front());
             else if(total_greeters > 1)
             {
                 QStringList gs;
                 for(const auto& g : _service->user().greeters())
-                    gs << address(g).c_str();
+                    gs << greet_address(g).c_str();
 
                 bool ok;
                 auto g = QInputDialog::getItem(this, tr("Suggested Greeter"),

@@ -45,9 +45,6 @@ namespace fire
         namespace
         {
             const std::string SERVICE_ADDRESS = "user_service";
-            const std::string ADD_REQUEST = "add_user_request";
-            const std::string REQUEST_CONFIRMED = "add_user_confirmed";
-            const std::string REQUEST_REJECTED = "add_user_rejected";
             const std::string PING_REQUEST = "ping_request";
             const std::string REGISTER_WITH_GREETER = "reg_with_greeter";
             const std::string PING = "!";
@@ -116,96 +113,6 @@ namespace fire
             r.from_port = m.meta.extra["from_port"].as_string();
             r.public_secret = m.meta.extra["public_secret"].as_bytes();
             r.send_back = m.meta.extra["send_back"];
-        }
-
-        struct req_rejected 
-        {
-            std::string address;
-            std::string key;
-        };
-
-        struct req_confirmed
-        {
-            std::string to;
-            std::string key;
-            user_info_ptr from;
-        };
-
-        m::message convert(const add_request& r)
-        {
-            REQUIRE(r.from);
-
-            m::message m;
-            m.meta.type = ADD_REQUEST;
-            m.meta.to = {r.to, SERVICE_ADDRESS};
-            m.meta.extra["key"] = r.key;
-            m.data = u::encode(*r.from);
-
-            return m;
-        }
-
-        void convert(const m::message& m, add_request& r)
-        {
-            REQUIRE_EQUAL(m.meta.type, ADD_REQUEST);
-            REQUIRE_GREATER(m.meta.from.size(), 1);
-
-            std::string from = m.meta.from.front();
-
-            r.from = std::make_shared<user_info>();
-            u::decode(m.data, *r.from);
-            r.from->address(from);
-            r.to = "";
-            r.key = m.meta.extra["key"].as_string();
-
-            ENSURE(r.from);
-        }
-
-        m::message convert(const req_confirmed& r)
-        {
-            REQUIRE(r.from);
-
-            m::message m;
-            m.meta.type = REQUEST_CONFIRMED;
-            m.meta.to = {r.to, SERVICE_ADDRESS};
-            m.meta.extra["key"] = r.key;
-            m.data = u::encode(*r.from);
-
-            return m;
-        }
-
-        void convert(const m::message& m, req_confirmed& r)
-        {
-            REQUIRE_EQUAL(m.meta.type, REQUEST_CONFIRMED);
-            REQUIRE_GREATER(m.meta.from.size(), 1);
-
-            std::string from = m.meta.from.front();
-
-            r.from = std::make_shared<user_info>();
-            u::decode(m.data, *r.from);
-            r.from->address(from);
-            r.to = "";
-            r.key = m.meta.extra["key"].as_string();
-
-            ENSURE(r.from);
-        }
-
-        m::message convert(const req_rejected& r)
-        {
-            m::message m;
-            m.meta.type = REQUEST_REJECTED;
-            m.meta.extra["key"] = r.key;
-            m.meta.to = {r.address, SERVICE_ADDRESS}; 
-
-            return m;
-        }
-
-        void convert(const m::message& m, req_rejected& r)
-        {
-            REQUIRE_EQUAL(m.meta.type, REQUEST_REJECTED);
-            REQUIRE_GREATER(m.meta.from.size(), 1);
-
-            r.key = m.meta.extra["key"].as_string();
-            r.address = m.meta.from.front();
         }
 
         struct register_with_greeter
@@ -450,45 +357,6 @@ namespace fire
                 auto address = n::make_udp_address(r.from_ip, r.from_port);
                 setup_security_session(address, c->key(), r.public_secret);
             }
-            else if(m.meta.type == ADD_REQUEST)
-            {
-                add_request r;
-                convert(m, r);
-
-                CHECK(r.from);
-
-                //if contact already exists send confirmation
-                //otherwise add to pending requests
-
-                auto f = _user->contacts().by_id(r.from->id());
-                if(f) send_confirmation(f->id(), r.key);
-                else 
-                {
-                    u::mutex_scoped_lock l(_mutex);
-                    _pending_requests[r.from->id()] = r;
-
-                    fire_new_contact_event(r.from->id());
-                }
-            }
-            else if(m.meta.type == REQUEST_CONFIRMED)
-            {
-                req_confirmed r;
-                convert(m, r);
-
-                CHECK(r.from);
-
-                if(_sent_requests.count(r.key))
-                {
-                    _sent_requests.erase(r.key);
-                    confirm_contact(r.from);
-                }
-            }
-            else if(m.meta.type == REQUEST_REJECTED)
-            {
-                req_rejected r;
-                convert(m, r);
-                _sent_requests.erase(r.key);
-            }
             else if(m.meta.type == REGISTER_WITH_GREETER)
             {
                 register_with_greeter r;
@@ -583,94 +451,6 @@ namespace fire
         {
             ENSURE_FALSE(_in_port.empty());
             return _in_port;
-        }
-
-        void user_service::confirm_contact(user_info_ptr contact)
-        {
-            u::mutex_scoped_lock l(_mutex);
-
-            INVARIANT(_user);
-            INVARIANT(mail());
-            REQUIRE(contact);
-
-            //add user
-            _user->contacts().add(contact);
-            add_contact_data(contact);
-            save_user(_home, *_user);
-            send_ping_request(contact, true);
-        }
-
-        const add_requests& user_service::pending_requests() const
-        {
-            return _pending_requests;
-        }
-
-        void user_service::attempt_to_add_contact(const std::string& address)
-        {
-            u::mutex_scoped_lock l(_mutex);
-
-            INVARIANT(_user);
-            INVARIANT(mail());
-
-            std::string ex = m::external_address(address);
-            std::string key = u::uuid();
-
-            user_info_ptr self{new user_info{_user->info()}};
-            add_request r{ex, key, self};
-
-            _sent_requests.insert(key);
-            mail()->push_outbox(convert(r));
-        }
-
-        void user_service::send_confirmation(const std::string& id, std::string key)
-        {
-            u::mutex_scoped_lock l(_mutex);
-
-            INVARIANT(_user);
-            INVARIANT(mail());
-
-            if(key.empty())
-            {
-                auto p = _pending_requests.find(id);
-                CHECK(p != _pending_requests.end());
-                CHECK(p->second.from);
-
-                _user->contacts().add(p->second.from);
-                add_contact_data(p->second.from);
-                save_user(_home, *_user);
-
-                key = p->second.key;
-            }
-
-            user_info_ptr user = _user->contacts().by_id(id);
-            CHECK(user);
-
-            user_info_ptr self{new user_info{_user->info()}};
-            req_confirmed r{user->address(), key, self};
-
-            mail()->push_outbox(convert(r));
-            _pending_requests.erase(id);
-        }
-
-        void user_service::send_rejection(const std::string& id)
-        {
-            u::mutex_scoped_lock l(_mutex);
-
-            INVARIANT(_user);
-            INVARIANT(mail());
-
-            //get user who wanted to be added
-            auto p = _pending_requests.find(id);
-            CHECK(p != _pending_requests.end());
-            auto user = p->second.from;
-            auto key = p->second.key;
-
-            //remove request
-            if(p != _pending_requests.end())
-                _pending_requests.erase(id);
-
-            req_rejected r{user->address(), key};
-            mail()->push_outbox(convert(r));
         }
 
         void user_service::remove_contact(const std::string& id)
@@ -863,12 +643,6 @@ namespace fire
             send_ping_request(c->address(), send_back);
         }
 
-        void user_service::fire_new_contact_event(const std::string& id)
-        {
-            event::new_contact e{id};
-            send_event(event::convert(e));
-        }
-
         void user_service::fire_contact_connected_event(const std::string& id)
         {
             u::mutex_scoped_lock l(_ping_mutex);
@@ -963,23 +737,8 @@ namespace fire
 
         namespace event
         {
-            const std::string NEW_CONTACT = "new_contact";
             const std::string CONTACT_CONNECTED = "contact_con";
             const std::string CONTACT_DISCONNECTED = "contact_discon";
-
-            m::message convert(const new_contact& c)
-            {
-                m::message m;
-                m.meta.type = NEW_CONTACT;
-                m.data = u::to_bytes(c.id);
-                return m;
-            }
-
-            void convert(const m::message& m, new_contact& c)
-            {
-                REQUIRE_EQUAL(m.meta.type, NEW_CONTACT);
-                c.id = u::to_str(m.data);
-            }
 
             m::message convert(const contact_connected& c)
             {
