@@ -53,13 +53,15 @@ namespace fire
             return _response_service_address;
         }
 
-        greet_key_response::greet_key_response(const u::bytes& key) :
-            _pub_key(key) {}
+        greet_key_response::greet_key_response(const std::string& key) :
+            _pub_key{key}, _host{}, _port{} {}
 
         greet_key_response::greet_key_response(const m::message& m)
         {
             REQUIRE_EQUAL(m.meta.type, GREET_KEY_RESPONSE);
-            _pub_key = m.meta.extra["pub_key"].as_bytes();
+            _pub_key = m.meta.extra["pub_key"].as_string();
+            _host = m.meta.extra["from_ip"].as_string();
+            _port = m.meta.extra["from_port"].as_string();
         }
 
         greet_key_response::operator message::message() const
@@ -70,7 +72,17 @@ namespace fire
             return m;
         }
 
-        const u::bytes& greet_key_response::key() const
+        const std::string& greet_key_response::host() const
+        {
+            return _host;
+        }
+
+        const std::string& greet_key_response::port() const
+        {
+            return _port;
+        }
+
+        const std::string& greet_key_response::key() const
         {
             return _pub_key;
         }

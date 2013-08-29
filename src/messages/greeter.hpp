@@ -57,17 +57,21 @@ namespace fire
         class greet_key_response
         {
             public:
-                greet_key_response(const util::bytes& key);
+                greet_key_response(const std::string& key);
 
             public:
                 greet_key_response(const message::message&);
                 operator message::message() const;
 
             public:
-                const util::bytes& key() const;
+                const std::string& host() const;
+                const std::string& port() const;
+                const std::string& key() const;
 
             private:
-                util::bytes _pub_key;
+                std::string _host;
+                std::string _port;
+                std::string _pub_key;
         };
 
         class greet_register

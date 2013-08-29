@@ -125,9 +125,9 @@ void send_response(
 
     LOG << "sending reply to " << address << std::endl;
 
+    //encrypt using public key
     auto data = u::encode(m);
     data = sec.encrypt(address, data);
-
     con.send(address, data);
 }
 
@@ -164,19 +164,24 @@ void find_user(
 
 void send_pub_key(
         n::connection_manager& con, 
+        sc::session_library& sec, 
         const n::endpoint& ep,  
         const ms::greet_key_request& req, 
         user_info_map& users, 
         const sc::private_key& pkey)
 {
-    ms::greet_key_response rep{u::to_bytes(pkey.public_key())};
+    ms::greet_key_response rep{pkey.public_key()};
     m::message m = rep;
 
     auto address = n::make_address_str(ep); 
     m.meta.to = {address, req.response_service_address()};
 
     LOG << "sending pub key to " << address << std::endl;
-    con.send(address, u::encode(m));
+
+    //send plaintext
+    auto data = u::encode(m);
+    data = sec.encrypt(address, data);
+    con.send(address, data);
 }
 
 void create_new_key(const std::string& key, const std::string& pass)
@@ -261,7 +266,7 @@ int main(int argc, char *argv[])
     //linux requires that binds to the same port are made before
     //a listen is made.
     n::connection_manager con{POOL_SIZE, port};
-    sc::session_library sec_session{*pkey};
+    sc::session_library sec{*pkey};
     user_info_map users;
 
     u::bytes data;
@@ -277,7 +282,7 @@ int main(int argc, char *argv[])
 
         //decrypt message
         auto sid = n::make_address_str(ep);
-        data = sec_session.decrypt(sid, data);
+        data = sec.decrypt(sid, data);
 
         //parse message
         m::message m;
@@ -286,17 +291,17 @@ int main(int argc, char *argv[])
         if(m.meta.type == ms::GREET_REGISTER)
         {
             ms::greet_register r{m};
-            register_user(con, sec_session, ep, r, users);
+            register_user(con, sec, ep, r, users);
         }
         else if(m.meta.type == ms::GREET_FIND_REQUEST)
         {
             ms::greet_find_request r{m};
-            find_user(con, sec_session,  ep, r, users);
+            find_user(con, sec,  ep, r, users);
         }
         else if(m.meta.type == ms::GREET_KEY_REQUEST)
         {
             ms::greet_key_request r{m};
-            send_pub_key(con, ep, r, users, *pkey);
+            send_pub_key(con, sec, ep, r, users, *pkey);
         }
     }
     catch(std::exception& e)

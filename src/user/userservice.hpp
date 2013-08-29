@@ -104,6 +104,7 @@ namespace fire
                 virtual void message_recieved(const message::message&);
 
             private:
+                void add_greeter(const std::string& host, const std::string& port, const std::string& pub_key);
                 void update_address(const std::string& address);
                 void confirm_contact(user_info_ptr contact);
                 void update_contact_address(const std::string& id, const std::string& ip, const std::string& port);
@@ -130,7 +131,7 @@ namespace fire
                 void init_ping();
                 void init_greet();
                 void request_register(const greet_server&);
-                void do_regiser_with_greeter(const std::string& greeter);
+                void do_regiser_with_greeter(const std::string& greeter, const std::string& pub_key);
                 void send_ping_requests();
                 void send_ping_request(user::user_info_ptr, bool send_back = true);
                 void send_ping_request(const std::string& address, bool send_back = true);

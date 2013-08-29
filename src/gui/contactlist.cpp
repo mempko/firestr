@@ -28,7 +28,8 @@
 #include <sstream>
 
 namespace u = fire::util;
-namespace usr = fire::user;
+namespace n = fire::network;
+namespace us = fire::user;
                 
 namespace fire
 {
@@ -40,8 +41,8 @@ namespace fire
         }
 
         std::string user_text(
-                user::user_info_ptr c, 
-                user::user_service_ptr s)
+                us::user_info_ptr c, 
+                us::user_service_ptr s)
         {
             REQUIRE(c);
             REQUIRE(s);
@@ -54,8 +55,8 @@ namespace fire
         }
 
         user_info::user_info(
-                user::user_info_ptr p, 
-                user::user_service_ptr s,
+                us::user_info_ptr p, 
+                us::user_service_ptr s,
                 bool accept_reject,
                 bool compact,
                 bool remove) :
@@ -166,7 +167,7 @@ namespace fire
 
         contact_list_dialog::contact_list_dialog(
                 const std::string& title, 
-                user::user_service_ptr service,
+                us::user_service_ptr service,
                 bool add_on_start,
                 QWidget* parent) :
             QDialog{parent},
@@ -299,7 +300,7 @@ namespace fire
             _prev_contacts = contacts;
         }
 
-        contact_list::contact_list(user::user_service_ptr service, const user::contact_list& contacts, bool remove) :
+        contact_list::contact_list(us::user_service_ptr service, const us::contact_list& contacts, bool remove) :
             _service{service},
             _remove{remove}
         {
@@ -313,7 +314,7 @@ namespace fire
             INVARIANT(_service);
         }
 
-        void contact_list::add_contact(user::user_info_ptr u)
+        void contact_list::add_contact(us::user_info_ptr u)
         {
             REQUIRE(u);
             INVARIANT(_service);
@@ -325,7 +326,7 @@ namespace fire
             _contact_widgets.push_back(ui);
         }
 
-        void contact_list::update(const user::contact_list& contacts)
+        void contact_list::update(const us::contact_list& contacts)
         {
             clear();
             _contact_widgets.clear();
@@ -348,7 +349,7 @@ namespace fire
             }
         }
 
-        greeter_list::greeter_list(user::user_service_ptr service) :
+        greeter_list::greeter_list(us::user_service_ptr service) :
             _service{service}
 
         {
@@ -358,7 +359,7 @@ namespace fire
                 add_greeter(s);
         }
                 
-        void greeter_list::add_greeter(const user::greet_server& s)
+        void greeter_list::add_greeter(const us::greet_server& s)
         {
             add(new greeter_info{_service, s});
         }
@@ -394,12 +395,14 @@ namespace fire
             //append port if not specified
             if(address.find(":") == std::string::npos) address.append(":7070");
 
+            auto host_port = n::parse_host_port(address);
+
             _service->add_greeter(address);
-            CHECK_FALSE(_service->user().greeters().empty());
-            add_greeter(_service->user().greeters().back());
+            us::greet_server ts{host_port.first, host_port.second, ""};
+            add_greeter(ts);
         }
 
-        greeter_info::greeter_info(user::user_service_ptr service, const user::greet_server& s) :
+        greeter_info::greeter_info(us::user_service_ptr service, const us::greet_server& s) :
             _server{s}, _service{service}
         {
             INVARIANT(_service);
@@ -430,7 +433,7 @@ namespace fire
             _rm->setEnabled(false);
         }
 
-        add_contact_dialog::add_contact_dialog(user::user_service_ptr s, QWidget* parent) :
+        add_contact_dialog::add_contact_dialog(us::user_service_ptr s, QWidget* parent) :
             _service{s}, QDialog{parent}
         {
             INVARIANT(_service);
@@ -473,7 +476,7 @@ namespace fire
             accept();
         }
 
-        std::string address(const user::greet_server& s)
+        std::string address(const us::greet_server& s)
         {
             return s.host() + ":" + s.port();
         }
@@ -494,8 +497,8 @@ namespace fire
             }
 
             //load contact file
-            user::contact_file cf;
-            if(!usr::load_contact_file(convert(file), cf))
+            us::contact_file cf;
+            if(!us::load_contact_file(convert(file), cf))
             {
                 reject();
                 return;
@@ -548,8 +551,8 @@ namespace fire
             }
 
             //save contact file
-            usr::contact_file cf{ _service->user().info(), greeter};
-            usr::save_contact_file(convert(file), cf);
+            us::contact_file cf{ _service->user().info(), greeter};
+            us::save_contact_file(convert(file), cf);
         }
     }
 }

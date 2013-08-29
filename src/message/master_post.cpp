@@ -61,9 +61,13 @@ namespace fire
                 auto sid = n::make_address_str(ep);
                 data = o->_session_library->decrypt(sid, data);
 
+                //could not decrypt, skip
+                if(data.empty()) continue;
+
                 //parse message
                 message m;
                 u::decode(data, m);
+
 
                 //skip bad message
                 if(m.meta.to.empty()) continue;

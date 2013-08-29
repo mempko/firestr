@@ -211,6 +211,7 @@ namespace fire
         struct register_with_greeter
         {
             std::string server;
+            std::string pub_key;
         };
 
         m::message convert(const register_with_greeter& r)
@@ -218,6 +219,7 @@ namespace fire
             m::message m;
             m.meta.type = REGISTER_WITH_GREETER;
             m.meta.extra["server"] = r.server;
+            m.meta.extra["pub_key"] = r.pub_key;
             m.meta.to = {SERVICE_ADDRESS}; 
 
             return m;
@@ -229,6 +231,7 @@ namespace fire
             REQUIRE_FALSE(m.meta.from.empty());
 
             r.server = m.meta.extra["server"].as_string();
+            r.pub_key = m.meta.extra["pub_key"].as_string();
         }
 
         user_service::user_service(user_service_context& c) :
@@ -310,7 +313,7 @@ namespace fire
         void user_service::request_register(const greet_server& g)
         {
             auto s = n::make_tcp_address(g.host(), g.port(), _in_port);
-            register_with_greeter r{s};
+            register_with_greeter r{s, g.public_key()};
 
             m::message m = convert(r);
             m.meta.to = {SERVICE_ADDRESS};
@@ -344,7 +347,7 @@ namespace fire
             }
         }
 
-        void user_service::do_regiser_with_greeter(const std::string& server)
+        void user_service::do_regiser_with_greeter(const std::string& server, const std::string& pub_key)
         {
             //regiser with greeter
             LOG << "sending greet message to " << server << std::endl;
@@ -356,6 +359,10 @@ namespace fire
                 SERVICE_ADDRESS
             };
 
+            //create security session
+            _session_library->create_session(server, pub_key);
+
+            //send registration request to greeter
             m::message gm = gr;
             gm.meta.to = {server, "outside"};
             mail()->push_outbox(gm);
@@ -486,7 +493,12 @@ namespace fire
             {
                 register_with_greeter r;
                 convert(m, r);
-                do_regiser_with_greeter(r.server);
+                do_regiser_with_greeter(r.server, r.pub_key);
+            }
+            else if(m.meta.type == ms::GREET_KEY_RESPONSE)
+            {
+                ms::greet_key_response rs{m};
+                add_greeter(rs.host(), rs.port(), rs.key());
             }
             else if(m.meta.type == ms::GREET_FIND_RESPONSE)
             {
@@ -675,12 +687,28 @@ namespace fire
 
         void user_service::add_greeter(const std::string& address)
         {
-            INVARIANT(_user);
-            //parse host/port
+            ms::greet_key_request r{SERVICE_ADDRESS};
+
             auto host_port = n::parse_host_port(address);
+            auto service = n::make_tcp_address(host_port.first, host_port.second, _in_port);
+
+            m::message m = r;
+            m.meta.to = {service, "outside"};
+            mail()->push_outbox(m);
+        }
+
+        void user_service::add_greeter(const std::string& host, const std::string& port, const std::string& pub_key)
+        {
+            INVARIANT(_user);
+            if(host.empty() || port.empty() || pub_key.empty()) return;
+
+            //check to make sure the greeter has not been added already
+            for(auto g : _user->greeters())
+                if(g.host() == host && g.port() == port)
+                    return;
 
             //add greeter
-            greet_server gs{host_port.first, host_port.second};
+            greet_server gs{host, port, pub_key};
             _user->greeters().push_back(gs);
 
             save_user(_home, *_user);
@@ -694,12 +722,11 @@ namespace fire
             INVARIANT(_user);
             //parse host/port
             auto host_port = n::parse_host_port(address);
-            greet_server gs{host_port.first, host_port.second};
 
             //find greeter
             greet_servers::iterator g = _user->greeters().end();
             for(greet_servers::iterator i = _user->greeters().begin(); i != _user->greeters().end(); i++)
-                if(gs.host() == i->host() && gs.port() == i->port())
+                if(host_port.first == i->host() && host_port.second == i->port())
                     g = i;
             if(g == _user->greeters().end()) return;
            
