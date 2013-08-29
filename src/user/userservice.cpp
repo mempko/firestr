@@ -379,11 +379,7 @@ namespace fire
             REQUIRE_FALSE(address.empty());
             INVARIANT(_session_library);
 
-            auto& s = _session_library->get_session(address);
-            s.key = key;
-            s.shared_secret.create_symmetric_key(public_val);
-
-            ENSURE(s.shared_secret.ready()); 
+            _session_library->create_session(address, key, public_val);
         }
 
         void user_service::message_recieved(const message::message& m)
@@ -511,6 +507,9 @@ namespace fire
 
                     auto local = n::make_udp_address(rs.local().ip, rs.local().port);
                     auto external = n::make_udp_address(rs.external().ip, rs.external().port);
+                    //create security sessions for local and external
+                    _session_library->create_session(local, c->key());
+                    _session_library->create_session(external, c->key());
 
                     //send ping request via local network and external
                     //network. First one to arrive gets to be connection
@@ -535,8 +534,7 @@ namespace fire
 
             auto a = n::make_udp_address(ip, port);
 
-            auto& s = _session_library->get_session(a);
-            s.key = c->key();
+            _session_library->create_session(a, c->key());
 
             if(c->address() == a) return;
 
@@ -811,7 +809,7 @@ namespace fire
             INVARIANT(_user);
             INVARIANT(mail());
 
-            auto& s = _session_library->get_session(address);
+            const auto& s = _session_library->get_session(address);
             ping_request a
             {
                 address, 
@@ -834,8 +832,7 @@ namespace fire
             INVARIANT(mail());
 
             LOG << "sending connection request to " << c->name() << " (" << c->id() << ", " << c->address() << ")" << std::endl;
-            auto& s = _session_library->get_session(c->address());
-            s.key = c->key();
+            _session_library->create_session(c->address(), c->key());
             send_ping_request(c->address(), send_back);
         }
 

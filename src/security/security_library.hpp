@@ -53,9 +53,10 @@ namespace fire
                 util::bytes decrypt(const id&, const util::bytes&) const;
 
             public:
-                session& get_session(const id&);
+                void create_session(const id&, const public_key&);
+                void create_session(const id&, const public_key&, const util::bytes& public_val);
+                const session& get_session(const id&) const;
                 void remove_session(const id&);
-                void create_shared_secret(const id&, const util::bytes& public_val);
 
             private:
                 util::bytes encrypt_assymetric(session_map::const_iterator, const util::bytes&) const;

@@ -130,28 +130,49 @@ namespace fire
             return ds;
         }
 
-        session& session_library::get_session(const id& i)
+        void session_library::create_session(const id& i, const public_key& key)
+        {
+            REQUIRE(key.valid());
+            u::mutex_scoped_lock l(_mutex);
+
+            LOG << "creating pk security session for: " << i << std::endl;
+
+            auto& s = _s[i];
+            s.key = key;
+
+            ENSURE(!s.shared_secret.ready());
+            ENSURE(s.key.valid());
+        }
+
+        void session_library::create_session(const id& i, const public_key& key, const util::bytes& public_val)
+        {
+            REQUIRE(key.valid());
+            u::mutex_scoped_lock l(_mutex);
+
+            LOG << "creating pk/dh security session for: " << i << std::endl;
+
+            auto& s = _s[i];
+            s.key = key;
+            s.shared_secret.create_symmetric_key(public_val);
+
+            ENSURE(s.shared_secret.ready());
+        }
+
+        const session& session_library::get_session(const id& i) const
         {
             u::mutex_scoped_lock l(_mutex);
-            if(!_s.count(i)) LOG << "creating security session for: " << i << std::endl;
-            return _s[i];
+            auto r = _s.find(i);
+            REQUIRE(r != _s.end());
+
+            return r->second;
         }
 
         void session_library::remove_session(const id& i)
         {
             u::mutex_scoped_lock l(_mutex);
+            REQUIRE(_s.count(i));
+
             _s.erase(i);
         }
-
-        void session_library::create_shared_secret(const id& i, const util::bytes& public_val)
-        {
-            u::mutex_scoped_lock l(_mutex);
-            auto s = _s.find(i);
-            if(s == _s.end()) return;
-
-            s->second.shared_secret.create_symmetric_key(public_val);
-            ENSURE(s->second.shared_secret.ready());
-        }
-
     }
 }

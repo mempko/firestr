@@ -107,8 +107,7 @@ void register_user(
     user_info i = {r.id(), local, ext, r.response_service_address(), ep};
     m[i.id] = i;
 
-    auto& session = sec.get_session(address);
-    session.key = sc::public_key{r.pub_key()};
+    sec.create_session(address, r.pub_key());
 
     LOG << "registered " << i.id << " " << i.ext.ip << ":" << i.ext.port << std::endl;
 }
