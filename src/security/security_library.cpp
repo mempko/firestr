@@ -52,6 +52,7 @@ namespace fire
 
         u::bytes session_library::encrypt_assymetric(const id& i, const u::bytes& bs) const
         {
+            u::mutex_scoped_lock l(_mutex);
             return encrypt_assymetric(_s.find(i), bs);
         }
 
@@ -72,6 +73,7 @@ namespace fire
 
         u::bytes session_library::encrypt_symmetric(const id& i, const u::bytes& bs) const
         {
+            u::mutex_scoped_lock l(_mutex);
             return encrypt_symmetric(_s.find(i), bs);
         }
 

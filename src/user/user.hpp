@@ -119,25 +119,28 @@ namespace fire
         class greet_server
         {
             public:
-                greet_server() : _host(), _port(){}
+                greet_server() : _host(), _port(), _key(){}
 
                 greet_server(const greet_server& o) : 
-                    _host{o._host}, _port{o._port}{}
+                    _host{o._host}, _port{o._port}, _key{o._key}{}
 
-                greet_server(const std::string& host, const std::string& port) : 
-                    _host{host}, _port{port}{}
+                greet_server(const std::string& host, const std::string& port, const std::string& key) : 
+                    _host{host}, _port{port}, _key{key}{}
 
                 greet_server& operator=(const greet_server& o);
 
             public:
                 std::string host() const; 
                 std::string port() const;
+                std::string public_key() const;
                 void host(const std::string& host); 
                 void port(const std::string& port);
+                void public_key(const std::string& key);
 
             private:
                 std::string _host;
                 std::string _port;
+                std::string _key;
                 mutable std::mutex _mutex;
         };
 
