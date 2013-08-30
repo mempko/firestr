@@ -135,15 +135,19 @@ namespace fire
         void session_library::create_session(const id& i, const public_key& key)
         {
             REQUIRE(key.valid());
+
             u::mutex_scoped_lock l(_mutex);
+
+            auto& s = _s[i];
+            if(s.key.valid() && s.key.key() == key.key()) return;
 
             LOG << "creating pk security session for: " << i << std::endl;
 
-            auto& s = _s[i];
             s.key = key;
+            s.shared_secret = dh_secret{};
 
-            ENSURE(!s.shared_secret.ready());
             ENSURE(s.key.valid());
+            ENSURE(!s.shared_secret.ready());
         }
 
         void session_library::create_session(const id& i, const public_key& key, const util::bytes& public_val)
@@ -154,9 +158,11 @@ namespace fire
             LOG << "creating pk/dh security session for: " << i << std::endl;
 
             auto& s = _s[i];
-            s.key = key;
+
+            if(!s.key.valid() || s.key.key() != key.key()) s.key = key;
             s.shared_secret.create_symmetric_key(public_val);
 
+            ENSURE(s.key.valid());
             ENSURE(s.shared_secret.ready());
         }
 
@@ -172,7 +178,7 @@ namespace fire
         void session_library::remove_session(const id& i)
         {
             u::mutex_scoped_lock l(_mutex);
-            REQUIRE(_s.count(i));
+            if(!_s.count(i)) return;
 
             _s.erase(i);
         }
