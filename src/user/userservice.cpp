@@ -456,9 +456,14 @@ namespace fire
         void user_service::remove_contact(const std::string& id)
         {
             INVARIANT(_user);
+            INVARIANT(_session_library);
             auto c = _user->contacts().by_id(id);
             if(!c) return;
+            
+            //remove security session
+            _session_library->remove_session(c->address());
 
+            //remove contact
             fire_contact_disconnected_event(id);
             _user->contacts().remove(c);
 
@@ -521,6 +526,7 @@ namespace fire
             size_t send_ticks = 0;
             REQUIRE(s);
             REQUIRE(s->_user);
+            REQUIRE(s->_session_library);
             while(!s->_done)
             try
             {
@@ -547,6 +553,9 @@ namespace fire
                         if(cur_state != prev_state)
                         {
                             CHECK(!cur_state); // should only flip one way
+                            CHECK(p.second.contact);
+
+                            s->_session_library->remove_session(p.second.contact->address());
                             s->fire_contact_disconnected_event(p.first);
                         }
                     }
