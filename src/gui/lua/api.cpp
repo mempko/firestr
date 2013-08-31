@@ -95,11 +95,8 @@ namespace fire
 
             void lua_api::report_error(const std::string& e)
             {
-                if(!output) 
-                {
-                    LOG << "script error: " << e << std::endl;
-                    return;
-                }
+                LOG << "script error: " << e << std::endl;
+                if(!output) return;
                 output->add(make_error_widget(e));
             }
 
