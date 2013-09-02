@@ -127,16 +127,18 @@ namespace fire
         bool session::send(const std::string& to, const message::message& m)
         {
             INVARIANT(_sender);
-            _sender->send(to, m);
+            return _sender->send(to, m);
         }
 
         bool session::send(const message::message& m)
         {
+            bool sent = false;
             for(auto c : _contacts.list())
             {
                 CHECK(c);
-                send(c->id(), m); 
+                sent |= send(c->id(), m); 
             }
+            return sent;
         }
     }
 }
