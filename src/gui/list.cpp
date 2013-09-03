@@ -17,6 +17,7 @@ namespace fire
 
             //setup layout
             _layout = new QVBoxLayout{_root};
+            _layout->setAlignment(Qt::AlignTop);
 
             //setup base
             setWidgetResizable(true);
