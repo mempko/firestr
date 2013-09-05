@@ -37,7 +37,6 @@ namespace fire
         namespace 
         {
             const size_t TIMER_SLEEP = 200;//in milliseconds
-            const size_t CW_WIDTH = 50;//in milliseconds
             const size_t ADD_CONTACT_WIDTH = 10;
         }
 
@@ -63,24 +62,15 @@ namespace fire
 
             update_contact_select();
 
-            _contacts = new contact_list{_session_service->user_service(), _session->contacts()};
-
             auto* cw = new QWidget;
             auto* cl = new QGridLayout;
 
             cw->setLayout(cl);
             cl->addWidget(_contact_select, 0,0);
             cl->addWidget(_add_contact, 0, 1);
-            cl->addWidget(_contacts, 1, 0, 1, 2);
-            cw->resize(CW_WIDTH, cw->height());
+            cl->addWidget(_messages, 1, 0, 1, 3);
 
-            _splitter = new QSplitter{Qt::Horizontal};
-            _splitter->addWidget(_messages);
-            _splitter->addWidget(cw);
-            _splitter->setStretchFactor(0, 1);
-            _splitter->setStretchFactor(1, 0);
-           
-            _layout->addWidget(_splitter);
+            _layout->addWidget(cw);
 
             setLayout(_layout);
             _layout->setContentsMargins(0,0,0,0);
@@ -166,7 +156,6 @@ namespace fire
             INVARIANT(_contact_select);
             INVARIANT(_session_service);
             INVARIANT(_session);
-            INVARIANT(_contacts);
 
             size_t i = _contact_select->currentIndex();
             auto id = convert(_contact_select->itemData(i).toString());
@@ -175,7 +164,6 @@ namespace fire
             if(!contact) return;
 
             _session_service->add_contact_to_session(contact, _session);
-            _contacts->add_contact(contact);
 
             update_contact_select();
             add(contact_alert(contact, "added to session"));
@@ -183,7 +171,7 @@ namespace fire
 
         void session_widget::update_contacts()
         {
-            _contacts->update(_session->contacts());
+            _messages->update_contact_lists();
             update_contact_select();
         }
 
@@ -231,6 +219,19 @@ namespace fire
                     if(!c) continue;
 
                     add(contact_alert(c, "quit session"));
+                    update_contacts();
+                }
+                else if(m.meta.type == s::event::CONTACT_ADDED)
+                {
+                    s::event::contact_added r;
+                    s::event::convert(m, r);
+
+                    if(r.session_id != _session->id()) continue;
+
+                    auto c = _session_service->user_service()->by_id(r.contact_id);
+                    if(!c) continue;
+
+                    add(contact_alert(c, "added to session"));
                     update_contacts();
                 }
                 else if(m.meta.type == us::event::CONTACT_CONNECTED)

@@ -75,6 +75,9 @@ namespace fire
                 void fire_contact_removed(
                         const std::string& session_id,
                         const std::string& contact_id);
+                void fire_contact_added(
+                        const std::string& session_id,
+                        const std::string& contact_id);
 
             private:
                 message::post_office_ptr _post;
@@ -123,6 +126,15 @@ namespace fire
             };
             message::message convert(const contact_removed&);
             void convert(const message::message&, contact_removed&);
+
+            extern const std::string CONTACT_ADDED;
+            struct contact_added
+            {
+                std::string session_id;
+                std::string contact_id;
+            };
+            message::message convert(const contact_added&);
+            void convert(const message::message&, contact_added&);
         }
     }
 }
