@@ -24,6 +24,7 @@
 
 #include <set>
 #include <string>
+#include <functional>
 
 #include <QDialog>
 #include <QPushButton>
@@ -45,6 +46,7 @@ namespace fire
 
             public slots:
                 void update();
+                void update(std::function<bool(user::user_info&)> f);
                 void remove();
 
             private:
@@ -65,6 +67,7 @@ namespace fire
                 void add_contact(user::user_info_ptr);
                 void update(const user::contact_list&);
                 void update_status();
+                void update_status(std::function<bool(user::user_info&)> f);
 
             protected:
                 user::user_service_ptr _service;

@@ -366,11 +366,9 @@ namespace fire
             void lua_api::send_to_helper(us::user_info_ptr c, const script_message& m)
             {
                 REQUIRE(c);
-                if(!session->user_service()->contact_available(c->id()) || session->contacts().by_id(c->id()) != c)
-                {
-                    contacts.remove(c);
+                if( !session->user_service()->contact_available(c->id()) || 
+                    !session->contacts().has(c->id()))
                     return;
-                }
 
                 sender->send(c->id(), m); 
             }

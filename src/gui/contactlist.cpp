@@ -42,12 +42,13 @@ namespace fire
 
         std::string user_text(
                 us::user_info_ptr c, 
-                us::user_service_ptr s)
+                us::user_service_ptr s, 
+                bool force_offline = false)
         {
             REQUIRE(c);
             REQUIRE(s);
 
-            bool online = s->contact_available(c->id());
+            bool online = !force_offline && s->contact_available(c->id());
 
             std::stringstream ss;
             ss << "<font color='" << (online ? "green" : "red") << "'>" << c->name() << "</font>";
@@ -102,6 +103,15 @@ namespace fire
             INVARIANT(_user_text);
 
             _user_text->setText(user_text(_contact, _service).c_str());
+        }
+
+        void user_info::update(std::function<bool(us::user_info&)> f)
+        {
+            INVARIANT(_service);
+            INVARIANT(_contact);
+            INVARIANT(_user_text);
+
+            _user_text->setText(user_text(_contact, _service, !f(*_contact)).c_str());
         }
 
         void user_info::remove()
@@ -322,6 +332,15 @@ namespace fire
             {
                 CHECK(p);
                 p->update();
+            }
+        }
+
+        void contact_list::update_status(std::function<bool(us::user_info&)> f)
+        {
+            for(auto p : _contact_widgets)
+            {
+                CHECK(p);
+                p->update(f);
             }
         }
 

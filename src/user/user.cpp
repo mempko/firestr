@@ -381,6 +381,12 @@ namespace fire
             return true;
         }
 
+        bool contact_list::has(const std::string& id) const
+        {
+            u::mutex_scoped_lock l(_mutex);
+            return _map.count(id) != 0;
+        }
+
         user_info_ptr contact_list::by_id(const std::string& id) const
         {
             u::mutex_scoped_lock l(_mutex);
