@@ -668,9 +668,9 @@ namespace fire
                 {
                     session_synced_event(m);
                 }
-                else if(m.meta.type == s::event::CONTACT_REMOVED)
+                else if(m.meta.type == s::event::CONTACT_REMOVED || m.meta.type == s::event::CONTACT_ADDED)
                 {
-                    contact_removed_from_session_event(m);
+                    contact_removed_or_added_from_session_event(m);
                 }
                 else if(m.meta.type == us::event::CONTACT_CONNECTED)
                 {
@@ -886,7 +886,7 @@ namespace fire
 
             std::string name = convert(NEW_SESSION_NAME);
 
-            //make default name to be firt person in contact list
+            //make default name to be first person in contact list
             if(!s->contacts().empty()) 
                 name = s->contacts().list()[0]->name();
 
@@ -958,7 +958,7 @@ namespace fire
             s->mail()->push_inbox(m);
         }
 
-        void main_window::contact_removed_from_session_event(const m::message& e)
+        void main_window::contact_removed_or_added_from_session_event(const m::message& e)
         {
             _session_service->broadcast_message(e);
         }

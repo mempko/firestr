@@ -24,6 +24,7 @@ namespace fire
         namespace
         {
             const size_t TIMER_SLEEP = 100;//in milliseconds
+            const size_t CW_WIDTH = 50;
         }
 
         message_list::message_list(
@@ -47,10 +48,31 @@ namespace fire
         {
             REQUIRE(m);
             INVARIANT(_layout);
+            INVARIANT(_session);
+
+            //add contact list along right side of message
+            auto cw = new contact_list{_session->user_service(), _session->contacts()};
+            cw->resize(CW_WIDTH, cw->height());
+
+            auto s = new QSplitter{Qt::Horizontal};
+            s->addWidget(m);
+            s->addWidget(cw);
+            s->setStretchFactor(0, 1);
+            s->setStretchFactor(1, 0);
 
             //we might want to do something 
             //different with a message here
-            list::add(m);
+            list::add(s);
+            _contact_lists.push_back(cw);
+        }
+
+        void message_list::update_contact_lists()
+        {
+            for(auto cl : _contact_lists) 
+            {
+                CHECK(cl);
+                cl->update_status();
+            }
         }
 
         void message_list::add(QWidget* w)

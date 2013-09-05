@@ -183,6 +183,8 @@ namespace fire
             }
         }
 
+        using added_contacts = std::vector<std::string>;
+
         session_ptr session_service::sync_session(const std::string& id, const user::contact_list& contacts)
         {
             INVARIANT(_post);
@@ -210,7 +212,7 @@ namespace fire
             else s = sp->second;
 
             CHECK(s);
-            bool new_contact = false;
+            added_contacts added;
             for(auto c : contacts.list())
             {
                 CHECK(c);
@@ -218,17 +220,20 @@ namespace fire
                 if(s->contacts().by_id(c->id())) continue;
 
                 s->contacts().add(c);
-                new_contact = true;
+                added.push_back(c->id());
             }
 
             //done creating session, fire event
             if(is_new) fire_new_session_event(id);
 
             //sync session
-            if(new_contact) 
+            if(!added.empty()) 
             {
                 sync_existing_session(s);
                 fire_session_synced_event(id);
+
+                for(const auto& cid : added)
+                    fire_contact_added(id, cid);
             }
 
             return s;
@@ -394,6 +399,7 @@ namespace fire
             const std::string QUIT_SESSION = "quit_session_event";
             const std::string SESSION_SYNCED = "session_synced_event";
             const std::string CONTACT_REMOVED = "session_contact_removed";
+            const std::string CONTACT_ADDED = "session_contact_added";
 
             m::message convert(const new_session& s)
             {
@@ -452,6 +458,22 @@ namespace fire
                 s.session_id = u::to_str(m.data);
                 s.contact_id = m.meta.extra["contact_id"].as_string();
             }
+
+            m::message convert(const contact_added& s)
+            {
+                m::message m;
+                m.meta.type = CONTACT_ADDED;
+                m.meta.extra["contact_id"] = s.contact_id;
+                m.data = u::to_bytes(s.session_id);
+                return m;
+            }
+
+            void convert(const m::message& m, contact_added& s)
+            {
+                REQUIRE_EQUAL(m.meta.type, CONTACT_ADDED);
+                s.session_id = u::to_str(m.data);
+                s.contact_id = m.meta.extra["contact_id"].as_string();
+            }
         }
 
         void session_service::fire_new_session_event(const std::string& id)
@@ -477,6 +499,14 @@ namespace fire
                 const std::string& contact_id)
         {
             event::contact_removed e{session_id, contact_id};
+            send_event(event::convert(e));
+        }
+
+        void session_service::fire_contact_added(
+                const std::string& session_id, 
+                const std::string& contact_id)
+        {
+            event::contact_added e{session_id, contact_id};
             send_event(event::convert(e));
         }
     }
