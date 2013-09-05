@@ -45,6 +45,7 @@ namespace fire
 
             public:
                 void update_contact_lists();
+                void remove_from_contact_lists(user::user_info_ptr);
 
             public slots:
                 std::string add_new_app(const messages::new_app&); 
@@ -56,7 +57,9 @@ namespace fire
                 app::app_service_ptr _app_service;
 
                 using contact_list_ptrs = std::vector<contact_list*>;
+                using message_contacts = std::vector<user::contact_list>;
                 contact_list_ptrs _contact_lists;
+                message_contacts _message_contacts;
         };
     }
 }

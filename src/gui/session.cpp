@@ -167,6 +167,7 @@ namespace fire
 
             update_contact_select();
             add(contact_alert(contact, "added to session"));
+            update_contacts();
         }
 
         void session_widget::update_contacts()
@@ -219,6 +220,8 @@ namespace fire
                     if(!c) continue;
 
                     add(contact_alert(c, "quit session"));
+
+                    _messages->remove_from_contact_lists(c);
                     update_contacts();
                 }
                 else if(m.meta.type == s::event::CONTACT_ADDED)
