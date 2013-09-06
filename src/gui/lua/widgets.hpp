@@ -108,6 +108,7 @@ namespace fire
 
                 void clear();
                 void line(double x1, double y1, double x2, double y2);
+                void circle(double x, double y, double r);
 
                 const std::string& get_mouse_released_callback() const { return mouse_released_callback;}
                 const std::string& get_mouse_pressed_callback() const { return mouse_pressed_callback;}

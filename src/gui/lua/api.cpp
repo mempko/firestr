@@ -221,6 +221,7 @@ namespace fire
                     .set("disable", &widget_ref::disable)
                     .set("clear", &draw_ref::clear)
                     .set("line", &draw_ref::line)
+                    .set("circle", &draw_ref::circle)
                     .set("pen", &draw_ref::set_pen)
                     .set("get_pen", &draw_ref::get_pen);
 

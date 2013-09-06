@@ -504,6 +504,20 @@ namespace fire
                 w->scene()->addLine(sp1.x(), sp1.y(), sp2.x(), sp2.y(), pen);
             }
 
+            void draw_ref::circle(double x, double y, double r)
+            {
+                INVARIANT(api);
+
+                auto w = get_view();
+                if(!w) return;
+
+                auto sp = w->mapToScene(x,y);
+                auto spr = w->mapToScene(x+r,y+r);
+                auto rx = std::fabs(spr.x() - sp.x());
+                auto ry = std::fabs(spr.y() - sp.y());
+                w->scene()->addEllipse(sp.x()-rx, sp.y()-ry, 2*rx, 2*ry, pen);
+            }
+
             void draw_ref::clear()
             {
                 INVARIANT(api);
