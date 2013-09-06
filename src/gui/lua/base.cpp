@@ -85,6 +85,12 @@ namespace fire
                 api->sender->send_to_local_app(app_id, m); 
             }
 
+            std::string contact_ref::get_id() const
+            {
+                INVARIANT(api);
+                return user_id;
+            }
+
             std::string contact_ref::get_name() const
             {
                 INVARIANT(api);
