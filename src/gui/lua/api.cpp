@@ -143,6 +143,7 @@ namespace fire
                     .set("set_width", &QPen::setWidth);
 
                 SLB::Class<contact_ref>{"contact", &manager}
+                    .set("id", &contact_ref::get_id)
                     .set("name", &contact_ref::get_name)
                     .set("online", &contact_ref::is_online);
 
