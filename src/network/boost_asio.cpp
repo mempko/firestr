@@ -51,15 +51,16 @@ namespace fire
             const size_t BLOCK_SLEEP = 10;
             const size_t THREAD_SLEEP = 40;
             const int RETRIES = 0;
-            const size_t MAX_UDP_BUFF_SIZE = 1024; //in bytes
-            const size_t UDP_CHuNK_SIZE = 508; //in bytes
+            const size_t MAX_UDP_BUFF_SIZE = 2048; //in bytes
             const size_t SEQUENCE_BASE = 1;
-            const size_t CHUNK_TOTAL_BASE = SEQUENCE_BASE + 8;
-            const size_t CHUNK_BASE = SEQUENCE_BASE + 12;
-            const size_t MESSAGE_BASE = SEQUENCE_BASE + 16;
+            const size_t CHUNK_TOTAL_BASE = SEQUENCE_BASE + sizeof(sequence_type);
+            const size_t CHUNK_BASE = CHUNK_TOTAL_BASE + sizeof(chunk_total_type);
+            const size_t MESSAGE_BASE = CHUNK_BASE + sizeof(chunk_id_type);
 
             //<mark> <sequence num> <chunk total> <chunk>
-            const size_t HEADER_SIZE = SEQUENCE_BASE + sizeof(uint64_t) + sizeof(int) + sizeof(int);
+            const size_t HEADER_SIZE = MESSAGE_BASE;
+            const size_t UDP_CHuNK_SIZE = 1024-HEADER_SIZE; //in bytes
+            const size_t MAX_MESSAGE_SIZE = std::pow(2,sizeof(chunk_total_type)*8) * UDP_CHuNK_SIZE;
 
             asio_params::connect_mode determine_connection_mode(const queue_options& o)
             {
@@ -824,6 +825,11 @@ namespace fire
         {
             INVARIANT(_socket);
             if(m.data.empty()) return false;
+            if(m.data.size() > MAX_MESSAGE_SIZE)
+            {
+                LOG << "message of size `" << m.data.size() << "' is larger than the max message size of `" << MAX_MESSAGE_SIZE << "'" << std::endl;
+                return false;
+            }
 
             _sequence++;
             size_t chunks = chunkify(m.ep.address, m.ep.port, m.data);
@@ -861,6 +867,24 @@ namespace fire
             b[offset + 3] =  v        & 0xFF;
         }
 
+        void write_be(u::bytes& b, size_t offset, unsigned int v)
+        {
+            REQUIRE_GREATER_EQUAL(b.size() - offset, sizeof(unsigned int));
+
+            b[offset]     = (v >> 24) & 0xFF;
+            b[offset + 1] = (v >> 16) & 0xFF;
+            b[offset + 2] = (v >>  8) & 0xFF;
+            b[offset + 3] =  v        & 0xFF;
+        }
+
+        void write_be(u::bytes& b, size_t offset, uint16_t v)
+        {
+            REQUIRE_GREATER_EQUAL(b.size() - offset, sizeof(uint16_t));
+
+            b[offset]     = (v >> 8) & 0xFF;
+            b[offset + 1] =  v        & 0xFF;
+        }
+
         void read_be(const u::bytes& b, size_t offset, uint64_t& v)
         {
             REQUIRE_GREATER_EQUAL(b.size() - offset, sizeof(uint64_t));
@@ -877,12 +901,30 @@ namespace fire
 
         void read_be(const u::bytes& b, size_t offset, int& v)
         {
-            REQUIRE_GREATER_EQUAL(b.size() - offset, sizeof(uint64_t));
+            REQUIRE_GREATER_EQUAL(b.size() - offset, sizeof(int));
 
             v = (static_cast<int>(b[offset])     << 24) |
                 (static_cast<int>(b[offset + 1]) << 16) |
                 (static_cast<int>(b[offset + 2]) << 8)  |
                 (static_cast<int>(b[offset + 3]));
+        }
+
+        void read_be(const u::bytes& b, size_t offset, unsigned int& v)
+        {
+            REQUIRE_GREATER_EQUAL(b.size() - offset, sizeof(unsigned int));
+
+            v = (static_cast<unsigned int>(b[offset])     << 24) |
+                (static_cast<unsigned int>(b[offset + 1]) << 16) |
+                (static_cast<unsigned int>(b[offset + 2]) << 8)  |
+                (static_cast<unsigned int>(b[offset + 3]));
+        }
+
+        void read_be(const u::bytes& b, size_t offset, uint16_t& v)
+        {
+            REQUIRE_GREATER_EQUAL(b.size() - offset, sizeof(uint16_t));
+
+            v = (static_cast<uint16_t>(b[offset]) << 8) |
+                (static_cast<uint16_t>(b[offset + 1]));
         }
 
         u::bytes encode_udp_wire(const udp_chunk& ch)
@@ -924,15 +966,15 @@ namespace fire
             if(b[0] != '!') return ch;
 
             //read sequence number
-            if(b.size() < SEQUENCE_BASE + sizeof(uint64_t)) return ch;
+            if(b.size() < SEQUENCE_BASE + sizeof(sequence_type)) return ch;
             read_be(b, SEQUENCE_BASE, ch.sequence);
 
             //write total chunks 
-            if(b.size() < CHUNK_TOTAL_BASE + sizeof(uint64_t)) return ch;
+            if(b.size() < CHUNK_TOTAL_BASE + sizeof(chunk_total_type)) return ch;
             read_be(b, CHUNK_TOTAL_BASE, ch.total_chunks);
 
             //read chunk number
-            if(b.size() < CHUNK_BASE + sizeof(uint64_t)) return ch;
+            if(b.size() < CHUNK_BASE + sizeof(chunk_id_type)) return ch;
             read_be(b, CHUNK_BASE, ch.chunk);
 
             //copy message
@@ -952,6 +994,8 @@ namespace fire
             if(_out_queue.empty()) return;
 
             _writing = true;
+
+            CHECK_FALSE(_out_queue.empty());
 
             //encode bytes to wire format
             const auto& chunk = _out_queue.front();

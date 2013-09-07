@@ -139,7 +139,9 @@ namespace fire
 
         using udp_resolver_ptr = std::unique_ptr<boost::asio::ip::udp::resolver>;
         using udp_socket_ptr = std::unique_ptr<boost::asio::ip::udp::socket>;
-        using sequence_type = uint64_t;
+        using sequence_type = unsigned int;
+        using chunk_total_type = uint16_t;
+        using chunk_id_type = uint16_t;
 
         struct udp_chunk
         {
@@ -147,8 +149,8 @@ namespace fire
             std::string host;
             std::string port;
             sequence_type sequence;
-            int total_chunks;
-            int chunk;
+            chunk_total_type total_chunks;
+            chunk_id_type chunk;
             util::bytes data;
         };
 
@@ -201,7 +203,7 @@ namespace fire
                 //other
                 boost::asio::io_service& _io;
                 udp_socket_ptr _socket;
-                uint64_t _sequence;
+                sequence_type _sequence;
                 bool _writing;
                 mutable std::mutex _mutex;
                 boost::system::error_code _error;
