@@ -415,7 +415,7 @@ namespace fire
             //add message to in queue
             {
                 u::mutex_scoped_lock l(_in_mutex);
-                _in_queue.push(data);
+                _in_queue.emplace_push(data);
                 if(_track) _last_in_socket.push(this);
             }
 
@@ -807,7 +807,7 @@ namespace fire
                 std::copy(b.begin() + s, b.begin() + e, c.data.begin());
 
                 //push chunk to queue
-                _out_queue.push(c);
+                _out_queue.emplace_push(c);
 
                 //step
                 chunk++;
@@ -1065,22 +1065,23 @@ namespace fire
             {
                 if(c.total_chunks == 0) return false;
 
-                //TODO: decide max chunks to prevent malformed message
-                //taking all memory 
                 wm.chunks.resize(c.total_chunks);
                 wm.set.resize(c.total_chunks);
             }
 
             CHECK_FALSE(wm.chunks.empty());
 
-            if(c.chunk >= wm.chunks.size()) return false;
+            auto chunk_n = c.chunk;
+            auto sequence_n = c.sequence;
+
+            if(chunk_n >= wm.chunks.size()) return false;
             if(c.total_chunks != wm.chunks.size()) return false;
-            if(wm.set[c.chunk]) return false;
+            if(wm.set[chunk_n]) return false;
 
-            wm.chunks[c.chunk] = c;
-            wm.set[c.chunk] = 1;
+            wm.chunks[chunk_n] = std::move(c);
+            wm.set[chunk_n] = 1;
 
-            //if message is not complete return 
+            //if message is not complete yet, return 
             if(wm.set.count() != wm.chunks.size()) return false;
 
             //get total size
@@ -1099,7 +1100,7 @@ namespace fire
             CHECK_EQUAL(s, total_message_size);
 
             //remove message from working
-            wms.erase(c.sequence);
+            wms.erase(sequence_n);
             return true;
         }
 
@@ -1130,19 +1131,23 @@ namespace fire
             if(chunk.valid)
             {
                 //add message to in queue if we got complete message
-                endpoint ep = {UDP, _in_endpoint.address().to_string(), boost::lexical_cast<std::string>(_in_endpoint.port())};
+                endpoint ep = {
+                    UDP, 
+                    _in_endpoint.address().to_string(), 
+                    boost::lexical_cast<std::string>(_in_endpoint.port())};
 
                 bool inserted = false;
                 {
                     u::mutex_scoped_lock l(_mutex);
                     inserted = insert_chunk(make_address_str(ep), chunk, _in_working, data);
+                    //chunk is no longer valid after insert_chunk call because a move is done.
                 }
 
                 if(inserted)
                 {
                     u::mutex_scoped_lock l(_in_mutex);
                     endpoint_message em = {ep, data};
-                    _in_queue.push(em);
+                    _in_queue.emplace_push(em);
                 }
             }
 
