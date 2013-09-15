@@ -269,8 +269,10 @@ namespace fire
                 auto intro = new QLabel(
                         "<b>Welcome!</b><br><br>"
                         "Add a new contact now.<br>"
-                        "You need their <b>IP</b> and <b>PORT<b><br>"
-                        "Once they accept, you are connected!"
+                        "You need to create an invite file,<br>"
+                        "and give it to another.<br>"
+                        "Once you both add each other,<br>"
+                        "you are connected!"
                         );
                 auto add_contact = new QPushButton("add contact");
 
