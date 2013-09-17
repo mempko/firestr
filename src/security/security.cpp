@@ -44,6 +44,7 @@ namespace fire
             const std::string SESSION_PARAM = "firestr";
             const std::string CYPHER = "AES-128/CBC";
             const std::string SHARED_DOMAIN = "modp/ietf/2048";
+            std::mutex BOTAN_MUTEX;
         }
 
         void validate_passphrase(const std::string& passphrase)
@@ -54,6 +55,7 @@ namespace fire
 
         private_key::private_key(const std::string& passphrase)
         {
+            u::mutex_scoped_lock l(BOTAN_MUTEX);
             validate_passphrase(passphrase);
 
             b::AutoSeeded_RNG r;
@@ -73,6 +75,7 @@ namespace fire
             _encrypted_private_key{encrypted_private_key}
         {
             REQUIRE_FALSE(encrypted_private_key.empty());
+            u::mutex_scoped_lock l(BOTAN_MUTEX);
 
             validate_passphrase(passphrase);
 
@@ -82,11 +85,13 @@ namespace fire
                     _encrypted_private_key.size()};
 
             _k.reset(b::PKCS8::load_key(ds, r, passphrase));
+            _public_key = b::X509::PEM_encode(*_k);
 
             if(!_k) throw std::invalid_argument{"Invalid Password"};
 
             INVARIANT(_k);
             INVARIANT_FALSE(_encrypted_private_key.empty());
+            ENSURE_FALSE(_public_key.empty());
         }
 
         const std::string& private_key::encrypted_private_key() const
@@ -110,6 +115,7 @@ namespace fire
         void public_key::set(const std::string& key) 
         {
             REQUIRE_FALSE(key.empty());
+            u::mutex_scoped_lock l(BOTAN_MUTEX);
 
             b::DataSource_Memory ds{reinterpret_cast<const b::byte*>(&_ks[0]), _ks.size()};
             _k.reset(b::X509::load_key(ds));
@@ -149,6 +155,7 @@ namespace fire
         public_key& public_key::operator=(const public_key& o)
         {
             if(&o == this) return *this;
+            u::mutex_scoped_lock l(BOTAN_MUTEX);
 
             _ks = o._ks;
             b::DataSource_Memory ds{reinterpret_cast<const b::byte*>(&_ks[0]), _ks.size()};
@@ -203,6 +210,7 @@ namespace fire
         u::bytes private_key::decrypt(const u::bytes& b) const
         {
             INVARIANT(_k);
+            u::mutex_scoped_lock l(BOTAN_MUTEX);
 
             b::PK_Decryptor_EME d{*_k, EME_SCHEME};
 
@@ -224,6 +232,7 @@ namespace fire
         {
             INVARIANT(_k);
             INVARIANT_FALSE(_ks.empty());
+            u::mutex_scoped_lock l(BOTAN_MUTEX);
 
             std::stringstream rs;
 
@@ -244,6 +253,7 @@ namespace fire
 
         dh_secret::dh_secret()
         {
+            u::mutex_scoped_lock l(BOTAN_MUTEX);
             b::AutoSeeded_RNG r;
             b::DL_Group sd{SHARED_DOMAIN};
             _pkey = std::make_shared<b::DH_PrivateKey>(r, sd);
@@ -271,6 +281,7 @@ namespace fire
 
         void dh_secret::create_symmetric_key(const util::bytes& pv)
         {
+            u::mutex_scoped_lock bl(BOTAN_MUTEX);
             u::mutex_scoped_lock l(_mutex);
             INVARIANT(_pkey);
 
@@ -294,6 +305,7 @@ namespace fire
         util::bytes dh_secret::encrypt(const util::bytes& bs) const
         {
             REQUIRE(ready());
+            u::mutex_scoped_lock bl(BOTAN_MUTEX);
             u::mutex_scoped_lock l(_mutex);
             b::Pipe p{b::get_cipher(CYPHER, *_skey, b::ENCRYPTION)};
             p.start_msg();
@@ -307,6 +319,7 @@ namespace fire
         util::bytes dh_secret::decrypt(const util::bytes& bs) const
         {
             REQUIRE(ready());
+            u::mutex_scoped_lock bl(BOTAN_MUTEX);
             u::mutex_scoped_lock l(_mutex);
             b::Pipe p{b::get_cipher(CYPHER, *_skey, b::DECRYPTION)};
             p.start_msg();

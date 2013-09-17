@@ -17,13 +17,17 @@
 
 #include <string>
 #include <cstdlib>
+#include <fstream>
+#include <termios.h>
 
 #include <boost/asio/ip/host_name.hpp>
 #include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
 
 #include "network/connection_manager.hpp"
 #include "message/message.hpp"
 #include "messages/greeter.hpp"
+#include "security/security_library.hpp"
 #include "util/thread.hpp"
 #include "util/bytes.hpp"
 #include "util/dbc.hpp"
@@ -33,10 +37,12 @@
 
 namespace po = boost::program_options;
 namespace ip = boost::asio::ip;
+namespace bf = boost::filesystem;
 namespace n = fire::network;
 namespace m = fire::message;
 namespace ms = fire::messages;
 namespace u = fire::util;
+namespace sc = fire::security;
 
 namespace
 {
@@ -50,11 +56,14 @@ po::options_description create_descriptions()
 
     const std::string host = ip::host_name();
     const std::string port = "7070";
+    const std::string private_key = "firegreet_key";
 
     d.add_options()
         ("help", "prints help")
         ("host", po::value<std::string>()->default_value(host), "host/ip of this server") 
-        ("port", po::value<std::string>()->default_value(port), "port this server will receive messages on");
+        ("port", po::value<std::string>()->default_value(port), "port this server will receive messages on")
+        ("pass", po::value<std::string>(), "password to decrypt private key")
+        ("key", po::value<std::string>()->default_value(private_key), "path to private key file");
 
     return d;
 }
@@ -80,10 +89,16 @@ struct user_info
 };
 using user_info_map = std::map<std::string, user_info>;
 
-void register_user(n::connection_manager& con, const n::endpoint& ep, const ms::greet_register& r, user_info_map& m)
+void register_user(
+        n::connection_manager& con, 
+        sc::session_library& sec, 
+        const n::endpoint& ep, 
+        const ms::greet_register& r, 
+        user_info_map& m)
 {
+    auto address = n::make_address_str(ep);
     if(r.id().empty()) return;
-    if(con.is_disconnected(n::make_address_str(ep))) return;
+    if(con.is_disconnected(address)) return;
 
     //use user specified ip, otherwise use socket ip
     ms::greet_endpoint local = r.local();
@@ -92,21 +107,36 @@ void register_user(n::connection_manager& con, const n::endpoint& ep, const ms::
     user_info i = {r.id(), local, ext, r.response_service_address(), ep};
     m[i.id] = i;
 
+    sec.create_session(address, r.pub_key());
+
     LOG << "registered " << i.id << " " << i.ext.ip << ":" << i.ext.port << std::endl;
 }
 
-void send_response(n::connection_manager& con, const ms::greet_find_response& r, const user_info& u)
+void send_response(
+        n::connection_manager& con, 
+        sc::session_library& sec, 
+        const ms::greet_find_response& r, 
+        const user_info& u)
 {
     m::message m = r;
 
-    auto address = n::make_tcp_address(u.ext.ip, u.ext.port); 
+    auto address = n::make_address_str(u.ep); 
     m.meta.to = {address, u.response_service_address};
 
     LOG << "sending reply to " << address << std::endl;
-    con.send(n::make_address_str(u.ep), u::encode(m));
+
+    //encrypt using public key
+    auto data = u::encode(m);
+    data = sec.encrypt(address, data);
+    con.send(address, data);
 }
 
-void find_user(n::connection_manager& con, const n::endpoint& ep,  const ms::greet_find_request& r, user_info_map& users)
+void find_user(
+        n::connection_manager& con, 
+        sc::session_library& sec, 
+        const n::endpoint& ep, 
+        const ms::greet_find_request& r, 
+        user_info_map& users)
 {
     //find from user
     auto fup = users.find(r.from_id());
@@ -126,16 +156,90 @@ void find_user(n::connection_manager& con, const n::endpoint& ep,  const ms::gre
 
     //send response to both clients
     ms::greet_find_response fr{true, i.id, i.local,  i.ext};
-    send_response(con, fr, f);
+    send_response(con, sec, fr, f);
 
     ms::greet_find_response ir{true, f.id, f.local,  f.ext};
-    send_response(con, ir, i);
+    send_response(con, sec, ir, i);
+}
+
+void send_pub_key(
+        n::connection_manager& con, 
+        sc::session_library& sec, 
+        const n::endpoint& ep,  
+        const ms::greet_key_request& req, 
+        user_info_map& users, 
+        const sc::private_key& pkey)
+{
+    ms::greet_key_response rep{pkey.public_key()};
+    m::message m = rep;
+
+    auto address = n::make_address_str(ep); 
+    m.meta.to = {address, req.response_service_address()};
+
+    LOG << "sending pub key to " << address << std::endl;
+
+    //send plaintext
+    auto data = u::encode(m);
+    data = sec.encrypt(address, data);
+    con.send(address, data);
+}
+
+void create_new_key(const std::string& key, const std::string& pass)
+{
+    auto k = std::make_shared<sc::private_key>(pass);
+    CHECK(k);
+
+    std::ofstream key_out(key.c_str());
+    if(!key_out.good()) 
+        throw std::runtime_error{"unable to save `" + key + "'"};
+
+    sc::encode(key_out, *k);
+}
+
+sc::private_key_ptr load_private_key(const std::string& key, const std::string& pass)
+{
+    if(!bf::exists(key)) create_new_key(key, pass);
+
+    std::ifstream key_in(key.c_str());
+    if(!key_in.good()) 
+        throw std::runtime_error{"unable to load `" + key + "' for reading"};
+
+    auto r = sc::decode_private_key(key_in, pass);
+    CHECK(r);
+    return r;
+}
+
+void echo_off()
+{
+    termios tty;
+    tcgetattr(STDIN_FILENO, &tty);
+    tty.c_lflag &= ~ECHO;
+    tcsetattr(STDIN_FILENO, TCSANOW, &tty);
+}
+
+void echo_on()
+{
+    termios tty;
+    tcgetattr(STDIN_FILENO, &tty);
+    tty.c_lflag |= ECHO;
+    tcsetattr(STDIN_FILENO, TCSANOW, &tty);
+}
+
+std::string prompt_pass()
+{
+    std::string pass;
+    std::cout << "enter password: ";
+    echo_off();
+    std::getline(std::cin, pass);
+    echo_on();
+    std::cout << std::endl;
+
+    return pass;
 }
 
 int main(int argc, char *argv[])
 {
     CREATE_LOG("./");
-
 
     auto desc = create_descriptions();
     auto vm = parse_options(argc, argv, desc);
@@ -145,16 +249,24 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    Botan::LibraryInitializer init;
+
     auto host = vm["host"].as<std::string>();
     auto port = vm["port"].as<std::string>();
+    auto pass = vm.count("pass") ? vm["pass"].as<std::string>() : prompt_pass();
 
-    Botan::LibraryInitializer init;
+    auto key = vm["key"].as<std::string>();
+
+    auto pkey = load_private_key(key, pass);
+    CHECK(pkey);
+
 
     //it is important the tcp_connection manager is created before
     //the input tcp_connection is made. This is because tcp on
     //linux requires that binds to the same port are made before
     //a listen is made.
     n::connection_manager con{POOL_SIZE, port};
+    sc::session_library sec{*pkey};
     user_info_map users;
 
     u::bytes data;
@@ -168,6 +280,10 @@ int main(int argc, char *argv[])
             continue;
         }
 
+        //decrypt message
+        auto sid = n::make_address_str(ep);
+        data = sec.decrypt(sid, data);
+
         //parse message
         m::message m;
         u::decode(data, m);
@@ -175,12 +291,17 @@ int main(int argc, char *argv[])
         if(m.meta.type == ms::GREET_REGISTER)
         {
             ms::greet_register r{m};
-            register_user(con, ep, r, users);
+            register_user(con, sec, ep, r, users);
         }
         else if(m.meta.type == ms::GREET_FIND_REQUEST)
         {
             ms::greet_find_request r{m};
-            find_user(con, ep, r, users);
+            find_user(con, sec,  ep, r, users);
+        }
+        else if(m.meta.type == ms::GREET_KEY_REQUEST)
+        {
+            ms::greet_key_request r{m};
+            send_pub_key(con, sec, ep, r, users, *pkey);
         }
     }
     catch(std::exception& e)

@@ -26,6 +26,8 @@ namespace fire
 {
     namespace messages
     {
+        extern const std::string GREET_KEY_REQUEST;
+        extern const std::string GREET_KEY_RESPONSE;
         extern const std::string GREET_REGISTER;
         extern const std::string GREET_FIND_REQUEST;
         extern const std::string GREET_FIND_RESPONSE;
@@ -36,12 +38,49 @@ namespace fire
             std::string port;
         };
 
+        class greet_key_request
+        {
+            public:
+                greet_key_request(const std::string& response_service_address);
+
+            public:
+                greet_key_request(const message::message&);
+                operator message::message() const;
+
+            public:
+                const std::string& response_service_address() const;
+
+            private:
+                std::string _response_service_address;
+        };
+
+        class greet_key_response
+        {
+            public:
+                greet_key_response(const std::string& key);
+
+            public:
+                greet_key_response(const message::message&);
+                operator message::message() const;
+
+            public:
+                const std::string& host() const;
+                const std::string& port() const;
+                const std::string& key() const;
+
+            private:
+                std::string _host;
+                std::string _port;
+                std::string _pub_key;
+        };
+
         class greet_register
         {
             public:
                 greet_register(
                         const std::string& id,
                         const greet_endpoint& local,
+                        const std::string& pbkey,
                         const std::string& response_service_address);
 
             public:
@@ -51,11 +90,13 @@ namespace fire
             public:
                 const std::string& id() const;
                 const greet_endpoint& local() const;
+                const std::string& pub_key() const;
                 const std::string& response_service_address() const;
 
             private:
                 std::string _id;
                 greet_endpoint _local;
+                std::string _pub_key;
                 std::string _response_service_address;
         };
 

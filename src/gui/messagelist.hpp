@@ -25,6 +25,7 @@
 #include "gui/list.hpp"
 #include "gui/message.hpp"
 #include "gui/app/app_service.hpp"
+#include "gui/contactlist.hpp"
 #include "session/session.hpp"
 #include "messages/new_app.hpp"
 #endif
@@ -45,6 +46,10 @@ namespace fire
                 session::session_ptr session();
                 app::app_service_ptr app_service();
 
+            public:
+                void update_contact_lists();
+                void remove_from_contact_lists(user::user_info_ptr);
+
             public slots:
                 std::string add_new_app(const messages::new_app&); 
                 void add(message*);
@@ -53,6 +58,11 @@ namespace fire
             private:
                 session::session_ptr _session;
                 app::app_service_ptr _app_service;
+
+                using contact_list_ptrs = std::vector<contact_list*>;
+                using message_contacts = std::vector<user::contact_list>;
+                contact_list_ptrs _contact_lists;
+                message_contacts _message_contacts;
         };
     }
 }

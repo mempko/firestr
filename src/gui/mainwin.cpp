@@ -99,16 +99,26 @@ namespace fire
             INVARIANT(_main_menu);
         }
 
+        std::string app_id(const us::local_user& l)
+        {
+            return "firestr-" + l.info().id();
+        }
+
         void main_window::save_state()
         {
-            QSettings settings("mempko", "firestr");
+            INVARIANT(_context.user);
+            auto id = app_id(*_context.user);
+            QSettings settings("mempko", id.c_str());
             settings.setValue("main_window/geometry", saveGeometry());
             settings.setValue("main_window/state", saveState());
         }
 
         void main_window::restore_state()
         {
-            QSettings settings("mempko", "firestr");
+            INVARIANT(_context.user);
+            auto id = app_id(*_context.user);
+
+            QSettings settings("mempko", id.c_str());
             restoreGeometry(settings.value("main_window/geometry").toByteArray());
             restoreState(settings.value("main_window/state").toByteArray());
         }
@@ -259,8 +269,10 @@ namespace fire
                 auto intro = new QLabel(
                         "<b>Welcome!</b><br><br>"
                         "Add a new contact now.<br>"
-                        "You need their <b>IP</b> and <b>PORT<b><br>"
-                        "Once they accept, you are connected!"
+                        "You need to create an invite file,<br>"
+                        "and give it to another.<br>"
+                        "Once you both add each other,<br>"
+                        "you are connected!"
                         );
                 auto add_contact = new QPushButton("add contact");
 
@@ -658,16 +670,9 @@ namespace fire
                 {
                     session_synced_event(m);
                 }
-                else if(m.meta.type == s::event::CONTACT_REMOVED)
+                else if(m.meta.type == s::event::CONTACT_REMOVED || m.meta.type == s::event::CONTACT_ADDED)
                 {
-                    contact_removed_from_session_event(m);
-                }
-                else if(m.meta.type == us::event::NEW_CONTACT)
-                {
-                    us::event::new_contact r;
-                    us::event::convert(m, r);
-
-                    new_contact_event(r.id);
+                    contact_removed_or_added_from_session_event(m);
                 }
                 else if(m.meta.type == us::event::CONTACT_CONNECTED)
                 {
@@ -883,7 +888,7 @@ namespace fire
 
             std::string name = convert(NEW_SESSION_NAME);
 
-            //make default name to be firt person in contact list
+            //make default name to be first person in contact list
             if(!s->contacts().empty()) 
                 name = s->contacts().list()[0]->name();
 
@@ -955,36 +960,9 @@ namespace fire
             s->mail()->push_inbox(m);
         }
 
-        void main_window::contact_removed_from_session_event(const m::message& e)
+        void main_window::contact_removed_or_added_from_session_event(const m::message& e)
         {
             _session_service->broadcast_message(e);
-        }
-
-        void main_window::new_contact_event(const std::string& id)
-        {
-            INVARIANT(_user_service);
-            auto p = _user_service->pending_requests().find(id);
-            if(p == _user_service->pending_requests().end()) return;
-
-            auto c = p->second.from;
-            CHECK(c);
-
-            std::stringstream s;
-            s << "<b>" << c->name() << "</b> wants to connect " << std::endl;
-
-            auto w = new QWidget;
-            auto l = new QHBoxLayout;
-            w->setLayout(l);
-
-            auto t = new QLabel{s.str().c_str()};
-            auto b = new QPushButton{"contact list"};
-
-            l->addWidget(t);
-            l->addWidget(b);
-
-            connect(b, SIGNAL(clicked()), this, SLOT(show_contact_list()));
-
-            show_alert(w);
         }
 
         void main_window::contact_connected_event(const us::event::contact_connected& r)

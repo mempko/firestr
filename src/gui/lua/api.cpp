@@ -95,11 +95,8 @@ namespace fire
 
             void lua_api::report_error(const std::string& e)
             {
-                if(!output) 
-                {
-                    LOG << "script error: " << e << std::endl;
-                    return;
-                }
+                LOG << "script error: " << e << std::endl;
+                if(!output) return;
                 output->add(make_error_widget(e));
             }
 
@@ -146,6 +143,7 @@ namespace fire
                     .set("set_width", &QPen::setWidth);
 
                 SLB::Class<contact_ref>{"contact", &manager}
+                    .set("id", &contact_ref::get_id)
                     .set("name", &contact_ref::get_name)
                     .set("online", &contact_ref::is_online);
 
@@ -223,6 +221,7 @@ namespace fire
                     .set("disable", &widget_ref::disable)
                     .set("clear", &draw_ref::clear)
                     .set("line", &draw_ref::line)
+                    .set("circle", &draw_ref::circle)
                     .set("pen", &draw_ref::set_pen)
                     .set("get_pen", &draw_ref::get_pen);
 
@@ -369,11 +368,9 @@ namespace fire
             void lua_api::send_to_helper(us::user_info_ptr c, const script_message& m)
             {
                 REQUIRE(c);
-                if(!session->user_service()->contact_available(c->id()) || session->contacts().by_id(c->id()) != c)
-                {
-                    contacts.remove(c);
+                if( !session->user_service()->contact_available(c->id()) || 
+                    !session->contacts().has(c->id()))
                     return;
-                }
 
                 sender->send(c->id(), m); 
             }

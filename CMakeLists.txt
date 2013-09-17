@@ -24,11 +24,17 @@ SET(CMAKE_CXX_FLAGS -DBOOST_TT_HAS_OPERATOR_HPP_INCLUDED)
 SET(CMAKE_C_COMPILER   gcc-4.7)
 SET(CMAKE_CXX_COMPILER g++-4.7)
 
-
 if(APPLE)
     add_definitions(-D_GLIBCXX_USE_NANOSLEEP)
     link_directories(/usr/local/lib)
     include_directories(/usr/local/include)
+
+    #botan from macports
+    include_directories(/opt/local/include/botan-1.10/)
+    link_directories(/opt/local/lib/)
+else()
+    #botan
+    include_directories(/usr/include/botan-1.10/)
 endif()
 
 #setup boost
@@ -49,11 +55,8 @@ add_definitions(${Qt5Widgets_DEFINITIONS})
 add_definitions(${Qt5Network_DEFINITIONS})
 set(CMAKE_CXX_FLAGS "${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
 
-#setup misc
-include_directories(/usr/include/botan-1.10/)
-
 if(APPLE)
-    set(MISC_LIBRARIES libuuid.dylib libpthread.dylib libbotan-1.10.a libcrypto.so libgmp.so)
+    set(MISC_LIBRARIES libuuid.dylib libpthread.dylib libbotan-1.10.a)
 else()
     set(MISC_LIBRARIES libuuid.so libpthread.so librt.so libbotan-1.10.a libcrypto.so libgmp.so)
 endif()

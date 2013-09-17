@@ -65,7 +65,6 @@ namespace fire
                 QSplitter* _splitter;
                 QString _name;
                 message_list* _messages;
-                contact_list* _contacts;
                 session::session_ptr _session;
                 session::session_service_ptr _session_service;
                 app::app_service_ptr _app_service;

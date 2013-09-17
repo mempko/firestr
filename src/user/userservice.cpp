@@ -45,9 +45,6 @@ namespace fire
         namespace
         {
             const std::string SERVICE_ADDRESS = "user_service";
-            const std::string ADD_REQUEST = "add_user_request";
-            const std::string REQUEST_CONFIRMED = "add_user_confirmed";
-            const std::string REQUEST_REJECTED = "add_user_rejected";
             const std::string PING_REQUEST = "ping_request";
             const std::string REGISTER_WITH_GREETER = "reg_with_greeter";
             const std::string PING = "!";
@@ -118,99 +115,10 @@ namespace fire
             r.send_back = m.meta.extra["send_back"];
         }
 
-        struct req_rejected 
-        {
-            std::string address;
-            std::string key;
-        };
-
-        struct req_confirmed
-        {
-            std::string to;
-            std::string key;
-            user_info_ptr from;
-        };
-
-        m::message convert(const add_request& r)
-        {
-            REQUIRE(r.from);
-
-            m::message m;
-            m.meta.type = ADD_REQUEST;
-            m.meta.to = {r.to, SERVICE_ADDRESS};
-            m.meta.extra["key"] = r.key;
-            m.data = u::encode(*r.from);
-
-            return m;
-        }
-
-        void convert(const m::message& m, add_request& r)
-        {
-            REQUIRE_EQUAL(m.meta.type, ADD_REQUEST);
-            REQUIRE_GREATER(m.meta.from.size(), 1);
-
-            std::string from = m.meta.from.front();
-
-            r.from = std::make_shared<user_info>();
-            u::decode(m.data, *r.from);
-            r.from->address(from);
-            r.to = "";
-            r.key = m.meta.extra["key"].as_string();
-
-            ENSURE(r.from);
-        }
-
-        m::message convert(const req_confirmed& r)
-        {
-            REQUIRE(r.from);
-
-            m::message m;
-            m.meta.type = REQUEST_CONFIRMED;
-            m.meta.to = {r.to, SERVICE_ADDRESS};
-            m.meta.extra["key"] = r.key;
-            m.data = u::encode(*r.from);
-
-            return m;
-        }
-
-        void convert(const m::message& m, req_confirmed& r)
-        {
-            REQUIRE_EQUAL(m.meta.type, REQUEST_CONFIRMED);
-            REQUIRE_GREATER(m.meta.from.size(), 1);
-
-            std::string from = m.meta.from.front();
-
-            r.from = std::make_shared<user_info>();
-            u::decode(m.data, *r.from);
-            r.from->address(from);
-            r.to = "";
-            r.key = m.meta.extra["key"].as_string();
-
-            ENSURE(r.from);
-        }
-
-        m::message convert(const req_rejected& r)
-        {
-            m::message m;
-            m.meta.type = REQUEST_REJECTED;
-            m.meta.extra["key"] = r.key;
-            m.meta.to = {r.address, SERVICE_ADDRESS}; 
-
-            return m;
-        }
-
-        void convert(const m::message& m, req_rejected& r)
-        {
-            REQUIRE_EQUAL(m.meta.type, REQUEST_REJECTED);
-            REQUIRE_GREATER(m.meta.from.size(), 1);
-
-            r.key = m.meta.extra["key"].as_string();
-            r.address = m.meta.from.front();
-        }
-
         struct register_with_greeter
         {
             std::string server;
+            std::string pub_key;
         };
 
         m::message convert(const register_with_greeter& r)
@@ -218,6 +126,7 @@ namespace fire
             m::message m;
             m.meta.type = REGISTER_WITH_GREETER;
             m.meta.extra["server"] = r.server;
+            m.meta.extra["pub_key"] = r.pub_key;
             m.meta.to = {SERVICE_ADDRESS}; 
 
             return m;
@@ -229,6 +138,7 @@ namespace fire
             REQUIRE_FALSE(m.meta.from.empty());
 
             r.server = m.meta.extra["server"].as_string();
+            r.pub_key = m.meta.extra["pub_key"].as_string();
         }
 
         user_service::user_service(user_service_context& c) :
@@ -310,7 +220,7 @@ namespace fire
         void user_service::request_register(const greet_server& g)
         {
             auto s = n::make_tcp_address(g.host(), g.port(), _in_port);
-            register_with_greeter r{s};
+            register_with_greeter r{s, g.public_key()};
 
             m::message m = convert(r);
             m.meta.to = {SERVICE_ADDRESS};
@@ -344,7 +254,7 @@ namespace fire
             }
         }
 
-        void user_service::do_regiser_with_greeter(const std::string& server)
+        void user_service::do_regiser_with_greeter(const std::string& server, const std::string& pub_key)
         {
             //regiser with greeter
             LOG << "sending greet message to " << server << std::endl;
@@ -352,9 +262,14 @@ namespace fire
             {
                 _user->info().id(), 
                 {_in_host, _in_port},
+                _user->info().key().key(),
                 SERVICE_ADDRESS
             };
 
+            //create security session
+            _session_library->create_session(server, pub_key);
+
+            //send registration request to greeter
             m::message gm = gr;
             gm.meta.to = {server, "outside"};
             mail()->push_outbox(gm);
@@ -378,11 +293,7 @@ namespace fire
             REQUIRE_FALSE(address.empty());
             INVARIANT(_session_library);
 
-            auto& s = _session_library->get_session(address);
-            s.key = key;
-            s.shared_secret.create_symmetric_key(public_val);
-
-            ENSURE(s.shared_secret.ready()); 
+            _session_library->create_session(address, key, public_val);
         }
 
         void user_service::message_recieved(const message::message& m)
@@ -446,50 +357,16 @@ namespace fire
                 auto address = n::make_udp_address(r.from_ip, r.from_port);
                 setup_security_session(address, c->key(), r.public_secret);
             }
-            else if(m.meta.type == ADD_REQUEST)
-            {
-                add_request r;
-                convert(m, r);
-
-                CHECK(r.from);
-
-                //if contact already exists send confirmation
-                //otherwise add to pending requests
-
-                auto f = _user->contacts().by_id(r.from->id());
-                if(f) send_confirmation(f->id(), r.key);
-                else 
-                {
-                    u::mutex_scoped_lock l(_mutex);
-                    _pending_requests[r.from->id()] = r;
-
-                    fire_new_contact_event(r.from->id());
-                }
-            }
-            else if(m.meta.type == REQUEST_CONFIRMED)
-            {
-                req_confirmed r;
-                convert(m, r);
-
-                CHECK(r.from);
-
-                if(_sent_requests.count(r.key))
-                {
-                    _sent_requests.erase(r.key);
-                    confirm_contact(r.from);
-                }
-            }
-            else if(m.meta.type == REQUEST_REJECTED)
-            {
-                req_rejected r;
-                convert(m, r);
-                _sent_requests.erase(r.key);
-            }
             else if(m.meta.type == REGISTER_WITH_GREETER)
             {
                 register_with_greeter r;
                 convert(m, r);
-                do_regiser_with_greeter(r.server);
+                do_regiser_with_greeter(r.server, r.pub_key);
+            }
+            else if(m.meta.type == ms::GREET_KEY_RESPONSE)
+            {
+                ms::greet_key_response rs{m};
+                add_greeter(rs.host(), rs.port(), rs.key());
             }
             else if(m.meta.type == ms::GREET_FIND_RESPONSE)
             {
@@ -510,6 +387,9 @@ namespace fire
 
                     auto local = n::make_udp_address(rs.local().ip, rs.local().port);
                     auto external = n::make_udp_address(rs.external().ip, rs.external().port);
+                    //create security sessions for local and external
+                    _session_library->create_session(local, c->key());
+                    _session_library->create_session(external, c->key());
 
                     //send ping request via local network and external
                     //network. First one to arrive gets to be connection
@@ -534,8 +414,7 @@ namespace fire
 
             auto a = n::make_udp_address(ip, port);
 
-            auto& s = _session_library->get_session(a);
-            s.key = c->key();
+            _session_library->create_session(a, c->key());
 
             if(c->address() == a) return;
 
@@ -574,100 +453,17 @@ namespace fire
             return _in_port;
         }
 
-        void user_service::confirm_contact(user_info_ptr contact)
-        {
-            u::mutex_scoped_lock l(_mutex);
-
-            INVARIANT(_user);
-            INVARIANT(mail());
-            REQUIRE(contact);
-
-            //add user
-            _user->contacts().add(contact);
-            add_contact_data(contact);
-            save_user(_home, *_user);
-            send_ping_request(contact, true);
-        }
-
-        const add_requests& user_service::pending_requests() const
-        {
-            return _pending_requests;
-        }
-
-        void user_service::attempt_to_add_contact(const std::string& address)
-        {
-            u::mutex_scoped_lock l(_mutex);
-
-            INVARIANT(_user);
-            INVARIANT(mail());
-
-            std::string ex = m::external_address(address);
-            std::string key = u::uuid();
-
-            user_info_ptr self{new user_info{_user->info()}};
-            add_request r{ex, key, self};
-
-            _sent_requests.insert(key);
-            mail()->push_outbox(convert(r));
-        }
-
-        void user_service::send_confirmation(const std::string& id, std::string key)
-        {
-            u::mutex_scoped_lock l(_mutex);
-
-            INVARIANT(_user);
-            INVARIANT(mail());
-
-            if(key.empty())
-            {
-                auto p = _pending_requests.find(id);
-                CHECK(p != _pending_requests.end());
-                CHECK(p->second.from);
-
-                _user->contacts().add(p->second.from);
-                add_contact_data(p->second.from);
-                save_user(_home, *_user);
-
-                key = p->second.key;
-            }
-
-            user_info_ptr user = _user->contacts().by_id(id);
-            CHECK(user);
-
-            user_info_ptr self{new user_info{_user->info()}};
-            req_confirmed r{user->address(), key, self};
-
-            mail()->push_outbox(convert(r));
-            _pending_requests.erase(id);
-        }
-
-        void user_service::send_rejection(const std::string& id)
-        {
-            u::mutex_scoped_lock l(_mutex);
-
-            INVARIANT(_user);
-            INVARIANT(mail());
-
-            //get user who wanted to be added
-            auto p = _pending_requests.find(id);
-            CHECK(p != _pending_requests.end());
-            auto user = p->second.from;
-            auto key = p->second.key;
-
-            //remove request
-            if(p != _pending_requests.end())
-                _pending_requests.erase(id);
-
-            req_rejected r{user->address(), key};
-            mail()->push_outbox(convert(r));
-        }
-
         void user_service::remove_contact(const std::string& id)
         {
             INVARIANT(_user);
+            INVARIANT(_session_library);
             auto c = _user->contacts().by_id(id);
             if(!c) return;
+            
+            //remove security session
+            _session_library->remove_session(c->address());
 
+            //remove contact
             fire_contact_disconnected_event(id);
             _user->contacts().remove(c);
 
@@ -676,12 +472,28 @@ namespace fire
 
         void user_service::add_greeter(const std::string& address)
         {
-            INVARIANT(_user);
-            //parse host/port
+            ms::greet_key_request r{SERVICE_ADDRESS};
+
             auto host_port = n::parse_host_port(address);
+            auto service = n::make_tcp_address(host_port.first, host_port.second, _in_port);
+
+            m::message m = r;
+            m.meta.to = {service, "outside"};
+            mail()->push_outbox(m);
+        }
+
+        void user_service::add_greeter(const std::string& host, const std::string& port, const std::string& pub_key)
+        {
+            INVARIANT(_user);
+            if(host.empty() || port.empty() || pub_key.empty()) return;
+
+            //check to make sure the greeter has not been added already
+            for(auto g : _user->greeters())
+                if(g.host() == host && g.port() == port)
+                    return;
 
             //add greeter
-            greet_server gs{host_port.first, host_port.second};
+            greet_server gs{host, port, pub_key};
             _user->greeters().push_back(gs);
 
             save_user(_home, *_user);
@@ -695,12 +507,11 @@ namespace fire
             INVARIANT(_user);
             //parse host/port
             auto host_port = n::parse_host_port(address);
-            greet_server gs{host_port.first, host_port.second};
 
             //find greeter
             greet_servers::iterator g = _user->greeters().end();
             for(greet_servers::iterator i = _user->greeters().begin(); i != _user->greeters().end(); i++)
-                if(gs.host() == i->host() && gs.port() == i->port())
+                if(host_port.first == i->host() && host_port.second == i->port())
                     g = i;
             if(g == _user->greeters().end()) return;
            
@@ -715,6 +526,7 @@ namespace fire
             size_t send_ticks = 0;
             REQUIRE(s);
             REQUIRE(s->_user);
+            REQUIRE(s->_session_library);
             while(!s->_done)
             try
             {
@@ -741,6 +553,9 @@ namespace fire
                         if(cur_state != prev_state)
                         {
                             CHECK(!cur_state); // should only flip one way
+                            CHECK(p.second.contact);
+
+                            s->_session_library->remove_session(p.second.contact->address());
                             s->fire_contact_disconnected_event(p.first);
                         }
                     }
@@ -810,7 +625,7 @@ namespace fire
             INVARIANT(_user);
             INVARIANT(mail());
 
-            auto& s = _session_library->get_session(address);
+            const auto& s = _session_library->get_session(address);
             ping_request a
             {
                 address, 
@@ -833,15 +648,8 @@ namespace fire
             INVARIANT(mail());
 
             LOG << "sending connection request to " << c->name() << " (" << c->id() << ", " << c->address() << ")" << std::endl;
-            auto& s = _session_library->get_session(c->address());
-            s.key = c->key();
+            _session_library->create_session(c->address(), c->key());
             send_ping_request(c->address(), send_back);
-        }
-
-        void user_service::fire_new_contact_event(const std::string& id)
-        {
-            event::new_contact e{id};
-            send_event(event::convert(e));
         }
 
         void user_service::fire_contact_connected_event(const std::string& id)
@@ -938,23 +746,8 @@ namespace fire
 
         namespace event
         {
-            const std::string NEW_CONTACT = "new_contact";
             const std::string CONTACT_CONNECTED = "contact_con";
             const std::string CONTACT_DISCONNECTED = "contact_discon";
-
-            m::message convert(const new_contact& c)
-            {
-                m::message m;
-                m.meta.type = NEW_CONTACT;
-                m.data = u::to_bytes(c.id);
-                return m;
-            }
-
-            void convert(const m::message& m, new_contact& c)
-            {
-                REQUIRE_EQUAL(m.meta.type, NEW_CONTACT);
-                c.id = u::to_str(m.data);
-            }
 
             m::message convert(const contact_connected& c)
             {

@@ -96,6 +96,7 @@ namespace fire
 
             d["host"] = g.host();
             d["port"] = g.port();
+            d["pub_key"] = g.public_key();
 
             return d;
         }
@@ -105,6 +106,7 @@ namespace fire
             greet_server g{
                 d["host"].as_string(),
                 d["port"].as_string(),
+                d["pub_key"].as_string(),
             };
             return g;
         }
@@ -378,6 +380,12 @@ namespace fire
             return true;
         }
 
+        bool contact_list::has(const std::string& id) const
+        {
+            u::mutex_scoped_lock l(_mutex);
+            return _map.count(id) != 0;
+        }
+
         user_info_ptr contact_list::by_id(const std::string& id) const
         {
             u::mutex_scoped_lock l(_mutex);
@@ -482,6 +490,12 @@ namespace fire
             return _port;
         }
 
+        std::string greet_server::public_key() const
+        {
+            u::mutex_scoped_lock l(_mutex);
+            return _key;
+        }
+
         void greet_server::host(const std::string& v)
         {
             u::mutex_scoped_lock l(_mutex);
@@ -494,6 +508,12 @@ namespace fire
             _port = v;
         }
 
+        void greet_server::public_key(const std::string& v)
+        {
+            u::mutex_scoped_lock l(_mutex);
+            _key = v;
+        }
+
         greet_server& greet_server::operator=(const greet_server& o)
         {
             if(&o == this) return *this;
@@ -501,6 +521,7 @@ namespace fire
             u::mutex_scoped_lock l(_mutex);
             _host = o.host();
             _port = o.port();
+            _key = o.public_key();
             return *this;
         }
     }

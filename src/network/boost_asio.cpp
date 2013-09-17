@@ -51,15 +51,16 @@ namespace fire
             const size_t BLOCK_SLEEP = 10;
             const size_t THREAD_SLEEP = 40;
             const int RETRIES = 0;
-            const size_t MAX_UDP_BUFF_SIZE = 1024; //in bytes
-            const size_t UDP_CHuNK_SIZE = 508; //in bytes
+            const size_t MAX_UDP_BUFF_SIZE = 2048; //in bytes
             const size_t SEQUENCE_BASE = 1;
-            const size_t CHUNK_TOTAL_BASE = SEQUENCE_BASE + 8;
-            const size_t CHUNK_BASE = SEQUENCE_BASE + 12;
-            const size_t MESSAGE_BASE = SEQUENCE_BASE + 16;
+            const size_t CHUNK_TOTAL_BASE = SEQUENCE_BASE + sizeof(sequence_type);
+            const size_t CHUNK_BASE = CHUNK_TOTAL_BASE + sizeof(chunk_total_type);
+            const size_t MESSAGE_BASE = CHUNK_BASE + sizeof(chunk_id_type);
 
             //<mark> <sequence num> <chunk total> <chunk>
-            const size_t HEADER_SIZE = SEQUENCE_BASE + sizeof(uint64_t) + sizeof(int) + sizeof(int);
+            const size_t HEADER_SIZE = MESSAGE_BASE;
+            const size_t UDP_CHuNK_SIZE = 1024-HEADER_SIZE; //in bytes
+            const size_t MAX_MESSAGE_SIZE = std::pow(2,sizeof(chunk_total_type)*8) * UDP_CHuNK_SIZE;
 
             asio_params::connect_mode determine_connection_mode(const queue_options& o)
             {
@@ -414,7 +415,7 @@ namespace fire
             //add message to in queue
             {
                 u::mutex_scoped_lock l(_in_mutex);
-                _in_queue.push(data);
+                _in_queue.emplace_push(data);
                 if(_track) _last_in_socket.push(this);
             }
 
@@ -806,7 +807,7 @@ namespace fire
                 std::copy(b.begin() + s, b.begin() + e, c.data.begin());
 
                 //push chunk to queue
-                _out_queue.push(c);
+                _out_queue.emplace_push(c);
 
                 //step
                 chunk++;
@@ -824,6 +825,11 @@ namespace fire
         {
             INVARIANT(_socket);
             if(m.data.empty()) return false;
+            if(m.data.size() > MAX_MESSAGE_SIZE)
+            {
+                LOG << "message of size `" << m.data.size() << "' is larger than the max message size of `" << MAX_MESSAGE_SIZE << "'" << std::endl;
+                return false;
+            }
 
             _sequence++;
             size_t chunks = chunkify(m.ep.address, m.ep.port, m.data);
@@ -861,6 +867,24 @@ namespace fire
             b[offset + 3] =  v        & 0xFF;
         }
 
+        void write_be(u::bytes& b, size_t offset, unsigned int v)
+        {
+            REQUIRE_GREATER_EQUAL(b.size() - offset, sizeof(unsigned int));
+
+            b[offset]     = (v >> 24) & 0xFF;
+            b[offset + 1] = (v >> 16) & 0xFF;
+            b[offset + 2] = (v >>  8) & 0xFF;
+            b[offset + 3] =  v        & 0xFF;
+        }
+
+        void write_be(u::bytes& b, size_t offset, uint16_t v)
+        {
+            REQUIRE_GREATER_EQUAL(b.size() - offset, sizeof(uint16_t));
+
+            b[offset]     = (v >> 8) & 0xFF;
+            b[offset + 1] =  v        & 0xFF;
+        }
+
         void read_be(const u::bytes& b, size_t offset, uint64_t& v)
         {
             REQUIRE_GREATER_EQUAL(b.size() - offset, sizeof(uint64_t));
@@ -877,12 +901,30 @@ namespace fire
 
         void read_be(const u::bytes& b, size_t offset, int& v)
         {
-            REQUIRE_GREATER_EQUAL(b.size() - offset, sizeof(uint64_t));
+            REQUIRE_GREATER_EQUAL(b.size() - offset, sizeof(int));
 
             v = (static_cast<int>(b[offset])     << 24) |
                 (static_cast<int>(b[offset + 1]) << 16) |
                 (static_cast<int>(b[offset + 2]) << 8)  |
                 (static_cast<int>(b[offset + 3]));
+        }
+
+        void read_be(const u::bytes& b, size_t offset, unsigned int& v)
+        {
+            REQUIRE_GREATER_EQUAL(b.size() - offset, sizeof(unsigned int));
+
+            v = (static_cast<unsigned int>(b[offset])     << 24) |
+                (static_cast<unsigned int>(b[offset + 1]) << 16) |
+                (static_cast<unsigned int>(b[offset + 2]) << 8)  |
+                (static_cast<unsigned int>(b[offset + 3]));
+        }
+
+        void read_be(const u::bytes& b, size_t offset, uint16_t& v)
+        {
+            REQUIRE_GREATER_EQUAL(b.size() - offset, sizeof(uint16_t));
+
+            v = (static_cast<uint16_t>(b[offset]) << 8) |
+                (static_cast<uint16_t>(b[offset + 1]));
         }
 
         u::bytes encode_udp_wire(const udp_chunk& ch)
@@ -924,12 +966,15 @@ namespace fire
             if(b[0] != '!') return ch;
 
             //read sequence number
+            if(b.size() < SEQUENCE_BASE + sizeof(sequence_type)) return ch;
             read_be(b, SEQUENCE_BASE, ch.sequence);
 
             //write total chunks 
+            if(b.size() < CHUNK_TOTAL_BASE + sizeof(chunk_total_type)) return ch;
             read_be(b, CHUNK_TOTAL_BASE, ch.total_chunks);
 
             //read chunk number
+            if(b.size() < CHUNK_BASE + sizeof(chunk_id_type)) return ch;
             read_be(b, CHUNK_BASE, ch.chunk);
 
             //copy message
@@ -949,6 +994,8 @@ namespace fire
             if(_out_queue.empty()) return;
 
             _writing = true;
+
+            CHECK_FALSE(_out_queue.empty());
 
             //encode bytes to wire format
             const auto& chunk = _out_queue.front();
@@ -1024,14 +1071,17 @@ namespace fire
 
             CHECK_FALSE(wm.chunks.empty());
 
-            if(c.chunk >= wm.chunks.size()) return false;
+            auto chunk_n = c.chunk;
+            auto sequence_n = c.sequence;
+
+            if(chunk_n >= wm.chunks.size()) return false;
             if(c.total_chunks != wm.chunks.size()) return false;
-            if(wm.set[c.chunk]) return false;
+            if(wm.set[chunk_n]) return false;
 
-            wm.chunks[c.chunk] = c;
-            wm.set[c.chunk] = 1;
+            wm.chunks[chunk_n] = std::move(c);
+            wm.set[chunk_n] = 1;
 
-            //if message is not complete return false
+            //if message is not complete yet, return 
             if(wm.set.count() != wm.chunks.size()) return false;
 
             //get total size
@@ -1050,7 +1100,7 @@ namespace fire
             CHECK_EQUAL(s, total_message_size);
 
             //remove message from working
-            wms.erase(c.sequence);
+            wms.erase(sequence_n);
             return true;
         }
 
@@ -1081,19 +1131,23 @@ namespace fire
             if(chunk.valid)
             {
                 //add message to in queue if we got complete message
-                endpoint ep = {UDP, _in_endpoint.address().to_string(), boost::lexical_cast<std::string>(_in_endpoint.port())};
+                endpoint ep = {
+                    UDP, 
+                    _in_endpoint.address().to_string(), 
+                    boost::lexical_cast<std::string>(_in_endpoint.port())};
 
                 bool inserted = false;
                 {
                     u::mutex_scoped_lock l(_mutex);
                     inserted = insert_chunk(make_address_str(ep), chunk, _in_working, data);
+                    //chunk is no longer valid after insert_chunk call because a move is done.
                 }
 
                 if(inserted)
                 {
                     u::mutex_scoped_lock l(_in_mutex);
                     endpoint_message em = {ep, data};
-                    _in_queue.push(em);
+                    _in_queue.emplace_push(em);
                 }
             }
 

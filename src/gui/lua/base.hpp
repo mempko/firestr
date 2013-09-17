@@ -73,6 +73,7 @@ namespace fire
             struct contact_ref : public basic_ref
             {
                 std::string user_id;
+                std::string get_id() const;
                 std::string get_name() const;
                 bool is_online() const;
             };

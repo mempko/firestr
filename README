@@ -3,10 +3,10 @@
 Firestr (Pronounced Fire Star) 0.2
 ===================================================================
 
-This is not the web. Firestr in short, is a simple distributed, 
-decentralized communication and computation platform.
+Firestr in short, is a simple distributed, decentralized communication 
+and computation platform.
 
-You don't send a message to someone, you send an program, which 
+You don't send a message to someone, you send software, which 
 can have rich content. All programs are wired up together automatically
 providing distributed communication, either through text, images, videos, 
 or games.
@@ -20,10 +20,6 @@ WARNING
 
 The software is in development. The security of the software has
 not been audited so use AT YOUR OWN RISK.
-
-While all current P2P communication is encrypted, the communication
-to the greeters is not. So you can expose you unique ID if you use
-the software.
 
 If you are a security expert, please contribute.
 
