@@ -51,6 +51,8 @@ namespace fire
             const size_t PING_THREAD_SLEEP = 500; //half a second
             const size_t PING_TICKS = 6; //3 seconds
             const size_t PING_THRESH = 10*PING_TICKS; 
+            const size_t RECONNECT_TICKS = 60; //send reconnect every minute
+            const size_t RECONNECT_THREAD_SLEEP = 1000; //one second
             const char CONNECTED = 'c';
             const char DISCONNECTED = 'd';
         }
@@ -159,7 +161,7 @@ namespace fire
                 add_contact_data(c);
 
             init_ping();
-            init_greet();
+            init_reconnect();
 
             INVARIANT(_user);
             INVARIANT(_session_library);
@@ -170,9 +172,11 @@ namespace fire
         user_service::~user_service()
         {
             INVARIANT(_ping_thread);
+            INVARIANT(_reconnect_thread);
             send_ping(DISCONNECTED);
             _done = true;
             _ping_thread->join();
+            _reconnect_thread->join();
         }
 
         void user_service::add_contact_data(user::user_info_ptr u)
@@ -203,9 +207,22 @@ namespace fire
             ENSURE(_ping_thread);
         }
 
-        void user_service::init_greet()
+        void reconnect_thread(user_service* s);
+        void user_service::init_reconnect()
         {
+            REQUIRE(!_reconnect_thread);
+
+            _reconnect_thread.reset(new std::thread{reconnect_thread, this});
+
+            ENSURE(_reconnect_thread);
+        }
+
+        void user_service::reconnect()
+        {
+            u::mutex_scoped_lock l(_mutex);
             INVARIANT(_user);
+
+            LOG << "connecting to peers..." << std::endl;
 
             //send ping requests for all contacts
             //to handle local contacts on a network using 
@@ -520,10 +537,41 @@ namespace fire
             save_user(_home, *_user);
         }
 
+        void reconnect_thread(user_service* s)
+        try
+        {
+            //start by connecting
+            size_t ticks = RECONNECT_TICKS;
+            while(!s->_done)
+            try
+            {
+                if(ticks >= RECONNECT_TICKS) 
+                {
+                    s->reconnect();
+                    ticks = 0;
+                }
+                ticks++;
+                u::sleep_thread(RECONNECT_THREAD_SLEEP);
+            }
+            catch(std::exception& e)
+            {
+                LOG << "Error in reconnect thread: " << e.what() << std::endl;
+            }
+            catch(...)
+            {
+                LOG << "Unexpected error in reconnect thread." << std::endl;
+            }
+        }
+        catch(...)
+        {
+            LOG << "exit: user_service::reconnect_thread" << std::endl;
+        }
+
         void ping_thread(user_service* s)
         try
         {
             size_t send_ticks = 0;
+            size_t reconnect_ticks = 0;
             REQUIRE(s);
             REQUIRE(s->_user);
             REQUIRE(s->_session_library);
@@ -617,7 +665,11 @@ namespace fire
             INVARIANT(_user);
 
             for(auto c : _user->contacts().list())
+            {
+                CHECK(c);
+                if(contact_available(c->id())) continue;
                 send_ping_request(c);
+            }
         }
 
         void user_service::send_ping_request(const std::string& address, bool send_back)

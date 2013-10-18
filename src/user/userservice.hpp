@@ -110,7 +110,8 @@ namespace fire
             private:
                 //ping specific 
                 void init_ping();
-                void init_greet();
+                void init_reconnect();
+                void reconnect();
                 void request_register(const greet_server&);
                 void do_regiser_with_greeter(const std::string& greeter, const std::string& pub_key);
                 void send_ping_requests();
@@ -127,6 +128,7 @@ namespace fire
                 //ping
                 mutable std::mutex _ping_mutex;
                 util::thread_uptr _ping_thread;
+                util::thread_uptr _reconnect_thread;
                 contacts_data _contacts;
 
                 //greet
@@ -142,6 +144,7 @@ namespace fire
             private:
                 friend void ping_thread(user_service*);
                 friend void greet_thread(user_service*);
+                friend void reconnect_thread(user_service*);
         };
 
         using user_service_ptr = std::shared_ptr<user_service>;
