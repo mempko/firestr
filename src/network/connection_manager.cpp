@@ -94,7 +94,11 @@ namespace fire
         tcp_queue_ptr connection_manager::connect(const std::string& address)
         try
         {
-            REQUIRE_RANGE(_next_available, 0, _pool.size());
+            if(_next_available >= _pool.size()) 
+            {
+                LOG << "ran out of tcp connections..." << std::endl;
+                return {};
+            }
 
             //return if we are already assigned a socket to that address
             auto p = _out.find(address);
@@ -103,6 +107,7 @@ namespace fire
             //parse address to host, port
             auto a = parse_address(address);
 
+            //increment index in pool
             auto i = _next_available;
             _next_available++;
 
@@ -143,8 +148,7 @@ namespace fire
                 }
 
                 auto o = connect(to);
-                CHECK(o);
-                return o->send(b);
+                return o ? o->send(b) : false;
             }
 
             CHECK(type == asio_params::udp);
