@@ -266,6 +266,7 @@ namespace fire
             public:
                 connection* get_socket() const;
                 void connect(const std::string& host, const std::string& port);
+                bool is_connected();
 
             private:
                 void connect();
