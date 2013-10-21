@@ -26,8 +26,8 @@ if(APPLE)
     include_directories(/usr/local/include)
 
     #botan from macports
-    include_directories(/opt/local/include/botan-1.10/)
-    link_directories(/opt/local/lib/)
+    include_directories(/usr/local/include/botan-1.10/)
+    link_directories(/usr/local/lib/)
 else()
     #botan
     include_directories(/usr/include/botan-1.10/)
