@@ -35,7 +35,7 @@ namespace fire
         {
             const double THREAD_SLEEP = 10; //in milliseconds 
             const double QUIT_SLEEP = 50; //in milliseconds 
-            const size_t POOL_SIZE = 100; //small pool size for now
+            const size_t POOL_SIZE = 30; //small pool size for now
         }
 
         void in_thread(master_post_office* o)
