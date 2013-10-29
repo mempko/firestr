@@ -217,7 +217,7 @@ namespace fire
             ENSURE(_reconnect_thread);
         }
 
-        void user_service::reconnect()
+        void user_service::reconnect(bool contact_greeters)
         {
             u::mutex_scoped_lock l(_mutex);
             INVARIANT(_user);
@@ -230,8 +230,9 @@ namespace fire
             send_ping_requests();
 
             //register with greeter
-            for(const auto& g : _user->greeters())
-                request_register(g);
+            if(contact_greeters)
+                for(const auto& g : _user->greeters())
+                    request_register(g);
         }
 
         void user_service::request_register(const greet_server& g)
@@ -540,6 +541,8 @@ namespace fire
         void reconnect_thread(user_service* s)
         try
         {
+            bool contact_greeters = true;
+
             //start by connecting
             size_t ticks = RECONNECT_TICKS;
             while(!s->_done)
@@ -547,7 +550,8 @@ namespace fire
             {
                 if(ticks >= RECONNECT_TICKS) 
                 {
-                    s->reconnect();
+                    s->reconnect(contact_greeters);
+                    contact_greeters = false; //contact greeters once..
                     ticks = 0;
                 }
                 ticks++;

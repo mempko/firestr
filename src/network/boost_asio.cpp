@@ -261,7 +261,12 @@ namespace fire
             }
 
             if(error)
+            {
+                u::mutex_scoped_lock l(_mutex);
+                _error = error;
+                _state = disconnected;
                 LOG << "error connecting to `" << _ep.address << ":" << _ep.port << "' : " << error.message() << std::endl;
+            }
         }
 
         u::bytes encode_tcp_wire(const u::bytes data)
@@ -514,6 +519,7 @@ namespace fire
             REQUIRE(_p.mode == asio_params::delayed_connect);
             REQUIRE_FALSE(host.empty());
             REQUIRE_FALSE(port.empty());
+            REQUIRE_FALSE(_run_thread);
             INVARIANT(_io);
             REQUIRE(!_out || _out->state() == tcp_connection::disconnected);
 
@@ -526,6 +532,11 @@ namespace fire
             //start up engine
             _run_thread.reset(new std::thread{tcp_run_thread, this});
             ENSURE(_run_thread);
+        }
+
+        bool tcp_queue::is_connected()
+        {
+            return _out && _out->is_connected();
         }
 
         void tcp_queue::delayed_connect()

@@ -71,6 +71,7 @@ po::variables_map parse_options(int argc, char* argv[], po::options_description&
 }
 
 int main(int argc, char *argv[])
+try
 {
     auto desc = create_descriptions();
     auto vm = parse_options(argc, argv, desc);
@@ -101,4 +102,12 @@ int main(int argc, char *argv[])
     w.show();
 
     return a.exec();
+}
+catch(std::exception& e)
+{
+    LOG << "program quit prematurely: " << e.what() << std::endl;
+}
+catch(std::exception& e)
+{
+    LOG << "program quit prematurely: unknown reason" << std::endl;
 }
