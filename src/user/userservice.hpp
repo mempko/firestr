@@ -111,7 +111,7 @@ namespace fire
                 //ping specific 
                 void init_ping();
                 void init_reconnect();
-                void reconnect();
+                void reconnect(bool contact_greeters);
                 void request_register(const greet_server&);
                 void do_regiser_with_greeter(const std::string& greeter, const std::string& pub_key);
                 void send_ping_requests();
