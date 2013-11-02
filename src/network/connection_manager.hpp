@@ -45,6 +45,10 @@ namespace fire
 
             private:
                 tcp_queue_ptr connect(const std::string& address);
+                void teardown_and_repool_tcp_connections();
+                void create_udp_endpoint();
+                void create_tcp_endpoint();
+                void create_tcp_pool();
 
             private:
                 enum receive_state { 

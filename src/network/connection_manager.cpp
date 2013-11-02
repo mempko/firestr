@@ -34,8 +34,36 @@ namespace fire
             _next_available{0},
             _rstate{receive_state::IN_UDP1}
         {
+            teardown_and_repool_tcp_connections();
+            create_udp_endpoint();
+
+            ENSURE_FALSE(_pool.empty());
+            ENSURE(_in);
+            ENSURE(_udp_con);
+            ENSURE_EQUAL(_next_available, 0);
+        }
+
+        void connection_manager::create_udp_endpoint()
+        {
             //create listen socket
-#ifdef __APPLE__
+            asio_params udp_p = {
+                asio_params::udp, 
+                asio_params::bind, 
+                "", //uri
+                "", //host
+                "", //port
+                _local_port,
+                false, //block;
+                0, // wait;
+                true, //track_incoming;
+            };
+            _udp_con = create_udp_queue(udp_p);
+        }
+        void connection_manager::create_tcp_endpoint()
+        {
+            REQUIRE_FALSE(_in);
+            REQUIRE_FALSE(_local_port.empty());
+
             auto listen_address = make_tcp_address("*", _local_port);
 
             queue_options qo = { 
@@ -44,7 +72,12 @@ namespace fire
                 {"track_incoming", "1"}};
 
             _in = create_tcp_queue(listen_address, qo);
-#endif
+            ENSURE(_in);
+        }
+
+        void connection_manager::create_tcp_pool()
+        {
+            REQUIRE(!_pool.empty());
 
             //create outgoing params
             asio_params p = {
@@ -60,49 +93,67 @@ namespace fire
             };
 
             //create socket pool
-            for(size_t i = 0; i < size; ++i)
+            for(size_t i = 0; i < _pool.size(); ++i)
                 _pool[i] = std::make_shared<tcp_queue>(p);
+        }
+
+        void connection_manager::teardown_and_repool_tcp_connections()
+        {
+            LOG << "creating listening tcp connection and outgoing pool..." << std::endl;
+            _next_available = 0;
+            _in.reset();
+            _in_connections.clear();
+            _out.clear();
+            for(auto& pv : _pool) pv.reset();
+
+#ifdef __APPLE__
+            create_tcp_endpoint();
+#endif
+            create_tcp_pool();
 
 #ifndef __APPLE__
-            //create listen socket
-            auto listen_address = make_tcp_address("*", _local_port);
-
-            queue_options qo = { 
-                {"bnd", "1"},
-                {"block", "0"},
-                {"track_incoming", "1"}};
-
-            _in = create_tcp_queue(listen_address, qo);
+            create_tcp_endpoint();
 #endif
-
-            asio_params udp_p = {
-                asio_params::udp, 
-                asio_params::bind, 
-                "", //uri
-                "", //host
-                "", //port
-                _local_port,
-                false, //block;
-                0, // wait;
-                true, //track_incoming;
-            };
-            _udp_con = create_udp_queue(udp_p);
-
-            INVARIANT(_in);
         }
+
 
         tcp_queue_ptr connection_manager::connect(const std::string& address)
         try
         {
-            if(_next_available >= _pool.size()) 
-            {
-                LOG << "ran out of tcp connections..." << std::endl;
-                return {};
-            }
-
             //return if we are already assigned a socket to that address
             auto p = _out.find(address);
-            if(p != _out.end()) return _pool[p->second];
+            if(p != _out.end()) 
+            {
+                auto& c = _pool[p->second];
+                CHECK(c);
+                if(c->is_connected()) 
+                    return _pool[p->second];
+            }
+
+            //if we ran out of connections in the out pool then first check if any 
+            //are connected. If any are connected then the message is not sent and
+            //we are screwed for now with the algorithm. Otherwise we must have lost
+            //internet connection and need to tear down and recreate the out connection
+            //pool
+            if(_next_available >= _pool.size()) 
+            {
+                bool any_connected = false;
+                for(auto& c : _pool) 
+                {
+                    CHECK(c);
+                    if(c->is_connected()) 
+                        any_connected = true;
+                }
+
+                if(any_connected)
+                {
+                    LOG << "ran out of outgoing tcp connections..." << std::endl;
+                    return {};
+                } 
+                teardown_and_repool_tcp_connections();
+            }
+
+            CHECK_RANGE(_next_available, 0, _pool.size());
 
             //parse address to host, port
             auto a = parse_address(address);
@@ -144,7 +195,7 @@ namespace fire
                 {
                     auto o = inp->second;
                     CHECK(o);
-                    return o->send(b);
+                    if(!o->is_disconnected()) return o->send(b);
                 }
 
                 auto o = connect(to);
