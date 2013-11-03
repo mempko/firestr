@@ -50,7 +50,7 @@ namespace fire
             const std::string PING = "!";
             const size_t PING_THREAD_SLEEP = 500; //half a second
             const size_t PING_TICKS = 6; //3 seconds
-            const size_t PING_THRESH = 10*PING_TICKS; 
+            const size_t PING_THRESH = 3*PING_TICKS; 
             const size_t RECONNECT_TICKS = 60; //send reconnect every minute
             const size_t RECONNECT_THREAD_SLEEP = 1000; //one second
             const char CONNECTED = 'c';
