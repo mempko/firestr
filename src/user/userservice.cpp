@@ -380,7 +380,7 @@ namespace fire
                 auto address = n::make_udp_address(r.from_ip, r.from_port);
                 setup_security_session(address, c->key(), r.public_secret);
 
-                send_ping_to(CONNECTED, c->id());
+                send_ping_to(CONNECTED, c->id(), true);
             }
             else if(m.meta.type == REGISTER_WITH_GREETER)
             {
@@ -642,11 +642,11 @@ namespace fire
             return c->second.state == contact_data::CONNECTED;
         }
 
-        void user_service::send_ping_to(char s, const std::string& id)
+        void user_service::send_ping_to(char s, const std::string& id, bool force)
         {
             u::mutex_scoped_lock l(_ping_mutex);
             auto& p  = _contacts[id];
-            if(!p.contact || p.state == contact_data::OFFLINE) return;
+            if(!p.contact || (p.state == contact_data::OFFLINE && !force)) return;
             if(!_user->contacts().by_id(p.contact->id()))
             {
                 p.contact.reset();
