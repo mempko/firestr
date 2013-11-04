@@ -107,7 +107,7 @@ catch(std::exception& e)
 {
     LOG << "program quit prematurely: " << e.what() << std::endl;
 }
-catch(std::exception& e)
+catch(...)
 {
     LOG << "program quit prematurely: unknown reason" << std::endl;
 }

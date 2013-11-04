@@ -35,7 +35,7 @@ namespace fire
     {
         struct contact_data
         {
-            enum state { OFFLINE, ONLINE, CONNECTED} state;
+            enum state { OFFLINE, CONNECTING, CONNECTED} state;
             user_info_ptr contact;
             size_t last_ping;
         };
@@ -104,6 +104,8 @@ namespace fire
                 std::mutex _mutex;
 
             private:
+                bool contact_connecting(const std::string& id);
+                bool contact_connected(const std::string& id);
                 void fire_contact_connected_event(const std::string& id);
                 void fire_contact_disconnected_event(const std::string& id);
 
@@ -111,13 +113,14 @@ namespace fire
                 //ping specific 
                 void init_ping();
                 void init_reconnect();
-                void reconnect(bool contact_greeters);
+                void reconnect();
                 void request_register(const greet_server&);
                 void do_regiser_with_greeter(const std::string& greeter, const std::string& pub_key);
                 void send_ping_requests();
                 void send_ping_request(user::user_info_ptr, bool send_back = true);
                 void send_ping_request(const std::string& address, bool send_back = true);
                 void send_ping(char t);
+                void send_ping_to(char t, const std::string& id, bool force = false);
                 void add_contact_data(user::user_info_ptr);
                 void setup_security_session(
                         const std::string& address, 

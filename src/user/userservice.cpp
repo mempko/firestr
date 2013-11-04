@@ -50,7 +50,7 @@ namespace fire
             const std::string PING = "!";
             const size_t PING_THREAD_SLEEP = 500; //half a second
             const size_t PING_TICKS = 6; //3 seconds
-            const size_t PING_THRESH = 10*PING_TICKS; 
+            const size_t PING_THRESH = 3*PING_TICKS; 
             const size_t RECONNECT_TICKS = 60; //send reconnect every minute
             const size_t RECONNECT_THREAD_SLEEP = 1000; //one second
             const char CONNECTED = 'c';
@@ -217,7 +217,7 @@ namespace fire
             ENSURE(_reconnect_thread);
         }
 
-        void user_service::reconnect(bool contact_greeters)
+        void user_service::reconnect()
         {
             u::mutex_scoped_lock l(_mutex);
             INVARIANT(_user);
@@ -230,9 +230,8 @@ namespace fire
             send_ping_requests();
 
             //register with greeter
-            if(contact_greeters)
-                for(const auto& g : _user->greeters())
-                    request_register(g);
+            for(const auto& g : _user->greeters())
+                request_register(g);
         }
 
         void user_service::request_register(const greet_server& g)
@@ -318,28 +317,34 @@ namespace fire
         {
             if(m.meta.type == PING)
             {
-                u::mutex_scoped_lock l(_ping_mutex);
                 ping r;
                 convert(m, r);
 
-                auto p = _contacts.find(r.from_id);
-                if(p == _contacts.end() || !p->second.contact) return;
-
-                auto& ticks = p->second.last_ping;
-                bool prev_state = available(ticks);
-
-                if(r.state == CONNECTED)
+                bool fire_event = false;
+                bool cur_state = false;
                 {
-                    ticks = 0;
-                }
-                else
-                {
-                    ticks = PING_THRESH + PING_THRESH;
-                    CHECK_FALSE(available(ticks));
+                    u::mutex_scoped_lock l(_ping_mutex);
+
+                    auto p = _contacts.find(r.from_id);
+                    if(p == _contacts.end() || !p->second.contact) return;
+
+                    auto& ticks = p->second.last_ping;
+                    bool prev_state = available(ticks);
+
+                    if(r.state == CONNECTED)
+                    {
+                        ticks = 0;
+                    }
+                    else
+                    {
+                        ticks = PING_THRESH + PING_THRESH;
+                        CHECK_FALSE(available(ticks));
+                    }
+                    cur_state = available(ticks);
+                    fire_event = cur_state != prev_state || p->second.state == contact_data::CONNECTING;
                 }
 
-                bool cur_state = available(ticks);
-                if(cur_state != prev_state)
+                if(fire_event)
                 {
                     if(cur_state) fire_contact_connected_event(r.from_id);
                     else fire_contact_disconnected_event(r.from_id);
@@ -355,9 +360,9 @@ namespace fire
 
                 //we are already connected to this contact
                 //send ping and return
-                if(contact_available(c->id())) 
+                if(contact_available(c->id()) ||_contacts[c->id()].state == contact_data::CONNECTING) 
                 {
-                    LOG << "got connection request from: " << c->name() << " (" << c->address() << "), already connected. " << std::endl;
+                    LOG << "got connection request from: " << c->name() << " (" << c->address() << "), already connecting..." << std::endl;
                     if(r.send_back) send_ping_request(c, false);
                     return;
                 }
@@ -368,12 +373,14 @@ namespace fire
                 //if it is different.
                 update_contact_address(c->id(), r.from_ip, r.from_port);
 
-                fire_contact_connected_event(c->id());
+                contact_connecting(c->id());
                 if(r.send_back) send_ping_request(c, false);
 
                 //update session to use DH 
                 auto address = n::make_udp_address(r.from_ip, r.from_port);
                 setup_security_session(address, c->key(), r.public_secret);
+
+                send_ping_to(CONNECTED, c->id(), true);
             }
             else if(m.meta.type == REGISTER_WITH_GREETER)
             {
@@ -400,8 +407,6 @@ namespace fire
                     CHECK(_contacts.count(c->id()));
 
                     if(_contacts[c->id()].state == contact_data::CONNECTED) return;
-
-                    _contacts[c->id()].state = contact_data::ONLINE;
 
                     auto local = n::make_udp_address(rs.local().ip, rs.local().port);
                     auto external = n::make_udp_address(rs.external().ip, rs.external().port);
@@ -541,8 +546,6 @@ namespace fire
         void reconnect_thread(user_service* s)
         try
         {
-            bool contact_greeters = true;
-
             //start by connecting
             size_t ticks = RECONNECT_TICKS;
             while(!s->_done)
@@ -550,8 +553,7 @@ namespace fire
             {
                 if(ticks >= RECONNECT_TICKS) 
                 {
-                    s->reconnect(contact_greeters);
-                    contact_greeters = false; //contact greeters once..
+                    s->reconnect();
                     ticks = 0;
                 }
                 ticks++;
@@ -607,7 +609,6 @@ namespace fire
                             CHECK(!cur_state); // should only flip one way
                             CHECK(p.second.contact);
 
-                            s->_session_library->remove_session(p.second.contact->address());
                             s->fire_contact_disconnected_event(p.first);
                         }
                     }
@@ -641,27 +642,30 @@ namespace fire
             return c->second.state == contact_data::CONNECTED;
         }
 
+        void user_service::send_ping_to(char s, const std::string& id, bool force)
+        {
+            u::mutex_scoped_lock l(_ping_mutex);
+            auto& p  = _contacts[id];
+            if(!p.contact || (p.state == contact_data::OFFLINE && !force)) return;
+            if(!_user->contacts().by_id(p.contact->id()))
+            {
+                p.contact.reset();
+                return;
+            }
+            auto c = p.contact;
+            CHECK(c);
+
+            ping r = {c->address(), _user->info().id(), s};
+            mail()->push_outbox(convert(r));
+        }
+
         void user_service::send_ping(char s)
         {
             REQUIRE(s == CONNECTED || s == DISCONNECTED);
-            u::mutex_scoped_lock l(_ping_mutex);
 
             //send ping message to all connected contacts
             for(auto p : _contacts)
-            {
-                if(!p.second.contact || p.second.state != contact_data::CONNECTED) continue;
-                if(!_user->contacts().by_id(p.second.contact->id()))
-                {
-                    p.second.contact.reset();
-                    continue;
-                }
-
-                auto c = p.second.contact;
-                CHECK(c);
-
-                ping r = {c->address(), _user->info().id(), s};
-                mail()->push_outbox(convert(r));
-            }
+                send_ping_to(s, p.first);
         }
 
         void user_service::send_ping_requests()
@@ -708,25 +712,51 @@ namespace fire
             send_ping_request(c->address(), send_back);
         }
 
-        void user_service::fire_contact_connected_event(const std::string& id)
+        bool user_service::contact_connecting(const std::string& id)
         {
             u::mutex_scoped_lock l(_ping_mutex);
-
             auto c = _user->contacts().by_id(id);
-            if(!c) return;
+            if(!c) return false;
 
             auto& cd = _contacts[c->id()];
             //don't fire if state is already connected
-            if(cd.state == contact_data::CONNECTED) return;
+            if(cd.state == contact_data::CONNECTING) return false;
+
+            cd.contact = c;
+            cd.last_ping = 0;
+            cd.state = contact_data::CONNECTING;
+            ENSURE(cd.state == contact_data::CONNECTING);
+            return true;
+
+        }
+
+        bool user_service::contact_connected(const std::string& id)
+        {
+            u::mutex_scoped_lock l(_ping_mutex);
+            auto c = _user->contacts().by_id(id);
+            if(!c) return false;
+
+            auto& cd = _contacts[c->id()];
+            //don't fire if state is already connected
+            if(cd.state == contact_data::CONNECTED) return false;
 
             cd.contact = c;
             cd.last_ping = 0;
             cd.state = contact_data::CONNECTED;
+            ENSURE(cd.state == contact_data::CONNECTED);
+            return true;
+
+        }
+
+        void user_service::fire_contact_connected_event(const std::string& id)
+        {
+            bool state_changed = contact_connected(id);
+            if(_contacts[id].state == contact_data::CONNECTING) LOG << "goop~~~~~~~~~~~~~~~~" << (state_changed ? "true" : " false") << std::endl;
+            if(!state_changed) return;
+            LOG << "hhooop" << std::endl;
 
             event::contact_connected e{id};
             send_event(event::convert(e));
-
-            ENSURE(cd.state == contact_data::CONNECTED);
         }
 
         void user_service::fire_contact_disconnected_event(const std::string& id)
@@ -734,11 +764,17 @@ namespace fire
             auto& cd = _contacts[id];
             CHECK(cd.contact);
 
+            auto prev_state = cd.state;
+
             cd.state = contact_data::OFFLINE;
             cd.last_ping = PING_THRESH;
 
-            event::contact_disconnected e{id, cd.contact->name()};
-            send_event(event::convert(e));
+            if(prev_state == contact_data::CONNECTED)
+            {
+                _session_library->remove_session(cd.contact->address());
+                event::contact_disconnected e{id, cd.contact->name()};
+                send_event(event::convert(e));
+            }
 
             ENSURE(cd.state == contact_data::OFFLINE);
         }
