@@ -18,7 +18,7 @@
 #include "user/userservice.hpp"
 #include "messages/greeter.hpp"
 #include "messages/pinhole.hpp"
-#include "network/boost_asio.hpp"
+#include "network/connection.hpp"
 #include "util/uuid.hpp"
 #include "util/string.hpp"
 #include "util/dbc.hpp"
@@ -753,7 +753,6 @@ namespace fire
             bool state_changed = contact_connected(id);
             if(_contacts[id].state == contact_data::CONNECTING) LOG << "goop~~~~~~~~~~~~~~~~" << (state_changed ? "true" : " false") << std::endl;
             if(!state_changed) return;
-            LOG << "hhooop" << std::endl;
 
             event::contact_connected e{id};
             send_event(event::convert(e));

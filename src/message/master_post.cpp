@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "message/master_post.hpp"
-#include "network/boost_asio.hpp"
 #include "util/bytes.hpp"
 #include "util/dbc.hpp"
 #include "util/log.hpp"

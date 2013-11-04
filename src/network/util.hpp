@@ -18,12 +18,25 @@
 #define FIRESTR_NETWORK_UTIL_H
 
 #include <string>
+#include <memory>
+#include <unordered_map>
+
+#include <boost/cstdint.hpp>
+#include <boost/asio.hpp>
+#include <boost/asio.hpp>
+#include <boost/dynamic_bitset.hpp>
+
+#include "util/bytes.hpp"
+#include "util/queue.hpp"
 
 namespace fire 
 {
     namespace network 
     {
         std::string get_lan_ip();
+
+        using byte_queue = util::queue<util::bytes>;
+        using asio_service_ptr = std::unique_ptr<boost::asio::io_service>;
     }
 }
 
