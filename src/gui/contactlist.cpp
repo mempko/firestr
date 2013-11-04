@@ -19,6 +19,7 @@
 #include "gui/contactlist.hpp"
 #include "gui/util.hpp"
 #include "util/dbc.hpp"
+#include "network/message_queue.hpp"
 
 #include <QtWidgets>
 #include <QGridLayout>

@@ -20,7 +20,6 @@
 
 #include "user/user.hpp"
 #include "service/service.hpp"
-#include "network/message_queue.hpp"
 #include "security/security_library.hpp"
 #include "util/thread.hpp"
 

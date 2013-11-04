@@ -17,8 +17,8 @@
 #ifndef FIRESTR_NETWORK_CONNECTION_MANAGER_H
 #define FIRESTR_NETWORK_CONNECTION_MANAGER_H
 
-#include "network/message_queue.hpp"
-#include "network/boost_asio.hpp"
+#include "network/tcp_queue.hpp"
+#include "network/udp_queue.hpp"
 #include "util/thread.hpp"
 
 #include <string>

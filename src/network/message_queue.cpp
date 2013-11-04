@@ -16,7 +16,6 @@
  */
 
 #include "network/message_queue.hpp"
-#include "network/boost_asio.hpp"
 
 #include "util/string.hpp"
 
