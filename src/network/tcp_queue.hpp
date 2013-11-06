@@ -53,7 +53,7 @@ namespace fire
                 virtual bool is_disconnected() const;
 
             public:
-                void bind(const std::string& port);
+                void bind(port_type port);
                 void connect(boost::asio::ip::tcp::endpoint);
                 void start_read();
                 void close();
@@ -64,7 +64,7 @@ namespace fire
 
             public:
                 void update_endpoint();
-                void update_endpoint(const std::string& address, const std::string& port);
+                void update_endpoint(const std::string& address, port_type port);
 
             private:
                 void handle_connect(
@@ -112,7 +112,7 @@ namespace fire
 
             public:
                 connection* get_socket() const;
-                void connect(const std::string& host, const std::string& port);
+                void connect(const std::string& host, port_type port);
                 bool is_connected();
 
             private:

@@ -17,6 +17,7 @@
 #ifndef FIRESTR_NETWORK_CONNECTION_H
 #define FIRESTR_NETWORK_CONNECTION_H
 
+#include "network/endpoint.hpp"
 #include "network/util.hpp"
 #include "network/message_queue.hpp"
 #include "util/thread.hpp"
@@ -28,12 +29,6 @@ namespace fire
         extern const std::string TCP;
         extern const std::string UDP;
         class connection;
-        struct endpoint
-        {
-            std::string protocol;
-            std::string address;
-            std::string port;
-        };
 
         struct asio_params
         {
@@ -41,8 +36,8 @@ namespace fire
             enum connect_mode {bind, connect, delayed_connect} mode; 
             std::string uri;
             std::string host;
-            std::string port;
-            std::string local_port;
+            port_type port;
+            port_type local_port;
             bool block;
             double wait;
             bool track_incoming;
@@ -58,8 +53,8 @@ namespace fire
 
         asio_params parse_params(const address_components& c);
         asio_params::endpoint_type determine_type(const std::string& address);
-        std::string make_tcp_address(const std::string& host, const std::string& port, const std::string& local_port = "");
-        std::string make_udp_address(const std::string& host, const std::string& port, const std::string& local_port = "");
+        std::string make_tcp_address(const std::string& host, port_type port, port_type local_port = 0);
+        std::string make_udp_address(const std::string& host, port_type port, port_type local_port = 0);
         std::string make_address_str(const endpoint& e);
     }
 }

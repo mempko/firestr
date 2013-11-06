@@ -49,7 +49,7 @@ namespace fire
         {
             std::string home;
             std::string host;
-            std::string port;
+            network::port_type port;
             user::local_user_ptr user;
             bool debug;
         };

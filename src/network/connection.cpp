@@ -19,6 +19,8 @@
 #include "util/dbc.hpp"
 #include "util/log.hpp"
 
+#include <sstream> 
+
 namespace fire
 {
     namespace network
@@ -58,7 +60,7 @@ namespace fire
             p.uri = c.address;
             p.host = c.host;
             p.port = c.port;
-            p.local_port = get_opt(o, "local_port", std::string(""));
+            p.local_port = parse_port(get_opt(o, "local_port", std::string("0")));
             p.block = get_opt(o, "block", 0);
             p.wait = get_opt(o, "wait", 0);
             p.track_incoming = get_opt(o, "track_incoming", 0);
@@ -69,28 +71,29 @@ namespace fire
         std::string make_pro_address(
                 const std::string& proto, 
                 const std::string& host, 
-                const std::string& port, 
-                const std::string& local_port)
+                port_type port, 
+                port_type local_port)
         {
-            return local_port.empty() ? 
-                proto + "://" + host + ":" + port : 
-                proto + "://" + host + ":" + port + ",local_port=" + local_port;
+            std::stringstream s;
+            s << proto << "://" << host << ":" << port; 
+            if(local_port > 0) s << ",local_port=" << local_port;
+            return s.str();
         }
 
-        std::string make_tcp_address(const std::string& host, const std::string& port, const std::string& local_port)
+        std::string make_tcp_address(const std::string& host, port_type port, port_type local_port)
         {
             return make_pro_address(TCP, host, port, local_port);
         }
-        std::string make_udp_address(const std::string& host, const std::string& port, const std::string& local_port)
+        std::string make_udp_address(const std::string& host, port_type port, port_type local_port)
         {
             return make_pro_address(UDP, host, port, local_port);
         }
 
         std::string make_address_str(const endpoint& e)
         {
-            return e.protocol + "://" + e.address + ":" + e.port;
+            std::stringstream s; s << e.protocol << "://" << e.address << ":" << e.port;
+            return s.str();
         }
-
 
     }
 }

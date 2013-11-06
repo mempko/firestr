@@ -113,7 +113,7 @@ namespace fire
             return _state;
         }
 
-        void tcp_connection::bind(const std::string& port)
+        void tcp_connection::bind(port_type port)
         {
             u::mutex_scoped_lock l(_mutex);
             INVARIANT(_socket);
@@ -385,17 +385,17 @@ namespace fire
             return _ep;
         }
 
-        void tcp_connection::update_endpoint(const std::string& address, const std::string& port)
+        void tcp_connection::update_endpoint(const std::string& address, port_type port)
         {
             REQUIRE_FALSE(address.empty());
-            REQUIRE_FALSE(port.empty());
+            REQUIRE_GREATER(port, 0);
 
             _ep.protocol = TCP;
             _ep.address = address;
             _ep.port = port;
 
             ENSURE_FALSE(_ep.address.empty());
-            ENSURE_FALSE(_ep.port.empty());
+            ENSURE_GREATER(_ep.port, 0);
         }
 
         void tcp_connection::update_endpoint()
@@ -405,10 +405,10 @@ namespace fire
             auto remote = _socket->remote_endpoint();
             _ep.protocol = TCP;
             _ep.address = remote.address().to_string();
-            _ep.port = boost::lexical_cast<std::string>(remote.port());
+            _ep.port = remote.port();
 
             ENSURE_FALSE(_ep.address.empty());
-            ENSURE_FALSE(_ep.port.empty());
+            ENSURE_GREATER(_ep.port, 0);
         }
 
         void tcp_run_thread(tcp_queue*);
@@ -460,11 +460,10 @@ namespace fire
             return _in_queue.pop(b, _p.block);
         }
 
-        void tcp_queue::connect(const std::string& host, const std::string& port)
+        void tcp_queue::connect(const std::string& host, port_type port)
         {
             REQUIRE(_p.mode == asio_params::delayed_connect);
             REQUIRE_FALSE(host.empty());
-            REQUIRE_FALSE(port.empty());
             REQUIRE_FALSE(_run_thread);
             INVARIANT(_io);
             REQUIRE(!_out || _out->state() == tcp_connection::disconnected);
@@ -492,7 +491,7 @@ namespace fire
             REQUIRE(!_out);
 
             _out.reset(new tcp_connection{*_io, _in_queue, _last_in_socket, _mutex});
-            if(!_p.local_port.empty()) _out->bind(_p.local_port);
+            if(_p.local_port > 0) _out->bind(_p.local_port);
 
             ENSURE(_out);
         }
@@ -514,7 +513,7 @@ namespace fire
             //init resolver if it does not exist
             if(!_resolver) _resolver.reset(new tcp::resolver{*_io}); 
 
-            tcp::resolver::query query{_p.host, _p.port}; 
+            tcp::resolver::query query{_p.host, port_to_string(_p.port)}; 
             auto ei = _resolver->resolve(query);
             auto endpoint = *ei;
 

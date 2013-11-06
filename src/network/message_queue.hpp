@@ -25,6 +25,7 @@
 
 #include <boost/lexical_cast.hpp>
 
+#include "network/endpoint.hpp"
 #include "util/bytes.hpp"
 #include "util/dbc.hpp"
 
@@ -71,7 +72,7 @@ namespace fire
             std::string address; 
             std::string transport; 
             std::string host;
-            std::string port;
+            port_type port;
             queue_options options;
         };
 
@@ -79,8 +80,6 @@ namespace fire
                 const std::string& queue_address, 
                 const queue_options& defaults = queue_options());
 
-        using host_port = std::pair<std::string,std::string>;
-        host_port parse_host_port(const std::string&);
     }
 }
 
