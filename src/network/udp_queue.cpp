@@ -239,7 +239,7 @@ namespace fire
             return true;
         }
 
-        void write_be(u::bytes& b, size_t offset, uint64_t v)
+        void write_be_u64(u::bytes& b, size_t offset, uint64_t v)
         {
             REQUIRE_GREATER_EQUAL(b.size() - offset, sizeof(uint64_t));
 
@@ -253,7 +253,7 @@ namespace fire
             b[offset + 7] =  v        & 0xFF;
         }
 
-        void write_be(u::bytes& b, size_t offset, int v)
+        void write_be_32(u::bytes& b, size_t offset, int v)
         {
             REQUIRE_GREATER_EQUAL(b.size() - offset, sizeof(int));
 
@@ -263,7 +263,7 @@ namespace fire
             b[offset + 3] =  v        & 0xFF;
         }
 
-        void write_be(u::bytes& b, size_t offset, unsigned int v)
+        void write_be_u32(u::bytes& b, size_t offset, unsigned int v)
         {
             REQUIRE_GREATER_EQUAL(b.size() - offset, sizeof(unsigned int));
 
@@ -273,7 +273,7 @@ namespace fire
             b[offset + 3] =  v        & 0xFF;
         }
 
-        void write_be(u::bytes& b, size_t offset, uint16_t v)
+        void write_be_u16(u::bytes& b, size_t offset, uint16_t v)
         {
             REQUIRE_GREATER_EQUAL(b.size() - offset, sizeof(uint16_t));
 
@@ -281,46 +281,65 @@ namespace fire
             b[offset + 1] =  v        & 0xFF;
         }
 
-        void read_be(const u::bytes& b, size_t offset, uint64_t& v)
+        void read_be_u64(const u::bytes& b, size_t offset, uint64_t& v)
         {
             REQUIRE_GREATER_EQUAL(b.size() - offset, sizeof(uint64_t));
 
-            v = (static_cast<uint64_t>(b[offset])     << 56) |
-                (static_cast<uint64_t>(b[offset + 1]) << 48) |
-                (static_cast<uint64_t>(b[offset + 2]) << 40) |
-                (static_cast<uint64_t>(b[offset + 3]) << 32) |
-                (static_cast<uint64_t>(b[offset + 4]) << 24) |
-                (static_cast<uint64_t>(b[offset + 5]) << 16) |
-                (static_cast<uint64_t>(b[offset + 6]) << 8)  |
-                (static_cast<uint64_t>(b[offset + 7]));
+            uint64_t v8 = static_cast<unsigned char>(b[offset]);
+            uint64_t v7 = static_cast<unsigned char>(b[offset + 1]);
+            uint64_t v6 = static_cast<unsigned char>(b[offset + 2]);
+            uint64_t v5 = static_cast<unsigned char>(b[offset + 3]);
+            uint64_t v4 = static_cast<unsigned char>(b[offset + 4]);
+            uint64_t v3 = static_cast<unsigned char>(b[offset + 5]);
+            uint64_t v2 = static_cast<unsigned char>(b[offset + 6]);
+            uint64_t v1 = static_cast<unsigned char>(b[offset + 7]);
+
+            v = (v8 << 56) | 
+                (v7 << 48) | 
+                (v6 << 40) | 
+                (v5 << 32) | 
+                (v4 << 24) | 
+                (v3 << 16) | 
+                (v2 << 8)  | 
+                v1;
         }
 
-        void read_be(const u::bytes& b, size_t offset, int& v)
+        void read_be_32(const u::bytes& b, size_t offset, int& v)
         {
             REQUIRE_GREATER_EQUAL(b.size() - offset, sizeof(int));
 
-            v = (static_cast<int>(b[offset])     << 24) |
-                (static_cast<int>(b[offset + 1]) << 16) |
-                (static_cast<int>(b[offset + 2]) << 8)  |
-                (static_cast<int>(b[offset + 3]));
+            int v4 = static_cast<unsigned char>(b[offset]);
+            int v3 = static_cast<unsigned char>(b[offset + 1]);
+            int v2 = static_cast<unsigned char>(b[offset + 2]);
+            int v1 = static_cast<unsigned char>(b[offset + 3]);
+
+            v = (v4 << 24) |
+                (v3 << 16) |
+                (v2 <<  8) |
+                v1;
         }
 
-        void read_be(const u::bytes& b, size_t offset, unsigned int& v)
+        void read_be_u32(const u::bytes& b, size_t offset, unsigned int& v)
         {
             REQUIRE_GREATER_EQUAL(b.size() - offset, sizeof(unsigned int));
+            unsigned int v4 = static_cast<unsigned char>(b[offset]);
+            unsigned int v3 = static_cast<unsigned char>(b[offset + 1]);
+            unsigned int v2 = static_cast<unsigned char>(b[offset + 2]);
+            unsigned int v1 = static_cast<unsigned char>(b[offset + 3]);
 
-            v = (static_cast<unsigned int>(b[offset])     << 24) |
-                (static_cast<unsigned int>(b[offset + 1]) << 16) |
-                (static_cast<unsigned int>(b[offset + 2]) << 8)  |
-                (static_cast<unsigned int>(b[offset + 3]));
+            v = (v4 << 24) |
+                (v3 << 16) |
+                (v2 <<  8) |
+                v1;
         }
 
-        void read_be(const u::bytes& b, size_t offset, uint16_t& v)
+        void read_be_u16(const u::bytes& b, size_t offset, uint16_t& v)
         {
             REQUIRE_GREATER_EQUAL(b.size() - offset, sizeof(uint16_t));
+            uint16_t v2 = static_cast<unsigned char>(b[offset]);
+            uint16_t v1 = static_cast<unsigned char>(b[offset + 1]);
 
-            v = (static_cast<uint16_t>(b[offset]) << 8) |
-                (static_cast<uint16_t>(b[offset + 1]));
+            v = (v2 <<  8) | v1;
         }
 
         void encode_udp_wire(u::bytes& r, const udp_chunk& ch)
@@ -331,13 +350,13 @@ namespace fire
             r[0] = ch.type == udp_chunk::msg ? '!' : '@';
 
             //write sequence number
-            write_be(r, SEQUENCE_BASE, ch.sequence);
+            write_be_u64(r, SEQUENCE_BASE, ch.sequence);
 
             //write total chunks
-            write_be(r, CHUNK_TOTAL_BASE, ch.total_chunks);
+            write_be_u16(r, CHUNK_TOTAL_BASE, ch.total_chunks);
 
             //write chunk number
-            write_be(r, CHUNK_BASE, ch.chunk);
+            write_be_u16(r, CHUNK_BASE, ch.chunk);
 
             //write message
             if(!ch.data.empty()) 
@@ -359,15 +378,15 @@ namespace fire
 
             //read sequence number
             if(b.size() < SEQUENCE_BASE + sizeof(sequence_type)) return ch;
-            read_be(b, SEQUENCE_BASE, ch.sequence);
+            read_be_u64(b, SEQUENCE_BASE, ch.sequence);
 
             //write total chunks 
             if(b.size() < CHUNK_TOTAL_BASE + sizeof(chunk_total_type)) return ch;
-            read_be(b, CHUNK_TOTAL_BASE, ch.total_chunks);
+            read_be_u16(b, CHUNK_TOTAL_BASE, ch.total_chunks);
 
             //read chunk number
             if(b.size() < CHUNK_BASE + sizeof(chunk_id_type)) return ch;
-            read_be(b, CHUNK_BASE, ch.chunk);
+            read_be_u16(b, CHUNK_BASE, ch.chunk);
 
             //copy message
             CHECK_GREATER_EQUAL(b.size(), HEADER_SIZE);
