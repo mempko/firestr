@@ -1,3 +1,4 @@
+
 /*
  * Copyright (C) 2013  Maxim Noah Khailo
  *
@@ -14,30 +15,28 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef FIRESTR_NETWORK_UTIL_H
-#define FIRESTR_NETWORK_UTIL_H
+#ifndef FIRESTR_NETWORK_ENDPOINT_H
+#define FIRESTR_NETWORK_ENDPOINT_H
 
 #include <string>
-#include <memory>
-#include <unordered_map>
-
-#include <boost/cstdint.hpp>
-#include <boost/asio.hpp>
-#include <boost/asio.hpp>
-#include <boost/dynamic_bitset.hpp>
-
-#include "util/bytes.hpp"
-#include "util/queue.hpp"
 
 namespace fire 
 {
     namespace network 
     {
-        std::string get_lan_ip();
+        using port_type = short unsigned int;
+        std::string port_to_string(port_type);
+        port_type parse_port(const std::string&);
 
-        using byte_queue = util::queue<util::bytes>;
-        using asio_service_ptr = std::unique_ptr<boost::asio::io_service>;
+        struct endpoint
+        {
+            std::string protocol;
+            std::string address;
+            port_type port;
+        };
+
+        using host_port = std::pair<std::string,port_type>;
+        host_port parse_host_port(const std::string&);
     }
 }
-
 #endif

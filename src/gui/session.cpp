@@ -249,7 +249,6 @@ namespace fire
                     auto c = _session->contacts().by_id(r.id);
                     if(!c) continue;
 
-                    add(contact_alert(c, "disconnected"));
                     update_contacts();
                 }
                 else

@@ -18,7 +18,7 @@
 #include "user/userservice.hpp"
 #include "messages/greeter.hpp"
 #include "messages/pinhole.hpp"
-#include "network/boost_asio.hpp"
+#include "network/connection.hpp"
 #include "util/uuid.hpp"
 #include "util/string.hpp"
 #include "util/dbc.hpp"
@@ -89,7 +89,7 @@ namespace fire
             std::string to;
             std::string from_id;
             std::string from_ip;
-            std::string from_port;
+            int from_port;
             u::bytes public_secret;
             int send_back;
         };
@@ -112,7 +112,7 @@ namespace fire
             REQUIRE_GREATER(m.meta.from.size(), 1);
             r.from_id = m.meta.extra["from_id"].as_string();
             r.from_ip = m.meta.extra["from_ip"].as_string();
-            r.from_port = m.meta.extra["from_port"].as_string();
+            r.from_port = m.meta.extra["from_port"].as_int();
             r.public_secret = m.meta.extra["public_secret"].as_bytes();
             r.send_back = m.meta.extra["send_back"];
         }
@@ -426,7 +426,7 @@ namespace fire
             }
         }
 
-        void user_service::update_contact_address(const std::string& id, const std::string& ip, const std::string& port)
+        void user_service::update_contact_address(const std::string& id, const std::string& ip, n::port_type port)
         {
             INVARIANT(_user);
             INVARIANT(_session_library);
@@ -470,9 +470,9 @@ namespace fire
             return _in_host;
         }
 
-        const std::string& user_service::in_port() const
+        n::port_type user_service::in_port() const
         {
-            ENSURE_FALSE(_in_port.empty());
+            ENSURE_GREATER(_in_port, 0);
             return _in_port;
         }
 
@@ -505,10 +505,10 @@ namespace fire
             mail()->push_outbox(m);
         }
 
-        void user_service::add_greeter(const std::string& host, const std::string& port, const std::string& pub_key)
+        void user_service::add_greeter(const std::string& host, n::port_type port, const std::string& pub_key)
         {
             INVARIANT(_user);
-            if(host.empty() || port.empty() || pub_key.empty()) return;
+            if(host.empty() || port == 0 || pub_key.empty()) return;
 
             //check to make sure the greeter has not been added already
             for(auto g : _user->greeters())
@@ -689,7 +689,7 @@ namespace fire
             ping_request a
             {
                 address, 
-                _user->info().id(), "", "", //the ip and port will be filled in on other side
+                _user->info().id(), "", 0, //the ip and port will be filled in on other side
                 s.shared_secret.public_value(),
                 send_back
             };
@@ -753,7 +753,6 @@ namespace fire
             bool state_changed = contact_connected(id);
             if(_contacts[id].state == contact_data::CONNECTING) LOG << "goop~~~~~~~~~~~~~~~~" << (state_changed ? "true" : " false") << std::endl;
             if(!state_changed) return;
-            LOG << "hhooop" << std::endl;
 
             event::contact_connected e{id};
             send_event(event::convert(e));

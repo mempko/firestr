@@ -23,6 +23,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "network/endpoint.hpp"
 #include "security/security.hpp"
 #include "util/thread.hpp"
 #include "util/dbc.hpp"
@@ -125,22 +126,22 @@ namespace fire
                 greet_server(const greet_server& o) : 
                     _host{o._host}, _port{o._port}, _key{o._key}{}
 
-                greet_server(const std::string& host, const std::string& port, const std::string& key) : 
+                greet_server(const std::string& host, network::port_type port, const std::string& key) : 
                     _host{host}, _port{port}, _key{key}{}
 
                 greet_server& operator=(const greet_server& o);
 
             public:
                 std::string host() const; 
-                std::string port() const;
+                network::port_type port() const;
                 std::string public_key() const;
                 void host(const std::string& host); 
-                void port(const std::string& port);
+                void port(network::port_type port);
                 void public_key(const std::string& key);
 
             private:
                 std::string _host;
-                std::string _port;
+                network::port_type _port;
                 std::string _key;
                 mutable std::mutex _mutex;
         };

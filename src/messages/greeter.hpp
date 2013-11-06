@@ -17,6 +17,7 @@
 #ifndef FIRESTR_MESSAGES_GREET_REGISTER_H
 #define FIRESTR_MESSAGES_GREET_REGISTER_H
 
+#include "network/endpoint.hpp"
 #include "message/message.hpp"
 #include "util/bytes.hpp"
 
@@ -35,7 +36,7 @@ namespace fire
         struct greet_endpoint
         {
             std::string ip;
-            std::string port;
+            network::port_type port;
         };
 
         class greet_key_request
@@ -65,12 +66,12 @@ namespace fire
 
             public:
                 const std::string& host() const;
-                const std::string& port() const;
+                network::port_type port() const;
                 const std::string& key() const;
 
             private:
                 std::string _host;
-                std::string _port;
+                network::port_type _port;
                 std::string _pub_key;
         };
 

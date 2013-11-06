@@ -49,13 +49,13 @@ po::options_description create_descriptions()
     std::string ip = fn::get_lan_ip();
     if(!ip.empty()) host = ip;
 
-    const std::string port = "6060";
+    fn::port_type port = 6060;
 
     d.add_options()
         ("help", "prints help")
         ("home", po::value<std::string>()->default_value(home), "configuration directory")
         ("host", po::value<std::string>()->default_value(host), "host/ip of this machine") 
-        ("port", po::value<std::string>()->default_value(port), "port this machine will receive messages on")
+        ("port", po::value<int>()->default_value(port), "port this machine will receive messages on")
         ("debug", "if set, turns on the debug menu");
 
     return d;
@@ -89,7 +89,7 @@ try
         
     c.home = vm["home"].as<std::string>();
     c.host = vm["host"].as<std::string>();
-    c.port = vm["port"].as<std::string>();
+    c.port = vm["port"].as<int>();
     c.debug = vm.count("debug");
 
     CREATE_LOG(c.home);
