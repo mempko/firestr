@@ -59,6 +59,8 @@ namespace fire
         {
             udp_chunks chunks;
             boost::dynamic_bitset<> set;
+            size_t ticks = 0;
+            size_t resent = 0;
         };
 
         using working_udp_endpoints = std::unordered_map<sequence_type, working_udp_chunks>;
@@ -87,12 +89,14 @@ namespace fire
             private:
                 size_t chunkify(const std::string& host, port_type port, const fire::util::bytes& b);
                 void send(udp_chunk& c);
+                void resend();
 
             private:
                 //reading
                 util::bytes _in_buffer;
                 boost::asio::ip::udp::endpoint _in_endpoint;
                 working_udp_messages _in_working;
+                working_udp_messages _out_working;
                 std::mutex& _in_mutex;
                 endpoint_queue& _in_queue;
 
@@ -107,6 +111,9 @@ namespace fire
                 bool _writing;
                 mutable std::mutex _mutex;
                 boost::system::error_code _error;
+            private:
+                friend void udp_run_thread(udp_queue*);
+                friend void resend_thread(udp_queue*);
         };
 
         using udp_connection_ptr = std::shared_ptr<udp_connection>;
@@ -129,6 +136,7 @@ namespace fire
                 asio_params _p;
                 asio_service_ptr _io;
                 util::thread_uptr _run_thread;
+                util::thread_uptr _resend_thread;
 
                 udp_connection_ptr _con;
                 endpoint_queue _in_queue;
@@ -137,6 +145,7 @@ namespace fire
 
             private:
                 friend void udp_run_thread(udp_queue*);
+                friend void resend_thread(udp_queue*);
         };
 
         using udp_queue_ptr = std::shared_ptr<udp_queue>;
