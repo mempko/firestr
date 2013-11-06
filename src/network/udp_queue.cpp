@@ -41,8 +41,10 @@ namespace fire
         {
             const size_t BLOCK_SLEEP = 10;
             const size_t THREAD_SLEEP = 40;
-            const int RETRIES = 0;
-            const size_t MAX_UDP_BUFF_SIZE = 2048; //in bytes
+            const size_t RESEND_THREAD_SLEEP = 1000;
+            const size_t RESEND_TICK_THRESHOLD = 5; //resend after 10 seconds
+            const size_t RESEND_THRESHOLD = 1; //resend one time
+            const size_t MAX_UDP_BUFF_SIZE = 1024*500; //500k in bytes
             const size_t SEQUENCE_BASE = 1;
             const size_t CHUNK_TOTAL_BASE = SEQUENCE_BASE + sizeof(sequence_type);
             const size_t CHUNK_BASE = CHUNK_TOTAL_BASE + sizeof(chunk_total_type);
@@ -120,6 +122,44 @@ namespace fire
             _writing = false;
         }
 
+        void remember_chunk(const std::string& addr, const udp_chunk& c, working_udp_messages& w)
+        {
+            auto& wms = w[addr];
+            auto& wm = wms[c.sequence];
+            if(wm.chunks.empty())
+            {
+                if(c.total_chunks == 0) return;
+
+                wm.chunks.resize(c.total_chunks);
+                wm.set.resize(c.total_chunks);
+            }
+            wm.chunks[c.chunk] = c;
+            wm.set[c.chunk] = 0;
+        }
+
+        void validate_chunk(const std::string& addr, const udp_chunk& c, working_udp_messages& w)
+        {
+            auto chunk_n = c.chunk;
+            auto sequence_n = c.sequence;
+
+            auto& wms = w[addr];
+            if(wms.count(sequence_n) == 0) return;
+
+            auto& wm = wms[sequence_n];
+
+            if(chunk_n >= wm.chunks.size()) return;
+            if(c.total_chunks != wm.chunks.size()) return;
+
+            wm.set[chunk_n] = 1;
+            wm.ticks = 0;
+
+            //if message is not complete yet, return 
+            if(wm.set.count() != wm.chunks.size()) return;
+
+            //remove message from working
+            wms.erase(sequence_n);
+        }
+
         void udp_connection::send(udp_chunk& c)
         {
             //push chunk to queue
@@ -144,6 +184,7 @@ namespace fire
 
             CHECK_GREATER(total_chunks, 0);
 
+            u::mutex_scoped_lock l(_mutex);
             while(s < b.size())
             {
                 size_t size = e - s;
@@ -161,6 +202,7 @@ namespace fire
                 std::copy(b.begin() + s, b.begin() + e, c.data.begin());
 
                 //push to out queue
+                remember_chunk(make_address_str({ UDP, host, port}), c, _out_working);
                 send(c);
 
                 //step
@@ -520,15 +562,64 @@ namespace fire
                 }
                 else
                 {
-                    //LOG << "ack: " << chunk.sequence << ":" << chunk.chunk << "/" << chunk.total_chunks << std::endl;
-                    //TODO implement ACK
+                    u::mutex_scoped_lock l(_mutex);
+                    validate_chunk(make_address_str(ep), chunk, _out_working);
                 }
             }
 
             start_read();
         }
 
+        using exhausted_messages = std::set<sequence_type>;
+
+        void udp_connection::resend()
+        {
+            bool resent = false;
+            for(auto& wms : _out_working)
+            {
+                exhausted_messages em;
+                for(auto& wmp : wms.second)
+                {
+                    auto& wm = wmp.second;
+                    wm.ticks++;
+                    sequence_type sequence = wmp.first;
+                    bool resent_m = false;
+                    bool skip = wm.ticks <= RESEND_TICK_THRESHOLD;
+                    bool gaps = wm.set.count() != wm.chunks.size(); 
+                    if(gaps)
+                    {
+                        for(const auto& c : wm.chunks)
+                        {
+                            //skip validated
+                            if(skip || wm.set[c.chunk]) continue;
+
+                            auto mc = c;//copy
+                            resent_m = true;
+                            send(mc);
+                        }
+                    }
+
+                    if(resent_m) 
+                    {
+                        resent = true;
+                        wm.ticks = 0;
+                        wm.resent++;
+                        LOG << "resent: " << sequence << " times: " << wm.resent << std::endl;
+                    }
+
+                    if(!gaps || wm.resent >= RESEND_THRESHOLD) 
+                        em.insert(sequence);
+                }
+
+                //erase all exhaused messages
+                for(auto sequence : em) 
+                    wms.second.erase(sequence);
+            }
+            if(resent) _io.post(boost::bind(&udp_connection::do_send, this, false));
+        }
+
         void udp_run_thread(udp_queue*);
+        void resend_thread(udp_queue*);
         udp_queue::udp_queue(const asio_params& p) :
             _p(p), _done{false},
             _io{new ba::io_service}
@@ -536,10 +627,12 @@ namespace fire
             REQUIRE_GREATER(_p.local_port, 0);
             bind();
             _run_thread.reset(new std::thread{udp_run_thread, this});
+            _resend_thread.reset(new std::thread{resend_thread, this});
 
             INVARIANT(_io);
             INVARIANT(_con);
             INVARIANT(_run_thread);
+            INVARIANT(_resend_thread);
         }
 
         void udp_queue::bind()
@@ -562,6 +655,7 @@ namespace fire
             if(_p.wait > 0) u::sleep_thread(_p.wait);
             if(_con) _con->close();
             if(_run_thread) _run_thread->join();
+            if(_resend_thread) _resend_thread->join();
         }
 
         bool udp_queue::send(const endpoint_message& m)
@@ -587,6 +681,29 @@ namespace fire
             {
                 q->_io->poll();
                 u::sleep_thread(THREAD_SLEEP);
+            }
+            catch(std::exception& e)
+            {
+                LOG << "error in udp thread. " << e.what() << std::endl;
+            }
+            catch(...)
+            {
+                LOG << "unknown error in udp thread." << std::endl;
+            }
+        }
+
+        void resend_thread(udp_queue* q)
+        {
+            CHECK(q);
+            CHECK(q->_io);
+            while(!q->_done) 
+            try
+            {
+                {
+                    u::mutex_scoped_lock l(q->_con->_mutex);
+                    q->_con->resend();
+                }
+                u::sleep_thread(RESEND_THREAD_SLEEP);
             }
             catch(std::exception& e)
             {
