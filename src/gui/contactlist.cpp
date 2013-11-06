@@ -197,7 +197,7 @@ namespace fire
             layout->addWidget(id_label, 3,0); 
             layout->addWidget(id_txt, 3,1,1,2); 
 
-            std::string addr = _service->in_host() + ":" + _service->in_port();
+            std::string addr = _service->in_host() + ":" + n::port_to_string(_service->in_port());
             auto* addr_label = new QLabel("your address");
             auto* addr_txt = new QLineEdit(addr.c_str());
             addr_txt->setMinimumWidth(addr.size() * 8);
@@ -243,7 +243,7 @@ namespace fire
 
         std::string greet_address(const us::greet_server& s)
         {
-            return s.host() + ":" + s.port();
+            return s.host() + ":" + n::port_to_string(s.port());
         }
 
         void contact_list_dialog::new_contact()
@@ -405,7 +405,7 @@ namespace fire
 
             auto* layout = new QGridLayout{this};
             setLayout(layout);
-            _address = _server.host() + ":" + _server.port();
+            _address = _server.host() + ":" + n::port_to_string(_server.port());
             _label = new QLabel{_address.c_str()};
             layout->addWidget( _label, 0,0);
             _rm = new QPushButton("x");

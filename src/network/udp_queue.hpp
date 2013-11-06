@@ -44,7 +44,7 @@ namespace fire
         {
             bool valid;
             std::string host;
-            std::string port;
+            port_type port;
             sequence_type sequence;
             chunk_total_type total_chunks;
             chunk_id_type chunk;
@@ -64,6 +64,7 @@ namespace fire
         using working_udp_endpoints = std::unordered_map<sequence_type, working_udp_chunks>;
         using working_udp_messages = std::unordered_map<std::string, working_udp_endpoints>;
 
+        class udp_queue;
         class udp_connection
         {
             public:
@@ -75,7 +76,7 @@ namespace fire
                 bool send(const endpoint_message& m, bool block = false);
 
             public:
-                void bind(const std::string& port);
+                void bind(port_type port);
                 void do_send(bool force);
                 void handle_write(const boost::system::error_code& error);
                 void handle_read(const boost::system::error_code& error, size_t transferred);
@@ -84,7 +85,7 @@ namespace fire
                 void do_close();
 
             private:
-                size_t chunkify(const std::string& host, const std::string& port, const fire::util::bytes& b);
+                size_t chunkify(const std::string& host, port_type port, const fire::util::bytes& b);
                 void send(udp_chunk& c);
 
             private:

@@ -33,12 +33,6 @@ namespace u = fire::util;
 namespace ba = boost::asio;
 using namespace boost::asio::ip;
 
-namespace so = boost::asio::detail::socket_option; 
-using time_to_live = so::integer<IPPROTO_IP, IP_TTL>; 
-#ifdef __APPLE__
-using reuse_port = so::boolean<SOL_SOCKET, SO_REUSEPORT>;
-#endif
-
 namespace fire
 {
     namespace network
@@ -134,7 +128,7 @@ namespace fire
 
         size_t udp_connection::chunkify(
                 const std::string& host, 
-                const std::string& port, 
+                port_type port, 
                 const fire::util::bytes& b)
         {
             REQUIRE_FALSE(b.empty());
@@ -287,9 +281,8 @@ namespace fire
                 (static_cast<uint16_t>(b[offset + 1]));
         }
 
-        u::bytes encode_udp_wire(const udp_chunk& ch)
+        void encode_udp_wire(u::bytes& r, const udp_chunk& ch)
         {
-            u::bytes r;
             r.resize(HEADER_SIZE + ch.data.size());
 
             //set mark
@@ -307,8 +300,6 @@ namespace fire
             //write message
             if(!ch.data.empty()) 
                 std::copy(ch.data.begin(), ch.data.end(), r.begin() + MESSAGE_BASE);
-
-            return r;
         }
 
         udp_chunk decode_udp_wire(const u::bytes& b)
@@ -337,6 +328,7 @@ namespace fire
             read_be(b, CHUNK_BASE, ch.chunk);
 
             //copy message
+            CHECK_GREATER_EQUAL(b.size(), HEADER_SIZE);
             const size_t data_size = b.size() - HEADER_SIZE;
 
             if(data_size > 0)
@@ -363,7 +355,7 @@ namespace fire
 
             //encode bytes to wire format
             const auto& chunk = _out_queue.front();
-            _out_buffer = encode_udp_wire(chunk);
+            encode_udp_wire(_out_buffer, chunk);
 
             auto p = boost::lexical_cast<short unsigned int>(chunk.port);
             udp::endpoint ep(address::from_string(chunk.host), p);
@@ -378,7 +370,6 @@ namespace fire
         void udp_connection::handle_write(const boost::system::error_code& error)
         {
             //remove sent message
-            //TODO: maybe do a retry?
             _out_queue.pop_front();
             _error = error;
 
@@ -396,18 +387,17 @@ namespace fire
             ENSURE(_writing);
         }
 
-        void udp_connection::bind(const std::string& port)
+        void udp_connection::bind(port_type port)
         {
             LOG << "bind udp port " << port << std::endl;
             INVARIANT(_socket);
-            auto p = boost::lexical_cast<short unsigned int>(port);
 
             _socket->open(udp::v4(), _error);
             _socket->set_option(udp::socket::reuse_address(true),_error);
-            _socket->bind(udp::endpoint(udp::v4(), p), _error);
+            _socket->bind(udp::endpoint(udp::v4(), port), _error);
 
             if(_error)
-                LOG << "error binding udp to port " << p << ": " << _error.message() << std::endl;
+                LOG << "error binding udp to port " << port << ": " << _error.message() << std::endl;
 
             start_read();
         }
@@ -494,14 +484,11 @@ namespace fire
 
             if(chunk.valid)
             {
+                //add message to in queue if we got complete message
+                endpoint ep = { UDP, _in_endpoint.address().to_string(), _in_endpoint.port()};
+
                 if(chunk.type == udp_chunk::msg)
                 { 
-                    //add message to in queue if we got complete message
-                    endpoint ep = {
-                        UDP, 
-                        _in_endpoint.address().to_string(), 
-                        boost::lexical_cast<std::string>(_in_endpoint.port())};
-
                     udp_chunk ack;
                     ack.type = udp_chunk::ack;
                     ack.host = ep.address;
@@ -546,7 +533,7 @@ namespace fire
             _p(p), _done{false},
             _io{new ba::io_service}
         {
-            REQUIRE_FALSE(_p.local_port.empty());
+            REQUIRE_GREATER(_p.local_port, 0);
             bind();
             _run_thread.reset(new std::thread{udp_run_thread, this});
 

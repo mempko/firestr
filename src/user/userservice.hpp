@@ -56,7 +56,7 @@ namespace fire
         {
             std::string home;
             std::string host;
-            std::string port;
+            network::port_type port;
             local_user_ptr user;
             message::mailbox_ptr events;
             security::session_library_ptr session_library;
@@ -73,7 +73,7 @@ namespace fire
                 const local_user& user() const;
                 const std::string& home() const;
                 const std::string& in_host() const;
-                const std::string& in_port() const;
+                network::port_type in_port() const;
 
             public:
                 void confirm_contact(const contact_file&);
@@ -90,9 +90,9 @@ namespace fire
                 virtual void message_recieved(const message::message&);
 
             private:
-                void add_greeter(const std::string& host, const std::string& port, const std::string& pub_key);
+                void add_greeter(const std::string& host, network::port_type port, const std::string& pub_key);
                 void update_address(const std::string& address);
-                void update_contact_address(const std::string& id, const std::string& ip, const std::string& port);
+                void update_contact_address(const std::string& id, const std::string& ip, network::port_type port);
                 void find_contact_with_greeter(user_info_ptr c, const std::string& greeter);
                 void find_contact(user_info_ptr c);
 
@@ -135,7 +135,7 @@ namespace fire
 
                 //greet
                 std::string _in_host;
-                std::string _in_port;
+                network::port_type _in_port;
 
                 //stores session security information for 
                 //a connection with a user

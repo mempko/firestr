@@ -156,7 +156,7 @@ namespace fire
 
         master_post_office::master_post_office(
                 const std::string& in_host,
-                const std::string& in_port,
+                n::port_type in_port,
                 sc::session_library_ptr sl) : 
             _in_host{in_host},
             _in_port{in_port},

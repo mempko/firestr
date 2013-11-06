@@ -17,6 +17,7 @@
 #include "messages/greeter.hpp"
 #include "util/dbc.hpp"
 
+namespace n = fire::network;
 namespace m = fire::message;
 namespace u = fire::util;
 
@@ -61,7 +62,7 @@ namespace fire
             REQUIRE_EQUAL(m.meta.type, GREET_KEY_RESPONSE);
             _pub_key = m.meta.extra["pub_key"].as_string();
             _host = m.meta.extra["from_ip"].as_string();
-            _port = m.meta.extra["from_port"].as_string();
+            _port = m.meta.extra["from_port"].as_int();
         }
 
         greet_key_response::operator message::message() const
@@ -77,7 +78,7 @@ namespace fire
             return _host;
         }
 
-        const std::string& greet_key_response::port() const
+        n::port_type greet_key_response::port() const
         {
             return _port;
         }
@@ -105,7 +106,7 @@ namespace fire
 
             _id = m.meta.extra["from_id"].as_string();
             _local.ip = m.meta.extra["loc_ip"].as_string();
-            _local.port = m.meta.extra["loc_port"].as_string();
+            _local.port = m.meta.extra["loc_port"].as_int();
             _pub_key = m.meta.extra["pub_key"].as_string();
             _response_service_address = m.meta.extra["response_address"].as_string();
         }
@@ -116,7 +117,7 @@ namespace fire
             m.meta.type = GREET_REGISTER;
             m.meta.extra["from_id"] = _id;
             m.meta.extra["loc_ip"] = _local.ip;
-            m.meta.extra["loc_port"] = _local.port;
+            m.meta.extra["loc_port"] = static_cast<int>(_local.port);
             m.meta.extra["pub_key"] = _pub_key;
             m.meta.extra["response_address"] = _response_service_address;
             return m;
@@ -195,9 +196,9 @@ namespace fire
 
             _id = m.meta.extra["search_id"].as_string();
             _local.ip = m.meta.extra["loc_ip"].as_string();
-            _local.port = m.meta.extra["loc_port"].as_string();
+            _local.port = m.meta.extra["loc_port"].as_int();
             _ext.ip = m.meta.extra["ext_ip"].as_string();
-            _ext.port = m.meta.extra["ext_port"].as_string();
+            _ext.port = m.meta.extra["ext_port"].as_int();
             _found = m.meta.extra["found"].as_int() == 1;
         }
 
@@ -207,9 +208,9 @@ namespace fire
             m.meta.type = GREET_FIND_RESPONSE;
             m.meta.extra["search_id"] = _id;
             m.meta.extra["loc_ip"] = _local.ip;
-            m.meta.extra["loc_port"] = _local.port;
+            m.meta.extra["loc_port"] = static_cast<int>(_local.port);
             m.meta.extra["ext_ip"] = _ext.ip;
-            m.meta.extra["ext_port"] = _ext.port;
+            m.meta.extra["ext_port"] = static_cast<int>(_ext.port);
             m.meta.extra["found"] = static_cast<int>(_found ? 1 : 0);
             return m;
         }

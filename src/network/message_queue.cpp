@@ -44,13 +44,6 @@ namespace fire
             return o;
         }
 
-        host_port parse_host_port(const std::string& a)
-        {
-            auto s = util::split<strings>(a, ":");
-            if(s.size() != 2) std::invalid_argument("address must have host and port."); 
-            return std::make_pair(s[0], s[1]);
-        }
-
         address_components parse_address(
                 const std::string& queue_address, 
                 const queue_options& defaults)
@@ -76,17 +69,7 @@ namespace fire
             c.host = c.host.substr(2);
             c.options = defaults;
 
-            c.port = a[2];
-
-            try
-            {
-                int nport = boost::lexical_cast<int>(c.port);
-                if(nport <= 0) std::invalid_argument("invalid port");
-            }
-            catch(...)
-            {
-                std::invalid_argument("port must be a number");
-            }
+            c.port = parse_port(a[2]);
 
             if(s.size() > 1) 
             {

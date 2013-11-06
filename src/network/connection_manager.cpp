@@ -28,7 +28,7 @@ namespace fire
 {
     namespace network
     {
-        connection_manager::connection_manager(size_t size, const std::string& local_port) :
+        connection_manager::connection_manager(size_t size, port_type local_port) :
             _pool(size),
             _local_port{local_port},
             _next_available{0},
@@ -51,7 +51,7 @@ namespace fire
                 asio_params::bind, 
                 "", //uri
                 "", //host
-                "", //port
+                0, //port
                 _local_port,
                 false, //block;
                 0, // wait;
@@ -62,7 +62,7 @@ namespace fire
         void connection_manager::create_tcp_endpoint()
         {
             REQUIRE_FALSE(_in);
-            REQUIRE_FALSE(_local_port.empty());
+            REQUIRE_GREATER(_local_port, 0);
 
             auto listen_address = make_tcp_address("*", _local_port);
 
@@ -85,7 +85,7 @@ namespace fire
                 asio_params::delayed_connect, 
                 "", //uri
                 "", //host
-                "", //port
+                0, //port
                 _local_port,
                 false, //block;
                 0, // wait;

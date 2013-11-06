@@ -36,7 +36,7 @@ namespace fire
         class connection_manager
         {
             public:
-                connection_manager(size_t size, const std::string& listen_port);
+                connection_manager(size_t size, port_type listen_port);
 
             public:
                 bool receive(endpoint& ep, util::bytes& b);
@@ -70,7 +70,7 @@ namespace fire
                 receive_state _rstate;
                 assignment_map _out;
                 tcp_connection_pool _pool;
-                std::string _local_port;
+                port_type _local_port;
                 size_t _next_available;
                 std::mutex _mutex;
                 tcp_queue_ptr _in;

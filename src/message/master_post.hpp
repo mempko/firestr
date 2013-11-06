@@ -38,7 +38,7 @@ namespace fire
             public:
                 master_post_office(
                         const std::string& in_host,
-                        const std::string& in_port,
+                        network::port_type in_port,
                         security::session_library_ptr);
                 virtual ~master_post_office();
 
@@ -48,7 +48,7 @@ namespace fire
             private:
                 bool _stunned;
                 std::string _in_host;
-                std::string _in_port;
+                network::port_type _in_port;
                 network::stun_gun_ptr _stun;
                 util::thread_uptr _in_thread;
                 util::thread_uptr _out_thread;

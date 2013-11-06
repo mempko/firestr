@@ -26,6 +26,7 @@
 
 namespace bf = boost::filesystem;
 namespace u = fire::util;
+namespace n = fire::network;
 namespace sc = fire::security;
 
 namespace fire
@@ -96,7 +97,7 @@ namespace fire
             u::dict d;
 
             d["host"] = g.host();
-            d["port"] = g.port();
+            d["port"] = static_cast<int>(g.port());
             d["pub_key"] = g.public_key();
 
             return d;
@@ -106,7 +107,7 @@ namespace fire
         {
             greet_server g{
                 d["host"].as_string(),
-                d["port"].as_string(),
+                d["port"].as_int(),
                 d["pub_key"].as_string(),
             };
             return g;
@@ -485,7 +486,7 @@ namespace fire
             return _host;
         }
 
-        std::string greet_server::port() const
+        n::port_type greet_server::port() const
         {
             u::mutex_scoped_lock l(_mutex);
             return _port;
@@ -503,7 +504,7 @@ namespace fire
             _host = v;
         }
 
-        void greet_server::port(const std::string& v)
+        void greet_server::port(n::port_type v)
         {
             u::mutex_scoped_lock l(_mutex);
             _port = v;

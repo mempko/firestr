@@ -55,13 +55,13 @@ po::options_description create_descriptions()
     po::options_description d{"Options"};
 
     const std::string host = ip::host_name();
-    const std::string port = "7070";
+    n::port_type port = 7070;
     const std::string private_key = "firegreet_key";
 
     d.add_options()
         ("help", "prints help")
         ("host", po::value<std::string>()->default_value(host), "host/ip of this server") 
-        ("port", po::value<std::string>()->default_value(port), "port this server will receive messages on")
+        ("port", po::value<int>()->default_value(port), "port this server will receive messages on")
         ("pass", po::value<std::string>(), "password to decrypt private key")
         ("key", po::value<std::string>()->default_value(private_key), "path to private key file");
 
@@ -76,8 +76,6 @@ po::variables_map parse_options(int argc, char* argv[], po::options_description&
 
     return v;
 }
-
-using port_map = std::map<std::string, std::string>;
 
 struct user_info
 {
@@ -252,7 +250,7 @@ int main(int argc, char *argv[])
     Botan::LibraryInitializer init;
 
     auto host = vm["host"].as<std::string>();
-    auto port = vm["port"].as<std::string>();
+    auto port = vm["port"].as<int>();
     auto pass = vm.count("pass") ? vm["pass"].as<std::string>() : prompt_pass();
 
     auto key = vm["key"].as<std::string>();
