@@ -114,6 +114,7 @@ namespace fire
                 connection* get_socket() const;
                 void connect(const std::string& host, port_type port);
                 bool is_connected();
+                bool is_connecting();
 
             private:
                 void connect();

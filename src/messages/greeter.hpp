@@ -37,6 +37,11 @@ namespace fire
         {
             std::string ip;
             network::port_type port;
+
+            bool operator==(const greet_endpoint& o) const
+            {
+                return ip == o.ip && port == o.port;
+            }
         };
 
         class greet_key_request

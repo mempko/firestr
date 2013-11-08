@@ -126,8 +126,8 @@ namespace fire
             {
                 auto& c = _pool[p->second];
                 CHECK(c);
-                if(c->is_connected()) 
-                    return _pool[p->second];
+                if(c->is_connecting() || c->is_connected()) 
+                    return c;
             }
 
             //if we ran out of connections in the out pool then first check if any 

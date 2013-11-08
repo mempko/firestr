@@ -105,7 +105,7 @@ namespace fire
         bool tcp_connection::is_connecting() const
         {
             u::mutex_scoped_lock l(_mutex);
-            return _state == disconnected;
+            return _state == connecting;
         }
 
         tcp_connection::con_state tcp_connection::state() const
@@ -146,6 +146,7 @@ namespace fire
             if(_state != disconnected || !_socket->is_open()) return;
 
             _state = connecting;
+             LOG << "tcp connecting to " << _ep.address << ":" << _ep.port << std::endl;
 
             _socket->async_connect(endpoint,
                     boost::bind(&tcp_connection::handle_connect, this,
@@ -482,6 +483,11 @@ namespace fire
         bool tcp_queue::is_connected()
         {
             return _out && _out->is_connected();
+        }
+
+        bool tcp_queue::is_connecting()
+        {
+            return _out && _out->is_connecting();
         }
 
         void tcp_queue::delayed_connect()
