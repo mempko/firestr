@@ -102,6 +102,14 @@ void register_user(
     ms::greet_endpoint local = r.local();
     ms::greet_endpoint ext = {ep.address, ep.port};
 
+    //check to see if user already registers and
+    //don't re-register if ip and port of local and external are the same
+    if(m.count(r.id()))
+    {
+        const auto& si = m[r.id()];
+        if(si.local == local && si.ext == ext) return;
+    }
+    
     user_info i = {r.id(), local, ext, r.response_service_address(), ep};
     m[i.id] = i;
 
