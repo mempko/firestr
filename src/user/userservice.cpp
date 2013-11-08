@@ -236,7 +236,7 @@ namespace fire
 
         void user_service::request_register(const greet_server& g)
         {
-            auto s = n::make_tcp_address(g.host(), g.port(), _in_port);
+            auto s = n::make_tcp_address(g.host(), g.port());
             register_with_greeter r{s, g.public_key()};
 
             m::message m = convert(r);
