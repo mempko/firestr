@@ -83,7 +83,8 @@ struct user_info
     ms::greet_endpoint local;
     ms::greet_endpoint ext;
     std::string response_service_address;
-    n::endpoint ep;
+    n::endpoint tcp_ep;
+    n::endpoint udp_ep;
 };
 using user_info_map = std::map<std::string, user_info>;
 
@@ -104,18 +105,38 @@ void register_user(
 
     //check to see if user already registers and
     //don't re-register if ip and port of local and external are the same
+    bool is_udp = ep.protocol == "udp";
     if(m.count(r.id()))
     {
-        const auto& si = m[r.id()];
-        if(si.local == local && si.ext == ext) return;
+        auto& i = m[r.id()];
+        if(i.local == local && i.ext == ext) return;
+
+        i.local = local;
+        if(is_udp)
+        {
+            i.ext = ext;
+            i.udp_ep = ep;
+        }
+        else 
+        {
+            //only overwrite external if udp one hasn't been set
+            if(i.udp_ep.protocol.empty()) i.ext = ext;
+            i.tcp_ep = ep;
+        }
+        LOG << "updated " << i.id << " " << i.ext.ip << ":" << i.ext.port << " prot: " << ep.protocol << std::endl;
     }
-    
-    user_info i = {r.id(), local, ext, r.response_service_address(), ep};
-    m[i.id] = i;
+    else
+    {
+        n::endpoint tcp_ep;
+        n::endpoint udp_ep;
+        (is_udp ? udp_ep : tcp_ep) = ep;
+        user_info i = {r.id(), local, ext, r.response_service_address(), tcp_ep, udp_ep};
+        m[i.id] = i;
+        LOG << "registered " << i.id << " " << i.ext.ip << ":" << i.ext.port << " prot: " << ep.protocol << std::endl;
+    }
 
     sec.create_session(address, r.pub_key());
 
-    LOG << "registered " << i.id << " " << i.ext.ip << ":" << i.ext.port << std::endl;
 }
 
 void send_response(
@@ -124,9 +145,10 @@ void send_response(
         const ms::greet_find_response& r, 
         const user_info& u)
 {
+    REQUIRE_FALSE(u.tcp_ep.protocol.empty());
     m::message m = r;
 
-    auto address = n::make_address_str(u.ep); 
+    auto address = n::make_address_str(u.tcp_ep); 
     m.meta.to = {address, u.response_service_address};
 
     LOG << "sending reply to " << address << std::endl;
@@ -147,14 +169,15 @@ void find_user(
     //find from user
     auto fup = users.find(r.from_id());
     if(fup == users.end()) return;
+    if(fup->second.tcp_ep.protocol.empty()) return;
 
     //find search user
     auto up = users.find(r.search_id());
     if(up == users.end()) return;
+    if(up->second.tcp_ep.protocol.empty()) return;
 
     auto& f = fup->second;
     if(con.is_disconnected(n::make_address_str(ep))) return;
-    f.ep = ep;
 
     auto& i = up->second;
 
@@ -260,12 +283,10 @@ int main(int argc, char *argv[])
     auto host = vm["host"].as<std::string>();
     auto port = vm["port"].as<int>();
     auto pass = vm.count("pass") ? vm["pass"].as<std::string>() : prompt_pass();
-
     auto key = vm["key"].as<std::string>();
 
     auto pkey = load_private_key(key, pass);
     CHECK(pkey);
-
 
     //it is important the tcp_connection manager is created before
     //the input tcp_connection is made. This is because tcp on

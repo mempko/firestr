@@ -185,6 +185,8 @@ namespace fire
             CHECK_GREATER(total_chunks, 0);
 
             u::mutex_scoped_lock l(_mutex);
+            _sequence++;
+
             while(s < b.size())
             {
                 size_t size = e - s;
@@ -214,7 +216,6 @@ namespace fire
 
             CHECK_EQUAL(chunk, total_chunks);
             return chunk;
-
         }
 
         bool udp_connection::send(const endpoint_message& m, bool block)
@@ -227,7 +228,6 @@ namespace fire
                 return false;
             }
 
-            _sequence++;
             size_t chunks = chunkify(m.ep.address, m.ep.port, m.data);
 
             //post to do send
@@ -548,6 +548,7 @@ namespace fire
                 //add message to in queue if we got complete message
                 endpoint ep = { UDP, _in_endpoint.address().to_string(), _in_endpoint.port()};
 
+
                 if(chunk.type == udp_chunk::msg)
                 { 
                     udp_chunk ack;
@@ -644,12 +645,14 @@ namespace fire
             _io{new ba::io_service}
         {
             REQUIRE_GREATER(_p.local_port, 0);
+            _resolver.reset(new udp::resolver{*_io});
             bind();
             _run_thread.reset(new std::thread{udp_run_thread, this});
             _resend_thread.reset(new std::thread{resend_thread, this});
 
             INVARIANT(_io);
             INVARIANT(_con);
+            INVARIANT(_resolver);
             INVARIANT(_run_thread);
             INVARIANT(_resend_thread);
         }
@@ -682,7 +685,30 @@ namespace fire
             INVARIANT(_io);
             CHECK(_con);
 
+            auto address = resolve(m.ep);
+            if(address != m.ep.address)
+            {
+                endpoint_message cm = m;
+                cm.ep.address = address;
+                return _con->send(cm, _p.block);
+            }
             return _con->send(m, _p.block);
+        }
+
+        const std::string& udp_queue::resolve(const endpoint& ep)
+        {
+            INVARIANT(_resolver);
+
+            auto resolved = _rmap.find(ep.address);
+            if(resolved != _rmap.end()) return resolved->second;
+
+            udp::resolver::query q{ep.address, port_to_string(ep.port)};
+            auto iter = _resolver->resolve(q);
+            udp::endpoint endp = *iter;
+            auto resolved_address = endp.address().to_string();
+            _rmap[ep.address] = resolved_address;
+            _rmap[resolved_address] = resolved_address;
+            return _rmap[ep.address]; 
         }
 
         bool udp_queue::receive(endpoint_message& m)
