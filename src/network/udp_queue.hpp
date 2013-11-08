@@ -65,6 +65,7 @@ namespace fire
 
         using working_udp_endpoints = std::unordered_map<sequence_type, working_udp_chunks>;
         using working_udp_messages = std::unordered_map<std::string, working_udp_endpoints>;
+        using resolve_map = std::unordered_map<std::string, std::string>;
 
         class udp_queue;
         class udp_connection
@@ -131,6 +132,7 @@ namespace fire
 
             private:
                 void bind();
+                const std::string& resolve(const endpoint&);
 
             private:
                 asio_params _p;
@@ -140,6 +142,8 @@ namespace fire
 
                 udp_connection_ptr _con;
                 endpoint_queue _in_queue;
+                udp_resolver_ptr _resolver;
+                resolve_map _rmap;
                 mutable std::mutex _mutex;
                 bool _done;
 

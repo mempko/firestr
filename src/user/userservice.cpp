@@ -119,7 +119,8 @@ namespace fire
 
         struct register_with_greeter
         {
-            std::string server;
+            std::string tcp_addr;
+            std::string udp_addr;
             std::string pub_key;
         };
 
@@ -127,7 +128,8 @@ namespace fire
         {
             m::message m;
             m.meta.type = REGISTER_WITH_GREETER;
-            m.meta.extra["server"] = r.server;
+            m.meta.extra["tcp_addr"] = r.tcp_addr;
+            m.meta.extra["udp_addr"] = r.udp_addr;
             m.meta.extra["pub_key"] = r.pub_key;
             m.meta.to = {SERVICE_ADDRESS}; 
 
@@ -139,7 +141,8 @@ namespace fire
             REQUIRE_EQUAL(m.meta.type, REGISTER_WITH_GREETER);
             REQUIRE_FALSE(m.meta.from.empty());
 
-            r.server = m.meta.extra["server"].as_string();
+            r.tcp_addr = m.meta.extra["tcp_addr"].as_string();
+            r.udp_addr = m.meta.extra["udp_addr"].as_string();
             r.pub_key = m.meta.extra["pub_key"].as_string();
         }
 
@@ -236,8 +239,10 @@ namespace fire
 
         void user_service::request_register(const greet_server& g)
         {
-            auto s = n::make_tcp_address(g.host(), g.port());
-            register_with_greeter r{s, g.public_key()};
+            //tcp and udp register...
+            auto tcp_s = n::make_tcp_address(g.host(), g.port());
+            auto udp_s = n::make_udp_address(g.host(), g.port());
+            register_with_greeter r{tcp_s, udp_s, g.public_key()};
 
             m::message m = convert(r);
             m.meta.to = {SERVICE_ADDRESS};
@@ -271,10 +276,13 @@ namespace fire
             }
         }
 
-        void user_service::do_regiser_with_greeter(const std::string& server, const std::string& pub_key)
+        void user_service::do_regiser_with_greeter(
+                const std::string& tcp_addr, 
+                const std::string& udp_addr, 
+                const std::string& pub_key)
         {
             //regiser with greeter
-            LOG << "sending greet message to " << server << std::endl;
+            LOG << "sending greet message to " << tcp_addr << " : " << udp_addr << std::endl;
             ms::greet_register gr
             {
                 _user->info().id(), 
@@ -284,19 +292,21 @@ namespace fire
             };
 
             //create security session
-            _session_library->create_session(server, pub_key);
+            _session_library->create_session(tcp_addr, pub_key);
+            _session_library->create_session(udp_addr, pub_key);
 
             //send registration request to greeter
-            m::message gm = gr;
-            gm.meta.to = {server, "outside"};
-            mail()->push_outbox(gm);
+            m::message tcp_gm = gr; tcp_gm.meta.to = {tcp_addr, "outside"};
+            m::message udp_gm = gr; udp_gm.meta.to = {udp_addr, "outside"};
+            mail()->push_outbox(tcp_gm);
+            mail()->push_outbox(udp_gm);
 
             //send search query to greeter for all contacts that are offline
             for(auto c : _user->contacts().list())
             {
                 CHECK(c);
                 if(contact_available(c->id())) continue;
-                find_contact_with_greeter(c, server);
+                find_contact_with_greeter(c, tcp_addr);
             }
         }
 
@@ -386,7 +396,7 @@ namespace fire
             {
                 register_with_greeter r;
                 convert(m, r);
-                do_regiser_with_greeter(r.server, r.pub_key);
+                do_regiser_with_greeter(r.tcp_addr, r.udp_addr, r.pub_key);
             }
             else if(m.meta.type == ms::GREET_KEY_RESPONSE)
             {

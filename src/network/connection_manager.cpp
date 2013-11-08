@@ -317,9 +317,11 @@ namespace fire
 
         bool connection_manager::is_disconnected(const std::string& addr)
         {
-            auto s = _in_connections[addr];
-            if(!s) return true;
-            return s->is_disconnected();
+            u::mutex_scoped_lock l(_mutex);
+            auto si = _in_connections.find(addr);
+            if(si == _in_connections.end()) return true;
+            CHECK(si->second);
+            return si->second->is_disconnected();
         }
     }
 }

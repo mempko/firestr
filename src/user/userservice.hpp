@@ -114,7 +114,11 @@ namespace fire
                 void init_reconnect();
                 void reconnect();
                 void request_register(const greet_server&);
-                void do_regiser_with_greeter(const std::string& greeter, const std::string& pub_key);
+                void do_regiser_with_greeter(
+                        const std::string& tcp_addr, 
+                        const std::string& udp_addr, 
+                        const std::string& pub_key);
+
                 void send_ping_requests();
                 void send_ping_request(user::user_info_ptr, bool send_back = true);
                 void send_ping_request(const std::string& address, bool send_back = true);
