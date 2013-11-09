@@ -624,7 +624,9 @@ namespace fire
                         resent = true;
                         wm.ticks = 0;
                         wm.resent++;
-                        LOG << "resent: " << sequence << " times: " << wm.resent << std::endl;
+                        CHECK_FALSE(wm.chunks.empty());
+                        const auto& c = wm.chunks[0];
+                        LOG << "resent: " << c.host << ":" << c.port << " seq:" << sequence << " times: " << wm.resent << std::endl;
                     }
 
                     if(!gaps || wm.resent >= RESEND_THRESHOLD) 
