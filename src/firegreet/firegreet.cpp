@@ -144,8 +144,6 @@ void send_response(
         const ms::greet_find_response& r, 
         const user_info& u)
 {
-    if(con.is_disconnected(n::make_address_str(u.tcp_ep))) return;
-
     REQUIRE_FALSE(u.tcp_ep.protocol.empty());
     m::message m = r;
 
@@ -179,6 +177,10 @@ void find_user(
 
     auto& f = fup->second;
     auto& i = up->second;
+
+    //don't send match if either is disconnected
+    if(con.is_disconnected(n::make_address_str(f.tcp_ep))) return;
+    if(con.is_disconnected(n::make_address_str(i.tcp_ep))) return;
 
     LOG << "found match " << f.id << " " << f.ext.ip << ":" << f.ext.port << " <==> " <<  i.id << " " << i.ext.ip << ":" << i.ext.port << std::endl;
 
