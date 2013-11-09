@@ -97,7 +97,6 @@ void register_user(
 {
     auto address = n::make_address_str(ep);
     if(r.id().empty()) return;
-    if(con.is_disconnected(address)) return;
 
     //use user specified ip, otherwise use socket ip
     ms::greet_endpoint local = r.local();
@@ -145,6 +144,8 @@ void send_response(
         const ms::greet_find_response& r, 
         const user_info& u)
 {
+    if(con.is_disconnected(n::make_address_str(u.tcp_ep))) return;
+
     REQUIRE_FALSE(u.tcp_ep.protocol.empty());
     m::message m = r;
 
@@ -177,8 +178,6 @@ void find_user(
     if(up->second.tcp_ep.protocol.empty()) return;
 
     auto& f = fup->second;
-    if(con.is_disconnected(n::make_address_str(ep))) return;
-
     auto& i = up->second;
 
     LOG << "found match " << f.id << " " << f.ext.ip << ":" << f.ext.port << " <==> " <<  i.id << " " << i.ext.ip << ":" << i.ext.port << std::endl;
@@ -288,10 +287,6 @@ int main(int argc, char *argv[])
     auto pkey = load_private_key(key, pass);
     CHECK(pkey);
 
-    //it is important the tcp_connection manager is created before
-    //the input tcp_connection is made. This is because tcp on
-    //linux requires that binds to the same port are made before
-    //a listen is made.
     n::connection_manager con{POOL_SIZE, port};
     sc::session_library sec{*pkey};
     user_info_map users;
