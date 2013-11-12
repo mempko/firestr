@@ -440,7 +440,7 @@ namespace fire
             _rename_session_action = new QAction{tr("&Rename"), this};
             connect(_rename_session_action, SIGNAL(triggered()), this, SLOT(rename_session()));
 
-            _quit_session_action = new QAction{tr("&Quit"), this};
+            _quit_session_action = new QAction{tr("&Close"), this};
             connect(_quit_session_action, SIGNAL(triggered()), this, SLOT(quit_session()));
 
             if(_context.debug)
@@ -728,7 +728,8 @@ namespace fire
 
             session_widget* s = nullptr;
 
-            if(i != -1) s = dynamic_cast<session_widget*>(_sessions->widget(i));
+            auto sw = _sessions->widget(i);
+            if(i != -1 && sw != nullptr) s = dynamic_cast<session_widget*>(sw);
 
             bool enabled = s != nullptr;
 
@@ -794,8 +795,8 @@ namespace fire
             CHECK(s);
 
             std::stringstream msg;
-            msg << "Are you sure you want to quit the session `" << convert(sw->name()) << "'?";
-            auto a = QMessageBox::warning(this, tr("Quit Session?"), msg.str().c_str(), QMessageBox::Yes | QMessageBox::No);
+            msg << "Are you sure you want to close the session `" << convert(sw->name()) << "'?";
+            auto a = QMessageBox::warning(this, tr("Close Session?"), msg.str().c_str(), QMessageBox::Yes | QMessageBox::No);
             if(a != QMessageBox::Yes) return;
 
             _session_service->quit_session(s->id());

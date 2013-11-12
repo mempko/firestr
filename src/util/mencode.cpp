@@ -234,7 +234,7 @@ namespace fire
             t dec(std::istream& i, const std::string& type, char b, char e)
             {
                 int c = i.get();
-                if(!i.good()) t{};
+                if(!i.good()) return t{};
 
                 if(c != b)
                 {

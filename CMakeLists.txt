@@ -17,8 +17,6 @@
 cmake_minimum_required(VERSION 2.6)
 project(firestr)
 
-#use C++11
-ADD_DEFINITIONS(-std=c++11)
 SET(CMAKE_CXX_FLAGS -DBOOST_TT_HAS_OPERATOR_HPP_INCLUDED)
 
 SET(CMAKE_C_COMPILER   gcc-4.7)
