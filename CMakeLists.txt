@@ -17,9 +17,6 @@
 cmake_minimum_required(VERSION 2.6)
 project(firestr)
 
-#use C++11
-ADD_DEFINITIONS(-std=c++11)
-
 if(APPLE)
     add_definitions(-D_GLIBCXX_USE_NANOSLEEP)
     link_directories(/usr/local/lib)
