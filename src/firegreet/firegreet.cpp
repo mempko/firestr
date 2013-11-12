@@ -108,7 +108,8 @@ void register_user(
     if(m.count(r.id()))
     {
         auto& i = m[r.id()];
-        if(i.local == local && i.ext == ext) return;
+        auto cep = is_udp ? i.udp_ep : i.tcp_ep;
+        if(i.local == local && i.ext == ext && cep == ep) return;
 
         i.local = local;
         if(is_udp)

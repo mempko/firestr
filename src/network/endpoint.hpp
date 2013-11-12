@@ -33,6 +33,11 @@ namespace fire
             std::string protocol;
             std::string address;
             port_type port;
+
+            bool operator==(const endpoint& o) const
+            {
+                return protocol == o.protocol && address == o.address && port == o.port;
+            }
         };
 
         using host_port = std::pair<std::string,port_type>;
