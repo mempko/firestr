@@ -15,6 +15,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+#use C++11
+ADD_DEFINITIONS(-std=c++11)
+
 include_directories(.)
 include_directories(..)
 
