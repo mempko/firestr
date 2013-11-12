@@ -370,7 +370,7 @@ namespace fire
             {
                 uint8_t* ip_p = reinterpret_cast<uint8_t*>(&ip6[IPV6_LENGTH-1]);
                 std::stringstream ips;
-                for(size_t i = IPV6_LENGTH-2; i >= 0; i--) ips << ip_p[i];
+                for(int i = IPV6_LENGTH-2; i >= 0; i--) ips << ip_p[i];
                 mapped.ip = ips.str();
             }
 

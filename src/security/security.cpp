@@ -269,6 +269,7 @@ namespace fire
             u::mutex_scoped_lock l(_mutex);
             _pkey = o._pkey;
             _skey = o._skey;
+            return *this;
         }
 
         util::bytes dh_secret::public_value() const
