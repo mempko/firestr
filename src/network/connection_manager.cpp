@@ -220,6 +220,9 @@ namespace fire
 
         void connection_manager::transition_udp_state()
         {
+            REQUIRE(_rstate != IN_TCP);
+            REQUIRE(_rstate != OUT_TCP);
+
             auto ps = _rstate; 
             switch(_rstate)
             {
@@ -231,6 +234,7 @@ namespace fire
                 case receive_state::IN_UDP6: _rstate = receive_state::IN_UDP7; break;
                 case receive_state::IN_UDP7: _rstate = receive_state::IN_UDP8; break;
                 case receive_state::IN_UDP8: _rstate = receive_state::IN_TCP; break;
+                default: CHECK(false && "missed case");
             }
 
             ENSURE(ps != receive_state::IN_UDP8 || _rstate == receive_state::IN_TCP) 
@@ -308,6 +312,7 @@ namespace fire
                             }
                         }
                         break;
+                    default: CHECK(false && "missed case");
                 }
             }
 
