@@ -67,6 +67,7 @@ namespace fire
                 void update_endpoint(const std::string& address, port_type port);
 
             private:
+                void do_close();
                 void handle_connect(
                         const boost::system::error_code& error, 
                         boost::asio::ip::tcp::endpoint e);
