@@ -729,15 +729,12 @@ namespace fire
             if(!c) return false;
 
             auto& cd = _contacts[c->id()];
-            //don't fire if state is already connected
-            if(cd.state == contact_data::CONNECTING) return false;
 
             cd.contact = c;
             cd.last_ping = 0;
             cd.state = contact_data::CONNECTING;
             ENSURE(cd.state == contact_data::CONNECTING);
             return true;
-
         }
 
         bool user_service::contact_connected(const std::string& id)
@@ -761,7 +758,6 @@ namespace fire
         void user_service::fire_contact_connected_event(const std::string& id)
         {
             bool state_changed = contact_connected(id);
-            if(_contacts[id].state == contact_data::CONNECTING) LOG << "goop~~~~~~~~~~~~~~~~" << (state_changed ? "true" : " false") << std::endl;
             if(!state_changed) return;
 
             event::contact_connected e{id};
