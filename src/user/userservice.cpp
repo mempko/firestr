@@ -508,7 +508,7 @@ namespace fire
             ms::greet_key_request r{SERVICE_ADDRESS};
 
             auto host_port = n::parse_host_port(address);
-            auto service = n::make_tcp_address(host_port.first, host_port.second, _in_port);
+            auto service = n::make_tcp_address(host_port.first, host_port.second);
 
             m::message m = r;
             m.meta.to = {service, "outside"};
