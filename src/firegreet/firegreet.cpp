@@ -88,6 +88,39 @@ struct user_info
 };
 using user_info_map = std::map<std::string, user_info>;
 
+void update_address(
+        user_info& i, 
+        const ms::greet_endpoint& local,
+        const ms::greet_endpoint& ext,
+        const n::endpoint& ep,
+        bool is_udp)
+{
+    bool updated = false;
+
+    if(i.local != local) { i.local = local; updated = true; }
+
+    if(i.ext != ext)
+    {
+        if(is_udp) { i.ext = ext; updated = true; }
+        else if(i.udp_ep.protocol.empty()) { i.ext = ext; updated = true; }
+    }
+
+    if(is_udp)
+    {
+        if(i.udp_ep != ep) { i.udp_ep = ep; updated = true; }
+    }
+    else 
+    {
+        if(i.tcp_ep != ep) { i.tcp_ep = ep; updated = true; }
+    }
+
+    if(updated)
+    {
+        LOG << "updated " << i.id << " " << i.ext.ip << ":" << i.ext.port << " prot: " << ep.protocol << std::endl;
+    }
+
+}
+
 void register_user(
         n::connection_manager& con, 
         sc::session_library& sec, 
@@ -108,22 +141,7 @@ void register_user(
     if(m.count(r.id()))
     {
         auto& i = m[r.id()];
-        auto cep = is_udp ? i.udp_ep : i.tcp_ep;
-        if(i.local == local && i.ext == ext && cep == ep) return;
-
-        i.local = local;
-        if(is_udp)
-        {
-            i.ext = ext;
-            i.udp_ep = ep;
-        }
-        else 
-        {
-            //only overwrite external if udp one hasn't been set
-            if(i.udp_ep.protocol.empty()) i.ext = ext;
-            i.tcp_ep = ep;
-        }
-        LOG << "updated " << i.id << " " << i.ext.ip << ":" << i.ext.port << " prot: " << ep.protocol << std::endl;
+        update_address(i, local, ext, ep, is_udp);
     }
     else
     {
