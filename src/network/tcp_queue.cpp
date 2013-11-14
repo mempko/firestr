@@ -76,11 +76,6 @@ namespace fire
 
         void tcp_connection::close()
         {
-            _io.post(boost::bind(&tcp_connection::do_close, this));
-        }
-
-        void tcp_connection::do_close()
-        {
             INVARIANT(_socket);
             u::mutex_scoped_lock l(_mutex);
             LOG << "tcp_connection closed " << _socket->local_endpoint() << " + " << _socket->remote_endpoint() << " error: " << _error.message() << std::endl;
@@ -144,8 +139,8 @@ namespace fire
             INVARIANT(_socket);
 
             if(_state != disconnected || !_socket->is_open()) return;
-
             _state = connecting;
+
              LOG << "tcp connecting to " << _ep.address << ":" << _ep.port << std::endl;
 
             _socket->async_connect(endpoint,
