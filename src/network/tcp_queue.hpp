@@ -67,6 +67,7 @@ namespace fire
                 void update_endpoint(const std::string& address, port_type port);
 
             private:
+                void do_close();
                 void handle_connect(
                         const boost::system::error_code& error, 
                         boost::asio::ip::tcp::endpoint e);
@@ -75,7 +76,6 @@ namespace fire
                 void handle_write(const boost::system::error_code& error);
                 void handle_header(const boost::system::error_code& error, size_t);
                 void handle_body(const boost::system::error_code& error, size_t, size_t);
-                void do_close();
             private:
 
                 con_state _state;

@@ -42,6 +42,11 @@ namespace fire
             {
                 return ip == o.ip && port == o.port;
             }
+
+            bool operator!=(const greet_endpoint& o) const
+            {
+                return !(operator==(o));
+            }
         };
 
         class greet_key_request

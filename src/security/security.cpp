@@ -257,11 +257,16 @@ namespace fire
             b::AutoSeeded_RNG r;
             b::DL_Group sd{SHARED_DOMAIN};
             _pkey = std::make_shared<b::DH_PrivateKey>(r, sd);
+            auto p = _pkey->public_value();
+            _pub_value = u::bytes{std::begin(p), std::end(p)};
             ENSURE(_pkey);
+            ENSURE_FALSE(_pub_value.empty());
         }
 
         dh_secret::dh_secret(const dh_secret& o) : 
-            _pkey{o._pkey}, _skey{o._skey} {}
+            _pkey{o._pkey}, _skey{o._skey}, 
+            _pub_value{o._pub_value}, 
+            _other_pub_value{o._other_pub_value} {}
 
         dh_secret& dh_secret::operator=(const dh_secret& o)
         {
@@ -269,15 +274,23 @@ namespace fire
             u::mutex_scoped_lock l(_mutex);
             _pkey = o._pkey;
             _skey = o._skey;
+            _pub_value = o._pub_value;
+            _other_pub_value = o._other_pub_value;
             return *this;
         }
 
-        util::bytes dh_secret::public_value() const
+        const util::bytes& dh_secret::public_value() const
         {
             u::mutex_scoped_lock l(_mutex);
-            INVARIANT(_pkey);
-            auto p = _pkey->public_value();
-            return {std::begin(p), std::end(p)};
+            INVARIANT_FALSE(_pub_value.empty());
+            return _pub_value;
+        }
+
+        const util::bytes& dh_secret::other_public_value() const
+        {
+            u::mutex_scoped_lock l(_mutex);
+            ENSURE( _skey == nullptr || !_other_pub_value.empty());
+            return _other_pub_value;
         }
 
         void dh_secret::create_symmetric_key(const util::bytes& pv)
@@ -294,6 +307,7 @@ namespace fire
                             reinterpret_cast<const unsigned char*>(pv.data()), pv.size(),
                             SESSION_PARAM));
 
+            _other_pub_value = pv;
             ENSURE(_skey);
         }
 

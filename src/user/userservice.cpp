@@ -49,10 +49,10 @@ namespace fire
             const std::string REGISTER_WITH_GREETER = "reg_with_greeter";
             const std::string PING = "!";
             const size_t PING_THREAD_SLEEP = 500; //half a second
-            const size_t PING_TICKS = 6; //3 seconds
-            const size_t PING_THRESH = 3*PING_TICKS; 
-            const size_t RECONNECT_TICKS = 60; //send reconnect every minute
-            const size_t RECONNECT_THREAD_SLEEP = 1000; //one second
+            const size_t PING_TICKS = 3; //1.5 seconds
+            const size_t PING_THRESH = 9*PING_TICKS; 
+            const size_t RECONNECT_TICKS = 30; //send reconnect every minute
+            const size_t RECONNECT_THREAD_SLEEP = 2000; //one second
             const char CONNECTED = 'c';
             const char DISCONNECTED = 'd';
         }
@@ -508,7 +508,7 @@ namespace fire
             ms::greet_key_request r{SERVICE_ADDRESS};
 
             auto host_port = n::parse_host_port(address);
-            auto service = n::make_tcp_address(host_port.first, host_port.second, _in_port);
+            auto service = n::make_tcp_address(host_port.first, host_port.second);
 
             m::message m = r;
             m.meta.to = {service, "outside"};
@@ -729,15 +729,12 @@ namespace fire
             if(!c) return false;
 
             auto& cd = _contacts[c->id()];
-            //don't fire if state is already connected
-            if(cd.state == contact_data::CONNECTING) return false;
 
             cd.contact = c;
             cd.last_ping = 0;
             cd.state = contact_data::CONNECTING;
             ENSURE(cd.state == contact_data::CONNECTING);
             return true;
-
         }
 
         bool user_service::contact_connected(const std::string& id)
@@ -761,7 +758,6 @@ namespace fire
         void user_service::fire_contact_connected_event(const std::string& id)
         {
             bool state_changed = contact_connected(id);
-            if(_contacts[id].state == contact_data::CONNECTING) LOG << "goop~~~~~~~~~~~~~~~~" << (state_changed ? "true" : " false") << std::endl;
             if(!state_changed) return;
 
             event::contact_connected e{id};
