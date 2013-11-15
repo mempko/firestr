@@ -28,19 +28,32 @@ namespace fire
 {
     namespace network
     {
+        void tcp_send_thread(connection_manager*);
+
         connection_manager::connection_manager(size_t size, port_type local_port) :
             _pool(size),
             _local_port{local_port},
             _next_available{0},
-            _rstate{receive_state::IN_UDP1}
+            _rstate{receive_state::IN_UDP1},
+            _done{false}
         {
             teardown_and_repool_tcp_connections();
             create_udp_endpoint();
 
+            _tcp_send_thread.reset(new std::thread{tcp_send_thread, this});
+
             ENSURE_FALSE(_pool.empty());
             ENSURE(_in);
             ENSURE(_udp_con);
+            ENSURE(_tcp_send_thread);
             ENSURE_EQUAL(_next_available, 0);
+        }
+
+        connection_manager::~connection_manager()
+        {
+            _done = true;
+            _tcp_send_queue.done();
+            if(_tcp_send_thread) _tcp_send_thread->join();
         }
 
         void connection_manager::create_udp_endpoint()
@@ -116,11 +129,8 @@ namespace fire
 #endif
         }
 
-
-        tcp_queue_ptr connection_manager::connect(const std::string& address)
-        try
+        tcp_queue_ptr connection_manager::get_connected_queue(const std::string& address)
         {
-            //return if we are already assigned a socket to that address
             auto p = _out.find(address);
             if(p != _out.end()) 
             {
@@ -130,6 +140,19 @@ namespace fire
                     return c;
             }
 
+            return {};
+        }
+
+        tcp_queue_ptr connection_manager::connect(const std::string& address)
+        try
+        {
+            {
+                u::mutex_scoped_lock l(_mutex);
+                auto q = get_connected_queue(address);
+                if(q) return q;
+            }
+
+
             //if we ran out of connections in the out pool then first check if any 
             //are connected. If any are connected then the message is not sent and
             //we are screwed for now with the algorithm. Otherwise we must have lost
@@ -137,6 +160,7 @@ namespace fire
             //pool
             if(_next_available >= _pool.size()) 
             {
+                u::mutex_scoped_lock l(_mutex);
                 bool any_connected = false;
                 for(auto& c : _pool) 
                 {
@@ -163,6 +187,7 @@ namespace fire
             _next_available++;
 
             //assign address to socket and connect
+            u::mutex_scoped_lock l(_mutex);
             _out[address] = i;
             _pool[i]->connect(a.host, a.port);
 
@@ -181,25 +206,17 @@ namespace fire
         bool connection_manager::send(const std::string& to, const u::bytes& b)
         try
         {
-            u::mutex_scoped_lock l(_mutex);
+            INVARIANT(_udp_con);
 
             auto type = determine_type(to);
 
+            //if tcp, then push it to the tcp send queue
+            //which is processed by another thread so that
+            //udp connections are not blocked by tcp
             if(type == asio_params::tcp)
             {
-
-                //first check in tcp_connections for matching address and use that to send
-                //otherwise use outgoing tcp_connection.
-                auto inp = _in_connections.find(to);
-                if(inp != _in_connections.end())
-                {
-                    auto o = inp->second;
-                    CHECK(o);
-                    if(!o->is_disconnected()) return o->send(b);
-                }
-
-                auto o = connect(to);
-                return o ? o->send(b) : false;
+                _tcp_send_queue.push({to, b});
+                return true;
             }
 
             CHECK(type == asio_params::udp);
@@ -243,7 +260,6 @@ namespace fire
 
         bool connection_manager::receive(endpoint& ep, u::bytes& b)
         {
-            u::mutex_scoped_lock l(_mutex);
             INVARIANT(_in);
 
             //if we quite in prior call and got to done state
@@ -286,6 +302,7 @@ namespace fire
                                 auto s = _in->get_socket();
                                 CHECK(s);
                                 ep = s->get_endpoint();
+                                u::mutex_scoped_lock l(_mutex);
                                 _in_connections[make_address_str(ep)] = s;
                                 return true;
                             }
@@ -295,6 +312,7 @@ namespace fire
                     case receive_state::OUT_TCP:
                         {
                             _rstate = receive_state::DONE;
+                            u::mutex_scoped_lock l(_mutex);
                             for(auto p : _out)
                             {
                                 auto i = p.second;
@@ -327,6 +345,47 @@ namespace fire
             if(si == _in_connections.end()) return true;
             CHECK(si->second);
             return si->second->is_disconnected();
+        }
+
+        void tcp_send_thread(connection_manager* m)
+        {
+            REQUIRE(m);
+            while(!m->_done)
+            try
+            {
+                send_item i;
+                if(!m->_tcp_send_queue.pop(i, true))
+                    continue;
+
+                //first check in tcp_connections for matching address and use that to send
+                //otherwise use outgoing tcp_connection.
+                {
+                    u::mutex_scoped_lock l(m->_mutex);
+
+                    auto inp = m->_in_connections.find(i.to);
+                    if(inp != m->_in_connections.end())
+                    {
+                        auto o = inp->second;
+                        CHECK(o);
+                        if(!o->is_disconnected()) 
+                        {
+                            o->send(i.data);
+                            continue;
+                        }
+                    }
+                }
+
+                auto o = m->connect(i.to);
+                if(o) o->send(i.data);
+            }
+            catch(std::exception& e)
+            {
+                LOG << "connection_manager: error sending tcp message. " << e.what() << std::endl;
+            }
+            catch(...)
+            {
+                LOG << "connection_manager: error sending tcp message. Unknown reason." << std::endl;
+            }
         }
     }
 }
