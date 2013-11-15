@@ -49,10 +49,10 @@ namespace fire
             const std::string REGISTER_WITH_GREETER = "reg_with_greeter";
             const std::string PING = "!";
             const size_t PING_THREAD_SLEEP = 500; //half a second
-            const size_t PING_TICKS = 6; //3 seconds
-            const size_t PING_THRESH = 3*PING_TICKS; 
-            const size_t RECONNECT_TICKS = 60; //send reconnect every minute
-            const size_t RECONNECT_THREAD_SLEEP = 1000; //one second
+            const size_t PING_TICKS = 3; //1.5 seconds
+            const size_t PING_THRESH = 9*PING_TICKS; 
+            const size_t RECONNECT_TICKS = 30; //send reconnect every minute
+            const size_t RECONNECT_THREAD_SLEEP = 2000; //one second
             const char CONNECTED = 'c';
             const char DISCONNECTED = 'd';
         }

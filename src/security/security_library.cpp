@@ -147,7 +147,6 @@ namespace fire
             s.shared_secret = dh_secret{};
 
             ENSURE(s.key.valid());
-            ENSURE(!s.shared_secret.ready());
         }
 
         void session_library::create_session(const id& i, const public_key& key, const util::bytes& public_val)
@@ -159,7 +158,9 @@ namespace fire
 
             auto& s = _s[i];
 
+            //update public key if changed
             if(!s.key.valid() || s.key.key() != key.key()) s.key = key;
+
             s.shared_secret.create_symmetric_key(public_val);
 
             ENSURE(s.key.valid());

@@ -104,7 +104,8 @@ namespace fire
                 dh_secret& operator=(const dh_secret&);
 
             public:
-                util::bytes public_value() const;
+                const util::bytes& public_value() const;
+                const util::bytes& other_public_value() const;
                 void create_symmetric_key(const util::bytes& public_val);
 
             public:
@@ -115,6 +116,8 @@ namespace fire
             private:
                 dh_private_key_ptr _pkey;
                 symmetric_key_ptr _skey;
+                util::bytes _pub_value;
+                util::bytes _other_pub_value;
                 mutable std::mutex _mutex;
         };
 

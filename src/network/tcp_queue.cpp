@@ -146,13 +146,15 @@ namespace fire
 
         void tcp_connection::connect(tcp::endpoint endpoint)
         {
-            u::mutex_scoped_lock l(_mutex);
             INVARIANT(_socket);
 
-            if(_state != disconnected || !_socket->is_open()) return;
-            _state = connecting;
+            {
+                u::mutex_scoped_lock l(_mutex);
+                if(_state != disconnected || !_socket->is_open()) return;
+                _state = connecting;
+            }
 
-             LOG << "tcp connecting to " << _ep.address << ":" << _ep.port << std::endl;
+             LOG << "tcp connecting to " << _ep.address << ":" << _ep.port << " (" << endpoint << ")" <<std::endl;
 
             _socket->async_connect(endpoint,
                     boost::bind(&tcp_connection::handle_connect, this,
@@ -181,8 +183,10 @@ namespace fire
             //if no error then we are connected
             if (!error) 
             {
-                u::mutex_scoped_lock l(_mutex);
-                _state = connected;
+                {
+                    u::mutex_scoped_lock l(_mutex);
+                    _state = connected;
+                }
                 LOG << "new out tcp_connection " << _socket->local_endpoint() << " -> " << _socket->remote_endpoint() << ": " << error.message() << std::endl;
                 start_read();
 
@@ -242,7 +246,7 @@ namespace fire
                 _io.post(boost::bind(&tcp_connection::do_send, this, false));
 
             //if we are blocking, block until all messages are sent
-            while(block && !_out_queue.empty() && is_disconnected()) u::sleep_thread(BLOCK_SLEEP);
+            while(block && !_out_queue.empty()) u::sleep_thread(BLOCK_SLEEP);
 
             return is_connected();
         }

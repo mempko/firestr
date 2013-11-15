@@ -33,10 +33,18 @@ namespace fire
         using tcp_connection_pool = std::vector<tcp_queue_ptr>;
         using connection_map = std::unordered_map<std::string, connection*>; 
 
+        struct send_item
+        {
+            std::string to;
+            util::bytes data;
+        };
+        using send_queue = util::queue<send_item>;
+
         class connection_manager
         {
             public:
                 connection_manager(size_t size, port_type listen_port);
+                ~connection_manager();
 
             public:
                 bool receive(endpoint& ep, util::bytes& b);
@@ -44,6 +52,7 @@ namespace fire
                 bool is_disconnected(const std::string& addr);
 
             private:
+                tcp_queue_ptr get_connected_queue(const std::string& address);
                 tcp_queue_ptr connect(const std::string& address);
                 void teardown_and_repool_tcp_connections();
                 void create_udp_endpoint();
@@ -67,16 +76,23 @@ namespace fire
                 void transition_udp_state();
             private:
 
+                std::mutex _mutex;
+
                 receive_state _rstate;
                 assignment_map _out;
                 tcp_connection_pool _pool;
                 port_type _local_port;
                 size_t _next_available;
-                std::mutex _mutex;
                 tcp_queue_ptr _in;
                 udp_queue_ptr _udp_con;
 
                 connection_map _in_connections;
+
+                //to prevent tcp connections from mess'in with udp
+                bool _done;
+                send_queue _tcp_send_queue;
+                util::thread_uptr _tcp_send_thread;
+                friend void tcp_send_thread(connection_manager*);
         };
     }
 }
