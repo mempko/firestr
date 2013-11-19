@@ -98,7 +98,7 @@ namespace fire
         bool tcp_connection::is_connected() const
         {
             u::mutex_scoped_lock l(_mutex);
-            return _state == connected;
+            return _state == connected && _socket->is_open();
         }
 
         bool tcp_connection::is_disconnected() const
@@ -111,7 +111,7 @@ namespace fire
         bool tcp_connection::is_connecting() const
         {
             u::mutex_scoped_lock l(_mutex);
-            return _state == connecting;
+            return _state == connecting && _socket->is_open();
         }
 
         tcp_connection::con_state tcp_connection::state() const
