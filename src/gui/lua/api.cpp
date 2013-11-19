@@ -137,7 +137,9 @@ namespace fire
                     .set("send_to", &lua_api::send_to)
                     .set("send_local", &lua_api::send_local)
                     .set("save_file", &lua_api::save_file)
-                    .set("open_file", &lua_api::open_file);
+                    .set("open_file", &lua_api::open_file)
+                    .set("save_bin_file", &lua_api::save_bin_file)
+                    .set("open_bin_file", &lua_api::open_bin_file);
 
                 SLB::Class<QPen>{"pen", &manager}
                     .set("set_width", &QPen::setWidth);
@@ -151,10 +153,17 @@ namespace fire
                     .set("id", &app_ref::get_id)
                     .set("send", &app_ref::send);
 
+                SLB::Class<bin_data>{"bin_data", &manager}
+                    .set("get", &bin_data::get)
+                    .set("set", &bin_data::set)
+                    .set("str", &bin_data::to_str);
+
                 SLB::Class<script_message>{"script_message", &manager}
                     .set("from", &script_message::from)
                     .set("get", &script_message::get)
                     .set("set", &script_message::set)
+                    .set("get_bin", &script_message::get_bin)
+                    .set("set_bin", &script_message::set_bin)
                     .set("is_local", &script_message::is_local)
                     .set("app", &script_message::app);
 
@@ -231,6 +240,11 @@ namespace fire
                     .set("stop", &timer_ref::stop)
                     .set("interval", &timer_ref::set_interval)
                     .set("when_triggered", &timer_ref::set_callback);
+
+                SLB::Class<bin_file_data>{"bin_file_data", &manager}
+                    .set("good", &bin_file_data::is_good)
+                    .set("name", &bin_file_data::get_name)
+                    .set("data", &bin_file_data::get_data);
 
                 SLB::Class<file_data>{"file_data", &manager}
                     .set("good", &file_data::is_good)
@@ -800,15 +814,21 @@ namespace fire
                 run(callback);
             }
 
+            std::string get_file_name(QWidget* canvas)
+            {
+                REQUIRE(canvas);
+                std::string HOME = std::getenv("HOME");
+                auto file = QFileDialog::getOpenFileName(canvas, "Open File", HOME.c_str());
+                auto sf = convert(file);
+                return sf;
+            }
+
             file_data lua_api::open_file()
             {
                 INVARIANT(canvas);
 
-                std::string home = std::getenv("HOME");
-                auto file = QFileDialog::getOpenFileName(canvas, tr("Open File"), home.c_str());
-                if(file.isEmpty()) return file_data{};
-
-                auto sf = convert(file);
+                auto sf = get_file_name(canvas);
+                if(sf.empty()) return file_data{};
                 bf::path p = sf;
 
                 std::ifstream f(sf.c_str());
@@ -820,6 +840,33 @@ namespace fire
                 fd.name = p.filename().string();
                 fd.data = std::move(data);
                 fd.good = true;
+                LOG << "opened file `" << fd.name << " size " << fd.data.size() << std::endl;
+                return fd;
+            }
+
+            bin_file_data lua_api::open_bin_file()
+            {
+                INVARIANT(canvas);
+                auto sf = get_file_name(canvas);
+                if(sf.empty()) return bin_file_data{};
+                bf::path p = sf;
+
+                std::ifstream f(sf.c_str());
+                if(!f) return bin_file_data{};
+
+                f.seekg (0, f.end);
+                size_t length = f.tellg();
+                f.seekg (0, f.beg);
+
+                bin_data bin;
+                bin.data.resize(length);
+                f.read(&bin.data[0], length);
+
+                bin_file_data fd;
+                fd.name = p.filename().string();
+                fd.data = std::move(bin);
+                fd.good = true;
+                LOG << "opened bin file `" << fd.name << " size " << fd.data.data.size() << std::endl;
                 return fd;
             }
 
@@ -843,7 +890,25 @@ namespace fire
                 if(!o) return false;
 
                 o.write(data.c_str(), data.size());
-                LOG << "saved: " << fs << std::endl;
+                LOG << "saved: " << fs << " size " << data.size() <<  std::endl;
+                return true;
+            }
+
+            bool lua_api::save_bin_file(const std::string& suggested_name, const bin_data& bin)
+            {
+                if(bin.data.empty()) return false;
+
+                std::string home = std::getenv("HOME");
+                std::string suggested_path = home + "/" + sanatize(suggested_name);
+                auto file = QFileDialog::getSaveFileName(canvas, tr("Save File"), suggested_path.c_str());
+                if(file.isEmpty()) return false;
+
+                auto fs = convert(file);
+                std::ofstream o(fs.c_str());
+                if(!o) return false;
+
+                o.write(bin.data.data(), bin.data.size());
+                LOG << "saved bin: " << fs << " size " << bin.data.size() << std::endl;
                 return true;
             }
 

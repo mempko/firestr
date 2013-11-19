@@ -131,7 +131,9 @@ namespace fire
 
                     //file
                     file_data open_file();
+                    bin_file_data open_bin_file();
                     bool save_file(const std::string& suggested_name, const std::string& data);
+                    bool save_bin_file(const std::string& suggested_name, const bin_data& data);
 
                     public slots:
                         void button_clicked(int id);
