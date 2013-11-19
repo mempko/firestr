@@ -77,6 +77,24 @@ namespace fire
             };
             contact_ref empty_contact_ref(lua_api& api);
 
+            struct bin_data
+            {
+                util::bytes data;
+                char get(size_t i) const;
+                void set(size_t i, char);
+                std::string to_str() const;
+            };
+
+            struct bin_file_data 
+            {
+                std::string name;
+                bin_data data;
+                bool good = false;
+                std::string get_name() const;
+                bin_data get_data() const;
+                bool is_good() const;
+            };
+
             struct file_data 
             {
                 std::string name;
@@ -98,6 +116,8 @@ namespace fire
                 public:
                     std::string get(const std::string&) const;
                     void set(const std::string&, const std::string&);
+                    bin_data get_bin(const std::string&) const;
+                    void set_bin(const std::string&, const bin_data&);
                     contact_ref from() const;
                     bool is_local() const;
                     app_ref app() const;

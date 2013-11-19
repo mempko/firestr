@@ -109,6 +109,36 @@ namespace fire
                 return api->session->user_service()->contact_available(user_id);
             }
 
+            char bin_data::get(size_t i) const
+            {
+                return i >= data.size() ? 0 : data[i];
+            }
+
+            void bin_data::set(size_t i, char c)
+            {
+                if(i < data.size()) data[i] = c;
+            }
+
+            std::string bin_data::to_str() const
+            {
+                return {data.begin(), data.end()};
+            }
+
+            std::string bin_file_data::get_name() const
+            {
+                return name;
+            }
+
+            bin_data bin_file_data::get_data() const
+            {
+                return data;
+            }
+ 
+            bool bin_file_data::is_good() const
+            {
+                return good;
+            }
+
             std::string file_data::get_name() const
             {
                 return name;
@@ -164,6 +194,18 @@ namespace fire
             void script_message::set(const std::string& k, const std::string& v) 
             {
                 _v[k] = v;
+            }
+
+            bin_data script_message::get_bin(const std::string& k) const
+            {
+                if(!_v.has(k)) return {};
+                if(!_v[k].is_bytes()) return {};
+                return {_v[k].as_bytes()};
+            }
+
+            void script_message::set_bin(const std::string& k, const bin_data& v) 
+            {
+                _v[k] = v.data;
             }
 
             contact_ref empty_contact_ref(lua_api& api)
