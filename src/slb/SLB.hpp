@@ -4418,13 +4418,6 @@ namespace SLB {
     explicit Script(Manager *m = Manager::defaultManager());
     virtual ~Script();
 
-    // changes if the created lua_state will load default libraries when
-    // it is created. This change only takes effect when the lua_State is 
-    // created (when getState() method is called the first time). You can 
-    // always call resetState() to make sure the next created state will
-    // have or wont have default libraries loaded
-    void loadDefaultLibs(bool b) { _loadDefaultLibs = b; }
-
     // Tries to load-and-execute the given file, it can throw an exception
     // If SLB was compiled with Exception support or can exit the program
     // with an error code. See safeDoFile for a safe call that doesn't fail.
@@ -4537,7 +4530,6 @@ namespace SLB {
     void*     _allocator_ud;
     std::string _lastError;
     ErrorHandler *_errorHandler;
-    bool _loadDefaultLibs;
   };
 
 }
