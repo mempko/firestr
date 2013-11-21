@@ -31,6 +31,27 @@ namespace
   static SLB::MallocFn s_mallocFn = NULL;
   static SLB::FreeFn s_freeFn = NULL;
 }
+
+extern "C"
+{
+    extern int luaB_collectgarbage(lua_State*);
+    extern int luaB_getmetatable(lua_State*);
+    extern int luaB_ipairs(lua_State*);
+    extern int luaB_next(lua_State*);
+    extern int luaB_pairs(lua_State*);
+    extern int luaB_pcall(lua_State*);
+    extern int luaB_rawequal(lua_State*);
+    extern int luaB_rawlen(lua_State*);
+    extern int luaB_rawget(lua_State*);
+    extern int luaB_rawset(lua_State*);
+    extern int luaB_select(lua_State*);
+    extern int luaB_setmetatable(lua_State*);
+    extern int luaB_tonumber(lua_State*);
+    extern int luaB_tostring(lua_State*);
+    extern int luaB_type(lua_State*);
+    extern int luaB_xpcall(lua_State*);
+}
+
 namespace SLB
 {
   SLB_EXPORT void SetMemoryManagement(MallocFn mallocFn, FreeFn freeFn)
@@ -1620,8 +1641,7 @@ namespace SLB {
     _printCallback(DefaultPrintCallback),
     _allocator(&Script::allocator),
     _allocator_ud(0),
-    _errorHandler(0),
-    _loadDefaultLibs(true)
+    _errorHandler(0)
   {
     SLB_DEBUG_CALL;
     DefaultErrorHandler *err = 0;
@@ -1639,15 +1659,78 @@ namespace SLB {
     _allocator = f;
     _allocator_ud = ud;
   }
+
+  int open_safe_base (lua_State *s) 
+  {
+      static const luaL_Reg safe_base_funcs[] = 
+      {
+          {"collectgarbage", luaB_collectgarbage},
+          {"getmetatable", luaB_getmetatable},
+          {"ipairs", luaB_ipairs},
+          {"next", luaB_next},
+          {"pairs", luaB_pairs},
+          {"pcall", luaB_pcall},
+          {"rawequal", luaB_rawequal},
+          {"rawlen", luaB_rawlen},
+          {"rawget", luaB_rawget},
+          {"rawset", luaB_rawset},
+          {"select", luaB_select},
+          {"setmetatable", luaB_setmetatable},
+          {"tonumber", luaB_tonumber},
+          {"tostring", luaB_tostring},
+          {"type", luaB_type},
+          {"xpcall", luaB_xpcall},
+          {NULL, NULL}
+      };
+
+      /* set global _G */
+      lua_pushglobaltable(s);
+      lua_pushglobaltable(s);
+      lua_setfield(s, -2, "_G");
+      /* open lib into global table */
+      luaL_setfuncs(s, safe_base_funcs, 0);
+      lua_pushliteral(s, LUA_VERSION);
+      lua_setfield(s, -2, "_VERSION");  /* set global _VERSION */
+      return 1;
+  }
+
+  /**
+   * White list of safe libraries
+   */
+  void open_safe_libs(lua_State* s)
+  {
+      static const luaL_Reg safe_libs[] = 
+      {
+          {"_G", open_safe_base},
+          //{LUA_LOADLIBNAME, luaopen_package}, 
+          {LUA_COLIBNAME, luaopen_coroutine},
+          {LUA_TABLIBNAME, luaopen_table},
+          //{LUA_IOLIBNAME, luaopen_io},
+          //{LUA_OSLIBNAME, luaopen_os},
+          {LUA_STRLIBNAME, luaopen_string},
+          {LUA_BITLIBNAME, luaopen_bit32},
+          {LUA_MATHLIBNAME, luaopen_math},
+          //{LUA_DBLIBNAME, luaopen_debug},
+          {NULL, NULL}
+      };
+
+      for (const luaL_Reg* lib = safe_libs; lib->func; lib++) 
+      {
+          luaL_requiref(s, lib->name, lib->func, 1);
+          lua_pop(s, 1);  
+      }
+  }
+
   lua_State* Script::getState()
   {
     SLB_DEBUG_CALL;
     if (!_lua_state)
     {
-      SLB_DEBUG(10, "Open default libs = %s", _loadDefaultLibs ? " true": " false");
       _lua_state = lua_newstate(_allocator, _allocator_ud);
       assert("Can not create more lua_states" && (_lua_state != 0L));
-      if (_loadDefaultLibs) luaL_openlibs(_lua_state);
+
+      //we do not want to load standard libs, luaL_openlibs(_lua_state);
+      open_safe_libs(_lua_state);
       _manager->registerSLB(_lua_state);
       lua_pushlightuserdata(_lua_state, this);
       lua_pushcclosure(_lua_state,PrintHook,1);

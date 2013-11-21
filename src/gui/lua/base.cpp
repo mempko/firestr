@@ -109,6 +109,11 @@ namespace fire
                 return api->session->user_service()->contact_available(user_id);
             }
 
+            size_t bin_data::get_size() const
+            {
+                return data.size();
+            }
+
             char bin_data::get(size_t i) const
             {
                 return i >= data.size() ? 0 : data[i];
@@ -124,9 +129,26 @@ namespace fire
                 return {data.begin(), data.end()};
             }
 
+            bin_data bin_data::sub(size_t p, size_t s) const
+            {
+                auto si = data.begin(); std::advance(si, p);
+                auto ei = si;           std::advance(ei, s);
+                return {{si, ei}};
+            }
+
+            void bin_data::append(const bin_data& n) 
+            {
+                data.insert(data.end(), n.data.begin(), n.data.end());
+            }
+
             std::string bin_file_data::get_name() const
             {
                 return name;
+            }
+
+            size_t bin_file_data::get_size() const
+            {
+                return data.data.size();
             }
 
             bin_data bin_file_data::get_data() const
@@ -142,6 +164,11 @@ namespace fire
             std::string file_data::get_name() const
             {
                 return name;
+            }
+
+            size_t file_data::get_size() const
+            {
+                return data.size();
             }
 
             std::string file_data::get_data() const
