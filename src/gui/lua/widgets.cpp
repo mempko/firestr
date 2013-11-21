@@ -107,6 +107,7 @@ namespace fire
                     if(rp == api->label_refs.end()) return;
 
                     l = get_widget<QLabel>(id, api->widgets);
+                    if(!l) return;
                 }
 
                 CHECK(l);

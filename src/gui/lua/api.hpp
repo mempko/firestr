@@ -32,6 +32,13 @@ namespace fire
             using layout_map = std::unordered_map<int, QGridLayout*>;
             using timer_map = std::unordered_map<int, QTimer*>;
 
+            struct error_info
+            {
+                size_t line = 0;
+                std::string message;
+            };
+            using error_infos = std::vector<error_info>;
+
             class lua_api : public QObject
             {
                 Q_OBJECT
@@ -48,6 +55,7 @@ namespace fire
 
                 public:
                     //misc
+                    error_infos errors; 
                     list* output;
                     QWidget* canvas;
                     QGridLayout* layout;

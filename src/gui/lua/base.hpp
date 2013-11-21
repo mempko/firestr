@@ -80,8 +80,11 @@ namespace fire
             struct bin_data
             {
                 util::bytes data;
+                size_t get_size() const;
                 char get(size_t i) const;
                 void set(size_t i, char);
+                bin_data sub(size_t p, size_t s) const;
+                void append(const bin_data&);
                 std::string to_str() const;
             };
 
@@ -91,6 +94,7 @@ namespace fire
                 bin_data data;
                 bool good = false;
                 std::string get_name() const;
+                size_t get_size() const;
                 bin_data get_data() const;
                 bool is_good() const;
             };
@@ -101,6 +105,7 @@ namespace fire
                 std::string data;
                 bool good = false;
                 std::string get_name() const;
+                size_t get_size() const;
                 std::string get_data() const;
                 bool is_good() const;
             };

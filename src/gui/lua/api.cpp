@@ -154,8 +154,11 @@ namespace fire
                     .set("send", &app_ref::send);
 
                 SLB::Class<bin_data>{"bin_data", &manager}
+                    .set("size", &bin_data::get_size)
                     .set("get", &bin_data::get)
                     .set("set", &bin_data::set)
+                    .set("sub", &bin_data::sub)
+                    .set("append", &bin_data::append)
                     .set("str", &bin_data::to_str);
 
                 SLB::Class<script_message>{"script_message", &manager}
@@ -244,11 +247,13 @@ namespace fire
                 SLB::Class<bin_file_data>{"bin_file_data", &manager}
                     .set("good", &bin_file_data::is_good)
                     .set("name", &bin_file_data::get_name)
+                    .set("size", &bin_file_data::get_size)
                     .set("data", &bin_file_data::get_data);
 
                 SLB::Class<file_data>{"file_data", &manager}
                     .set("good", &file_data::is_good)
                     .set("name", &file_data::get_name)
+                    .set("size", &file_data::get_size)
                     .set("data", &file_data::get_data);
 
                 state = std::make_shared<SLB::Script>(&manager);
