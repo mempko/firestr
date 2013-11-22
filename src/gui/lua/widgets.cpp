@@ -297,7 +297,7 @@ namespace fire
                 return lp != map.end() ? lp->second : nullptr;
             }
 
-            void canvas_ref::place(const widget_ref& wr, int r, int c)
+            void grid_ref::place(const widget_ref& wr, int r, int c)
             {
                 INVARIANT(api);
                 INVARIANT_FALSE(id == 0);
@@ -321,7 +321,7 @@ namespace fire
                 l->addWidget(w, r, c);
             }
 
-            void canvas_ref::place_across(const widget_ref& wr, int r, int c, int row_span, int col_span)
+            void grid_ref::place_across(const widget_ref& wr, int r, int c, int row_span, int col_span)
             {
                 INVARIANT(api);
                 INVARIANT_FALSE(id == 0);

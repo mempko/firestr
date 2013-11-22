@@ -90,13 +90,13 @@ namespace fire
             using list_ref_map = std::unordered_map<int, list_ref>;
 
             //decided to call layouts canvases
-            struct canvas_ref : public basic_ref
+            struct grid_ref : public widget_ref
             {
                 void place(const widget_ref& w, int r, int c);
                 void place_across(const widget_ref& w, int r, int c, int row_span, int col_span);
             };
 
-            using canvas_ref_map = std::unordered_map<int, canvas_ref>;
+            using grid_ref_map = std::unordered_map<int, grid_ref>;
 
             class draw_view;
             struct draw_ref : public widget_ref
