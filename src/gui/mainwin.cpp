@@ -634,7 +634,7 @@ namespace fire
         void main_window::about()
         {
             QMessageBox::about(this, tr("Firestr 0.2"),
-                    tr("<p><b>Firestr</b> is a simple distributed communication and computation"
+                    tr("<p><b>Firestr</b> is a simple distributed communication and computation "
                         "platform. Write, clone, modify, and send people programs which "
                         "communicate with each other automatically, in a distributed way.</p>"
                         "<p>This is not the web, but it is on the internet.<br> "

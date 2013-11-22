@@ -47,6 +47,7 @@ namespace fire
             namespace
             {
                 const std::string SANATIZE_REPLACE = "_";
+                const size_t PADDING = 40;
             }
 
             lua_api::lua_api(
@@ -119,12 +120,14 @@ namespace fire
                     .set("edit", &lua_api::make_edit)
                     .set("text_edit", &lua_api::make_text_edit)
                     .set("list", &lua_api::make_list)
-                    .set("canvas", &lua_api::make_canvas)
+                    .set("grid", &lua_api::make_grid)
                     .set("draw", &lua_api::make_draw)
                     .set("pen", &lua_api::make_pen)
                     .set("timer", &lua_api::make_timer)
                     .set("place", &lua_api::place)
                     .set("place_across", &lua_api::place_across)
+                    .set("height", &lua_api::height)
+                    .set("grow", &lua_api::grow)
                     .set("total_contacts", &lua_api::total_contacts)
                     .set("last_contact", &lua_api::last_contact)
                     .set("contact", &lua_api::get_contact)
@@ -170,9 +173,12 @@ namespace fire
                     .set("is_local", &script_message::is_local)
                     .set("app", &script_message::app);
 
-                SLB::Class<canvas_ref>{"canvas", &manager}
-                    .set("place", &canvas_ref::place)
-                    .set("place_across", &canvas_ref::place_across);
+                SLB::Class<grid_ref>{"grid", &manager}
+                    .set("place", &grid_ref::place)
+                    .set("place_across", &grid_ref::place_across)
+                    .set("enabled", &widget_ref::enabled)
+                    .set("enable", &widget_ref::enable)
+                    .set("disable", &widget_ref::disable);
 
                 SLB::Class<button_ref>{"button", &manager}
                     .set("text", &button_ref::get_text)
@@ -310,7 +316,7 @@ namespace fire
                 text_edit_refs.clear();
                 list_refs.clear();
                 timer_refs.clear();
-                canvas_refs.clear();
+                grid_refs.clear();
                 widgets.clear();
                 timers.clear();
 
@@ -471,14 +477,14 @@ namespace fire
                     sender->send_to_local_app(id, m);
             }
 
-            canvas_ref lua_api::make_canvas(int r, int c)
+            grid_ref lua_api::make_grid()
             {
                 INVARIANT(layout);
                 INVARIANT(canvas);
                 std::lock_guard<std::mutex> lock(mutex);
 
                 //create button reference
-                canvas_ref ref;
+                grid_ref ref;
                 ref.id = new_id();
                 ref.api = this;
 
@@ -488,16 +494,26 @@ namespace fire
                 b->setLayout(l);
 
                 //add ref and widget to maps
-                canvas_refs[ref.id] = ref;
+                grid_refs[ref.id] = ref;
                 widgets[ref.id] = b;
                 layouts[ref.id] = l;
-
-                //place
-                layout->addWidget(b, r, c);
 
                 ENSURE_FALSE(ref.id == 0);
                 ENSURE(ref.api);
                 return ref;
+            }
+
+            void lua_api::height(int h)
+            {
+                INVARIANT(canvas);
+                canvas->setMinimumHeight(h);
+            }
+
+            void lua_api::grow()
+            {
+                INVARIANT(canvas);
+                INVARIANT(layout);
+                canvas->setMinimumHeight(layout->sizeHint().height() + PADDING);
             }
 
             void lua_api::place(const widget_ref& wr, int r, int c)

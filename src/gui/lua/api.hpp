@@ -84,7 +84,7 @@ namespace fire
                     edit_ref_map edit_refs;
                     text_edit_ref_map text_edit_refs;
                     list_ref_map list_refs;
-                    canvas_ref_map canvas_refs;
+                    grid_ref_map grid_refs;
                     draw_ref_map draw_refs;
                     timer_ref_map timer_refs;
 
@@ -115,9 +115,11 @@ namespace fire
                     QPen make_pen(const std::string& color, int width);
                     timer_ref make_timer(int msec, const std::string& callback);
 
-                    canvas_ref make_canvas(int r, int c);
+                    grid_ref make_grid();
                     void place(const widget_ref& w, int r, int c);
                     void place_across(const widget_ref& w, int r, int c, int row_span, int col_span);
+                    void height(int h);
+                    void grow();
 
                     //messages
                     void set_message_callback(const std::string& a);
