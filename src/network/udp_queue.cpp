@@ -25,10 +25,8 @@
 #include <stdexcept>
 #include <sstream>
 #include <functional>
-#include <boost/lexical_cast.hpp>
 #include <boost/bind.hpp>
 
-using boost::lexical_cast;
 namespace u = fire::util;
 namespace ba = boost::asio;
 using namespace boost::asio::ip;
@@ -42,7 +40,7 @@ namespace fire
             const size_t BLOCK_SLEEP = 10;
             const size_t THREAD_SLEEP = 40;
             const size_t RESEND_THREAD_SLEEP = 1000;
-            const size_t RESEND_TICK_THRESHOLD = 5; //resend after 10 seconds
+            const size_t RESEND_TICK_THRESHOLD = 5; //resend after 5 seconds
             const size_t RESEND_THRESHOLD = 1; //resend one time
             const size_t MAX_UDP_BUFF_SIZE = 1024*500; //500k in bytes
             const size_t SEQUENCE_BASE = 1;
@@ -61,37 +59,6 @@ namespace fire
             return udp_queue_ptr{new udp_queue{p}};
         }
 
-        //plan
-        //when recieving data on a udp socket
-        //each packet will have: 
-        //      1. message sequence number, 
-        //      2. chunk sequence number 
-        //      3. number of chunks in message
-        //
-        //      we keep track of messages by incoming port and address in the 
-        //      incoming_messages map.
-        //
-        //      which has a map of messages being constructed.
-        //      
-        //      when a chunk is recieved, it is put in the poper slot in the 
-        //      buffer.
-        //
-        //      if a message is complete, it is added to the in_queue and removed
-        //      from the buffers.
-        //
-        //      I will have to come up with a way to remove stale buffers.
-        //
-        //      This way out of order udp packets will be ordered
-        //      and we will also know which messages did not get completed.
-        //      maybe in the future i'll send ACK type messages for all chunks recieved
-        //      and do something like TCP over UDP.
-        //
-        // Sending a message is simpler
-        //
-        //  each message is split by chunks (a bit smaller than udp packet limit)
-        //  and send across the network as these chunks. 
-        //
-        //
         udp_connection::udp_connection(
                 endpoint_queue& in,
                 boost::asio::io_service& io, 
@@ -184,8 +151,10 @@ namespace fire
 
             CHECK_GREATER(total_chunks, 0);
 
-            u::mutex_scoped_lock l(_mutex);
-            _sequence++;
+            {
+                u::mutex_scoped_lock l(_mutex);
+                _sequence++;
+            }
 
             while(s < b.size())
             {
@@ -204,7 +173,10 @@ namespace fire
                 std::copy(b.begin() + s, b.begin() + e, c.data.begin());
 
                 //push to out queue
-                remember_chunk(make_address_str({ UDP, host, port}), c, _out_working);
+                {
+                    u::mutex_scoped_lock l(_mutex);
+                    remember_chunk(make_address_str({ UDP, host, port}), c, _out_working);
+                }
                 send(c);
 
                 //step
@@ -418,7 +390,7 @@ namespace fire
             const auto& chunk = _out_queue.front();
             encode_udp_wire(_out_buffer, chunk);
 
-            auto p = boost::lexical_cast<short unsigned int>(chunk.port);
+            auto p = chunk.port;
             udp::endpoint ep(address::from_string(chunk.host), p);
 
             _socket->async_send_to(ba::buffer(&_out_buffer[0], _out_buffer.size()), ep,

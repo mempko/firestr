@@ -260,7 +260,6 @@ namespace fire
 
         bool connection_manager::receive(endpoint& ep, u::bytes& b)
         {
-            INVARIANT(_in);
 
             //if we quite in prior call and got to done state
             //or returned with a message in OUT_TCP case, we
@@ -297,12 +296,13 @@ namespace fire
                     case receive_state::IN_TCP:
                         {
                             _rstate = receive_state::OUT_TCP;
+                            u::mutex_scoped_lock l(_mutex);
+                            INVARIANT(_in);
                             if(_in->receive(b)) 
                             {
                                 auto s = _in->get_socket();
                                 CHECK(s);
                                 ep = s->get_endpoint();
-                                u::mutex_scoped_lock l(_mutex);
                                 _in_connections[make_address_str(ep)] = s;
                                 return true;
                             }
