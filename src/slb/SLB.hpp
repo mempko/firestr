@@ -1369,6 +1369,8 @@ namespace SLB {
     /// functions. 
     virtual void stackElement(int /*level*/) {}
 
+    int errorLine() { return _currentLine; }
+
   protected:
 
     /// StackElement function
@@ -1395,6 +1397,8 @@ namespace SLB {
     /// StackElement function
     /// number of line, or -1 if there is no info available
     int SE_currentLine();
+    int _currentLine;
+
 
     /// StackElement function
     /// number of upvalues of the function
@@ -4477,6 +4481,7 @@ namespace SLB {
     static void* allocator(void *ud, void *ptr, size_t osize, size_t nsize);
 
     const char *getLastError() const { return _lastError.c_str(); }
+    int getLastErrorLine() const { return _lastErrorLine; }
 
     // Changes the print callback. This callback will be called by the internal
     // print function from the scripts in order t
@@ -4529,6 +4534,7 @@ namespace SLB {
     lua_Alloc _allocator;
     void*     _allocator_ud;
     std::string _lastError;
+    int      _lastErrorLine;
     ErrorHandler *_errorHandler;
   };
 
