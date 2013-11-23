@@ -236,6 +236,29 @@ namespace fire
                 //run the code
                 _api->reset_widgets();
                 _api->run(code);
+                update_error(_api->get_error());
+            }
+            
+            void app_editor::update_error(l::error_info e)
+            {
+                INVARIANT(_script);
+
+                QList<QTextEdit::ExtraSelection> extras;
+                if(e.line != -1)
+                {
+                    int line = e.line - 2;
+                    if(line < 0) line = 0;
+                    QTextEdit::ExtraSelection h;
+                    QTextCursor c = _script->textCursor();
+                    c.movePosition(QTextCursor::Start);
+                    c.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, line); 
+                    h.cursor = c;
+                    h.format.setProperty(QTextFormat::FullWidthSelection, true);
+                    QBrush b{QColor{255, 0, 0, 50}};
+                    h.format.setBackground(b);
+                    extras << h;
+                }
+                _script->setExtraSelections( extras );
             }
 
             void app_editor::save_app() 
@@ -302,6 +325,7 @@ namespace fire
                             _script->setTextCursor(cursor);
                             _api->reset_widgets();
                             _api->run(t.text);
+                            update_error(_api->get_error());
                         }
                     }
                     else if(m.meta.type == l::SCRIPT_MESSAGE)

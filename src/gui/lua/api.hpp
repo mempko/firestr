@@ -34,7 +34,7 @@ namespace fire
 
             struct error_info
             {
-                size_t line = 0;
+                int line;
                 std::string message;
             };
             using error_infos = std::vector<error_info>;
@@ -73,7 +73,7 @@ namespace fire
 
                     //util
                     void bind();
-                    std::string execute(const std::string&);
+                    error_info execute(const std::string&);
                     void run(const std::string&);
                     void reset_widgets();
                     void message_recieved(const script_message&);
@@ -98,7 +98,8 @@ namespace fire
                     int new_id();
 
                     //error func
-                    void report_error(const std::string& e);
+                    void report_error(const std::string& e, int line = -1);
+                    error_info get_error() const;
 
                     //================================
                     //API
@@ -151,6 +152,8 @@ namespace fire
                         void edit_finished(int id);
                         void text_edit_edited(int id);
                         void timer_triggered(int id);
+                private:
+                        error_info _error;
             };
 
             using lua_api_ptr = std::shared_ptr<lua_api>;

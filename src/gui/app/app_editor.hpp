@@ -88,6 +88,7 @@ namespace fire
 
                 private:
                     void init();
+                    void update_error(lua::error_info e);
 
                 private:
                     std::string _id;
