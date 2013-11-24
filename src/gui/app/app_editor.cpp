@@ -50,7 +50,7 @@ namespace fire
             namespace
             {
                 const size_t TIMER_SLEEP = 100; //in milliseconds
-                const size_t TIMER_UPDATE = 5000; //in milliseconds
+                const size_t TIMER_UPDATE = 2000; //in milliseconds
                 const size_t PADDING = 20;
                 const size_t MIN_EDIT_HEIGHT = 500;
                 const std::string SCRIPT_CODE_MESSAGE = "script";
@@ -87,7 +87,9 @@ namespace fire
                 _app_service{app_service},
                 _session{session},
                 _contacts{session->contacts()},
-                _app{app}
+                _app{app},
+                _prev_pos{0},
+                _run_state{READY}
             {
                 REQUIRE(session);
                 REQUIRE(app_service);
@@ -293,10 +295,38 @@ namespace fire
 
             void app_editor::update()
             {
+                INVARIANT(_script);
+
                 auto code = gui::convert(_script->toPlainText());
-                if(code != _prev_code) run_script();
+                int pos = _script->textCursor().position();
+
+                switch(_run_state)
+                {
+                    case READY:
+                        {
+                            if(code != _prev_code) 
+                                _run_state = CODE_CHANGED;
+                            break;
+                        }
+                    case CODE_CHANGED:
+                        {
+                            if(pos == _prev_pos) 
+                                _run_state = DONE_TYPING;
+                            break;
+                        }
+                    case DONE_TYPING:
+                        {
+                            if(pos == _prev_pos) 
+                            {
+                                run_script();
+                                _run_state = READY;
+                            }
+                            break;
+                        }
+                }
 
                 _prev_code = code;
+                _prev_pos = pos;
             }
 
             void app_editor::check_mail() 
