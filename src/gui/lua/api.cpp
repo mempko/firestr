@@ -26,6 +26,7 @@
 #include <boost/regex.hpp>
 
 #include <QTimer>
+#include <QTextBrowser>
 
 #include <functional>
 #include <cstdlib>
@@ -63,7 +64,8 @@ namespace fire
                 canvas{c},
                 layout{cl},
                 output{o},
-                ids{0}
+                ids{0},
+                _error{-1, ""}
             {
                 INVARIANT(sender);
                 INVARIANT(session);
@@ -91,14 +93,24 @@ namespace fire
             QWidget* make_error_widget(const std::string& text)
             {
                 std::string m = "<b>error:</b> " + text; 
-                return new QLabel{m.c_str()};
+                auto tb = new QTextBrowser;
+                tb->setHtml(m.c_str());
+                return tb;
             }
 
-            void lua_api::report_error(const std::string& e)
+            void lua_api::report_error(const std::string& e, int line)
             {
+                _error.line = line;
+                _error.message = e;
+
                 LOG << "script error: " << e << std::endl;
                 if(!output) return;
                 output->add(make_error_widget(e));
+            }
+
+            error_info lua_api::get_error() const
+            {
+                return _error;
             }
 
             int lua_api::new_id()
@@ -268,21 +280,23 @@ namespace fire
                 ENSURE(state);
             }
 
-            std::string lua_api::execute(const std::string& s)
+            error_info lua_api::execute(const std::string& s)
             try
             {
                 REQUIRE_FALSE(s.empty());
                 INVARIANT(state);
 
-                return state->safeDoString(s.c_str()) ? "" : state->getLastError();
+                return 
+                    state->safeDoString(s.c_str(), "app") ? 
+                    error_info{-1, ""} : error_info{state->getLastErrorLine(), state->getLastError()};
             }
             catch(std::exception& e)
             {
-                return e.what();
+                return {-1, e.what()};
             }
             catch(...)
             {
-                return "unknown";
+                return {-1, "unknown"};
             }
 
             void lua_api::reset_widgets()
@@ -328,7 +342,13 @@ namespace fire
                 REQUIRE_FALSE(code.empty());
 
                 auto error = execute(code);
-                if(!error.empty() && output) output->add(make_error_widget("error: " + error));
+                if(error.message.empty())
+                {
+                    _error.line = -1;
+                    _error.message.clear();
+                    return;
+                }
+                report_error(error.message, error.line);
             }
 
             //API implementation 
@@ -364,15 +384,15 @@ namespace fire
                     state->call(message_callback, m);
                 }
             }
-            catch(std::exception& e)
+            catch(SLB::CallException& e)
             {
                 std::stringstream s;
                 s << "error in message_received: " << e.what();
-                report_error(s.str());
+                report_error(s.str(), e.errorLine);
             }
             catch(...)
             {
-                report_error("error in message_received: unknown");
+                report_error("error in message_received: unknown", state->getLastErrorLine());
             }
 
             void lua_api::set_message_callback(const std::string& a)

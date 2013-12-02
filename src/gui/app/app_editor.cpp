@@ -50,7 +50,7 @@ namespace fire
             namespace
             {
                 const size_t TIMER_SLEEP = 100; //in milliseconds
-                const size_t TIMER_UPDATE = 5000; //in milliseconds
+                const size_t TIMER_UPDATE = 1500; //in milliseconds
                 const size_t PADDING = 20;
                 const size_t MIN_EDIT_HEIGHT = 500;
                 const std::string SCRIPT_CODE_MESSAGE = "script";
@@ -87,7 +87,9 @@ namespace fire
                 _app_service{app_service},
                 _session{session},
                 _contacts{session->contacts()},
-                _app{app}
+                _app{app},
+                _prev_pos{0},
+                _run_state{READY}
             {
                 REQUIRE(session);
                 REQUIRE(app_service);
@@ -154,9 +156,13 @@ namespace fire
                 if(_app) _script->setPlainText(_app->code().c_str());
                 layout()->addWidget(_script, 2, 0, 1, 2);
 
+                //add status bar
+                _status = new QLabel;
+                layout()->addWidget(_status, 3, 0);
+
                 //save button
                 _save = new QPushButton{"save"};
-                layout()->addWidget(_save, 3, 0);
+                layout()->addWidget(_save, 3, 1);
                 connect(_save, SIGNAL(clicked()), this, SLOT(save_app()));
 
                 setMinimumHeight(layout()->sizeHint().height() + PADDING);
@@ -180,6 +186,7 @@ namespace fire
                 INVARIANT(_canvas);
                 INVARIANT(_canvas_layout);
                 INVARIANT(_output);
+                INVARIANT(_status);
             }
 
             const std::string& app_editor::id()
@@ -221,7 +228,7 @@ namespace fire
                 }
             }
 
-            void app_editor::run_script()
+            bool app_editor::run_script()
             {
                 INVARIANT(_script);
                 INVARIANT(_session);
@@ -229,13 +236,38 @@ namespace fire
 
                 //get the code
                 auto code = gui::convert(_script->toPlainText());
-                if(code.empty()) return;
+                if(code.empty()) return true;
 
                 send_script();
 
                 //run the code
                 _api->reset_widgets();
                 _api->run(code);
+                update_error(_api->get_error());
+                return _api->get_error().line == -1;
+            }
+            
+            void app_editor::update_error(l::error_info e)
+            {
+                INVARIANT(_script);
+
+                QList<QTextEdit::ExtraSelection> extras;
+                if(e.line != -1)
+                {
+                    int line = e.line - 2;
+                    if(line < 0) line = 0;
+                    QTextEdit::ExtraSelection h;
+                    QTextCursor c = _script->textCursor();
+                    c.movePosition(QTextCursor::Start);
+                    c.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, line); 
+                    h.cursor = c;
+                    h.format.setProperty(QTextFormat::FullWidthSelection, true);
+                    QBrush b{QColor{255, 0, 0, 50}};
+                    h.format.setBackground(b);
+                    extras << h;
+                    update_status_to_errors();
+                }
+                _script->setExtraSelections( extras );
             }
 
             void app_editor::save_app() 
@@ -268,12 +300,83 @@ namespace fire
                 _app_service->save_app(*_app);
             }
 
+            void app_editor::update_status_to_errors()
+            {
+                INVARIANT(_status);
+                _status->setText("<font color='red'>errors</font>");
+            }
+
+            void app_editor::update_status_to_no_errors()
+            {
+                INVARIANT(_status);
+                _status->setText("<font color='green'>no errors</font>");
+            }
+
+            void app_editor::update_status_to_typing()
+            {
+                INVARIANT(_status);
+                _status->setText("<font color='orange'>typing...</font>");
+            }
+
+            void app_editor::update_status_to_waiting()
+            {
+                INVARIANT(_status);
+                _status->setText("<font color='orange'>waiting...</font>");
+            }
+
+            void app_editor::update_status_to_running()
+            {
+                INVARIANT(_status);
+                _status->setText("<font color='red'>running...</font>");
+            }
+
             void app_editor::update()
             {
+                INVARIANT(_script);
+                INVARIANT(_api);
+                update_error(_api->get_error());
+
                 auto code = gui::convert(_script->toPlainText());
-                if(code != _prev_code) run_script();
+                int pos = _script->textCursor().position();
+
+                switch(_run_state)
+                {
+                    case READY:
+                        {
+                            if(code != _prev_code) 
+                            {
+                                update_status_to_typing();
+                                _run_state = CODE_CHANGED;
+                            }
+                            break;
+                        }
+                    case CODE_CHANGED:
+                        {
+                            if(pos == _prev_pos) 
+                            {
+                                update_status_to_waiting();
+                                _run_state = DONE_TYPING;
+                            }
+                            break;
+                        }
+                    case DONE_TYPING:
+                        {
+                            if(pos == _prev_pos) 
+                            {
+                                update_status_to_running();
+
+                                //update status bar
+                                if(run_script()) update_status_to_no_errors();
+                                else update_status_to_errors();
+
+                            }
+                            _run_state = READY;
+                            break;
+                        }
+                }
 
                 _prev_code = code;
+                _prev_pos = pos;
             }
 
             void app_editor::check_mail() 
@@ -302,6 +405,7 @@ namespace fire
                             _script->setTextCursor(cursor);
                             _api->reset_widgets();
                             _api->run(t.text);
+                            update_error(_api->get_error());
                         }
                     }
                     else if(m.meta.type == l::SCRIPT_MESSAGE)

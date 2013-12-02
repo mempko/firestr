@@ -26,6 +26,7 @@
 */
 #include "SLB.hpp"
 #include <cstdlib>
+#include <sstream>
 namespace
 {
   static SLB::MallocFn s_mallocFn = NULL;
@@ -560,7 +561,7 @@ const char *ErrorHandler::SE_shortSource()
 }
 int ErrorHandler::SE_currentLine()
 {
-  if (_lua_state) return _debug.currentline;
+  if (_lua_state) {_currentLine = _debug.currentline; return _currentLine;};
   return -1;
 }
 int ErrorHandler::SE_numberOfUpvalues()
@@ -609,12 +610,11 @@ void DefaultErrorHandler::begin(const char *error)
 {
   _out.clear();
   _out.str("");
-  _out << "SLB Exception: "
-    << std::endl << "-------------------------------------------------------"
-    << std::endl;
-  _out << "Lua Error:" << std::endl << "\t"
-    << error << std::endl
-    << "Traceback:" << std::endl;
+  _out << "<b>Lua Error: </b><br/>"
+    << std::endl << "-------------------------------------------------------<br/>"
+    << std::endl
+    << error << "<br/>" << std::endl
+    << "<b>Traceback: </br>" << std::endl;
 }
 const char* DefaultErrorHandler::end()
 {
@@ -635,7 +635,7 @@ void DefaultErrorHandler::stackElement(int level)
     _out << " @ " << name;
      if (SE_nameWhat()) _out << "(" << SE_nameWhat() << ")";
   }
-  _out << std::endl;
+  _out << "<br/>" << std::endl;
 }
 }
 namespace SLB {
@@ -1070,12 +1070,11 @@ namespace SLB {
     SLB_DEBUG_CALL;
     std::ostringstream out;
     lua_Debug debug;
-    out << "SLB Exception: "
-      << std::endl << "-------------------------------------------------------"
-      << std::endl;
-    out << "Lua Error:" << std::endl << "\t"
-      << lua_tostring(L, -1) << std::endl
-      << "Traceback:" << std::endl;
+    out << "<b> Lua Error: </b></br>"
+      << std::endl << "-------------------------------------------------------<br/>"
+      << std::endl
+      << lua_tostring(L, -1) << "<br/>" <<std::endl
+      << "<b>Traceback: </b><br/>" << std::endl;
     for ( int level = 0; lua_getstack(L, level, &debug ); level++)
     {
       if (lua_getinfo(L, "Sln", &debug) )
@@ -1090,7 +1089,7 @@ namespace SLB {
           out << " @ " << debug.name;
            if (debug.namewhat) out << "(" << debug.namewhat << ")";
         }
-        out << std::endl;
+        out << "<br/>" << std::endl;
       }
       else
       {
@@ -1100,6 +1099,7 @@ namespace SLB {
     lua_pushstring(L, out.str().c_str()) ;
     return 1;
   }
+
   void LuaCallBase::execute(int numArgs, int numOutput, int )
   {
     SLB_DEBUG_CALL;
@@ -1107,7 +1107,7 @@ namespace SLB {
     if(handler.call(_lua_state, numArgs, numOutput))
     {
       const char* msg = lua_tostring(_lua_state, -1);
-      SLB_THROW(std::runtime_error( msg ? msg : "Unknown Error" ));
+      SLB_THROW(CallException( msg ? msg : "Unknown Error", handler.errorLine() ));
       SLB_CRITICAL_ERROR(msg ? msg : "Unknown Error" );
     }
   }
@@ -1800,6 +1800,7 @@ namespace SLB {
     }
     if( _errorHandler->call(_lua_state, 0, 0))
     {
+      _lastErrorLine = _errorHandler->errorLine();
       _lastError = lua_tostring(L,-1);
       result = false;
     }
@@ -1814,6 +1815,20 @@ namespace SLB {
     };
   }
 
+  int parseErrorLine(const std::string& s)
+  {
+      //find first :
+      size_t fc = s.find_first_of(':');
+      if(fc == std::string::npos) return -1;
+      size_t nc = s.find_first_of(':', fc + 1);
+      if(nc == std::string::npos) return -1;
+      std::string lns = s.substr(fc+1, nc - fc-1);
+      std::stringstream ss(lns);
+      int ln = -1;
+      ss >> ln;
+      return ln;
+  }
+
   bool Script::safeDoString(const char *o_code, const char *hint)
   {
     SLB_DEBUG_CALL;
@@ -1823,12 +1838,22 @@ namespace SLB {
     std::stringstream code;
     code << "--" << hint << std::endl << o_code;
     bool result = true;
-    if(luaL_loadstring(L,code.str().c_str()) || _errorHandler->call(_lua_state, 0, 0))
+    bool syntaxError = luaL_loadstring(L,code.str().c_str()) != 0;
+    if(syntaxError)
+    {
+        const char *s = lua_tostring(L,-1);
+        _lastError = lua_tostring(L,-1);
+        _lastErrorLine = parseErrorLine(_lastError);
+        result = false;
+    }
+    else if(_errorHandler->call(_lua_state, 0, 0))
     {
       const char *s = lua_tostring(L,-1);
       _lastError = lua_tostring(L,-1);
+      _lastErrorLine = _errorHandler->errorLine();
       result = false;
     }
+
     lua_settop(L,top);
     return result;
   }
