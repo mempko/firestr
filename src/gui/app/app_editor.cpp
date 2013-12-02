@@ -50,7 +50,7 @@ namespace fire
             namespace
             {
                 const size_t TIMER_SLEEP = 100; //in milliseconds
-                const size_t TIMER_UPDATE = 2000; //in milliseconds
+                const size_t TIMER_UPDATE = 1500; //in milliseconds
                 const size_t PADDING = 20;
                 const size_t MIN_EDIT_HEIGHT = 500;
                 const std::string SCRIPT_CODE_MESSAGE = "script";
@@ -296,6 +296,8 @@ namespace fire
             void app_editor::update()
             {
                 INVARIANT(_script);
+                INVARIANT(_api);
+                update_error(_api->get_error());
 
                 auto code = gui::convert(_script->toPlainText());
                 int pos = _script->textCursor().position();

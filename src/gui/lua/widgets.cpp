@@ -412,11 +412,11 @@ namespace fire
 
                 api->state->call(mouse_pressed_callback, button, x, y);
             }
-            catch(std::exception& e)
+            catch(SLB::CallException& e)
             {
                 std::stringstream s;
                 s << "error in mouse_pressed: " << e.what();
-                api->report_error(s.str());
+                api->report_error(s.str(), e.errorLine);
             }
             catch(...)
             {
@@ -431,11 +431,11 @@ namespace fire
 
                 api->state->call(mouse_released_callback, button, x, y);
             }
-            catch(std::exception& e)
+            catch(SLB::CallException& e)
             {
                 std::stringstream s;
                 s << "error in mouse_released: " << e.what();
-                api->report_error(s.str());
+                api->report_error(s.str(), e.errorLine);
             }
             catch(...)
             {
@@ -450,11 +450,11 @@ namespace fire
 
                 api->state->call(mouse_moved_callback, x, y);
             }
-            catch(std::exception& e)
+            catch(SLB::CallException& e)
             {
                 std::stringstream s;
                 s << "error in mouse_moved: " << e.what();
-                api->report_error(s.str());
+                api->report_error(s.str(), e.errorLine);
             }
             catch(...)
             {
@@ -469,11 +469,11 @@ namespace fire
 
                 api->state->call(mouse_dragged_callback, button, x, y);
             }
-            catch(std::exception& e)
+            catch(SLB::CallException& e)
             {
                 std::stringstream s;
                 s << "error in mouse_dragged: " << e.what();
-                api->report_error(s.str());
+                api->report_error(s.str(), e.errorLine);
             }
             catch(...)
             {

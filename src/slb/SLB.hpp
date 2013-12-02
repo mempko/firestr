@@ -1606,77 +1606,87 @@ namespace SLB
 
 namespace SLB
 {
+    struct CallException : public std::runtime_error
+    {
+        int errorLine;
+        std::string message;
 
-  class SLB_EXPORT LuaCallBase 
-  { 
-  public:
-    // this allows to store a luaCall, mainly used by
-    // Hybrid classes...
-    virtual ~LuaCallBase();
-  protected: 
-    LuaCallBase(lua_State *L, int index);
-    LuaCallBase(lua_State *L, const char *func);
-    void execute(int numArgs, int numOutput, int top);
+        CallException(const std::string& m, int l) : 
+            std::runtime_error(m.c_str()), 
+            message(m), errorLine(l) {}
+        ~CallException() throw () {}
+    };
 
-    lua_State *_lua_state;
-    int _ref; 
-  private:
-    void getFunc(int index);
-    static int errorHandler(lua_State *L);
-  }; 
+    class SLB_EXPORT LuaCallBase 
+    { 
+        public:
+            // this allows to store a luaCall, mainly used by
+            // Hybrid classes...
+            virtual ~LuaCallBase();
+        protected: 
+            LuaCallBase(lua_State *L, int index);
+            LuaCallBase(lua_State *L, const char *func);
+            void execute(int numArgs, int numOutput, int top);
 
-  template<typename T>
-  struct LuaCall;
+            lua_State *_lua_state;
+            int _ref; 
+        private:
+            void getFunc(int index);
+            static int errorHandler(lua_State *L);
+    }; 
 
-  #define SLB_ARG(N) T##N arg_##N, 
-  #define SLB_PUSH_ARGS(N) push<T##N>(_lua_state, arg_##N );
+    template<typename T>
+        struct LuaCall;
 
-  #define SLB_REPEAT(N) \
-  \
+#define SLB_ARG(N) T##N arg_##N, 
+#define SLB_PUSH_ARGS(N) push<T##N>(_lua_state, arg_##N );
+
+#define SLB_REPEAT(N) \
+    \
     /* LuaCall: functions that return something  */ \
     template<class R SPP_COMMA_IF(N) SPP_ENUM_D(N, class T)> \
     struct SLB_EXPORT LuaCall<R( SPP_ENUM_D(N,T) )> : public LuaCallBase\
     { \
-      LuaCall(lua_State *L, int index) : LuaCallBase(L,index) {} \
-      LuaCall(lua_State *L, const char *func) : LuaCallBase(L,func) {} \
-      R operator()( SPP_REPEAT( N, SLB_ARG) char dummyARG = 0) /*TODO: REMOVE dummyARG */\
-      { \
-        int top = lua_gettop(_lua_state); \
-        lua_rawgeti(_lua_state, LUA_REGISTRYINDEX,_ref); \
-        SPP_REPEAT( N, SLB_PUSH_ARGS ); \
-        execute(N, 1, top); \
-        R result = get<R>(_lua_state, -1); \
-        lua_settop(_lua_state,top); \
-        return result; \
-      } \
-      bool operator==(const LuaCall& lc) { return (_lua_state == lc._lua_state && _ref == lc._ref); }\
+        LuaCall(lua_State *L, int index) : LuaCallBase(L,index) {} \
+        LuaCall(lua_State *L, const char *func) : LuaCallBase(L,func) {} \
+        R operator()( SPP_REPEAT( N, SLB_ARG) char dummyARG = 0) /*TODO: REMOVE dummyARG */\
+        { \
+            int top = lua_gettop(_lua_state); \
+            lua_rawgeti(_lua_state, LUA_REGISTRYINDEX,_ref); \
+            SPP_REPEAT( N, SLB_PUSH_ARGS ); \
+            execute(N, 1, top); \
+            R result = get<R>(_lua_state, -1); \
+            lua_settop(_lua_state,top); \
+            return result; \
+        } \
+        bool operator==(const LuaCall& lc) { return (_lua_state == lc._lua_state && _ref == lc._ref); }\
     };
-  SPP_MAIN_REPEAT_Z(MAX,SLB_REPEAT)
-  #undef SLB_REPEAT
+    SPP_MAIN_REPEAT_Z(MAX,SLB_REPEAT)
+#undef SLB_REPEAT
 
-  #define SLB_REPEAT(N) \
-  \
-    /*LuaCall: functions that doesn't return anything */  \
-    template<SPP_ENUM_D(N, class T)> \
-    struct SLB_EXPORT LuaCall<void( SPP_ENUM_D(N,T) )> : public LuaCallBase\
+#define SLB_REPEAT(N) \
+        \
+        /*LuaCall: functions that doesn't return anything */  \
+        template<SPP_ENUM_D(N, class T)> \
+        struct SLB_EXPORT LuaCall<void( SPP_ENUM_D(N,T) )> : public LuaCallBase\
     { \
-      LuaCall(lua_State *L, int index) : LuaCallBase(L,index) {} \
-      LuaCall(lua_State *L, const char *func) : LuaCallBase(L,func) {} \
-      void operator()( SPP_REPEAT( N, SLB_ARG) char /*dummyARG*/ = 0) /*TODO: REMOVE dummyARG */\
-      { \
-        int top = lua_gettop(_lua_state); \
-        lua_rawgeti(_lua_state, LUA_REGISTRYINDEX,_ref); \
-        SPP_REPEAT( N, SLB_PUSH_ARGS ); \
-        execute(N, 0, top); \
-        lua_settop(_lua_state,top); \
-      } \
-      bool operator==(const LuaCall& lc) { return (_lua_state == lc._lua_state && _ref == lc._ref); }\
+        LuaCall(lua_State *L, int index) : LuaCallBase(L,index) {} \
+        LuaCall(lua_State *L, const char *func) : LuaCallBase(L,func) {} \
+        void operator()( SPP_REPEAT( N, SLB_ARG) char /*dummyARG*/ = 0) /*TODO: REMOVE dummyARG */\
+        { \
+            int top = lua_gettop(_lua_state); \
+            lua_rawgeti(_lua_state, LUA_REGISTRYINDEX,_ref); \
+            SPP_REPEAT( N, SLB_PUSH_ARGS ); \
+            execute(N, 0, top); \
+            lua_settop(_lua_state,top); \
+        } \
+        bool operator==(const LuaCall& lc) { return (_lua_state == lc._lua_state && _ref == lc._ref); }\
     }; \
 
-  SPP_MAIN_REPEAT_Z(MAX,SLB_REPEAT)
-  #undef SLB_REPEAT
-  #undef SLB_ARG
-  #undef SLB_PUSH_ARGS
+        SPP_MAIN_REPEAT_Z(MAX,SLB_REPEAT)
+#undef SLB_REPEAT
+#undef SLB_ARG
+#undef SLB_PUSH_ARGS
 
 } //end of SLB namespace
 
