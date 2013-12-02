@@ -1099,6 +1099,7 @@ namespace SLB {
     lua_pushstring(L, out.str().c_str()) ;
     return 1;
   }
+
   void LuaCallBase::execute(int numArgs, int numOutput, int )
   {
     SLB_DEBUG_CALL;
@@ -1106,7 +1107,7 @@ namespace SLB {
     if(handler.call(_lua_state, numArgs, numOutput))
     {
       const char* msg = lua_tostring(_lua_state, -1);
-      SLB_THROW(std::runtime_error( msg ? msg : "Unknown Error" ));
+      SLB_THROW(CallException( msg ? msg : "Unknown Error", handler.errorLine() ));
       SLB_CRITICAL_ERROR(msg ? msg : "Unknown Error" );
     }
   }

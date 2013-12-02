@@ -64,7 +64,8 @@ namespace fire
                 canvas{c},
                 layout{cl},
                 output{o},
-                ids{0}
+                ids{0},
+                _error{-1, ""}
             {
                 INVARIANT(sender);
                 INVARIANT(session);
@@ -383,15 +384,15 @@ namespace fire
                     state->call(message_callback, m);
                 }
             }
-            catch(std::exception& e)
+            catch(SLB::CallException& e)
             {
                 std::stringstream s;
                 s << "error in message_received: " << e.what();
-                report_error(s.str());
+                report_error(s.str(), e.errorLine);
             }
             catch(...)
             {
-                report_error("error in message_received: unknown");
+                report_error("error in message_received: unknown", state->getLastErrorLine());
             }
 
             void lua_api::set_message_callback(const std::string& a)
