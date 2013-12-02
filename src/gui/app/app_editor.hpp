@@ -80,7 +80,7 @@ namespace fire
                     fire::message::mailbox_ptr mail();
 
                 public slots:
-                    void run_script();
+                    bool run_script();
                     void send_script();
                     void save_app();
                     void check_mail();
@@ -89,6 +89,11 @@ namespace fire
                 private:
                     void init();
                     void update_error(lua::error_info e);
+                    void update_status_to_errors();
+                    void update_status_to_no_errors();
+                    void update_status_to_typing();
+                    void update_status_to_waiting();
+                    void update_status_to_running();
 
                 private:
                     std::string _id;
@@ -102,6 +107,7 @@ namespace fire
                     lua_highlighter* _highlighter;
                     QPushButton* _save;
                     QWidget* _canvas;
+                    QLabel* _status;
                     QGridLayout* _canvas_layout;
                     list* _output;
 
