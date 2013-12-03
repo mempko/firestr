@@ -103,6 +103,7 @@ namespace fire
                 std::mutex _mutex;
 
             private:
+                bool is_contact_connecting(const std::string& id) const;
                 bool contact_connecting(const std::string& id);
                 bool contact_connected(const std::string& id);
                 void fire_contact_connected_event(const std::string& id);
