@@ -305,7 +305,7 @@ namespace fire
             for(auto c : _user->contacts().list())
             {
                 CHECK(c);
-                if(contact_available(c->id())) continue;
+                if(is_contact_connecting(c->id()) || contact_available(c->id())) continue;
                 find_contact_with_greeter(c, tcp_addr);
             }
         }
@@ -370,10 +370,9 @@ namespace fire
 
                 //we are already connected to this contact
                 //send ping and return
-                if(contact_available(c->id()) ||_contacts[c->id()].state == contact_data::CONNECTING) 
+                if(contact_available(c->id()) || is_contact_connecting(c->id())) 
                 {
                     LOG << "got connection request from: " << c->name() << " (" << c->address() << "), already connecting..." << std::endl;
-                    if(r.send_back) send_ping_request(c, false);
                     return;
                 }
 
@@ -652,6 +651,14 @@ namespace fire
             return c->second.state == contact_data::CONNECTED;
         }
 
+        bool user_service::is_contact_connecting(const std::string& id) const
+        {
+            u::mutex_scoped_lock l(_ping_mutex);
+            auto c = _contacts.find(id);
+            if(c == _contacts.end() || !c->second.contact) return false;
+            return c->second.state == contact_data::CONNECTING;
+        }
+
         void user_service::send_ping_to(char s, const std::string& id, bool force)
         {
             u::mutex_scoped_lock l(_ping_mutex);
@@ -685,7 +692,7 @@ namespace fire
             for(auto c : _user->contacts().list())
             {
                 CHECK(c);
-                if(contact_available(c->id())) continue;
+                if(is_contact_connecting(c->id()) || contact_available(c->id())) continue;
                 send_ping_request(c);
             }
         }
