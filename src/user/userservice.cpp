@@ -373,7 +373,6 @@ namespace fire
                 if(contact_available(c->id()) || is_contact_connecting(c->id())) 
                 {
                     LOG << "got connection request from: " << c->name() << " (" << c->address() << "), already connecting..." << std::endl;
-                    if(r.send_back) send_ping_request(c, false);
                     return;
                 }
 
