@@ -58,8 +58,8 @@ namespace fire
             _mailbox{},
             _mailbox_stats{&stats},
             _name_s{name},
-            _in_max{0},
-            _out_max{0},
+            _in_max{1},
+            _out_max{1},
             _x{0},
             _prev_in_push{0},
             _prev_out_push{0},
@@ -74,8 +74,8 @@ namespace fire
         queue_debug::queue_debug(m::mailbox_wptr m) :
             _mailbox{m},
             _mailbox_stats{nullptr},
-            _in_max{0},
-            _out_max{0},
+            _in_max{1},
+            _out_max{1},
             _x{0},
             _prev_in_push{0},
             _prev_out_push{0},
@@ -156,10 +156,10 @@ namespace fire
             auto out_pop = stats->out_pop_count;
             stats->reset();
 
-            draw_graph(*_in_graph, px, _prev_in_push, _x, in_push, _in_max, QPen{QColor{"red"}});
-            draw_graph(*_in_graph, px, _prev_in_pop, _x, in_pop, _in_max, QPen{QColor{"orange"}});
-            draw_graph(*_out_graph, px, _prev_out_push, _x, out_push, _out_max, QPen{QColor{"green"}});
-            draw_graph(*_out_graph, px, _prev_out_pop, _x, out_pop, _out_max, QPen{QColor{"blue"}});
+            draw_graph(*_in_graph, px, _prev_in_push+2, _x, in_push+2, _in_max, QPen{QBrush{QColor{"red"}}, 0.5});
+            draw_graph(*_in_graph, px, _prev_in_pop, _x, in_pop, _in_max, QPen{QBrush{QColor{"orange"}}, 0.5});
+            draw_graph(*_out_graph, px, _prev_out_push+2, _x, out_push+2, _out_max, QPen{QBrush{QColor{"green"}}, 0.5});
+            draw_graph(*_out_graph, px, _prev_out_pop, _x, out_pop, _out_max, QPen{QBrush{QColor{"blue"}}, 0.5});
                     
             _prev_in_push = in_push;
             _prev_in_pop = in_pop;
