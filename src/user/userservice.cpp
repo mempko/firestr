@@ -50,9 +50,9 @@ namespace fire
             const std::string PING = "!";
             const size_t PING_THREAD_SLEEP = 500; //half a second
             const size_t PING_TICKS = 3; //1.5 seconds
-            const size_t PING_THRESH = 9*PING_TICKS; 
+            const size_t PING_THRESH = 20*PING_TICKS; 
             const size_t RECONNECT_TICKS = 30; //send reconnect every minute
-            const size_t RECONNECT_THREAD_SLEEP = 2000; //one second
+            const size_t RECONNECT_THREAD_SLEEP = 2000; //two seconds
             const char CONNECTED = 'c';
             const char DISCONNECTED = 'd';
         }
@@ -184,6 +184,7 @@ namespace fire
 
         void user_service::add_contact_data(user::user_info_ptr u)
         {
+            u::mutex_scoped_lock l(_ping_mutex);
             REQUIRE(u);
             contact_data cd  = {contact_data::OFFLINE, u, PING_THRESH};
             _contacts[u->id()] = cd; 
@@ -232,7 +233,7 @@ namespace fire
             //last known ip/port
             send_ping_requests();
 
-            //register with greeter
+            //register with greeters
             for(const auto& g : _user->greeters())
                 request_register(g);
         }
@@ -254,6 +255,8 @@ namespace fire
             REQUIRE(c);
             REQUIRE_FALSE(greeter.empty());
             INVARIANT(_user);
+            REQUIRE_FALSE(is_contact_connecting(c->id()));
+            REQUIRE_FALSE(contact_available(c->id()));
 
             ms::greet_find_request r {_user->info().id(), c->id()};
 
@@ -261,19 +264,6 @@ namespace fire
             m::message m = r;
             m.meta.to = {greeter, "outside"};
             mail()->push_outbox(m);
-        }
-
-        void user_service::find_contact(user_info_ptr c)
-        {
-            REQUIRE(c);
-            INVARIANT(_user);
-
-            for(const auto& g : _user->greeters())
-            {
-                auto s = n::make_tcp_address(g.host(), g.port(), _in_port);
-                CHECK_FALSE(s.empty());
-                find_contact_with_greeter(c, s);
-            }
         }
 
         void user_service::do_regiser_with_greeter(
@@ -382,13 +372,12 @@ namespace fire
                 //if it is different.
                 update_contact_address(c->id(), r.from_ip, r.from_port);
 
-                contact_connecting(c->id());
                 if(r.send_back) send_ping_request(c, false);
+                contact_connecting(c->id());
 
                 //update session to use DH 
                 auto address = n::make_udp_address(r.from_ip, r.from_port);
                 setup_security_session(address, c->key(), r.public_secret);
-
                 send_ping_to(CONNECTED, c->id(), true);
             }
             else if(m.meta.type == REGISTER_WITH_GREETER)
@@ -415,7 +404,7 @@ namespace fire
                 {
                     CHECK(_contacts.count(c->id()));
 
-                    if(_contacts[c->id()].state == contact_data::CONNECTED) return;
+                    if(contact_available(c->id()) || is_contact_connecting(c->id())) return;
 
                     auto local = n::make_udp_address(rs.local().ip, rs.local().port);
                     auto external = n::make_udp_address(rs.external().ip, rs.external().port);
@@ -723,6 +712,8 @@ namespace fire
             REQUIRE(c);
             INVARIANT(_user);
             INVARIANT(mail());
+            REQUIRE_FALSE(is_contact_connecting(c->id()));
+            REQUIRE_FALSE(contact_available(c->id()));
 
             LOG << "sending connection request to " << c->name() << " (" << c->id() << ", " << c->address() << ")" << std::endl;
             _session_library->create_session(c->address(), c->key());
@@ -843,8 +834,8 @@ namespace fire
             //add greeter
             if(!cf.greeter.empty()) add_greeter(cf.greeter);
 
-            //find contact address
-            find_contact(contact);
+            CHECK_FALSE(is_contact_connecting(contact->id()));
+            CHECK_FALSE(contact_available(contact->id()));
             send_ping_request(contact, true);
         }
 
