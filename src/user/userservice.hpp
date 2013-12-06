@@ -94,7 +94,6 @@ namespace fire
                 void update_address(const std::string& address);
                 void update_contact_address(const std::string& id, const std::string& ip, network::port_type port);
                 void find_contact_with_greeter(user_info_ptr c, const std::string& greeter);
-                void find_contact(user_info_ptr c);
 
             private:
                 local_user_ptr _user;
