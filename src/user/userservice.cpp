@@ -396,26 +396,35 @@ namespace fire
                 ms::greet_find_response rs{m};
                 if(!rs.found()) return;
 
-                LOG << "got greet response: " << rs.external().ip << ":" << rs.external().port << std::endl;
-
                 //send ping request using new local and remote address
                 auto c = _user->contacts().by_id(rs.id());
                 if(c) 
                 {
                     CHECK(_contacts.count(c->id()));
-
-                    if(contact_available(c->id()) || is_contact_connecting(c->id())) return;
+                    if(contact_available(c->id()) || is_contact_connecting(c->id())) 
+                    {
+                        LOG << "got greet response for: " << c->name() << " (" << c->id() << ") address:" << rs.external().ip << ":" << rs.external().port << " but already connecting..." << std::endl;
+                        return;
+                    }
 
                     auto local = n::make_udp_address(rs.local().ip, rs.local().port);
                     auto external = n::make_udp_address(rs.external().ip, rs.external().port);
-                    //create security sessions for local and external
-                    _session_library->create_session(local, c->key());
-                    _session_library->create_session(external, c->key());
 
-                    //send ping request via local network and external
-                    //network. First one to arrive gets to be connection
+                    LOG << "got greet response for: " << c->name() << " (" << c->id() << " ) local: " << local << " external: " << external <<  " sending requests..." << std::endl;
+                    //create security sessions for local 
+                    _session_library->create_session(local, c->key());
+
+                    //send ping request via local network 
                     send_ping_request(local);
-                    send_ping_request(external);
+
+                    //if external is different from local, create a security
+                    //session and send a ping request. First one to make it
+                    //wins the race.
+                    if(external != local)
+                    {
+                        _session_library->create_session(external, c->key());
+                        send_ping_request(external);
+                    }
                 }
             }
             else
