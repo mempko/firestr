@@ -347,7 +347,11 @@ namespace fire
                 if(fire_event)
                 {
                     if(cur_state) fire_contact_connected_event(r.from_id);
-                    else fire_contact_disconnected_event(r.from_id);
+                    else 
+                    {
+                        u::mutex_scoped_lock l(_ping_mutex);
+                        fire_contact_disconnected_event(r.from_id);
+                    }
                 }
             }
             else if(m.meta.type == PING_REQUEST)
@@ -360,7 +364,13 @@ namespace fire
 
                 //we are already connected to this contact
                 //send ping and return
-                if(contact_available(c->id()) || is_contact_connecting(c->id())) 
+                if(contact_available(c->id())) 
+                {
+                    LOG << "got connection request from: " << c->name() << " (" << c->address() << "), already connected..." << std::endl;
+                    return;
+                }
+
+                if(is_contact_connecting(c->id())) 
                 {
                     LOG << "got connection request from: " << c->name() << " (" << c->address() << "), already connecting..." << std::endl;
                     return;
@@ -751,8 +761,10 @@ namespace fire
             if(!c) return false;
 
             auto& cd = _contacts[c->id()];
+
             //don't fire if state is already connected
             if(cd.state == contact_data::CONNECTED) return false;
+            CHECK(cd.state == contact_data::CONNECTING);
 
             cd.contact = c;
             cd.last_ping = 0;
@@ -774,7 +786,8 @@ namespace fire
         void user_service::fire_contact_disconnected_event(const std::string& id)
         {
             auto& cd = _contacts[id];
-            CHECK(cd.contact);
+            REQUIRE(cd.state != contact_data::OFFLINE);
+            REQUIRE(cd.contact);
 
             auto prev_state = cd.state;
 
@@ -787,6 +800,7 @@ namespace fire
                 event::contact_disconnected e{id, cd.contact->name()};
                 send_event(event::convert(e));
             }
+            else CHECK(prev_state == contact_data::CONNECTING);
 
             ENSURE(cd.state == contact_data::OFFLINE);
         }
