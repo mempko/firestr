@@ -347,7 +347,11 @@ namespace fire
                 if(fire_event)
                 {
                     if(cur_state) fire_contact_connected_event(r.from_id);
-                    else fire_contact_disconnected_event(r.from_id);
+                    else 
+                    {
+                        u::mutex_scoped_lock l(_ping_mutex);
+                        fire_contact_disconnected_event(r.from_id);
+                    }
                 }
             }
             else if(m.meta.type == PING_REQUEST)
@@ -360,7 +364,13 @@ namespace fire
 
                 //we are already connected to this contact
                 //send ping and return
-                if(contact_available(c->id()) || is_contact_connecting(c->id())) 
+                if(contact_available(c->id())) 
+                {
+                    LOG << "got connection request from: " << c->name() << " (" << c->address() << "), already connected..." << std::endl;
+                    return;
+                }
+
+                if(is_contact_connecting(c->id())) 
                 {
                     LOG << "got connection request from: " << c->name() << " (" << c->address() << "), already connecting..." << std::endl;
                     return;
@@ -396,26 +406,35 @@ namespace fire
                 ms::greet_find_response rs{m};
                 if(!rs.found()) return;
 
-                LOG << "got greet response: " << rs.external().ip << ":" << rs.external().port << std::endl;
-
                 //send ping request using new local and remote address
                 auto c = _user->contacts().by_id(rs.id());
                 if(c) 
                 {
                     CHECK(_contacts.count(c->id()));
-
-                    if(contact_available(c->id()) || is_contact_connecting(c->id())) return;
+                    if(contact_available(c->id()) || is_contact_connecting(c->id())) 
+                    {
+                        LOG << "got greet response for: " << c->name() << " (" << c->id() << ") address:" << rs.external().ip << ":" << rs.external().port << " but already connecting..." << std::endl;
+                        return;
+                    }
 
                     auto local = n::make_udp_address(rs.local().ip, rs.local().port);
                     auto external = n::make_udp_address(rs.external().ip, rs.external().port);
-                    //create security sessions for local and external
-                    _session_library->create_session(local, c->key());
-                    _session_library->create_session(external, c->key());
 
-                    //send ping request via local network and external
-                    //network. First one to arrive gets to be connection
+                    LOG << "got greet response for: " << c->name() << " (" << c->id() << " ) local: " << local << " external: " << external <<  " sending requests..." << std::endl;
+                    //create security sessions for local 
+                    _session_library->create_session(local, c->key());
+
+                    //send ping request via local network 
                     send_ping_request(local);
-                    send_ping_request(external);
+
+                    //if external is different from local, create a security
+                    //session and send a ping request. First one to make it
+                    //wins the race.
+                    if(external != local)
+                    {
+                        _session_library->create_session(external, c->key());
+                        send_ping_request(external);
+                    }
                 }
             }
             else
@@ -742,8 +761,10 @@ namespace fire
             if(!c) return false;
 
             auto& cd = _contacts[c->id()];
+
             //don't fire if state is already connected
             if(cd.state == contact_data::CONNECTED) return false;
+            CHECK(cd.state == contact_data::CONNECTING);
 
             cd.contact = c;
             cd.last_ping = 0;
@@ -765,7 +786,8 @@ namespace fire
         void user_service::fire_contact_disconnected_event(const std::string& id)
         {
             auto& cd = _contacts[id];
-            CHECK(cd.contact);
+            REQUIRE(cd.state != contact_data::OFFLINE);
+            REQUIRE(cd.contact);
 
             auto prev_state = cd.state;
 
@@ -778,6 +800,7 @@ namespace fire
                 event::contact_disconnected e{id, cd.contact->name()};
                 send_event(event::convert(e));
             }
+            else CHECK(prev_state == contact_data::CONNECTING);
 
             ENSURE(cd.state == contact_data::OFFLINE);
         }

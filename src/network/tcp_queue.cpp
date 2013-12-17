@@ -445,8 +445,8 @@ namespace fire
         tcp_queue::~tcp_queue() 
         {
             INVARIANT(_io);
-            _io->stop();
             _done = true;
+            _io->stop();
             if(_p.block) _in_queue.done();
             if(_p.wait > 0) u::sleep_thread(_p.wait);
             if(_out) _out->close();
