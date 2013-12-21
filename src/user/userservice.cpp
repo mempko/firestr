@@ -769,6 +769,7 @@ namespace fire
             cd.contact = c;
             cd.last_ping = 0;
             cd.state = contact_data::CONNECTED;
+            LOG << c->name() << " connected" << std::endl;
             ENSURE(cd.state == contact_data::CONNECTED);
             return true;
 
@@ -796,6 +797,7 @@ namespace fire
 
             if(prev_state == contact_data::CONNECTED)
             {
+                LOG << cd.contact->name() << " disconnected" << std::endl;
                 _session_library->remove_session(cd.contact->address());
                 event::contact_disconnected e{id, cd.contact->name()};
                 send_event(event::convert(e));
