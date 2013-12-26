@@ -38,12 +38,13 @@ namespace fire
     {
         namespace
         {
-            const size_t RSA_SIZE = 1024;
+            const size_t RSA_SIZE = 4096;
             const std::string EME_SCHEME = "EME1(SHA-256)";
             const std::string KEY_AGREEMENT_ALGO = "KDF2(SHA-256)";
             const std::string SESSION_PARAM = "firestr";
-            const std::string CYPHER = "AES-128/CBC";
+            const std::string CYPHER = "AES-256/CBC";
             const std::string SHARED_DOMAIN = "modp/ietf/2048";
+            const size_t DH_KEY_SIZE = 32;
             std::mutex BOTAN_MUTEX;
         }
 
@@ -303,7 +304,7 @@ namespace fire
             _skey = 
                 std::make_shared<b::SymmetricKey>(
                         k.derive_key(
-                            16, 
+                            DH_KEY_SIZE, 
                             reinterpret_cast<const unsigned char*>(pv.data()), pv.size(),
                             SESSION_PARAM));
 
