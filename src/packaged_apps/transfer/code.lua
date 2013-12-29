@@ -1,3 +1,4 @@
+
 s = app:button("send")
 app:place(s, 0,0)
 app:height(100)
@@ -220,10 +221,16 @@ function got_chunk(m)
 	local orig_id = m:get("id") + 0
 	local id = m:from():id() .. "_" .. orig_id
 	local chunk = m:get("chunk") + 0
+
 	local chunk_data = m:get_bin("data")
 
 	local fd = gfiles[id]
 	local file = fd.file
+
+	if chunk < file.chunk then
+		return
+	end
+
 	if file.data == nil then
 		file.data = chunk_data
 	else
