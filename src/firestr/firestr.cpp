@@ -17,6 +17,7 @@
 
 #include <QApplication>
 
+#include "user/user.hpp"
 #include "gui/mainwin.hpp"
 #include "network/util.hpp"
 
@@ -35,6 +36,12 @@ namespace ip = boost::asio::ip;
 namespace fg = fire::gui;
 namespace fn = fire::network;
 namespace fu = fire::util;
+namespace fus = fire::user;
+
+namespace
+{
+    fn::port_type DEFAULT_PORT = 6060;
+}
 
 po::options_description create_descriptions()
 {
@@ -45,17 +52,15 @@ po::options_description create_descriptions()
     const std::string home = user + "/.firestr";
 
     std::string host = ip::host_name();
-
     std::string ip = fn::get_lan_ip();
-    if(!ip.empty()) host = ip;
 
-    fn::port_type port = 6060;
+    if(!ip.empty()) host = ip;
 
     d.add_options()
         ("help", "prints help")
         ("home", po::value<std::string>()->default_value(home), "configuration directory")
         ("host", po::value<std::string>()->default_value(host), "host/ip of this machine") 
-        ("port", po::value<int>()->default_value(port), "port this machine will receive messages on")
+        ("port", po::value<int>()->default_value(DEFAULT_PORT), "port this machine will receive messages on")
         ("debug", "if set, turns on the debug menu");
 
     return d;
@@ -68,6 +73,14 @@ po::variables_map parse_options(int argc, char* argv[], po::options_description&
     po::notify(v);
 
     return v;
+}
+
+
+fn::port_type get_port(const std::string& home, fn::port_type cmd_port)
+{
+    if(cmd_port != DEFAULT_PORT) return cmd_port;
+    auto cached_port = fus::load_port(home);
+    return cached_port != 0 ? cached_port : cmd_port;
 }
 
 int main(int argc, char *argv[])
@@ -86,10 +99,9 @@ try
     QApplication a{argc, argv};
 
     fg::main_window_context c;
-        
     c.home = vm["home"].as<std::string>();
     c.host = vm["host"].as<std::string>();
-    c.port = vm["port"].as<int>();
+    c.port = get_port(c.home, vm["port"].as<int>());
     c.debug = vm.count("debug");
 
     CREATE_LOG(c.home);
@@ -97,8 +109,9 @@ try
     c.user = fg::setup_user(c.home);
     if(!c.user) return 0;
 
-    fg::main_window w{c};
+    fus::save_port(c.home, c.port);
 
+    fg::main_window w{c};
     w.show();
 
     return a.exec();
