@@ -46,6 +46,14 @@ namespace fire
             const std::string SHARED_DOMAIN = "modp/ietf/2048";
             const size_t DH_KEY_SIZE = 32;
             std::mutex BOTAN_MUTEX;
+            std::unique_ptr<b::AutoSeeded_RNG> RNG;
+
+            void init_rng()
+            {
+                if(RNG) return;
+                RNG.reset(new b::AutoSeeded_RNG);
+                ENSURE(RNG);
+            }
         }
 
         void validate_passphrase(const std::string& passphrase)
@@ -59,11 +67,12 @@ namespace fire
             u::mutex_scoped_lock l(BOTAN_MUTEX);
             validate_passphrase(passphrase);
 
-            b::AutoSeeded_RNG r;
+            init_rng();
+            CHECK(RNG);
 
-            _k.reset(new b::RSA_PrivateKey{r, RSA_SIZE});
+            _k.reset(new b::RSA_PrivateKey{*RNG, RSA_SIZE});
             _public_key = b::X509::PEM_encode(*_k);
-            _encrypted_private_key = b::PKCS8::PEM_encode(*_k, r, passphrase);
+            _encrypted_private_key = b::PKCS8::PEM_encode(*_k, *RNG, passphrase);
 
             ENSURE(_k);
             ENSURE_FALSE(_encrypted_private_key.empty());
@@ -80,12 +89,14 @@ namespace fire
 
             validate_passphrase(passphrase);
 
-            b::AutoSeeded_RNG r;
             b::DataSource_Memory ds{
                 reinterpret_cast<const b::byte*>(&_encrypted_private_key[0]), 
                     _encrypted_private_key.size()};
 
-            _k.reset(b::PKCS8::load_key(ds, r, passphrase));
+            init_rng();
+            CHECK(RNG);
+
+            _k.reset(b::PKCS8::load_key(ds, *RNG, passphrase));
             _public_key = b::X509::PEM_encode(*_k);
 
             if(!_k) throw std::invalid_argument{"Invalid Password"};
@@ -235,16 +246,18 @@ namespace fire
             INVARIANT_FALSE(_ks.empty());
             u::mutex_scoped_lock l(BOTAN_MUTEX);
 
+            init_rng();
+            CHECK(RNG);
+
             std::stringstream rs;
 
             b::PK_Encryptor_EME e{*_k, EME_SCHEME};
 
-            b::AutoSeeded_RNG r;
             size_t advance = 0;
             while(advance < b.size())
             {
                 size_t size = std::min(e.maximum_input_size(), b.size()-advance);
-                auto c = e.encrypt(reinterpret_cast<const unsigned char*>(b.data())+advance, size, r);
+                auto c = e.encrypt(reinterpret_cast<const unsigned char*>(b.data())+advance, size, *RNG);
                 u::bytes bs{std::begin(c), std::end(c)};
                 rs << bs;
                 advance+=size;
@@ -255,9 +268,12 @@ namespace fire
         dh_secret::dh_secret()
         {
             u::mutex_scoped_lock l(BOTAN_MUTEX);
-            b::AutoSeeded_RNG r;
+
+            init_rng();
+            CHECK(RNG);
+
             b::DL_Group sd{SHARED_DOMAIN};
-            _pkey = std::make_shared<b::DH_PrivateKey>(r, sd);
+            _pkey = std::make_shared<b::DH_PrivateKey>(*RNG, sd);
             auto p = _pkey->public_value();
             _pub_value = u::bytes{std::begin(p), std::end(p)};
             ENSURE(_pkey);
@@ -343,6 +359,15 @@ namespace fire
             p.end_msg();
             auto e = p.read_all(0);
             return {std::begin(e), std::end(e)};
+        }
+
+        void randomize(util::bytes& b)
+        {
+            u::mutex_scoped_lock bl(BOTAN_MUTEX);
+            init_rng();
+            CHECK(RNG);
+
+            RNG->randomize(reinterpret_cast<unsigned char*>(b.data()), b.size());
         }
     }
 }
