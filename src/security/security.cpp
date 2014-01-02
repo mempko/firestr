@@ -97,9 +97,10 @@ namespace fire
             CHECK(RNG);
 
             _k.reset(b::PKCS8::load_key(ds, *RNG, passphrase));
-            _public_key = b::X509::PEM_encode(*_k);
 
             if(!_k) throw std::invalid_argument{"Invalid Password"};
+
+            _public_key = b::X509::PEM_encode(*_k);
 
             INVARIANT(_k);
             INVARIANT_FALSE(_encrypted_private_key.empty());
