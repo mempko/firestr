@@ -181,6 +181,12 @@ namespace fire
             return l.string();
         }
 
+        std::string get_local_port_file(const bf::path& home_dir)
+        {
+            bf::path l = home_dir / "port";
+            return l.string();
+        }
+
         bool user_created(const std::string& home_dir)
         {
             return bf::exists(get_local_user_file(home_dir));
@@ -524,6 +530,27 @@ namespace fire
             _port = o.port();
             _key = o.public_key();
             return *this;
+        }
+
+        network::port_type load_port(const std::string& home_dir)
+        {
+            auto local_port_file = get_local_port_file(home_dir);
+            if(!bf::exists(local_port_file)) return 0;
+
+            std::ifstream pin(local_port_file.c_str());
+            if(!pin.good()) return 0;
+
+            network::port_type r = 0;
+            pin >> r;
+            return r;
+        }
+
+        void save_port(const std::string& home_dir, network::port_type p)
+        {
+            auto local_port_file = get_local_port_file(home_dir);
+            std::ofstream po(local_port_file.c_str());
+            if(!po.good()) return;
+            po << p;
         }
     }
 }

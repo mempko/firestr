@@ -121,6 +121,10 @@ namespace fire
                 mutable std::mutex _mutex;
         };
 
+        /**
+         * Randomizes the byte array with the size specified
+         */
+        void randomize(util::bytes&);
     }
 }
 

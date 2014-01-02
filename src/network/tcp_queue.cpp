@@ -82,7 +82,7 @@ namespace fire
         void tcp_connection::do_close()
         {
             u::mutex_scoped_lock l(_mutex);
-            if(_socket)
+            if(_socket && _socket->is_open())
             {
                 LOG << "tcp_connection closed " << _socket->local_endpoint() << " + " << _socket->remote_endpoint() << " error: " << _error.message() << std::endl;
                 _socket->close();
@@ -164,7 +164,7 @@ namespace fire
         void tcp_connection::start_read()
         {
             INVARIANT(_socket);
-            if(!_socket->is_open()) return;
+            if(!_socket->is_open()) { close(); return; }
 
             //read message header
             ba::async_read_until(*_socket, _in_buffer, ':',
@@ -179,6 +179,7 @@ namespace fire
         {
             INVARIANT(_socket);
             ENSURE(_state == connecting);
+            if(!_socket->is_open()) { close(); return; }
 
             //if no error then we are connected
             if (!error) 
@@ -213,16 +214,9 @@ namespace fire
                 {
                     u::mutex_scoped_lock l(_mutex);
                     _error = error;
-                    _state = disconnected;
+                    LOG << "error connecting to `" << _ep.address << ":" << _ep.port << "' : " << error.message() << std::endl;
+                    close();
                 }
-            }
-
-            if(error)
-            {
-                u::mutex_scoped_lock l(_mutex);
-                _error = error;
-                _state = disconnected;
-                LOG << "error connecting to `" << _ep.address << ":" << _ep.port << "' : " << error.message() << std::endl;
             }
         }
 
@@ -276,6 +270,7 @@ namespace fire
         void tcp_connection::handle_write(const boost::system::error_code& error)
         {
             if(error) { _error = error; close(); return; }
+            if(!_socket->is_open()) { close(); return; }
 
             INVARIANT(_socket);
             REQUIRE_FALSE(_out_queue.empty());
@@ -298,8 +293,8 @@ namespace fire
         void tcp_connection::handle_header(const boost::system::error_code& error, size_t transferred)
         {
             INVARIANT(_socket);
-
             if(error) { _error = error; close(); return; }
+            if(!_socket->is_open()) { close(); return; }
 
             //read header 
             size_t o_size = _in_buffer.size();
@@ -356,7 +351,9 @@ namespace fire
         {
             INVARIANT(_socket);
             REQUIRE_GREATER(size, 0);
-            if(error && error == ba::error::eof) { _error = error; close(); return; }
+            if(error) { _error = error; close(); return; }
+            if(!_socket->is_open()) { close(); return; }
+
             if(_in_buffer.size() < size) 
             {
                 ba::async_read(*_socket,

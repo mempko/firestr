@@ -190,6 +190,10 @@ namespace fire
         user_info_ptr load_contact(const std::string& file);
         void save_contact(const std::string& file, const user_info&);
 
+        //load and save cached port
+        network::port_type load_port(const std::string& home_dir);
+        void save_port(const std::string& home_dir, network::port_type);
+
         //serialization functions
         std::ostream& operator<<(std::ostream& out, const user_info& u);
         std::istream& operator>>(std::istream& in, user_info& u);
