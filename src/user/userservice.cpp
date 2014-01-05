@@ -670,6 +670,8 @@ namespace fire
         void user_service::send_ping_to(char s, const std::string& id, bool force)
         {
             u::mutex_scoped_lock l(_ping_mutex);
+            if(_contacts.count(id) == 0) return;
+
             auto& p  = _contacts[id];
             if(!p.contact || (p.state == contact_data::OFFLINE && !force)) return;
             if(!_user->contacts().by_id(p.contact->id()))
@@ -786,9 +788,12 @@ namespace fire
 
         void user_service::fire_contact_disconnected_event(const std::string& id)
         {
+            auto c = _user->contacts().by_id(id);
+            if(!c) return;
+
             auto& cd = _contacts[id];
-            REQUIRE(cd.state != contact_data::OFFLINE);
-            REQUIRE(cd.contact);
+            CHECK(cd.state != contact_data::OFFLINE);
+            CHECK(cd.contact);
 
             auto prev_state = cd.state;
 
