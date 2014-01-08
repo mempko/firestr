@@ -92,7 +92,14 @@ namespace fire
         const value& dict::operator[] (const std::string& k) const
         {
             auto p = _m.find(k);
-            REQUIRE_FALSE(p == _m.end());
+            if(p == _m.end()) 
+            {
+                std::stringstream e;
+                e << "unable to find key `" << k << "' in dictionary" << std::endl;
+                throw std::runtime_error{e.str()}; 
+            }
+
+            ENSURE(p != _m.end());
             return p->second;
         }
 
