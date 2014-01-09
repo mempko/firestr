@@ -752,7 +752,7 @@ namespace fire
             //we need to force using PK encryption here because of DH timing
             //to setup the shared key
             auto m = convert(a);
-            m.meta.force = m::metadata::security::assymetric;
+            m.meta.encryption = m::metadata::encryption_type::asymmetric;
             mail()->push_outbox(m);
         }
 

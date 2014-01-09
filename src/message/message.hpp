@@ -35,7 +35,8 @@ namespace fire
             address to;
             address from;
             util::dict extra;
-            enum security { session, assymetric} force;
+            enum encryption_type { session, asymmetric, symmetric, plaintext};
+            encryption_type encryption = session;
         };
 
         struct message
