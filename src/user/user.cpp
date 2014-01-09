@@ -65,6 +65,18 @@ namespace fire
             };
         }
 
+        u::dict from_user_info(const user_info& u)
+        {
+            return convert(u);
+        }
+
+        user_info to_user_info(const u::dict& d)
+        {
+            user_info r;
+            convert(d, r);
+            return r;
+        }
+
         u::array convert(const users& us)
         {
             u::array a;
@@ -113,6 +125,29 @@ namespace fire
             return g;
         }
 
+        u::dict from_introduction(const contact_introduction& i)
+        {
+            u::dict d;
+
+            d["from_id"] = i.from_id;
+            d["greeter"] = i.greeter;
+            d["message"] = i.message;
+            d["contact"] = from_user_info(i.contact);
+
+            return d;
+        }
+
+        contact_introduction to_introduction(const u::dict& d)
+        {
+            contact_introduction i{
+                d["from_id"].as_string(),
+                d["greeter"].as_string(),
+                d["message"].as_string(),
+                to_user_info(d["contact"].as_dict()),
+            };
+            return i;
+        }
+
         std::ostream& operator<<(std::ostream& out, const user_info& u)
         {
             out << convert(u);
@@ -158,6 +193,21 @@ namespace fire
             return in;
         }
 
+        std::ostream& operator<<(std::ostream& out, const contact_introductions& is)
+        {
+            out << u::to_array(is, from_introduction);
+            return out;
+        }
+
+        std::istream& operator>>(std::istream& in, contact_introductions& is)
+        {
+            u::array a;
+            in >> a;
+
+            u::from_array(a, is, to_introduction);
+            return in;
+        }
+
         std::string get_local_user_file(const bf::path& home_dir)
         {
             bf::path l = home_dir / "local";
@@ -182,6 +232,12 @@ namespace fire
             return l.string();
         }
 
+        std::string get_local_introductions_file(const bf::path& home_dir)
+        {
+            bf::path l = home_dir / "introductions";
+            return l.string();
+        }
+
         std::string get_local_port_file(const bf::path& home_dir)
         {
             bf::path l = home_dir / "port";
@@ -193,19 +249,37 @@ namespace fire
             return bf::exists(get_local_user_file(home_dir));
         }
 
+
+        template<class R>
+            bool load_from_file(const std::string& f, R& r)
+            {
+                std::ifstream in(f.c_str());
+                if(!in.good()) return false;
+                in >> r;
+                return true;
+            }
+
+        template<class D>
+            void save_to_file(const std::string& f, const D& d)
+            {
+                std::ofstream out(f.c_str());
+                if(!out.good()) 
+                    throw std::runtime_error{"unable to save `" + f + "'"};
+
+                out << d;
+            }
+
         local_user_ptr load_user(const std::string& home_dir, const std::string& passphrase)
         {
             auto local_user_file = get_local_user_file(home_dir);
             auto local_prv_key_file = get_local_private_key_file(home_dir);
             auto local_contacts_file = get_local_contacts_file(home_dir);
             auto local_greaters_file = get_local_greeters_file(home_dir);
+            auto local_introductions_file = get_local_introductions_file(home_dir);
 
             //load user info
-            std::ifstream info_in(local_user_file.c_str());
-            if(!info_in.good()) return {};
-
             user_info info;
-            info_in >> info; 
+            if(!load_from_file(local_user_file, info)) return {};
 
             //load private key
             std::ifstream key_in(local_prv_key_file.c_str());
@@ -214,24 +288,18 @@ namespace fire
             auto prv_key = sc::decode_private_key(key_in, passphrase);
             CHECK(prv_key);
 
-            //load contacts
+            //load other user information
             users us;
-            std::ifstream contacts_in(local_contacts_file.c_str());
-            if(contacts_in.good()) 
-            {
-                contacts_in >> us;
-            }
+            load_from_file(local_contacts_file, us);
 
-            //load greeters
             greet_servers greeters;
-            std::ifstream greeters_in(local_greaters_file.c_str());
-            if(greeters_in.good()) 
-            {
-                greeters_in >> greeters;
-            }
+            load_from_file(local_greaters_file, greeters);
+
+            contact_introductions introductions;
+            load_from_file(local_introductions_file, introductions);
 
             contact_list contacts{us};
-            local_user_ptr lu{new local_user{info, contacts, greeters, prv_key}};
+            local_user_ptr lu{new local_user{info, contacts, greeters, introductions, prv_key}};
 
             ENSURE(lu);
             return lu;
@@ -245,14 +313,9 @@ namespace fire
             auto local_prv_key_file = get_local_private_key_file(home_dir);
             auto local_contacts_file = get_local_contacts_file(home_dir);
             auto local_greaters_file = get_local_greeters_file(home_dir);
+            auto local_introductions_file = get_local_introductions_file(home_dir);
 
-            {
-                std::ofstream info_out(local_user_file.c_str());
-                if(!info_out.good()) 
-                    throw std::runtime_error{"unable to save `" + local_user_file + "'"};
-
-                info_out << lu.info();
-            }
+            save_to_file(local_user_file, lu.info());
 
             if(!bf::exists(local_prv_key_file))
             {
@@ -263,21 +326,9 @@ namespace fire
                 sc::encode(key_out, lu.private_key());
             }
 
-            {
-                std::ofstream contacts_out(local_contacts_file.c_str());
-                if(!contacts_out.good()) 
-                    throw std::runtime_error{"unable to save `" + local_contacts_file + "'"};
-
-                contacts_out << lu.contacts().list();
-            }
-
-            {
-                std::ofstream greeters_out(local_greaters_file.c_str());
-                if(!greeters_out.good()) 
-                    throw std::runtime_error{"unable to save `" + local_greaters_file + "'"};
-
-                greeters_out << lu.greeters();
-            }
+            save_to_file(local_contacts_file, lu.contacts().list());
+            save_to_file(local_greaters_file, lu.greeters());
+            save_to_file(local_introductions_file, lu.introductions());
         }
 
         user_info_ptr load_contact(const std::string& file)
@@ -302,10 +353,12 @@ namespace fire
                 const user_info& i, 
                 const contact_list& c,
                 const greet_servers& g,
+                const contact_introductions& is,
                 sc::private_key_ptr pk) : 
             _info{i},
             _contacts{c},
             _greet_servers{g},
+            _introductions{is},
             _prv_key{pk}
         {
             REQUIRE(pk);

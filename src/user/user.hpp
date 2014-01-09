@@ -25,8 +25,10 @@
 
 #include "network/endpoint.hpp"
 #include "security/security.hpp"
-#include "util/thread.hpp"
+
 #include "util/dbc.hpp"
+#include "util/mencode.hpp"
+#include "util/thread.hpp"
 
 namespace fire
 {
@@ -148,6 +150,17 @@ namespace fire
 
         using greet_servers = std::vector<greet_server>;
 
+        struct contact_introduction
+        {
+            std::string from_id;
+            std::string greeter;
+            std::string message;
+            user_info contact;
+        };
+        using contact_introductions = std::vector<contact_introduction>;
+        contact_introduction to_introduction(const util::dict&);
+        util::dict from_introduction(const contact_introduction&);
+
         class local_user
         {
             public:
@@ -155,6 +168,7 @@ namespace fire
                         const user_info& i, 
                         const contact_list& c,
                         const greet_servers& g,
+                        const contact_introductions& is,
                         security::private_key_ptr);
 
                 local_user(const std::string& name, security::private_key_ptr); 
@@ -169,17 +183,22 @@ namespace fire
                 const greet_servers& greeters() const { return _greet_servers;}
                 greet_servers& greeters() { return _greet_servers;}
 
+                const contact_introductions& introductions() const { return _introductions;}
+                contact_introductions& introductions() { return _introductions;}
+
                 const security::private_key& private_key() const { return *_prv_key;}
 
             private:
                 user_info _info;
                 contact_list _contacts;
                 greet_servers _greet_servers;
+                contact_introductions _introductions;
                 security::private_key_ptr _prv_key;
         };
 
         using local_user_ptr = std::shared_ptr<local_user>;
         using local_user_wptr = std::weak_ptr<local_user>;
+
 
         //load and save local user info to disk
         bool user_created(const std::string& home_dir);
