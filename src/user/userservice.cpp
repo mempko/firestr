@@ -820,7 +820,8 @@ namespace fire
             if(!c) return;
 
             auto& cd = _contacts[id];
-            CHECK(cd.state != contact_data::OFFLINE);
+            if(cd.state == contact_data::OFFLINE) return;
+
             CHECK(cd.contact);
 
             auto prev_state = cd.state;
