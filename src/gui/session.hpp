@@ -20,6 +20,7 @@
 
 #include "gui/messagelist.hpp"
 #include "gui/contactlist.hpp"
+#include "gui/contactselect.hpp"
 #include "gui/app/app_service.hpp"
 #include "session/session.hpp"
 #include "session/session_service.hpp"
@@ -58,7 +59,7 @@ namespace fire
 
             private:
                 QGridLayout* _layout;
-                QComboBox* _contact_select;
+                contact_select_widget* _contact_select;
                 QPushButton* _add_contact;
                 QSplitter* _splitter;
                 QString _name;
