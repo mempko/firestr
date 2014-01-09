@@ -36,7 +36,7 @@ namespace fire
             address from;
             util::dict extra;
             enum encryption_type { session, asymmetric, symmetric, plaintext};
-            encryption_type encryption = session;
+            encryption_type encryption = encryption_type::session;
         };
 
         struct message
@@ -50,6 +50,11 @@ namespace fire
 
         std::string external_address(const std::string& host, const std::string& port);
         std::string external_address(const std::string& host_port);
+
+        void expect_symmetric(const message& m);
+        void expect_asymmetric(const message& m);
+        void expect_plaintext(const message& m);
+
     }
 
 }

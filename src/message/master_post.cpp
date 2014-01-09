@@ -57,12 +57,12 @@ namespace fire
             REQUIRE(o);
             REQUIRE(o->_session_library);
 
+            n::endpoint ep;
             while(!o->_done)
             try
             {
                 //get data from outside world
                 u::bytes data;
-                n::endpoint ep;
                 if(!o->_connections.receive(ep, data))
                 {
                     u::sleep_thread(THREAD_SLEEP);
@@ -101,11 +101,11 @@ namespace fire
             }
             catch(std::exception& e)
             {
-                LOG << "error recieving message: " << e.what() << std::endl;
+                LOG << "error recieving message from " << ep.address << ":" << ep.port << ". " << e.what() << std::endl;
             }
             catch(...)
             {
-                LOG << "error recieving message: unknown error." << std::endl;
+                LOG << "error recieving message from " << ep.address << ":" << ep.port << ". unknown error." << std::endl;
             }
         }
         catch(...)
@@ -121,18 +121,26 @@ namespace fire
         {
             switch(m.meta.encryption)
             {
-                case metadata::encryption_type::plaintext:
-                    data = sl.encrypt_plaintext(data);
-                    break;
+                case metadata::encryption_type::plaintext: 
+                    {
+                        data = sl.encrypt_plaintext(data);
+                        break;
+                    }
                 case metadata::encryption_type::symmetric:
-                    data = sl.encrypt_symmetric(session_id, data);
-                    break;
+                    {
+                        data = sl.encrypt_symmetric(session_id, data);
+                        break;
+                    }
                 case metadata::encryption_type::asymmetric:
-                    data = sl.encrypt_asymmetric(session_id, data);
-                    break;
+                    {
+                        data = sl.encrypt_asymmetric(session_id, data);
+                        break;
+                    }
                 case metadata::encryption_type::session: 
-                    data = sl.encrypt(session_id, data);
-                    break;
+                    {
+                        data = sl.encrypt(session_id, data);
+                        break;
+                    }
                 default:
                     CHECK(false && "missed type");
             }

@@ -99,7 +99,7 @@ namespace fire
                 case encryption_type::plaintext: 
                     {
                         et = encryption_type::plaintext;
-                        ds.reserve(bs.size()-1);; 
+                        ds.reserve(bs.size()-1); 
                         auto b = bs.begin(); b++;
                         ds.insert(ds.begin(), b, bs.end());
                     }

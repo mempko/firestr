@@ -89,6 +89,36 @@ namespace fire
         {
             return "udp://" + host_port;
         }
+
+        std::string to_str(metadata::encryption_type t)
+        {
+            switch(t)
+            {
+                case metadata::symmetric: return "symmetric";
+                case metadata::asymmetric: return "asymmetric";
+                case metadata::plaintext: return "plaintext";
+            }
+            return "unknown";
+        }
+
+
+        void expect_symmetric(const message& m)
+        {
+            if(m.meta.encryption == metadata::symmetric) return;
+            throw std::runtime_error{"expected message with symmetric encryption but got `" + to_str(m.meta.encryption) + "'"};
+        }
+
+        void expect_asymmetric(const message& m)
+        {
+            if(m.meta.encryption == metadata::asymmetric) return;
+            throw std::runtime_error{"expected message with asymmetric encryption but got `" + to_str(m.meta.encryption) + "'"};
+        }
+
+        void expect_plaintext(const message& m)
+        {
+            if(m.meta.encryption == metadata::plaintext) return;
+            throw std::runtime_error{"expected message with plaintext encryption but got `" + to_str(m.meta.encryption) + "'"};
+        }
     }
 }
 

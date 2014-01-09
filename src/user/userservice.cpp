@@ -334,6 +334,8 @@ namespace fire
         {
             if(m.meta.type == PING)
             {
+                m::expect_symmetric(m);
+
                 ping r;
                 convert(m, r);
 
@@ -373,6 +375,8 @@ namespace fire
             }
             else if(m.meta.type == PING_REQUEST)
             {
+                m::expect_asymmetric(m);
+
                 ping_request r;
                 convert(m, r);
 
@@ -415,11 +419,15 @@ namespace fire
             }
             else if(m.meta.type == ms::GREET_KEY_RESPONSE)
             {
+                m::expect_asymmetric(m);
+
                 ms::greet_key_response rs{m};
                 add_greeter(rs.host(), rs.port(), rs.key());
             }
             else if(m.meta.type == ms::GREET_FIND_RESPONSE)
             {
+                m::expect_asymmetric(m);
+
                 ms::greet_find_response rs{m};
                 if(!rs.found()) return;
 
@@ -456,6 +464,8 @@ namespace fire
             }
             else if(m.meta.type == INTRODUCTION)
             {
+                m::expect_symmetric(m);
+
                 contact_introduction i;
                 convert(m, i);
                 auto c = _user->contacts().by_id(i.from_id);
