@@ -109,6 +109,40 @@ namespace fire
                 user::user_service_ptr _service;
         };
 
+        class intro_info : public QWidget
+        {
+            Q_OBJECT
+            public:
+                intro_info(user::user_service_ptr, int i, const user::contact_introduction&);
+            private slots:
+                void remove();
+                void accept();
+
+            private:
+                QLabel* _label;
+                QPushButton* _accept;
+                QPushButton* _rm;
+
+            private:
+                int _index;
+                user::contact_introduction _intro;
+                user::user_service_ptr _service;
+
+        };
+
+        class intro_list : public list
+        {
+            Q_OBJECT
+            public:
+                intro_list(user::user_service_ptr);
+
+            public slots:
+                void introduce();
+
+            protected:
+                user::user_service_ptr _service;
+        };
+
         class contact_list_dialog : public QDialog
         {
             Q_OBJECT
@@ -126,6 +160,7 @@ namespace fire
 
             protected:
                 void init_contacts_tab(QWidget* tab, QGridLayout* layout, bool add_on_start);
+                void init_intro_tab(QWidget* tab, QGridLayout* layout);
                 void init_greeters_tab(QWidget* tab, QGridLayout* layout);
                 void update_contacts();
 

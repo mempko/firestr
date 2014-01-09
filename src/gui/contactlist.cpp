@@ -152,12 +152,17 @@ namespace fire
             auto* contacts_tab = new QWidget;
             auto* contacts_layout = new QGridLayout{contacts_tab};
 
+            auto* intro_tab = new QWidget;
+            auto* intro_layout = new QGridLayout{intro_tab};
+
             auto* greeters_tab = new QWidget;
             auto* greeters_layout = new QGridLayout{greeters_tab};
             tabs->addTab(contacts_tab, "contacts");
+            tabs->addTab(intro_tab, "introductions");
             tabs->addTab(greeters_tab, "greeters");
 
             init_contacts_tab(contacts_tab, contacts_layout, add_on_start);
+            init_intro_tab(intro_tab, intro_layout);
             init_greeters_tab(greeters_tab, greeters_layout);
 
             setWindowTitle(tr(title.c_str()));
@@ -214,6 +219,19 @@ namespace fire
             if(add_on_start) new_contact();
         }
 
+        void contact_list_dialog::init_intro_tab(QWidget* tab, QGridLayout* layout)
+        {
+            REQUIRE(tab);
+            REQUIRE(layout);
+            INVARIANT(_service);
+            auto il = new intro_list{_service};
+
+            layout->addWidget(il, 0,0);
+            auto* introduce = new QPushButton("introduce");
+            layout->addWidget(introduce, 1,0); 
+            connect(introduce, SIGNAL(clicked()), il, SLOT(introduce()));
+        }
+
         void contact_list_dialog::init_greeters_tab(QWidget* tab, QGridLayout* layout)
         {
             REQUIRE(tab);
@@ -225,7 +243,6 @@ namespace fire
             auto* add_new = new QPushButton("add");
             layout->addWidget(add_new, 1,0); 
             connect(add_new, SIGNAL(clicked()), gl, SLOT(add_greeter()));
-
         }
 
         void contact_list_dialog::update_contacts()
@@ -461,6 +478,91 @@ namespace fire
             //save contact file
             us::contact_file cf{ _service->user().info(), greeter};
             us::save_contact_file(convert(file), cf);
+        }
+
+        intro_list::intro_list(us::user_service_ptr service) :
+            _service{service}
+        {
+            REQUIRE(service);
+            INVARIANT(_service);
+            int i = 0;
+            for(const auto& intro : _service->user().introductions())
+            {
+                add(new intro_info{_service, i, intro});
+                i++;
+            }
+        }
+
+        void intro_list::introduce()
+        {
+        }
+
+        intro_info::intro_info(us::user_service_ptr service, int i, const us::contact_introduction& intro) :
+            _index{i}, _intro(intro), _service{service}
+        {
+            INVARIANT(_service);
+
+            auto from = _service->by_id(_intro.from_id);
+            if(!from) return;
+
+            auto* layout = new QGridLayout{this};
+            setLayout(layout);
+            std::string label = _intro.contact.name() + " introduced by " + from->name();
+            _label = new QLabel{label.c_str()};
+            layout->addWidget( _label, 0,0);
+            _accept = new QPushButton("+");
+            _accept->setMaximumSize(20,20);
+            _rm = new QPushButton("x");
+            _rm->setMaximumSize(20,20);
+            layout->addWidget(_accept, 0,1);
+            layout->addWidget(_rm, 0,2);
+            connect(_accept, SIGNAL(clicked()), this, SLOT(accept()));
+            connect(_rm, SIGNAL(clicked()), this, SLOT(remove()));
+        }
+
+        void intro_info::remove()
+        {
+            INVARIANT(_service);
+            INVARIANT(_accept);
+            INVARIANT(_rm);
+            INVARIANT(_label);
+            auto from = _service->by_id(_intro.from_id);
+
+            if(from)
+            {
+                std::stringstream msg;
+                msg << "Are you sure you want to remove introduction for `" << _intro.contact.name() << "' from `" << from->name() << "'?";
+                auto a = QMessageBox::warning(this, tr("Remove Introduction?"), msg.str().c_str(), QMessageBox::Yes | QMessageBox::No);
+                if(a != QMessageBox::Yes) return;
+            }
+
+            _service->remove_introduction(_index);
+            _label->setEnabled(false);
+            _rm->setEnabled(false);
+            _accept->setEnabled(false);
+        }
+
+        void intro_info::accept()
+        {
+            INVARIANT(_service);
+            INVARIANT(_accept);
+            INVARIANT(_rm);
+            INVARIANT(_label);
+            auto from = _service->by_id(_intro.from_id);
+
+            if(from)
+            {
+                std::stringstream msg;
+                msg << "Are you sure you want to add contact `" << _intro.contact.name() << "' introduced by `" << from->name() << "'?";
+                auto a = QMessageBox::warning(this, tr("Add Contact?"), msg.str().c_str(), QMessageBox::Yes | QMessageBox::No);
+                if(a != QMessageBox::Yes) return;
+            }
+
+            //add contact
+            _service->confirm_contact({_intro.contact, _intro.greeter});
+            _label->setEnabled(false);
+            _rm->setEnabled(false);
+            _accept->setEnabled(false);
         }
     }
 }
