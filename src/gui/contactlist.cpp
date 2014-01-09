@@ -509,13 +509,21 @@ namespace fire
             setLayout(layout);
             std::string label = _intro.contact.name() + " introduced by " + from->name();
             _label = new QLabel{label.c_str()};
+
             layout->addWidget( _label, 0,0);
+
             _accept = new QPushButton("+");
             _accept->setMaximumSize(20,20);
+            layout->addWidget(_accept, 0,1);
+
             _rm = new QPushButton("x");
             _rm->setMaximumSize(20,20);
-            layout->addWidget(_accept, 0,1);
             layout->addWidget(_rm, 0,2);
+
+            std::string message = "message: " + _intro.message;
+            _message = new QLabel{message.c_str()};
+            layout->addWidget( _message, 1,0);
+
             connect(_accept, SIGNAL(clicked()), this, SLOT(accept()));
             connect(_rm, SIGNAL(clicked()), this, SLOT(remove()));
         }
