@@ -120,6 +120,7 @@ namespace fire
 
             private:
                 QLabel* _label;
+                QLabel* _message;
                 QPushButton* _accept;
                 QPushButton* _rm;
 
