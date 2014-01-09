@@ -39,6 +39,8 @@ namespace fire
 
         using session_map = std::unordered_map<id, session>;
 
+        enum encryption_type { unknown='U',plaintext='P', symmetric='S', asymmetric='A'};
+
         class session_library
         {
             public:
@@ -46,11 +48,11 @@ namespace fire
 
             public:
                 util::bytes encrypt(const id&, const util::bytes&) const;
-                util::bytes encrypt_assymetric(const id&, const util::bytes&) const;
+                util::bytes encrypt_asymmetric(const id&, const util::bytes&) const;
                 util::bytes encrypt_symmetric(const id&, const util::bytes&) const;
                 util::bytes encrypt_plaintext(const util::bytes&) const;
 
-                util::bytes decrypt(const id&, const util::bytes&) const;
+                util::bytes decrypt(const id&, const util::bytes&, encryption_type&) const;
 
             public:
                 void create_session(const id&, const public_key&);
@@ -59,7 +61,7 @@ namespace fire
                 void remove_session(const id&);
 
             private:
-                util::bytes encrypt_assymetric(session_map::const_iterator, const util::bytes&) const;
+                util::bytes encrypt_asymmetric(session_map::const_iterator, const util::bytes&) const;
                 util::bytes encrypt_symmetric(session_map::const_iterator, const util::bytes&) const;
 
             private:

@@ -325,7 +325,8 @@ int main(int argc, char *argv[])
 
         //decrypt message
         auto sid = n::make_address_str(ep);
-        data = sec.decrypt(sid, data);
+        sc::encryption_type et;
+        data = sec.decrypt(sid, data, et);
 
         //parse message
         m::message m;
@@ -333,11 +334,15 @@ int main(int argc, char *argv[])
 
         if(m.meta.type == ms::GREET_REGISTER)
         {
+            if(et != sc::encryption_type::asymmetric) continue;
+
             ms::greet_register r{m};
             register_user(con, sec, ep, r, users);
         }
         else if(m.meta.type == ms::GREET_FIND_REQUEST)
         {
+            if(et != sc::encryption_type::asymmetric) continue;
+
             ms::greet_find_request r{m};
             find_user(con, sec,  ep, r, users);
         }
