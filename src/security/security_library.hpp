@@ -39,7 +39,7 @@ namespace fire
 
         using session_map = std::unordered_map<id, session>;
 
-        enum encryption_type { unknown='U',plaintext='P', symmetric='S', asymmetric='A'};
+        enum encryption_type { plaintext='P', symmetric='S', asymmetric='A', unknown='U'};
 
         class session_library
         {
