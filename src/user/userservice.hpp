@@ -85,6 +85,7 @@ namespace fire
 
                 void remove_introduction(size_t i);
                 contact_introductions introductions() const;
+                void send_introduction(const std::string& to, contact_introduction&);
 
             public:
                 user_info_ptr by_id(const std::string& id) const;

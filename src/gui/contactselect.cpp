@@ -32,12 +32,13 @@ namespace fire
     {
         contact_select_widget::contact_select_widget(
                 us::user_service_ptr s,
-                contact_select_filter f
-                ) : _user_service{s}, _filter{f}
+                contact_select_filter f) : 
+            _user_service{s}, _filter{f}
         {
             REQUIRE(s);
 
             update_contacts();
+            setMinimumWidth(300);
 
             INVARIANT(_user_service);
         }
@@ -46,7 +47,13 @@ namespace fire
         {
             INVARIANT(_user_service);
 
+            size_t si = currentIndex();
+            std::string id;
+            bool select = false;
+            if(count() > 0) id = convert(itemData(si).toString());
+
             clear();
+            int index = 0;
             for(auto p : _user_service->user().contacts().list())
             {
                 CHECK(p);
@@ -55,11 +62,19 @@ namespace fire
                 //skip contact which is disconnected
                 if(!_user_service->contact_available(p->id())) continue;
                 addItem(p->name().c_str(), p->id().c_str());
+
+                if(p->id() == id) 
+                {
+                    select = true;
+                    si = index;
+                }
+                index++;
             }
 
             bool enabled = count() > 0;
 
             setEnabled(enabled);
+            if(select) setCurrentIndex(si);
         }
 
         us::user_service_ptr contact_select_widget::user_service()

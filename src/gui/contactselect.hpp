@@ -37,7 +37,9 @@ namespace fire
         {
             Q_OBJECT
             public:
-                contact_select_widget(user::user_service_ptr, contact_select_filter f = identity_filter);
+                contact_select_widget(
+                        user::user_service_ptr, 
+                        contact_select_filter f = identity_filter);
 
             public:
                 user::user_service_ptr user_service();
