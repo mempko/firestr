@@ -26,3 +26,5 @@ messagelist - a factory class which creates a message based on type.
               the application.
 
 contactlist - UI for managing contacts and greeters.
+
+contactselect - UI for select available contacts in a dropdown
