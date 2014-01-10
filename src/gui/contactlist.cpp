@@ -39,7 +39,7 @@ namespace fire
     {
         namespace
         {
-            const size_t TIMER_SLEEP = 200;//in milliseconds
+            const size_t TIMER_SLEEP = 5000;//in milliseconds
         }
 
         std::string user_text(
