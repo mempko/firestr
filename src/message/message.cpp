@@ -18,6 +18,7 @@
 #include "util/dbc.hpp"
 
 #include <sstream>
+#include <stdexcept>
 
 namespace fire
 {
