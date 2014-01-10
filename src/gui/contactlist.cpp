@@ -19,6 +19,7 @@
 #include "gui/contactlist.hpp"
 #include "gui/util.hpp"
 #include "util/dbc.hpp"
+#include "util/log.hpp"
 #include "network/message_queue.hpp"
 
 #include <QtWidgets>
@@ -495,6 +496,9 @@ namespace fire
 
         void intro_list::introduce()
         {
+            INVARIANT(_service);
+            introduce_dialog d{"introduce", _service, this};
+            d.exec();
         }
 
         intro_info::intro_info(us::user_service_ptr service, int i, const us::contact_introduction& intro) :
@@ -507,21 +511,25 @@ namespace fire
 
             auto* layout = new QGridLayout{this};
             setLayout(layout);
-            std::string label = _intro.contact.name() + " introduced by " + from->name();
-            _label = new QLabel{label.c_str()};
+
+            std::stringstream l;
+            l << "<b>" << from->name() << "</b> introduces <b>" << _intro.contact.name() << "</b>";
+            _label = new QLabel{l.str().c_str()};
 
             layout->addWidget( _label, 0,0);
 
-            _accept = new QPushButton("+");
-            _accept->setMaximumSize(20,20);
+            std::stringstream a;
+            a << "add " << _intro.contact.name(); 
+            _accept = new QPushButton(a.str().c_str());
             layout->addWidget(_accept, 0,1);
 
             _rm = new QPushButton("x");
             _rm->setMaximumSize(20,20);
             layout->addWidget(_rm, 0,2);
 
-            std::string message = "message: " + _intro.message;
-            _message = new QLabel{message.c_str()};
+            std::stringstream m;
+            m << "<i>" << _intro.message << "</i>";
+            _message = new QLabel{m.str().c_str()};
             layout->addWidget( _message, 1,0);
 
             connect(_accept, SIGNAL(clicked()), this, SLOT(accept()));
@@ -548,6 +556,7 @@ namespace fire
             _label->setEnabled(false);
             _rm->setEnabled(false);
             _accept->setEnabled(false);
+            _message->setEnabled(false);
         }
 
         void intro_info::accept()
@@ -571,6 +580,170 @@ namespace fire
             _label->setEnabled(false);
             _rm->setEnabled(false);
             _accept->setEnabled(false);
+            _message->setEnabled(false);
+        }
+
+        introduce_dialog::introduce_dialog(
+                        const std::string& title, 
+                        us::user_service_ptr s, 
+                        QWidget* parent) : 
+            QDialog{parent},
+            _user_service{s}
+        {
+            REQUIRE(s);
+
+            auto* layout = new QVBoxLayout{this};
+            setLayout(layout);
+
+            _contact_1 = new contact_select_widget{s};
+            _contact_2 = new contact_select_widget{s};
+            _message_1 = new QLineEdit;
+            _message_2 = new QLineEdit;
+            _message_label_1 = new QLabel;
+            _message_label_2 = new QLabel;
+            _introduce = new QPushButton{"introduce"};
+
+            auto lw = new QWidget;
+            auto ll = new QVBoxLayout{lw};
+
+            ll->addWidget(new QLabel{"introduce"});
+            ll->addWidget(_contact_1);
+            ll->addWidget(_message_label_1);
+            ll->addWidget(_message_1);
+
+            auto rw = new QWidget;
+            auto rl = new QVBoxLayout{rw};
+
+            rl->addWidget(new QLabel{"to"});
+            rl->addWidget(_contact_2);
+            rl->addWidget(_message_label_2);
+            rl->addWidget(_message_2);
+
+            auto hw = new QWidget;
+            auto hl = new QHBoxLayout{hw};
+            hl->addWidget(lw);
+            hl->addWidget(rw);
+
+            layout->addWidget(hw);
+            layout->addWidget(_introduce);
+
+            connect(_contact_1, SIGNAL(activated(int)), this, SLOT(contact_1_selected(int)));
+            connect(_contact_2, SIGNAL(activated(int)), this, SLOT(contact_2_selected(int)));
+            connect(_introduce, SIGNAL(clicked()), this, SLOT(introduce()));
+
+            setWindowTitle(tr(title.c_str()));
+
+            update_widgets();
+
+            INVARIANT(_user_service);
+            INVARIANT(_contact_1);
+            INVARIANT(_contact_2);
+            INVARIANT(_message_1);
+            INVARIANT(_message_2);
+        }
+
+        void update_message_widgets(
+                bool same,
+                us::user_info_ptr c, 
+                QLabel* label,
+                QLineEdit* message)
+        {
+            REQUIRE(label);
+            REQUIRE(message);
+            if(!c || same)
+            {
+                label->setEnabled(false);
+                message->setEnabled(false);
+                return;
+            }
+
+            std::string l = "tell " + c->name() + "...";
+            label->setText(l.c_str());
+            label->setEnabled(true);
+            message->setEnabled(true);
+        }
+
+        void introduce_dialog::update_widgets()
+        {
+            INVARIANT(_user_service);
+            INVARIANT(_contact_1);
+            INVARIANT(_contact_2);
+            INVARIANT(_message_1);
+            INVARIANT(_message_2);
+            INVARIANT(_message_label_1);
+            INVARIANT(_message_label_2);
+            INVARIANT(_introduce);
+
+            auto c1 = _contact_1->selected_contact();
+            auto c2 = _contact_2->selected_contact();
+
+            bool same = false;
+            _introduce->setEnabled(false);
+            if(c1 && c2)
+            {
+                same = c1->id() == c2->id();
+                if(!same) _introduce->setEnabled(true);
+            }
+
+            update_message_widgets(same, c1, _message_label_1, _message_1);
+            update_message_widgets(same, c2, _message_label_2, _message_2);
+        }
+
+        void introduce_dialog::contact_1_selected(int)
+        {
+            update_widgets();
+        }
+
+        void introduce_dialog::contact_2_selected(int)
+        {
+            update_widgets();
+        }
+
+        void introduce_dialog::introduce()
+        {
+            INVARIANT(_user_service);
+            INVARIANT(_user_service);
+            INVARIANT(_contact_1);
+            INVARIANT(_contact_2);
+            INVARIANT(_message_1);
+            INVARIANT(_message_2);
+
+            auto c1 = _contact_1->selected_contact();
+            auto c2 = _contact_2->selected_contact();
+            if(!c1 || !c2)
+            {
+                update_widgets();
+                return;
+            }
+
+            CHECK(c1);
+            CHECK(c2);
+
+            //validate that they want to introduce the two selected
+            std::stringstream msg;
+            msg << "Are you sure you want to introduce `" << c1->name() << "' to `" << c2->name() << "'?";
+            auto a = QMessageBox::warning(this, tr("Introduce"), msg.str().c_str(), QMessageBox::Yes | QMessageBox::No);
+            if(a != QMessageBox::Yes) return;
+
+            std::string GREETER = ""; //TODO SET THIS
+
+            us::contact_introduction i1{
+                _user_service->user().info().id(),
+                GREETER,
+                convert(_message_1->text()),
+                *c2
+            };
+
+            us::contact_introduction i2{
+                _user_service->user().info().id(),
+                GREETER,
+                convert(_message_2->text()),
+                *c1
+            };
+
+            _user_service->send_introduction(c1->id(), i1);
+            _user_service->send_introduction(c2->id(), i2);
+            close();
         }
     }
 }

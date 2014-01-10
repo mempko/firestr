@@ -380,7 +380,7 @@ namespace fire
                 ping_request r;
                 convert(m, r);
 
-                auto c = _user->contacts().by_id(r.from_id);
+                auto c = by_id(r.from_id);
                 if(!c) return;
 
                 //we are already connected to this contact
@@ -432,7 +432,7 @@ namespace fire
                 if(!rs.found()) return;
 
                 //send ping request using new local and remote address
-                auto c = _user->contacts().by_id(rs.id());
+                auto c = by_id(rs.id());
                 if(c) 
                 {
                     CHECK(_contacts.count(c->id()));
@@ -468,9 +468,10 @@ namespace fire
 
                 contact_introduction i;
                 convert(m, i);
-                auto c = _user->contacts().by_id(i.from_id);
+                auto c = by_id(i.from_id);
                 if(c) 
                 {
+                    LOG << "got introduction from " << c->name() << " about " << i.contact.name() << "." << c->name() << " says: " << i.message << std::endl;
                     auto index = add_introduction(i);
                     if(index >= 0) fire_new_introduction(index);
                 }
@@ -487,7 +488,7 @@ namespace fire
             INVARIANT(_session_library);
             u::mutex_scoped_lock l(_mutex);
 
-            auto c = _user->contacts().by_id(id);
+            auto c = by_id(id);
             if(!c) return;
 
             auto a = n::make_udp_address(ip, port);
@@ -535,7 +536,7 @@ namespace fire
         {
             INVARIANT(_user);
             INVARIANT(_session_library);
-            auto c = _user->contacts().by_id(id);
+            auto c = by_id(id);
             if(!c) return;
             
             //remove security session
@@ -712,7 +713,7 @@ namespace fire
 
             auto& p  = _contacts[id];
             if(!p.contact || (p.state == contact_data::OFFLINE && !force)) return;
-            if(!_user->contacts().by_id(p.contact->id()))
+            if(!by_id(p.contact->id()))
             {
                 p.contact.reset();
                 return;
@@ -782,7 +783,7 @@ namespace fire
         bool user_service::contact_connecting(const std::string& id)
         {
             u::mutex_scoped_lock l(_ping_mutex);
-            auto c = _user->contacts().by_id(id);
+            auto c = by_id(id);
             if(!c) return false;
 
             auto& cd = _contacts[c->id()];
@@ -797,7 +798,7 @@ namespace fire
         bool user_service::contact_connected(const std::string& id)
         {
             u::mutex_scoped_lock l(_ping_mutex);
-            auto c = _user->contacts().by_id(id);
+            auto c = by_id(id);
             if(!c) return false;
 
             auto& cd = _contacts[c->id()];
@@ -826,7 +827,7 @@ namespace fire
 
         void user_service::fire_contact_disconnected_event(const std::string& id)
         {
-            auto c = _user->contacts().by_id(id);
+            auto c = by_id(id);
             if(!c) return;
 
             auto& cd = _contacts[id];
@@ -896,7 +897,7 @@ namespace fire
             //check to make sure user isn't already added
             //and that user isn't self
             auto id = cf.contact.id();
-            if(id == _user->info().id() || _user->contacts().by_id(id))
+            if(id == _user->info().id() || by_id(id))
                 return;
 
             user_info_ptr contact{new user_info{cf.contact}};
@@ -920,7 +921,11 @@ namespace fire
             INVARIANT(_user);
             auto& is = _user->introductions();
 
-            //check to make sure id 
+            //make sure we already don't have the user
+            auto cs = by_id(in.contact.id());
+            if(cs) return -1;
+
+            //check to make we already don't have a similar introduction
             for(const auto& i : is)
                 if(i.contact.id() == in.contact.id())
                     return -1;
@@ -952,6 +957,18 @@ namespace fire
             u::mutex_scoped_lock l(_mutex);
             INVARIANT(_user);
             return _user->introductions();
+        }
+
+        void user_service::send_introduction(const std::string& to, contact_introduction& i)
+        {
+            REQUIRE_FALSE(to.empty());
+            INVARIANT(_user);
+            auto c = by_id(to);
+            if(!c) return;
+
+            LOG << "sending introduction to " << c->name() << " about " << i.contact.name() << std::endl;
+            m::message m = convert(c->address(), i);
+            mail()->push_outbox(m);
         }
 
         namespace event

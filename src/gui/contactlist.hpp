@@ -19,6 +19,7 @@
 #define FIRESTR_GUI_CONTACT_LIST_H
 
 #include "gui/list.hpp"
+#include "gui/contactselect.hpp"
 #include "user/user.hpp"
 #include "user/userservice.hpp"
 
@@ -171,6 +172,35 @@ namespace fire
                 greeter_list* _greeters;
 
                 size_t _prev_contacts;
+        };
+
+        class introduce_dialog : public QDialog
+        {
+            Q_OBJECT
+            public:
+                introduce_dialog(
+                        const std::string& title, 
+                        user::user_service_ptr, 
+                        QWidget* parent = nullptr);
+            public slots:
+                void introduce();
+                void contact_1_selected(int);
+                void contact_2_selected(int);
+
+            protected:
+                void update_widgets();
+
+            protected:
+                user::user_service_ptr _user_service;
+
+                contact_select_widget* _contact_1;
+                contact_select_widget* _contact_2;
+
+                QLabel* _message_label_1;
+                QLabel* _message_label_2;
+                QLineEdit* _message_1;
+                QLineEdit* _message_2;
+                QPushButton* _introduce;
         };
     }
 }
