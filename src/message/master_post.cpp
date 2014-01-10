@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013  Maxim Noah Khailo
+ * Copyright (C) 2014  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,6 +35,20 @@ namespace fire
             const double THREAD_SLEEP = 10; //in milliseconds 
             const double QUIT_SLEEP = 50; //in milliseconds 
             const size_t POOL_SIZE = 30; //small pool size for now
+            const size_t NONCE_SIZE = 16; //size of nonce added to every message.
+        }
+
+        metadata::encryption_type to_message_encryption_type(sc::encryption_type s)
+        {
+            metadata::encryption_type r;
+            switch(s)
+            {
+                case sc::encryption_type::plaintext: r = metadata::encryption_type::plaintext; break;
+                case sc::encryption_type::symmetric: r = metadata::encryption_type::symmetric; break;
+                case sc::encryption_type::asymmetric: r = metadata::encryption_type::asymmetric; break;
+                default: CHECK(false && "missed case");
+            }
+            return r;
         }
 
         void in_thread(master_post_office* o)
@@ -43,12 +57,12 @@ namespace fire
             REQUIRE(o);
             REQUIRE(o->_session_library);
 
+            n::endpoint ep;
             while(!o->_done)
             try
             {
                 //get data from outside world
                 u::bytes data;
-                n::endpoint ep;
                 if(!o->_connections.receive(ep, data))
                 {
                     u::sleep_thread(THREAD_SLEEP);
@@ -58,7 +72,9 @@ namespace fire
 
                 //construct address as session id and decrypt message
                 auto sid = n::make_address_str(ep);
-                data = o->_session_library->decrypt(sid, data);
+
+                sc::encryption_type et;
+                data = o->_session_library->decrypt(sid, data, et);
 
                 //could not decrypt, skip
                 if(data.empty()) continue;
@@ -67,7 +83,6 @@ namespace fire
                 message m;
                 u::decode(data, m);
 
-
                 //skip bad message
                 if(m.meta.to.empty()) continue;
 
@@ -75,6 +90,7 @@ namespace fire
                 m.meta.extra["from_protocol"] = ep.protocol;
                 m.meta.extra["from_ip"] = ep.address;
                 m.meta.extra["from_port"] = ep.port;
+                m.meta.encryption = to_message_encryption_type(et);
 
                 //pop off master address
                 m.meta.to.pop_front();
@@ -85,17 +101,51 @@ namespace fire
             }
             catch(std::exception& e)
             {
-                LOG << "error recieving message: " << e.what() << std::endl;
+                LOG << "error recieving message from " << ep.address << ":" << ep.port << ". " << e.what() << std::endl;
             }
             catch(...)
             {
-                LOG << "error recieving message: unknown error." << std::endl;
+                LOG << "error recieving message from " << ep.address << ":" << ep.port << ". unknown error." << std::endl;
             }
         }
         catch(...)
         {
             LOG << "exit: master_post::in_thread" << std::endl;
         }
+
+        void encrypt_message(
+                u::bytes& data,
+                const message& m, 
+                const std::string& session_id,
+                security::session_library& sl)
+        {
+            switch(m.meta.encryption)
+            {
+                case metadata::encryption_type::plaintext: 
+                    {
+                        data = sl.encrypt_plaintext(data);
+                        break;
+                    }
+                case metadata::encryption_type::symmetric:
+                    {
+                        data = sl.encrypt_symmetric(session_id, data);
+                        break;
+                    }
+                case metadata::encryption_type::asymmetric:
+                    {
+                        data = sl.encrypt_asymmetric(session_id, data);
+                        break;
+                    }
+                case metadata::encryption_type::session: 
+                    {
+                        data = sl.encrypt(session_id, data);
+                        break;
+                    }
+                default:
+                    CHECK(false && "missed type");
+            }
+        }
+
 
         void out_thread(master_post_office* o)
         try
@@ -128,11 +178,11 @@ namespace fire
                 s << m;
                 u::bytes data = u::to_bytes(s.str());
 
-                //encrypt message
-                if(m.meta.force == metadata::security::assymetric)
-                    data = o->_session_library->encrypt_assymetric(outside_queue_address, data);
-                else 
-                    data = o->_session_library->encrypt(outside_queue_address, data);
+                encrypt_message(
+                        data, 
+                        m, 
+                        outside_queue_address,
+                        *o->_session_library);
 
                 //send message over wire
                 o->_connections.send(outside_queue_address, data);

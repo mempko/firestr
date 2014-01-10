@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013  Maxim Noah Khailo
+ * Copyright (C) 2014  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@
 #include "service/service.hpp"
 #include "security/security_library.hpp"
 #include "util/thread.hpp"
+#include "util/mencode.hpp"
 
 #include <map>
 #include <set>
@@ -82,6 +83,10 @@ namespace fire
                 void add_greeter(const std::string& address);
                 void remove_greeter(const std::string& address);
 
+                void remove_introduction(size_t i);
+                contact_introductions introductions() const;
+                void send_introduction(const std::string& to, contact_introduction&);
+
             public:
                 user_info_ptr by_id(const std::string& id) const;
                 bool contact_available(const std::string& id) const;
@@ -90,6 +95,7 @@ namespace fire
                 virtual void message_recieved(const message::message&);
 
             private:
+                int add_introduction(const contact_introduction&);
                 void add_greeter(const std::string& host, network::port_type port, const std::string& pub_key);
                 void update_address(const std::string& address);
                 void update_contact_address(const std::string& id, const std::string& ip, network::port_type port);
@@ -99,7 +105,7 @@ namespace fire
                 local_user_ptr _user;
 
                 std::string _home;
-                std::mutex _mutex;
+                mutable std::mutex _mutex;
 
             private:
                 bool is_contact_connecting(const std::string& id) const;
@@ -107,6 +113,7 @@ namespace fire
                 bool contact_connected(const std::string& id);
                 void fire_contact_connected_event(const std::string& id);
                 void fire_contact_disconnected_event(const std::string& id);
+                void fire_new_introduction(size_t i);
 
             private:
                 //ping specific 
@@ -160,15 +167,20 @@ namespace fire
         {
             extern const std::string CONTACT_CONNECTED;
             extern const std::string CONTACT_DISCONNECTED;
+            extern const std::string NEW_INTRODUCTION;
 
             struct contact_connected { std::string id; };
             struct contact_disconnected { std::string id; std::string name;};
+            struct new_introduction { size_t index;};
 
             message::message convert(const contact_connected&);
             void convert(const message::message&, contact_connected&);
 
             message::message convert(const contact_disconnected&);
             void convert(const message::message&, contact_disconnected&);
+
+            message::message convert(const new_introduction&);
+            void convert(const message::message&, new_introduction&);
         }
     }
 }

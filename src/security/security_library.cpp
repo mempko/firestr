@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013  Maxim Noah Khailo
+ * Copyright (C) 2014  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,11 +24,6 @@ namespace fire
 {
     namespace security 
     {
-        namespace
-        {
-            enum encryption_type { plaintext='P', symmetric='S', assymetric='A'};
-        }
-
         session_library::session_library(const private_key& pk) : _pk(pk) {}
 
         u::bytes append_prefix(char p, const u::bytes& bs)
@@ -40,20 +35,20 @@ namespace fire
             return rs;
         }
 
-        u::bytes session_library::encrypt_assymetric(session_map::const_iterator s, const u::bytes& bs) const
+        u::bytes session_library::encrypt_asymmetric(session_map::const_iterator s, const u::bytes& bs) const
         {
             if(bs.empty()) return {};
 
             if(s == _s.end()) return {};
 
             auto es = s->second.key.encrypt(bs);
-            return append_prefix(encryption_type::assymetric, es);
+            return append_prefix(encryption_type::asymmetric, es);
         }
 
-        u::bytes session_library::encrypt_assymetric(const id& i, const u::bytes& bs) const
+        u::bytes session_library::encrypt_asymmetric(const id& i, const u::bytes& bs) const
         {
             u::mutex_scoped_lock l(_mutex);
-            return encrypt_assymetric(_s.find(i), bs);
+            return encrypt_asymmetric(_s.find(i), bs);
         }
 
 
@@ -85,13 +80,13 @@ namespace fire
 
             if(!s->second.shared_secret.ready())
             {
-                return encrypt_assymetric(s, bs);
+                return encrypt_asymmetric(s, bs);
             }
 
             return encrypt_symmetric(s, bs);
         }
 
-        u::bytes session_library::decrypt(const id& i, const u::bytes& bs) const
+        u::bytes session_library::decrypt(const id& i, const u::bytes& bs, encryption_type& et) const
         {
             if(bs.size() < 2) return {};
 
@@ -103,7 +98,8 @@ namespace fire
             {
                 case encryption_type::plaintext: 
                     {
-                        ds.reserve(bs.size()-1);; 
+                        et = encryption_type::plaintext;
+                        ds.reserve(bs.size()-1); 
                         auto b = bs.begin(); b++;
                         ds.insert(ds.begin(), b, bs.end());
                     }
@@ -111,6 +107,7 @@ namespace fire
                 case encryption_type::symmetric: 
                     {
                         u::mutex_scoped_lock l(_mutex);
+                        et = encryption_type::symmetric;
                         auto s = _s.find(i);
                         if(s == _s.end()) return {};
                         if(!s->second.shared_secret.ready()) return {};
@@ -118,17 +115,20 @@ namespace fire
                         ds = s->second.shared_secret.decrypt(cb);
                     }
                     break;
-                case encryption_type::assymetric: 
+                case encryption_type::asymmetric: 
                     {
+                        et = encryption_type::asymmetric;
                         //decrypt message, skipping encryption type prefix
                         u::bytes cb{message_start, bs.end()};
                         ds = _pk.decrypt(cb);
                     }
                     break;
-                default: return {};
+                default: 
+                    {
+                        et = encryption_type::unknown;
+                        return {};
+                    }
             }
-
-            ENSURE(!ds.empty());
             return ds;
         }
 

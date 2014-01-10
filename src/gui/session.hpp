@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013  Maxim Noah Khailo
+ * Copyright (C) 2014  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 #ifndef Q_MOC_RUN
 #include "gui/messagelist.hpp"
 #include "gui/contactlist.hpp"
+#include "gui/contactselect.hpp"
 #include "gui/app/app_service.hpp"
 #include "session/session.hpp"
 #include "session/session_service.hpp"
@@ -60,7 +61,7 @@ namespace fire
 
             private:
                 QGridLayout* _layout;
-                QComboBox* _contact_select;
+                contact_select_widget* _contact_select;
                 QPushButton* _add_contact;
                 QSplitter* _splitter;
                 QString _name;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013  Maxim Noah Khailo
+ * Copyright (C) 2014  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -55,7 +55,13 @@ namespace fire
 
             _layout = new QGridLayout;
 
-            _contact_select = new QComboBox;
+            _contact_select = new contact_select_widget{session_service->user_service(), 
+                [session](const us::user_info& u) -> bool
+                {
+                    return !session->contacts().by_id(u.id());
+                }
+            };
+
             _add_contact = new QPushButton{"+"};
             _add_contact->setMaximumSize(20,20);
             connect(_add_contact, SIGNAL(clicked()), this, SLOT(add_contact()));
@@ -90,26 +96,9 @@ namespace fire
         void session_widget::update_contact_select()
         {
             INVARIANT(_contact_select);
-            INVARIANT(_session_service);
-            INVARIANT(_session);
-            INVARIANT(_add_contact);
-            INVARIANT(_session_service->user_service());
-
-            _contact_select->clear();
-            for(auto p : _session_service->user_service()->user().contacts().list())
-            {
-                CHECK(p);
-                //skip contact already in session
-                if(_session->contacts().by_id(p->id())) continue;
-
-                //skip contact which is disconnected
-                if(!_session_service->user_service()->contact_available(p->id())) continue;
-                _contact_select->addItem(p->name().c_str(), p->id().c_str());
-            }
+            _contact_select->update_contacts();
 
             bool enabled = _contact_select->count() > 0;
-
-            _contact_select->setEnabled(enabled);
             _add_contact->setEnabled(enabled);
         }
 
@@ -157,15 +146,11 @@ namespace fire
             INVARIANT(_session_service);
             INVARIANT(_session);
 
-            size_t i = _contact_select->currentIndex();
-            auto id = convert(_contact_select->itemData(i).toString());
-
-            auto contact = _session_service->user_service()->user().contacts().by_id(id);
+            auto contact = _contact_select->selected_contact();
             if(!contact) return;
 
             _session_service->add_contact_to_session(contact, _session);
 
-            update_contact_select();
             add(contact_alert(contact, "added to session"));
             update_contacts();
         }

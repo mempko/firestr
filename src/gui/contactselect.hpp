@@ -14,42 +14,45 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef FIRESTR_MESSAGES_SENDER_H
-#define FIRESTR_MESSAGES_SENDER_H
 
-#include "message/message.hpp"
+#ifndef FIRESTR_GUI_CONTACT_SELECT_H
+#define FIRESTR_GUI_CONTACT_SELECT_H
+
 #include "user/userservice.hpp"
 
-#include <string>
-#include <memory>
+#include <QWidget>
+#include <QGridLayout>
+#include <QComboBox>
+
+#include <functional>
 
 namespace fire
 {
-    namespace messages
+    namespace gui
     {
-        class sender
-        {
-            public:
-                sender(user::user_service_ptr, message::mailbox_ptr);
-            public:
+        using contact_select_filter = std::function<bool (const user::user_info&)>;
+        inline bool identity_filter(const user::user_info&) { return true;}
 
-                /**
-                 * Send a message to the recipient
-                 * @param to Id of user
-                 */
-                bool send(const std::string& to, message::message);
-                bool send_to_local_app(const std::string& id, message::message);
+        class contact_select_widget : public QComboBox
+        {
+            Q_OBJECT
+            public:
+                contact_select_widget(
+                        user::user_service_ptr, 
+                        contact_select_filter f = identity_filter);
 
             public:
                 user::user_service_ptr user_service();
+                user::user_info_ptr selected_contact();
+
+            public slots:
+                void update_contacts();
 
             private:
-                user::user_service_ptr _service;
-                message::mailbox_ptr _mail;
+                user::user_service_ptr _user_service;
+                contact_select_filter _filter;
         };
-
-        using sender_ptr = std::shared_ptr<sender>;
-        using sender_wptr = std::weak_ptr<sender>;
     }
 }
+
 #endif

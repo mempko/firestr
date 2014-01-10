@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013  Maxim Noah Khailo
+ * Copyright (C) 2014  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,6 +47,7 @@ namespace fire
             const std::string SERVICE_ADDRESS = "user_service";
             const std::string PING_REQUEST = "ping_request";
             const std::string REGISTER_WITH_GREETER = "reg_with_greeter";
+            const std::string INTRODUCTION = "contact_intro";
             const std::string PING = "!";
             const size_t PING_THREAD_SLEEP = 500; //half a second
             const size_t PING_TICKS = 3; //1.5 seconds
@@ -109,7 +110,7 @@ namespace fire
         void convert(const m::message& m, ping_request& r)
         {
             REQUIRE_EQUAL(m.meta.type, PING_REQUEST);
-            REQUIRE_GREATER(m.meta.from.size(), 1);
+            REQUIRE_FALSE(m.meta.from.empty());
             r.from_id = m.meta.extra["from_id"].as_string();
             r.from_ip = m.meta.extra["from_ip"].as_string();
             r.from_port = m.meta.extra["from_port"].as_int();
@@ -144,6 +145,22 @@ namespace fire
             r.tcp_addr = m.meta.extra["tcp_addr"].as_string();
             r.udp_addr = m.meta.extra["udp_addr"].as_string();
             r.pub_key = m.meta.extra["pub_key"].as_string();
+        }
+
+        m::message convert(const std::string& to, const contact_introduction& in)
+        {
+            m::message m;
+            m.meta.type = INTRODUCTION;
+            m.meta.to = {to, SERVICE_ADDRESS}; 
+            m.data = u::encode(from_introduction(in));
+            return m;
+        }
+
+        void convert(const m::message& m, contact_introduction& r)
+        {
+            REQUIRE_EQUAL(m.meta.type, INTRODUCTION);
+            REQUIRE_FALSE(m.meta.from.empty());
+            r = to_introduction(u::decode<u::dict>(m.data));
         }
 
         user_service::user_service(user_service_context& c) :
@@ -317,6 +334,8 @@ namespace fire
         {
             if(m.meta.type == PING)
             {
+                m::expect_symmetric(m);
+
                 ping r;
                 convert(m, r);
 
@@ -356,10 +375,12 @@ namespace fire
             }
             else if(m.meta.type == PING_REQUEST)
             {
+                m::expect_asymmetric(m);
+
                 ping_request r;
                 convert(m, r);
 
-                auto c = _user->contacts().by_id(r.from_id);
+                auto c = by_id(r.from_id);
                 if(!c) return;
 
                 //we are already connected to this contact
@@ -398,16 +419,20 @@ namespace fire
             }
             else if(m.meta.type == ms::GREET_KEY_RESPONSE)
             {
+                m::expect_asymmetric(m);
+
                 ms::greet_key_response rs{m};
                 add_greeter(rs.host(), rs.port(), rs.key());
             }
             else if(m.meta.type == ms::GREET_FIND_RESPONSE)
             {
+                m::expect_asymmetric(m);
+
                 ms::greet_find_response rs{m};
                 if(!rs.found()) return;
 
                 //send ping request using new local and remote address
-                auto c = _user->contacts().by_id(rs.id());
+                auto c = by_id(rs.id());
                 if(c) 
                 {
                     CHECK(_contacts.count(c->id()));
@@ -437,6 +462,20 @@ namespace fire
                     }
                 }
             }
+            else if(m.meta.type == INTRODUCTION)
+            {
+                m::expect_symmetric(m);
+
+                contact_introduction i;
+                convert(m, i);
+                auto c = by_id(i.from_id);
+                if(c) 
+                {
+                    LOG << "got introduction from " << c->name() << " about " << i.contact.name() << "." << c->name() << " says: " << i.message << std::endl;
+                    auto index = add_introduction(i);
+                    if(index >= 0) fire_new_introduction(index);
+                }
+            }
             else
             {
                 throw std::runtime_error{"unsuported message type `" + m.meta.type +"'"};
@@ -449,7 +488,7 @@ namespace fire
             INVARIANT(_session_library);
             u::mutex_scoped_lock l(_mutex);
 
-            auto c = _user->contacts().by_id(id);
+            auto c = by_id(id);
             if(!c) return;
 
             auto a = n::make_udp_address(ip, port);
@@ -497,7 +536,7 @@ namespace fire
         {
             INVARIANT(_user);
             INVARIANT(_session_library);
-            auto c = _user->contacts().by_id(id);
+            auto c = by_id(id);
             if(!c) return;
             
             //remove security session
@@ -670,9 +709,11 @@ namespace fire
         void user_service::send_ping_to(char s, const std::string& id, bool force)
         {
             u::mutex_scoped_lock l(_ping_mutex);
+            if(_contacts.count(id) == 0) return;
+
             auto& p  = _contacts[id];
             if(!p.contact || (p.state == contact_data::OFFLINE && !force)) return;
-            if(!_user->contacts().by_id(p.contact->id()))
+            if(!by_id(p.contact->id()))
             {
                 p.contact.reset();
                 return;
@@ -722,7 +763,7 @@ namespace fire
             //we need to force using PK encryption here because of DH timing
             //to setup the shared key
             auto m = convert(a);
-            m.meta.force = m::metadata::security::assymetric;
+            m.meta.encryption = m::metadata::encryption_type::asymmetric;
             mail()->push_outbox(m);
         }
 
@@ -742,7 +783,7 @@ namespace fire
         bool user_service::contact_connecting(const std::string& id)
         {
             u::mutex_scoped_lock l(_ping_mutex);
-            auto c = _user->contacts().by_id(id);
+            auto c = by_id(id);
             if(!c) return false;
 
             auto& cd = _contacts[c->id()];
@@ -757,7 +798,7 @@ namespace fire
         bool user_service::contact_connected(const std::string& id)
         {
             u::mutex_scoped_lock l(_ping_mutex);
-            auto c = _user->contacts().by_id(id);
+            auto c = by_id(id);
             if(!c) return false;
 
             auto& cd = _contacts[c->id()];
@@ -786,9 +827,13 @@ namespace fire
 
         void user_service::fire_contact_disconnected_event(const std::string& id)
         {
+            auto c = by_id(id);
+            if(!c) return;
+
             auto& cd = _contacts[id];
-            REQUIRE(cd.state != contact_data::OFFLINE);
-            REQUIRE(cd.contact);
+            if(cd.state == contact_data::OFFLINE) return;
+
+            CHECK(cd.contact);
 
             auto prev_state = cd.state;
 
@@ -805,6 +850,12 @@ namespace fire
             else CHECK(prev_state == contact_data::CONNECTING);
 
             ENSURE(cd.state == contact_data::OFFLINE);
+        }
+
+        void user_service::fire_new_introduction(size_t i)
+        {
+            event::new_introduction n{i};
+            send_event(event::convert(n));
         }
 
         bool load_contact_file(const std::string& file, contact_file& cf)
@@ -846,7 +897,7 @@ namespace fire
             //check to make sure user isn't already added
             //and that user isn't self
             auto id = cf.contact.id();
-            if(id == _user->info().id() || _user->contacts().by_id(id))
+            if(id == _user->info().id() || by_id(id))
                 return;
 
             user_info_ptr contact{new user_info{cf.contact}};
@@ -864,10 +915,67 @@ namespace fire
             send_ping_request(contact, true);
         }
 
+        int user_service::add_introduction(const contact_introduction& in)
+        {
+            u::mutex_scoped_lock l(_mutex);
+            INVARIANT(_user);
+            auto& is = _user->introductions();
+
+            //make sure we already don't have the user
+            auto cs = by_id(in.contact.id());
+            if(cs) return -1;
+
+            //check to make we already don't have a similar introduction
+            for(const auto& i : is)
+                if(i.contact.id() == in.contact.id())
+                    return -1;
+
+            //add and save
+            is.push_back(in);
+            save_user(_home, *_user);
+
+            ENSURE_FALSE(is.empty());
+            return is.size() - 1;
+        }
+
+        void user_service::remove_introduction(size_t i)
+        {
+            u::mutex_scoped_lock l(_mutex);
+            INVARIANT(_user);
+            auto& is = _user->introductions();
+            if(i >= is.size()) return;
+
+            //remove and save
+            auto e = is.begin();
+            std::advance(e, i);
+            is.erase(e);
+            save_user(_home, *_user);
+        }
+
+        contact_introductions user_service::introductions() const
+        {
+            u::mutex_scoped_lock l(_mutex);
+            INVARIANT(_user);
+            return _user->introductions();
+        }
+
+        void user_service::send_introduction(const std::string& to, contact_introduction& i)
+        {
+            REQUIRE_FALSE(to.empty());
+            INVARIANT(_user);
+            auto c = by_id(to);
+            if(!c) return;
+
+            LOG << "sending introduction to " << c->name() << " about " << i.contact.name() << std::endl;
+            m::message m = convert(c->address(), i);
+            mail()->push_outbox(m);
+        }
+
         namespace event
         {
             const std::string CONTACT_CONNECTED = "contact_con";
             const std::string CONTACT_DISCONNECTED = "contact_discon";
+            const std::string NEW_INTRODUCTION = "new_introduction";
 
             m::message convert(const contact_connected& c)
             {
@@ -897,6 +1005,20 @@ namespace fire
                 REQUIRE_EQUAL(m.meta.type, CONTACT_DISCONNECTED);
                 c.id = u::to_str(m.data);
                 c.name = m.meta.extra["name"].as_string();
+            }
+
+            m::message convert(const new_introduction& c)
+            {
+                m::message m;
+                m.meta.type = NEW_INTRODUCTION;
+                m.meta.extra["index"] = c.index;
+                return m;
+            }
+
+            void convert(const m::message& m, new_introduction& ni)
+            {
+                REQUIRE_EQUAL(m.meta.type, NEW_INTRODUCTION);
+                ni.index = m.meta.extra["index"].as_size();
             }
         }
     }

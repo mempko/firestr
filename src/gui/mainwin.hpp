@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013  Maxim Noah Khailo
+ * Copyright (C) 2014  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -108,6 +108,7 @@ namespace fire
                 void contact_connected_event(const user::event::contact_connected&);
                 void contact_disconnected_event(const user::event::contact_disconnected&);
                 void apps_updated_event(const app::event::apps_updated&);
+                void new_intro_event(const user::event::new_introduction&);
 
             private:
                 QMenu *_main_menu;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013  Maxim Noah Khailo
+ * Copyright (C) 2014  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,7 +35,8 @@ namespace fire
             address to;
             address from;
             util::dict extra;
-            enum security { session, assymetric} force;
+            enum encryption_type { session, asymmetric, symmetric, plaintext};
+            encryption_type encryption = encryption_type::session;
         };
 
         struct message
@@ -49,6 +50,11 @@ namespace fire
 
         std::string external_address(const std::string& host, const std::string& port);
         std::string external_address(const std::string& host_port);
+
+        void expect_symmetric(const message& m);
+        void expect_asymmetric(const message& m);
+        void expect_plaintext(const message& m);
+
     }
 
 }

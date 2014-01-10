@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013  Maxim Noah Khailo
+ * Copyright (C) 2014  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -686,6 +686,12 @@ namespace fire
                     us::event::convert(m, r);
                     contact_disconnected_event(r);
                 }
+                else if(m.meta.type == us::event::NEW_INTRODUCTION)
+                {
+                    us::event::new_introduction n;
+                    us::event::convert(m, n);
+                    new_intro_event(n);
+                }
                 else if(m.meta.type == a::event::APPS_UPDATED)
                 {
                     a::event::apps_updated r;
@@ -1016,6 +1022,30 @@ namespace fire
             //display alert
             show_alert(w);
             _session_service->broadcast_message(us::event::convert(r));
+        }
+
+        void main_window::new_intro_event(const user::event::new_introduction& i)
+        {
+            INVARIANT(_user_service);
+            auto is = _user_service->introductions();
+            if(i.index < 0 || i.index >= is.size()) return;
+
+            auto in = is[i.index];
+            auto from = _user_service->by_id(in.from_id);
+            if(!from) return;
+
+            //setup alert widget
+            std::stringstream s;
+            s << "<b>" << from->name() << "</b> wants to introduce you to <b>" << in.contact.name() << "</b>" << std::endl;
+
+            auto w = new QWidget;
+            auto l = new QHBoxLayout;
+            w->setLayout(l);
+            auto t = new QLabel{s.str().c_str()};
+            l->addWidget(t);
+
+            //display alert
+            show_alert(w);
         }
 
         void main_window::apps_updated_event(const app::event::apps_updated&)

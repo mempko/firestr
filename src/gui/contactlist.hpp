@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013  Maxim Noah Khailo
+ * Copyright (C) 2014  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 
 #ifndef Q_MOC_RUN
 #include "gui/list.hpp"
+#include "gui/contactselect.hpp"
 #include "user/user.hpp"
 #include "user/userservice.hpp"
 #endif
@@ -111,6 +112,41 @@ namespace fire
                 user::user_service_ptr _service;
         };
 
+        class intro_info : public QWidget
+        {
+            Q_OBJECT
+            public:
+                intro_info(user::user_service_ptr, int i, const user::contact_introduction&);
+            private slots:
+                void remove();
+                void accept();
+
+            private:
+                QLabel* _label;
+                QLabel* _message;
+                QPushButton* _accept;
+                QPushButton* _rm;
+
+            private:
+                int _index;
+                user::contact_introduction _intro;
+                user::user_service_ptr _service;
+
+        };
+
+        class intro_list : public list
+        {
+            Q_OBJECT
+            public:
+                intro_list(user::user_service_ptr);
+
+            public slots:
+                void introduce();
+
+            protected:
+                user::user_service_ptr _service;
+        };
+
         class contact_list_dialog : public QDialog
         {
             Q_OBJECT
@@ -128,6 +164,7 @@ namespace fire
 
             protected:
                 void init_contacts_tab(QWidget* tab, QGridLayout* layout, bool add_on_start);
+                void init_intro_tab(QWidget* tab, QGridLayout* layout);
                 void init_greeters_tab(QWidget* tab, QGridLayout* layout);
                 void update_contacts();
 
@@ -137,6 +174,35 @@ namespace fire
                 greeter_list* _greeters;
 
                 size_t _prev_contacts;
+        };
+
+        class introduce_dialog : public QDialog
+        {
+            Q_OBJECT
+            public:
+                introduce_dialog(
+                        const std::string& title, 
+                        user::user_service_ptr, 
+                        QWidget* parent = nullptr);
+            public slots:
+                void introduce();
+                void contact_1_selected(int);
+                void contact_2_selected(int);
+
+            protected:
+                void update_widgets();
+
+            protected:
+                user::user_service_ptr _user_service;
+
+                contact_select_widget* _contact_1;
+                contact_select_widget* _contact_2;
+
+                QLabel* _message_label_1;
+                QLabel* _message_label_2;
+                QLineEdit* _message_1;
+                QLineEdit* _message_2;
+                QPushButton* _introduce;
         };
     }
 }
