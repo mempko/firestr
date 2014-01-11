@@ -83,7 +83,7 @@ namespace fire
                 void add_greeter(const std::string& address);
                 void remove_greeter(const std::string& address);
 
-                void remove_introduction(size_t i);
+                void remove_introduction(const contact_introduction&);
                 contact_introductions introductions() const;
                 void send_introduction(const std::string& to, contact_introduction&);
 

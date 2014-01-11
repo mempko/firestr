@@ -114,7 +114,7 @@ namespace fire
         {
             Q_OBJECT
             public:
-                intro_info(user::user_service_ptr, int i, const user::contact_introduction&);
+                intro_info(user::user_service_ptr, const user::contact_introduction&);
             private slots:
                 void remove();
                 void accept();
@@ -126,7 +126,6 @@ namespace fire
                 QPushButton* _rm;
 
             private:
-                int _index;
                 user::contact_introduction _intro;
                 user::user_service_ptr _service;
 

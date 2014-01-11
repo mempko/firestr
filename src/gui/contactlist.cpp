@@ -486,12 +486,8 @@ namespace fire
         {
             REQUIRE(service);
             INVARIANT(_service);
-            int i = 0;
             for(const auto& intro : _service->user().introductions())
-            {
-                add(new intro_info{_service, i, intro});
-                i++;
-            }
+                add(new intro_info{_service, intro});
         }
 
         void intro_list::introduce()
@@ -501,8 +497,8 @@ namespace fire
             d.exec();
         }
 
-        intro_info::intro_info(us::user_service_ptr service, int i, const us::contact_introduction& intro) :
-            _index{i}, _intro(intro), _service{service}
+        intro_info::intro_info(us::user_service_ptr service, const us::contact_introduction& intro) :
+            _intro(intro), _service{service}
         {
             INVARIANT(_service);
 
@@ -552,7 +548,7 @@ namespace fire
                 if(a != QMessageBox::Yes) return;
             }
 
-            _service->remove_introduction(_index);
+            _service->remove_introduction(_intro);
             _label->setEnabled(false);
             _rm->setEnabled(false);
             _accept->setEnabled(false);
@@ -577,6 +573,7 @@ namespace fire
 
             //add contact
             _service->confirm_contact({_intro.contact, _intro.greeter});
+            _service->remove_introduction(_intro);
             _label->setEnabled(false);
             _rm->setEnabled(false);
             _accept->setEnabled(false);

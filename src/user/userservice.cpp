@@ -938,16 +938,16 @@ namespace fire
             return is.size() - 1;
         }
 
-        void user_service::remove_introduction(size_t i)
+        void user_service::remove_introduction(const contact_introduction& i)
         {
             u::mutex_scoped_lock l(_mutex);
             INVARIANT(_user);
             auto& is = _user->introductions();
-            if(i >= is.size()) return;
+
+            auto e = std::find(is.begin(), is.end(), i);
+            if(e == is.end()) return;
 
             //remove and save
-            auto e = is.begin();
-            std::advance(e, i);
             is.erase(e);
             save_user(_home, *_user);
         }
