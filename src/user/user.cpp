@@ -125,6 +125,12 @@ namespace fire
             return g;
         }
 
+        bool contact_introduction::operator==(const contact_introduction& o) const
+        {
+            if(this == &o) return true;
+            return contact.id() == o.contact.id();
+        }
+
         u::dict from_introduction(const contact_introduction& i)
         {
             u::dict d;
