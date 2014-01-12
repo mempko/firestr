@@ -84,8 +84,11 @@ namespace fire
             u::mutex_scoped_lock l(_mutex);
             if(_socket && _socket->is_open())
             {
-                LOG << "tcp_connection closed " << _socket->local_endpoint() << " + " << _socket->remote_endpoint() << " error: " << _error.message() << std::endl;
+                boost::system::error_code se;
+                _socket->shutdown(ba::ip::tcp::socket::shutdown_both, se);
                 _socket->close();
+                if(se) _error = se;
+                LOG << "tcp_connection closed " << _socket->local_endpoint() << " + " << _socket->remote_endpoint() << " error: " << _error.message() << std::endl;
             }
             else
             {
@@ -94,7 +97,6 @@ namespace fire
             _state = disconnected;
             _writing = false;
         }
-
         bool tcp_connection::is_connected() const
         {
             u::mutex_scoped_lock l(_mutex);
