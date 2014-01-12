@@ -17,6 +17,7 @@
 #include "gui/debugwin.hpp"
 
 #include "gui/list.hpp"
+#include "gui/util.hpp"
 
 #include "util/log.hpp"
 
@@ -203,11 +204,11 @@ namespace fire
             mailbox_layout->addWidget(_mailboxes, 0,0);
 
             //add tabs
-            tabs->addTab(log_tab, "log");
-            tabs->addTab(mailbox_tab, "mailboxes");
+            tabs->addTab(log_tab, tr("log"));
+            tabs->addTab(mailbox_tab, tr("mailboxes"));
 
             //add outside message queue to mailboxes tab
-            auto outside = new queue_debug{"outside", _post->outside_stats()};
+            auto outside = new queue_debug{convert(tr("outside")), _post->outside_stats()};
             _mailboxes->add(outside);
 
             //fill tabs with data 
@@ -293,13 +294,14 @@ namespace fire
 
         void debug_win::save_state()
         {
-            QSettings settings("mempko", "firestr");
+            INVARIANT(_user_service);
+            QSettings settings("mempko", app_id(_user_service->user()).c_str());
             settings.setValue("debug_win/geometry", saveGeometry());
         }
 
         void debug_win::restore_state()
         {
-            QSettings settings("mempko", "firestr");
+            QSettings settings("mempko", app_id(_user_service->user()).c_str());
             restoreGeometry(settings.value("debug_win/geometry").toByteArray());
         }
     }

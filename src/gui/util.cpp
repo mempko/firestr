@@ -25,5 +25,10 @@ namespace fire
         {
             return q.toUtf8().constData();
         }
+
+        std::string app_id(const user::local_user& l)
+        {
+            return "firestr-" + l.info().id();
+        }
     }
 }

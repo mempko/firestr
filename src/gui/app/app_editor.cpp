@@ -161,7 +161,7 @@ namespace fire
                 layout()->addWidget(_status, 3, 0);
 
                 //save button
-                _save = new QPushButton{"save"};
+                _save = new QPushButton{tr("save")};
                 layout()->addWidget(_save, 3, 1);
                 connect(_save, SIGNAL(clicked()), this, SLOT(save_app()));
 
@@ -282,8 +282,8 @@ namespace fire
 
                     QString r = QInputDialog::getText(
                             0, 
-                            "Name Your App",
-                            "App Name",
+                            tr("Name Your App"),
+                            tr("App Name"),
                             QLineEdit::Normal, name.c_str(), &ok);
 
                     if(ok && !r.isEmpty()) name = gui::convert(r);
@@ -303,31 +303,31 @@ namespace fire
             void app_editor::update_status_to_errors()
             {
                 INVARIANT(_status);
-                _status->setText("<font color='red'>errors</font>");
+                _status->setText(tr("<font color='red'>errors</font>"));
             }
 
             void app_editor::update_status_to_no_errors()
             {
                 INVARIANT(_status);
-                _status->setText("<font color='green'>no errors</font>");
+                _status->setText(tr("<font color='green'>no errors</font>"));
             }
 
             void app_editor::update_status_to_typing()
             {
                 INVARIANT(_status);
-                _status->setText("<font color='orange'>typing...</font>");
+                _status->setText(tr("<font color='orange'>typing...</font>"));
             }
 
             void app_editor::update_status_to_waiting()
             {
                 INVARIANT(_status);
-                _status->setText("<font color='orange'>waiting...</font>");
+                _status->setText(tr("<font color='orange'>waiting...</font>"));
             }
 
             void app_editor::update_status_to_running()
             {
                 INVARIANT(_status);
-                _status->setText("<font color='red'>running...</font>");
+                _status->setText(tr("<font color='red'>running...</font>"));
             }
 
             void app_editor::update()

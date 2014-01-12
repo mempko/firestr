@@ -19,12 +19,14 @@
 #define FIRESTR_GUI_UTIL_H
 
 #include <QString>
+#include "user/user.hpp"
 
 namespace fire
 {
     namespace gui
     {
         std::string convert(const QString&);
+        std::string app_id(const user::local_user& l);
     }
 }
 
