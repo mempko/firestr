@@ -419,7 +419,7 @@ namespace fire
             }
             else if(m.meta.type == ms::GREET_KEY_RESPONSE)
             {
-                m::expect_asymmetric(m);
+                m::expect_plaintext(m);
 
                 ms::greet_key_response rs{m};
                 add_greeter(rs.host(), rs.port(), rs.key());
