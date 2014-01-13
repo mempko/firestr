@@ -156,6 +156,7 @@ namespace fire
             std::string greeter;
             std::string message;
             user_info contact;
+            bool operator==(const contact_introduction&) const;
         };
         using contact_introductions = std::vector<contact_introduction>;
         contact_introduction to_introduction(const util::dict&);

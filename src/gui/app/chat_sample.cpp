@@ -116,7 +116,7 @@ namespace fire
                 layout()->addWidget(_message, 1, 0);
 
                 //send button
-                _send = new QPushButton{"send"};
+                _send = new QPushButton{tr("send")};
                 layout()->addWidget(_send, 1, 1);
 
                 connect(_message, SIGNAL(returnPressed()), this, SLOT(send_message()));
@@ -127,7 +127,7 @@ namespace fire
                 //if no contacts added, disable app
                 if(_session->contacts().empty())
                 {
-                    _messages->add(make_message_widget("alert", "no contacts in session"));
+                    _messages->add(make_message_widget(gui::convert(tr("alert")), gui::convert(tr("no contacts in session"))));
                     _message->setEnabled(false);
                     _send->setEnabled(false);
                     return;

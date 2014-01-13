@@ -151,7 +151,7 @@ namespace fire
 
             _session_service->add_contact_to_session(contact, _session);
 
-            add(contact_alert(contact, "added to session"));
+            add(contact_alert(contact, convert(tr("added to session"))));
             update_contacts();
         }
 
@@ -204,7 +204,7 @@ namespace fire
                     auto c = _session_service->user_service()->by_id(r.contact_id);
                     if(!c) continue;
 
-                    add(contact_alert(c, "quit session"));
+                    add(contact_alert(c, convert(tr("quit session"))));
 
                     _messages->remove_from_contact_lists(c);
                     update_contacts();
@@ -219,7 +219,7 @@ namespace fire
                     auto c = _session_service->user_service()->by_id(r.contact_id);
                     if(!c) continue;
 
-                    add(contact_alert(c, "added to session"));
+                    add(contact_alert(c, convert(tr("added to session"))));
                     update_contacts();
                 }
                 else if(m.meta.type == us::event::CONTACT_CONNECTED)

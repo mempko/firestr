@@ -99,11 +99,6 @@ namespace fire
             INVARIANT(_main_menu);
         }
 
-        std::string app_id(const us::local_user& l)
-        {
-            return "firestr-" + l.info().id();
-        }
-
         void main_window::save_state()
         {
             INVARIANT(_context.user);
@@ -142,8 +137,8 @@ namespace fire
 
                 auto p = QInputDialog::getText(
                         0, 
-                        "Enter Password",
-                        "Password",
+                        qApp->tr("Enter Password"),
+                        qApp->tr("Password"),
                         QLineEdit::Password, pass.c_str(), &ok);
 
                 if(ok && !p.isEmpty()) pass = convert(p);
@@ -168,8 +163,8 @@ namespace fire
 
             auto r = QInputDialog::getText(
                     0, 
-                    "New User",
-                    "Select User Name",
+                    qApp->tr("New User"),
+                    qApp->tr("Select User Name"),
                     QLineEdit::Normal, name.c_str(), &ok);
 
             if(ok && !r.isEmpty()) name = convert(r);
@@ -178,8 +173,8 @@ namespace fire
             std::string pass = "";
             auto p = QInputDialog::getText(
                     0, 
-                    "Create Password",
-                    "Password",
+                    qApp->tr("Create Password"),
+                    qApp->tr("Password"),
                     QLineEdit::Password, pass.c_str(), &ok);
 
             if(ok && !p.isEmpty()) pass = convert(p);
@@ -267,17 +262,18 @@ namespace fire
             if(_user_service->user().contacts().empty())
             {
                 auto intro = new QLabel(
+                        tr(
                         "<b>Welcome!</b><br><br>"
                         "Add a new contact now.<br>"
                         "You need to create an invite file,<br>"
                         "and give it to another.<br>"
                         "Once you both add each other,<br>"
                         "you are connected!"
-                        );
-                auto add_contact = new QPushButton("add contact");
+                        ));
+                auto add_contact = new QPushButton(tr("add contact"));
 
-                auto intro2 = new QLabel("Once connected, create a session");
-                auto add_session = new QPushButton("create session");
+                auto intro2 = new QLabel(tr("Once connected, create a session"));
+                auto add_session = new QPushButton(tr("create session"));
                 l->addWidget(intro);
                 l->addWidget(add_contact);
                 l->addWidget(intro2);
@@ -289,10 +285,11 @@ namespace fire
             else
             {
                 auto intro = new QLabel(
+                        tr(
                         "<b>Welcome!</b><br><br>"
                         "Start by creating a session"
-                        );
-                auto add_session = new QPushButton("create session");
+                        ));
+                auto add_session = new QPushButton(tr("create session"));
                 l->addWidget(intro);
                 l->addWidget(add_session);
                 connect(add_session, SIGNAL(clicked()), this, SLOT(create_session()));
@@ -780,8 +777,8 @@ namespace fire
 
             name = QInputDialog::getText(
                     0, 
-                    "Rename Session",
-                    "Name",
+                    tr("Rename Session"),
+                    tr("Name"),
                     QLineEdit::Normal, name, &ok);
 
             if(!ok || name.isEmpty()) return;
@@ -802,7 +799,7 @@ namespace fire
 
             std::stringstream msg;
             msg << "Are you sure you want to close the session `" << convert(sw->name()) << "'?";
-            auto a = QMessageBox::warning(this, tr("Close Session?"), msg.str().c_str(), QMessageBox::Yes | QMessageBox::No);
+            auto a = QMessageBox::warning(this, tr("Close Session?"), tr(msg.str().c_str()), QMessageBox::Yes | QMessageBox::No);
             if(a != QMessageBox::Yes) return;
 
             _session_service->quit_session(s->id());
@@ -842,7 +839,7 @@ namespace fire
                 CHECK(_sessions->isVisible());
 
                 _alert_screen->show();
-                _alert_tab_index = _sessions->addTab(_alert_screen, "alert");
+                _alert_tab_index = _sessions->addTab(_alert_screen, tr("alert"));
             }
 
             CHECK_RANGE(_alert_tab_index, 0, _sessions->count());
@@ -989,12 +986,12 @@ namespace fire
             auto l = new QHBoxLayout;
             w->setLayout(l);
 
-            auto t = new QLabel(s.str().c_str());
+            auto t = new QLabel{tr(s.str().c_str())};
             l->addWidget(t);
 
-            auto b = new QPushButton("new session");
+            auto b = new QPushButton{tr("new session")};
             l->addWidget(b);
-            auto m = new QSignalMapper(w);
+            auto m = new QSignalMapper{w};
 
             m->setMapping(b, QString{r.id.c_str()});
             connect(b, SIGNAL(clicked()), m, SLOT(map()));
@@ -1016,7 +1013,7 @@ namespace fire
             auto w = new QWidget;
             auto l = new QHBoxLayout;
             w->setLayout(l);
-            auto t = new QLabel{s.str().c_str()};
+            auto t = new QLabel{tr(s.str().c_str())};
             l->addWidget(t);
 
             //display alert
@@ -1041,7 +1038,7 @@ namespace fire
             auto w = new QWidget;
             auto l = new QHBoxLayout;
             w->setLayout(l);
-            auto t = new QLabel{s.str().c_str()};
+            auto t = new QLabel{tr(s.str().c_str())};
             l->addWidget(t);
 
             //display alert

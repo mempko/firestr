@@ -87,10 +87,10 @@ namespace fire
             }
             else
             {
-                layout->addWidget( new QLabel{"Name:"}, 0,0);
-                layout->addWidget( new QLabel{p->name().c_str()}, 0,1);
-                layout->addWidget( new QLabel{"Address:"}, 1,0);
-                layout->addWidget( new QLabel{p->address().c_str()}, 1,1);
+                layout->addWidget( new QLabel{tr("Name:")}, 0,0);
+                layout->addWidget( new QLabel{tr(p->name().c_str())}, 0,1);
+                layout->addWidget( new QLabel{tr("Address:")}, 1,0);
+                layout->addWidget( new QLabel{tr(p->address().c_str())}, 1,1);
             }
 
             layout->setContentsMargins(2,2,2,2);
@@ -124,7 +124,7 @@ namespace fire
             INVARIANT(_user_text);
 
             std::stringstream msg;
-            msg << "Are you sure you want to remove `" << _contact->name() << "'?";
+            msg << convert(tr("Are you sure you want to remove `")) << _contact->name() << "'?";
             auto a = QMessageBox::warning(this, tr("Remove Contact?"), msg.str().c_str(), QMessageBox::Yes | QMessageBox::No);
             if(a != QMessageBox::Yes) return;
 
@@ -158,9 +158,9 @@ namespace fire
 
             auto* greeters_tab = new QWidget;
             auto* greeters_layout = new QGridLayout{greeters_tab};
-            tabs->addTab(contacts_tab, "contacts");
-            tabs->addTab(intro_tab, "introductions");
-            tabs->addTab(greeters_tab, "greeters");
+            tabs->addTab(contacts_tab, tr("contacts"));
+            tabs->addTab(intro_tab, tr("introductions"));
+            tabs->addTab(greeters_tab, tr("greeters"));
 
             init_contacts_tab(contacts_tab, contacts_layout, add_on_start);
             init_intro_tab(intro_tab, intro_layout);
@@ -184,19 +184,19 @@ namespace fire
             update_contacts();
 
             //create add button
-            auto* add_new = new QPushButton("add");
+            auto* add_new = new QPushButton{tr("add")};
             layout->addWidget(add_new, 2,0); 
             connect(add_new, SIGNAL(clicked()), this, SLOT(new_contact()));
 
             //create create invite button
-            auto* invite = new QPushButton("create invite");
+            auto* invite = new QPushButton{tr("create invite")};
             layout->addWidget(invite, 2,1); 
             connect(invite, SIGNAL(clicked()), this, SLOT(create_contact_file()));
 
             //create id label
             std::string id = _service->user().info().id(); 
-            auto* id_label = new QLabel("your id");
-            auto* id_txt = new QLineEdit(id.c_str());
+            auto* id_label = new QLabel{tr("your id")};
+            auto* id_txt = new QLineEdit{id.c_str()};
             id_txt->setMinimumWidth(id.size() * 8);
             id_txt->setReadOnly(true);
             id_txt->setFrame(false);
@@ -204,7 +204,7 @@ namespace fire
             layout->addWidget(id_txt, 3,1,1,2); 
 
             std::string addr = _service->in_host() + ":" + n::port_to_string(_service->in_port());
-            auto* addr_label = new QLabel("your address");
+            auto* addr_label = new QLabel{tr("your address")};
             auto* addr_txt = new QLineEdit(addr.c_str());
             addr_txt->setMinimumWidth(addr.size() * 8);
             addr_txt->setReadOnly(true);
@@ -228,7 +228,7 @@ namespace fire
             auto il = new intro_list{_service};
 
             layout->addWidget(il, 0,0);
-            auto* introduce = new QPushButton("introduce");
+            auto* introduce = new QPushButton{tr("introduce")};
             layout->addWidget(introduce, 1,0); 
             connect(introduce, SIGNAL(clicked()), il, SLOT(introduce()));
         }
@@ -241,7 +241,7 @@ namespace fire
             auto gl = new greeter_list{_service};
 
             layout->addWidget(gl, 0,0);
-            auto* add_new = new QPushButton("add");
+            auto* add_new = new QPushButton{tr("add")};
             layout->addWidget(add_new, 1,0); 
             connect(add_new, SIGNAL(clicked()), gl, SLOT(add_greeter()));
         }
@@ -390,8 +390,8 @@ namespace fire
                 {
                     QString r = QInputDialog::getText(
                             0, 
-                            (error ? "Error, try again" : "Add New Greeter"),
-                            "Greeter Address",
+                            (error ? tr("Error, try again") : tr("Add New Greeter")),
+                            tr("Greeter Address"),
                             QLineEdit::Normal, address.c_str(), &ok);
 
                     if(ok && !r.isEmpty()) address = convert(r);
@@ -426,7 +426,7 @@ namespace fire
             _address = _server.host() + ":" + n::port_to_string(_server.port());
             _label = new QLabel{_address.c_str()};
             layout->addWidget( _label, 0,0);
-            _rm = new QPushButton("x");
+            _rm = new QPushButton{"x"};
             _rm->setMaximumSize(20,20);
             layout->addWidget(_rm, 0,1);
             connect(_rm, SIGNAL(clicked()), this, SLOT(remove()));
@@ -486,23 +486,19 @@ namespace fire
         {
             REQUIRE(service);
             INVARIANT(_service);
-            int i = 0;
             for(const auto& intro : _service->user().introductions())
-            {
-                add(new intro_info{_service, i, intro});
-                i++;
-            }
+                add(new intro_info{_service, intro});
         }
 
         void intro_list::introduce()
         {
             INVARIANT(_service);
-            introduce_dialog d{"introduce", _service, this};
+            introduce_dialog d{convert(tr("introduce")), _service, this};
             d.exec();
         }
 
-        intro_info::intro_info(us::user_service_ptr service, int i, const us::contact_introduction& intro) :
-            _index{i}, _intro(intro), _service{service}
+        intro_info::intro_info(us::user_service_ptr service, const us::contact_introduction& intro) :
+            _intro(intro), _service{service}
         {
             INVARIANT(_service);
 
@@ -513,17 +509,17 @@ namespace fire
             setLayout(layout);
 
             std::stringstream l;
-            l << "<b>" << from->name() << "</b> introduces <b>" << _intro.contact.name() << "</b>";
+            l << "<b>" << from->name() << convert(tr("</b> introduces <b>")) << _intro.contact.name() << "</b>";
             _label = new QLabel{l.str().c_str()};
 
             layout->addWidget( _label, 0,0);
 
             std::stringstream a;
-            a << "add " << _intro.contact.name(); 
-            _accept = new QPushButton(a.str().c_str());
+            a << convert(tr("add ")) << _intro.contact.name(); 
+            _accept = new QPushButton{a.str().c_str()};
             layout->addWidget(_accept, 0,1);
 
-            _rm = new QPushButton("x");
+            _rm = new QPushButton{"x"};
             _rm->setMaximumSize(20,20);
             layout->addWidget(_rm, 0,2);
 
@@ -552,7 +548,7 @@ namespace fire
                 if(a != QMessageBox::Yes) return;
             }
 
-            _service->remove_introduction(_index);
+            _service->remove_introduction(_intro);
             _label->setEnabled(false);
             _rm->setEnabled(false);
             _accept->setEnabled(false);
@@ -570,13 +566,14 @@ namespace fire
             if(from)
             {
                 std::stringstream msg;
-                msg << "Are you sure you want to add contact `" << _intro.contact.name() << "' introduced by `" << from->name() << "'?";
+                msg << convert(tr("Are you sure you want to add contact `")) << _intro.contact.name() << convert(tr("' introduced by `")) << from->name() << "'?";
                 auto a = QMessageBox::warning(this, tr("Add Contact?"), msg.str().c_str(), QMessageBox::Yes | QMessageBox::No);
                 if(a != QMessageBox::Yes) return;
             }
 
             //add contact
             _service->confirm_contact({_intro.contact, _intro.greeter});
+            _service->remove_introduction(_intro);
             _label->setEnabled(false);
             _rm->setEnabled(false);
             _accept->setEnabled(false);
@@ -601,12 +598,12 @@ namespace fire
             _message_2 = new QLineEdit;
             _message_label_1 = new QLabel;
             _message_label_2 = new QLabel;
-            _introduce = new QPushButton{"introduce"};
+            _introduce = new QPushButton{tr("introduce")};
 
             auto lw = new QWidget;
             auto ll = new QVBoxLayout{lw};
 
-            ll->addWidget(new QLabel{"introduce"});
+            ll->addWidget(new QLabel{tr("introduce")});
             ll->addWidget(_contact_1);
             ll->addWidget(_message_label_1);
             ll->addWidget(_message_1);
@@ -614,7 +611,7 @@ namespace fire
             auto rw = new QWidget;
             auto rl = new QVBoxLayout{rw};
 
-            rl->addWidget(new QLabel{"to"});
+            rl->addWidget(new QLabel{tr("to")});
             rl->addWidget(_contact_2);
             rl->addWidget(_message_label_2);
             rl->addWidget(_message_2);
@@ -657,7 +654,7 @@ namespace fire
                 return;
             }
 
-            std::string l = "tell " + c->name() + "...";
+            std::string l = convert(qApp->tr("tell ")) + c->name() + "...";
             label->setText(l.c_str());
             label->setEnabled(true);
             message->setEnabled(true);
@@ -721,7 +718,7 @@ namespace fire
 
             //validate that they want to introduce the two selected
             std::stringstream msg;
-            msg << "Are you sure you want to introduce `" << c1->name() << "' to `" << c2->name() << "'?";
+            msg << convert(tr("Are you sure you want to introduce `")) << c1->name() << convert(tr("' to `")) << c2->name() << "'?";
             auto a = QMessageBox::warning(this, tr("Introduce"), msg.str().c_str(), QMessageBox::Yes | QMessageBox::No);
             if(a != QMessageBox::Yes) return;
 
