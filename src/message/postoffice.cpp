@@ -25,7 +25,7 @@ namespace fire
     {
         namespace
         {
-            const double THREAD_SLEEP = 10; //in milliseconds 
+            const double THREAD_SLEEP = 20; //in milliseconds 
         }
 
         void send_thread(post_office* o)
