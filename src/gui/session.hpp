@@ -68,6 +68,7 @@ namespace fire
                 session::session_service_ptr _session_service;
                 app::app_service_ptr _app_service;
         };
+
     }
 }
 
