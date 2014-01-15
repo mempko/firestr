@@ -100,20 +100,19 @@ namespace fire
         bool tcp_connection::is_connected() const
         {
             u::mutex_scoped_lock l(_mutex);
-            return _state == connected && _socket->is_open();
+            return _state == connected;
         }
 
         bool tcp_connection::is_disconnected() const
         {
             u::mutex_scoped_lock l(_mutex);
-            INVARIANT(_socket);
-            return _state == disconnected || !_socket->is_open();
+            return _state == disconnected;
         }
 
         bool tcp_connection::is_connecting() const
         {
             u::mutex_scoped_lock l(_mutex);
-            return _state == connecting && _socket->is_open();
+            return _state == connecting;
         }
 
         tcp_connection::con_state tcp_connection::state() const
@@ -586,6 +585,7 @@ namespace fire
 
             if(error) 
             {
+                nc->_state = tcp_connection::disconnected;
                 LOG << "error accept " << nc->socket().local_endpoint() << " -> " << nc->socket().remote_endpoint() << ": " << error.message() << std::endl;
                 return;
             }
