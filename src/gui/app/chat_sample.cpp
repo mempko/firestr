@@ -186,11 +186,16 @@ namespace fire
                 text_message tm;
                 tm.text = text;
 
+                bool sent = false;
                 for(auto c : _session->contacts().list())
                 {
                     CHECK(c);
+                    if(!_session->user_service()->contact_available(c->id())) continue;
                     _sender->send(c->id(), convert(tm)); 
+                    sent = true;
                 }
+
+                if(!sent) _messages->add(make_message_widget("app", "nobody here..."));
             }
 
             void chat_sample::check_mail() 
