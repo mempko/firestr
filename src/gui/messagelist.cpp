@@ -29,17 +29,21 @@ namespace fire
 
         message_list::message_list(
                 a::app_service_ptr app_service,
+                s::session_service_ptr session_s,
                 s::session_ptr session) :
             _app_service{app_service},
+            _session_service{session_s},
             _session{session}
         {
             REQUIRE(app_service);
+            REQUIRE(session_s);
             REQUIRE(session);
 
             auto_scroll(true);
 
             INVARIANT(_root);
             INVARIANT(_layout);
+            INVARIANT(_session_service);
             INVARIANT(_session);
             INVARIANT(_app_service);
         }
@@ -116,6 +120,7 @@ namespace fire
 
         std::string message_list::add_new_app(const ms::new_app& n) 
         {
+            INVARIANT(_session_service);
             INVARIANT(_session);
             INVARIANT(_app_service);
 
@@ -123,7 +128,7 @@ namespace fire
             {
                 if(auto post = _session->parent_post().lock())
                 {
-                    auto c = new a::chat_sample{n.id(), _session};
+                    auto c = new a::chat_sample{n.id(), _session_service, _session};
                     post->add(c->mail());
                     add(c);
                 }
@@ -132,7 +137,7 @@ namespace fire
             {
                 if(auto post = _session->parent_post().lock())
                 {
-                    auto c = new a::app_editor{n.id(), _app_service, _session, nullptr};
+                    auto c = new a::app_editor{n.id(), _app_service, _session_service, _session, nullptr};
                     post->add(c->mail());
                     add(c);
                 }
@@ -143,7 +148,7 @@ namespace fire
                 {
                     app::app_ptr app{new app::app{u::decode<m::message>(n.data())}};
 
-                    auto c = new a::script_app{n.id(), app, _app_service, _session};
+                    auto c = new a::script_app{n.id(), app, _app_service, _session_service, _session};
                     post->add(c->mail());
                     add(c);
                 }

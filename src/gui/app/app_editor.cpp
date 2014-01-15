@@ -43,7 +43,7 @@ namespace fire
             const std::string SCRIPT_SAMPLE = "SCRIPT_SAMPLE";
             const std::string LUA_KEYWORDS = "\\b(app|and|break|do|else|elseif|end|false|for|function|if|in|local|nil|not|or|repeat|return|then|true|until|while)\\b";
             const std::string LUA_QUOTE = "\".*[^\\\\]\"";
-            const std::string LUA_API_KEYWORDS = "\\b(add|remove|size|button|callback|clear|contact|disable|edit|edited_callback|enable|enabled|finished_callback|from|get|label|last_contact|list|message|name|online|place|place_across|print|send|send_to|set|set_text|text|text_edit|total_contacts|when_clicked|when_edited|when_finished|when_message_received|draw|line|circle|when_mouse_moved|when_mouse_pressed|when_mouse_released|when_mouse_dragged|clear|pen|get_pen|when_local_message_received|is_local|send_local|timer|interval|stop|start|running|when_triggered|save_file|save_bin_file|open_file|open_bin_file|id|str|get_bin|set_bin|sub|append|grow|height|grid)\\b";
+            const std::string LUA_API_KEYWORDS = "\\b(add|remove|size|button|callback|clear|contact|disable|edit|edited_callback|enable|enabled|finished_callback|from|get|label|last_contact|list|message|name|online|place|place_across|print|send|send_to|set|set_text|text|text_edit|total_contacts|when_clicked|when_edited|when_finished|when_message_received|draw|line|circle|when_mouse_moved|when_mouse_pressed|when_mouse_released|when_mouse_dragged|clear|pen|get_pen|when_local_message_received|is_local|send_local|timer|interval|stop|start|running|when_triggered|save_file|save_bin_file|open_file|open_bin_file|id|str|get_bin|set_bin|sub|append|grow|height|grid|alert)\\b";
             const std::string LUA_NUMBERS = "[0-9\\.]+";
             const std::string LUA_OPERATORS = "[=+-\\*\\^:%#~<>\\(\\){}\\[\\];:,]+";
 
@@ -80,23 +80,27 @@ namespace fire
 
             app_editor::app_editor(
                     app_service_ptr app_service, 
+                    s::session_service_ptr session_s, 
                     s::session_ptr session, 
                     app_ptr app) :
                 message{},
                 _id{u::uuid()},
                 _app_service{app_service},
+                _session_service{session_s},
                 _session{session},
                 _contacts{session->contacts()},
                 _app{app},
                 _prev_pos{0},
                 _run_state{READY}
             {
-                REQUIRE(session);
                 REQUIRE(app_service);
+                REQUIRE(session_s);
+                REQUIRE(session);
 
                 init();
 
                 ENSURE(_api);
+                ENSURE(_session_service);
                 ENSURE(_session);
                 ENSURE(_app_service);
             }
@@ -104,21 +108,26 @@ namespace fire
             app_editor::app_editor(
                     const std::string& id, 
                     app_service_ptr app_service, 
+                    s::session_service_ptr session_s, 
                     s::session_ptr session,
                     app_ptr app) :
                 message{},
                 _id{id},
                 _app_service{app_service},
+                _session_service{session_s},
                 _session{session},
                 _contacts{session->contacts()},
                 _app{app}
             {
-                REQUIRE(session);
                 REQUIRE(app_service);
+                REQUIRE(session_s);
+                REQUIRE(session);
 
                 init();
 
                 ENSURE(_api);
+                ENSURE(_session_service);
+                ENSURE(_session);
                 ENSURE(_app_service);
             }
 
@@ -131,6 +140,7 @@ namespace fire
             {
                 INVARIANT(root());
                 INVARIANT(layout());
+                INVARIANT(_session_service);
                 INVARIANT(_session);
                 INVARIANT(_app_service);
 
@@ -144,7 +154,7 @@ namespace fire
 
                 _mail = std::make_shared<m::mailbox>(_id);
                 _sender = std::make_shared<ms::sender>(_session->user_service(), _mail);
-                _api = std::make_shared<l::lua_api>(_contacts, _sender, _session, _canvas, _canvas_layout, _output);
+                _api = std::make_shared<l::lua_api>(_contacts, _sender, _session, _session_service, _canvas, _canvas_layout, _output);
 
                 //text edit
                 _script = new QTextEdit;

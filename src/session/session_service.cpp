@@ -400,6 +400,7 @@ namespace fire
             const std::string SESSION_SYNCED = "session_synced_event";
             const std::string CONTACT_REMOVED = "session_contact_removed";
             const std::string CONTACT_ADDED = "session_contact_added";
+            const std::string SESSION_ALERT = "session_alert";
 
             m::message convert(const new_session& s)
             {
@@ -474,6 +475,20 @@ namespace fire
                 s.session_id = u::to_str(m.data);
                 s.contact_id = m.meta.extra["contact_id"].as_string();
             }
+
+            message::message convert(const session_alert& s)
+            {
+                m::message m;
+                m.meta.type = SESSION_ALERT;
+                m.data = u::to_bytes(s.session_id);
+                return m;
+            }
+
+            void convert(const m::message& m, session_alert& s)
+            {
+                REQUIRE_EQUAL(m.meta.type, SESSION_ALERT);
+                s.session_id = u::to_str(m.data);
+            }
         }
 
         void session_service::fire_new_session_event(const std::string& id)
@@ -509,6 +524,13 @@ namespace fire
             event::contact_added e{session_id, contact_id};
             send_event(event::convert(e));
         }
+
+        void session_service::fire_session_alert(const std::string& id)
+        {
+            event::session_alert e{id};
+            send_event(event::convert(e));
+        }
+
     }
 }
 

@@ -65,6 +65,9 @@ namespace fire
             public:
                 user::user_service_ptr user_service();
 
+            public:
+                void fire_session_alert(const std::string& id);
+
             protected:
                 virtual void message_recieved(const message::message&);
 
@@ -135,6 +138,14 @@ namespace fire
             };
             message::message convert(const contact_added&);
             void convert(const message::message&, contact_added&);
+
+            extern const std::string SESSION_ALERT;
+            struct session_alert
+            {
+                std::string session_id;
+            };
+            message::message convert(const session_alert&);
+            void convert(const message::message&, session_alert&);
         }
     }
 }

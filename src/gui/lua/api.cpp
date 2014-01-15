@@ -55,12 +55,14 @@ namespace fire
                     const us::contact_list& con,
                     ms::sender_ptr sndr,
                     s::session_ptr s,
+                    s::session_service_ptr ss,
                     QWidget* c,
                     QGridLayout* cl,
                     list* o ) :
                 contacts{con},
                 sender{sndr},
                 session{s},
+                session_service{ss},
                 canvas{c},
                 layout{cl},
                 output{o},
@@ -69,6 +71,7 @@ namespace fire
             {
                 INVARIANT(sender);
                 INVARIANT(session);
+                INVARIANT(session_service);
                 INVARIANT(canvas);
                 INVARIANT(layout);
 
@@ -127,6 +130,7 @@ namespace fire
 
                 SLB::Class<lua_api, SLB::Instance::NoCopyNoDestroy>{"Api", &manager}
                     .set("print", &lua_api::print)
+                    .set("alert", &lua_api::alert)
                     .set("button", &lua_api::make_button)
                     .set("label", &lua_api::make_label)
                     .set("edit", &lua_api::make_edit)
@@ -366,6 +370,13 @@ namespace fire
 
                 auto self = session->user_service()->user().info().name();
                 output->add(make_output_widget(self, a));
+            }
+
+            void lua_api::alert()
+            {
+                INVARIANT(session);
+                INVARIANT(session_service);
+                session_service->fire_session_alert(session->id());
             }
 
             void lua_api::message_recieved(const script_message& m)

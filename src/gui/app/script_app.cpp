@@ -51,14 +51,17 @@ namespace fire
             script_app::script_app(
                     app_ptr app, 
                     app_service_ptr as,
+                    s::session_service_ptr session_s,
                     s::session_ptr session) :
                 message{},
                 _id{u::uuid()},
+                _session_service{session_s},
                 _session{session},
                 _app{app},
                 _app_service{as},
                 _contacts{session->contacts()}
             {
+                REQUIRE(session_s);
                 REQUIRE(session);
                 REQUIRE(app);
                 REQUIRE(as);
@@ -66,6 +69,7 @@ namespace fire
                 init();
 
                 INVARIANT(_api);
+                INVARIANT(_session_service);
                 INVARIANT(_session);
                 INVARIANT(_app);
                 INVARIANT(_app_service);
@@ -75,14 +79,17 @@ namespace fire
             script_app::script_app(
                     const std::string& id, 
                     app_ptr app, app_service_ptr as, 
+                    s::session_service_ptr session_s,
                     s::session_ptr session) :
                 message{},
                 _id{id},
+                _session_service{session_s},
                 _session{session},
                 _app{app},
                 _app_service{as},
                 _contacts{session->contacts()}
             {
+                REQUIRE(session_s);
                 REQUIRE(session);
                 REQUIRE(app);
                 REQUIRE(as);
@@ -91,6 +98,7 @@ namespace fire
                 init();
 
                 INVARIANT(_api);
+                INVARIANT(_session_service);
                 INVARIANT(_session);
                 INVARIANT(_app);
                 INVARIANT(_app_service);
@@ -125,7 +133,7 @@ namespace fire
 
                 _mail = std::make_shared<m::mailbox>(_id);
                 _sender = std::make_shared<ms::sender>(_session->user_service(), _mail);
-                _api = std::make_shared<l::lua_api>(_contacts, _sender, _session, _canvas, _canvas_layout);
+                _api = std::make_shared<l::lua_api>(_contacts, _sender, _session, _session_service, _canvas, _canvas_layout);
 
                 //run script
                 _api->run(_app->code());

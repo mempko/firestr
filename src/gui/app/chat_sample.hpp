@@ -20,7 +20,7 @@
 
 #include "gui/list.hpp"
 #include "gui/message.hpp"
-#include "session/session.hpp"
+#include "session/session_service.hpp"
 #include "message/mailbox.hpp"
 #include "messages/sender.hpp"
 
@@ -43,8 +43,13 @@ namespace fire
                 Q_OBJECT
 
                 public:
-                    chat_sample(session::session_ptr);
-                    chat_sample(const std::string& id, session::session_ptr);
+                    chat_sample(
+                            session::session_service_ptr,
+                            session::session_ptr);
+                    chat_sample(
+                            const std::string& id, 
+                            session::session_service_ptr,
+                            session::session_ptr);
                     ~chat_sample();
 
                 public:
@@ -61,6 +66,7 @@ namespace fire
 
                 private:
                     std::string _id;
+                    session::session_service_ptr _session_service;
                     session::session_ptr _session;
                     fire::message::mailbox_ptr _mail;
                     messages::sender_ptr _sender;

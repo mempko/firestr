@@ -24,7 +24,7 @@
 #include "gui/message.hpp"
 #include "gui/app/app_service.hpp"
 #include "gui/contactlist.hpp"
-#include "session/session.hpp"
+#include "session/session_service.hpp"
 #include "messages/new_app.hpp"
 
 namespace fire
@@ -37,6 +37,7 @@ namespace fire
             public:
                 message_list(
                         app::app_service_ptr,
+                        session::session_service_ptr,
                         session::session_ptr);
 
             public:
@@ -53,6 +54,7 @@ namespace fire
                 void add(QWidget*);
 
             private:
+                session::session_service_ptr _session_service;
                 session::session_ptr _session;
                 app::app_service_ptr _app_service;
 
