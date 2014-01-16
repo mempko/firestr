@@ -76,12 +76,16 @@ namespace fire
 
         void tcp_connection::close()
         {
+            _state = disconnected;
+            _writing = false;
             _io.post(boost::bind(&tcp_connection::do_close, this));
         }
 
         void tcp_connection::do_close()
         {
             u::mutex_scoped_lock l(_mutex);
+            _state = disconnected;
+            _writing = false;
             if(_socket && _socket->is_open())
             {
                 boost::system::error_code se;
@@ -94,9 +98,8 @@ namespace fire
             {
                 LOG << "tcp_connection closed, socket already gone:  " << _ep.address << ":" << _ep.port << " error: " << _error.message() << std::endl;
             }
-            _state = disconnected;
-            _writing = false;
         }
+
         bool tcp_connection::is_connected() const
         {
             u::mutex_scoped_lock l(_mutex);
@@ -214,8 +217,10 @@ namespace fire
                 else
                 {
                     u::mutex_scoped_lock l(_mutex);
+                    {
                     _error = error;
                     LOG << "error connecting to `" << _ep.address << ":" << _ep.port << "' : " << error.message() << std::endl;
+                    }
                     close();
                 }
             }
@@ -249,6 +254,7 @@ namespace fire
         void tcp_connection::do_send(bool force)
         {
             ENSURE(_socket);
+            if(_state == disconnected) return;
 
             //check to see if a write is in progress
             if(!force && _writing) return;
@@ -270,6 +276,7 @@ namespace fire
 
         void tcp_connection::handle_write(const boost::system::error_code& error)
         {
+            if(_state == disconnected) return;
             if(error) { _error = error; close(); return; }
             if(!_socket->is_open()) { close(); return; }
 
@@ -294,6 +301,7 @@ namespace fire
         void tcp_connection::handle_header(const boost::system::error_code& error, size_t transferred)
         {
             INVARIANT(_socket);
+            if(_state == disconnected) return;
             if(error) { _error = error; close(); return; }
             if(!_socket->is_open()) { close(); return; }
 
@@ -352,6 +360,7 @@ namespace fire
         {
             INVARIANT(_socket);
             REQUIRE_GREATER(size, 0);
+            if(_state == disconnected) return;
             if(error) { _error = error; close(); return; }
             if(!_socket->is_open()) { close(); return; }
 
