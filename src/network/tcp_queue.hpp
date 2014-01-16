@@ -31,6 +31,7 @@ namespace fire
         using tcp_socket_ptr = std::unique_ptr<boost::asio::ip::tcp::socket>;
 
         class tcp_connection;
+        class tcp_queue;
         using tcp_connection_ptr_queue = util::queue<tcp_connection*>;
         using connection_ptr_queue = util::queue<connection*>;
 
@@ -73,7 +74,7 @@ namespace fire
                         boost::asio::ip::tcp::endpoint e);
                 void handle_punch(const boost::system::error_code& error);
                 void do_send(bool);
-                void handle_write(const boost::system::error_code& error);
+                void handle_write(const boost::system::error_code& error, size_t);
                 void handle_header(const boost::system::error_code& error, size_t);
                 void handle_body(const boost::system::error_code& error, size_t, size_t);
             private:
@@ -95,6 +96,7 @@ namespace fire
                 int _retries;
             private:
                 friend class tcp_queue;
+                friend void tcp_run_thread(tcp_queue*);
         };
 
         using tcp_connection_ptr = std::shared_ptr<tcp_connection>;
