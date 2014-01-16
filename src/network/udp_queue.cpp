@@ -644,8 +644,8 @@ namespace fire
         udp_queue::~udp_queue()
         {
             INVARIANT(_io);
-            _io->stop();
             _done = true;
+            _io->stop();
             if(_p.block) _in_queue.done();
             if(_p.wait > 0) u::sleep_thread(_p.wait);
             if(_con) _con->close();
@@ -697,7 +697,7 @@ namespace fire
             while(!q->_done) 
             try
             {
-                q->_io->poll();
+                q->_io->run();
                 u::sleep_thread(THREAD_SLEEP);
             }
             catch(std::exception& e)
