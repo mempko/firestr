@@ -633,7 +633,7 @@ namespace fire
             while(!q->_done) 
             try
             {
-                q->_io->poll();
+                q->_io->run();
                 u::sleep_thread(THREAD_SLEEP);
             }
             catch(std::exception& e)
