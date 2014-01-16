@@ -206,20 +206,21 @@ namespace fire
                 {
                     LOG << "retrying (" << (RETRIES - _retries) << "/" << RETRIES << ")..." << std::endl;
                     {
-                        u::mutex_scoped_lock l(_mutex);
-                        _retries--;
-
-                        _state = disconnected;
+                        {
+                            u::mutex_scoped_lock l(_mutex);
+                            _retries--;
+                            _state = disconnected;
+                        }
                         u::sleep_thread(2000);
                     }
                     connect(endpoint);
                 }
                 else
                 {
-                    u::mutex_scoped_lock l(_mutex);
                     {
-                    _error = error;
-                    LOG << "error connecting to `" << _ep.address << ":" << _ep.port << "' : " << error.message() << std::endl;
+                        u::mutex_scoped_lock l(_mutex);
+                        _error = error;
+                        LOG << "error connecting to `" << _ep.address << ":" << _ep.port << "' : " << error.message() << std::endl;
                     }
                     close();
                 }
@@ -260,23 +261,22 @@ namespace fire
             if(!force && _writing) return;
 
             REQUIRE_FALSE(_out_queue.empty());
-
             _writing = true;
 
             //encode bytes to wire format
             _out_buffer = encode_tcp_wire(_out_queue.front());
 
+            ENSURE(_writing);
             ba::async_write(*_socket,
                     ba::buffer(&_out_buffer[0], _out_buffer.size()),
                         boost::bind(&tcp_connection::handle_write, this,
-                            ba::placeholders::error));
-
-            ENSURE(_writing);
+                            ba::placeholders::error,
+                            ba::placeholders::bytes_transferred));
         }
 
-        void tcp_connection::handle_write(const boost::system::error_code& error)
+        void tcp_connection::handle_write(const boost::system::error_code& error, size_t transferred)
         {
-            if(_state == disconnected) return;
+            if(_state == disconnected) { CHECK_FALSE(_writing); return;}
             if(error) { _error = error; close(); return; }
             if(!_socket->is_open()) { close(); return; }
 
@@ -639,10 +639,12 @@ namespace fire
             catch(std::exception& e)
             {
                 LOG << "error in tcp thread. " << e.what() << std::endl;
+                q->_out->close();
             }
             catch(...)
             {
                 LOG << "unknown error in tcp thread." << std::endl;
+                q->_out->close();
             }
         }
 
