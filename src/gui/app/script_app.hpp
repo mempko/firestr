@@ -22,7 +22,7 @@
 #include "gui/list.hpp"
 #include "gui/message.hpp"
 #include "gui/app/app_service.hpp"
-#include "session/session.hpp"
+#include "session/session_service.hpp"
 #include "message/mailbox.hpp"
 #include "messages/sender.hpp"
 #include "gui/lua/api.hpp"
@@ -49,8 +49,17 @@ namespace fire
                 Q_OBJECT
 
                 public:
-                    script_app(app_ptr, app_service_ptr, session::session_ptr);
-                    script_app(const std::string& address, app_ptr, app_service_ptr, session::session_ptr);
+                    script_app(
+                            app_ptr, 
+                            app_service_ptr, 
+                            session::session_service_ptr, 
+                            session::session_ptr);
+                    script_app(
+                            const std::string& address, 
+                            app_ptr, 
+                            app_service_ptr, 
+                            session::session_service_ptr, 
+                            session::session_ptr);
                     ~script_app();
 
                 public:
@@ -67,6 +76,7 @@ namespace fire
 
                 private:
                     std::string _id;
+                    session::session_service_ptr _session_service;
                     session::session_ptr _session;
                     fire::message::mailbox_ptr _mail;
                     messages::sender_ptr _sender;

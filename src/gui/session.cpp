@@ -47,7 +47,7 @@ namespace fire
             _session_service{session_service},
             _session{session},
             _app_service{app_service},
-            _messages{new message_list{app_service, session}}
+            _messages{new message_list{app_service, session_service, session}}
         {
             REQUIRE(session_service);
             REQUIRE(session);

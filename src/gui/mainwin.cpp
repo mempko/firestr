@@ -524,12 +524,13 @@ namespace fire
         void main_window::make_chat_sample()
         {
             INVARIANT(_sessions);
+            INVARIANT(_session_service);
 
             auto s = dynamic_cast<session_widget*>(_sessions->currentWidget());
             if(!s) return;
 
             //create chat sample
-            auto t = new a::chat_sample{s->session()};
+            auto t = new a::chat_sample{_session_service, s->session()};
             s->add(t);
             s->session()->add_app_id(t->mail()->address());
 
@@ -569,6 +570,7 @@ namespace fire
         {
             INVARIANT(_sessions);
             INVARIANT(_app_service);
+            INVARIANT(_session_service);
 
             auto s = dynamic_cast<session_widget*>(_sessions->currentWidget());
             if(!s) return;
@@ -582,7 +584,7 @@ namespace fire
             if(!id.empty()) app = _app_service->load_app(id);
 
             //create app editor
-            auto t = new a::app_editor{_app_service, s->session(), app};
+            auto t = new a::app_editor{_app_service, _session_service, s->session(), app};
 
             s->add(t);
             s->session()->add_app_id(t->mail()->address());
@@ -601,6 +603,7 @@ namespace fire
         {
             INVARIANT(_app_service);
             INVARIANT(_sessions);
+            INVARIANT(_session_service);
 
             //get current session
             auto s = dynamic_cast<session_widget*>(_sessions->currentWidget());
@@ -612,7 +615,7 @@ namespace fire
             if(!a) return;
 
             //create app widget
-            auto t = new a::script_app{a, _app_service, s->session()};
+            auto t = new a::script_app{a, _app_service, _session_service, s->session()};
 
             //add to session
             s->add(t);
@@ -670,6 +673,12 @@ namespace fire
                 else if(m.meta.type == s::event::CONTACT_REMOVED || m.meta.type == s::event::CONTACT_ADDED)
                 {
                     contact_removed_or_added_from_session_event(m);
+                }
+                else if(m.meta.type == s::event::SESSION_ALERT)
+                {
+                    s::event::session_alert e;
+                    s::event::convert(m, e);
+                    session_alert_event(e);
                 }
                 else if(m.meta.type == us::event::CONTACT_CONNECTED)
                 {
@@ -962,6 +971,18 @@ namespace fire
 
             CHECK(s->mail());
             s->mail()->push_inbox(m);
+        }
+
+        void main_window::session_alert_event(const s::event::session_alert& e)
+        {
+            INVARIANT(_sessions);
+
+            auto t = find_session(_sessions, e.session_id);
+            auto ct = _sessions->currentIndex();
+            if(t == -1 || t == ct) return;
+
+            _sessions->setTabTextColor(t, QColor{"red"});
+            QApplication::alert(this);
         }
 
         void main_window::contact_removed_or_added_from_session_event(const m::message& e)

@@ -109,6 +109,7 @@ namespace fire
                 void contact_disconnected_event(const user::event::contact_disconnected&);
                 void apps_updated_event(const app::event::apps_updated&);
                 void new_intro_event(const user::event::new_introduction&);
+                void session_alert_event(const session::event::session_alert&);
 
             private:
                 QMenu *_main_menu;

@@ -74,26 +74,36 @@ namespace fire
                 return new QLabel{m.c_str()};
             }
 
-            chat_sample::chat_sample(s::session_ptr session) :
+            chat_sample::chat_sample(
+                    s::session_service_ptr session_s,
+                    s::session_ptr session) :
                 message{},
                 _id{u::uuid()},
+                _session_service{session_s},
                 _session{session}
             {
+                REQUIRE(session_s);
                 REQUIRE(session);
                 init();
             }
 
-            chat_sample::chat_sample(const std::string& id, s::session_ptr session) :
+            chat_sample::chat_sample(
+                    const std::string& id, 
+                    s::session_service_ptr session_s,
+                    s::session_ptr session) :
                 message{},
                 _id{id},
+                _session_service{session_s},
                 _session{session}
             {
+                REQUIRE(session_s);
                 REQUIRE(session);
                 init();
             }
 
             chat_sample::~chat_sample()
             {
+                INVARIANT(_session_service);
                 INVARIANT(_session);
             }
 
@@ -176,11 +186,16 @@ namespace fire
                 text_message tm;
                 tm.text = text;
 
+                bool sent = false;
                 for(auto c : _session->contacts().list())
                 {
                     CHECK(c);
+                    if(!_session->user_service()->contact_available(c->id())) continue;
                     _sender->send(c->id(), convert(tm)); 
+                    sent = true;
                 }
+
+                if(!sent) _messages->add(make_message_widget("app", "nobody here..."));
             }
 
             void chat_sample::check_mail() 
@@ -188,6 +203,7 @@ namespace fire
             {
                 INVARIANT(_mail);
                 INVARIANT(_session);
+                INVARIANT(_session_service);
 
                 m::message m;
                 while(_mail->pop_inbox(m))
@@ -202,6 +218,7 @@ namespace fire
 
                         _messages->add(make_message_widget(c->name(), t.text));
                         _messages->verticalScrollBar()->scroll(0, _messages->verticalScrollBar()->maximum());
+                        _session_service->fire_session_alert(_session->id());
                     }
                     else
                     {
