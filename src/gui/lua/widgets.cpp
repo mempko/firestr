@@ -24,6 +24,7 @@
 #include "util/log.hpp"
 
 #include <QTimer>
+#include <QImage>
 
 #include <functional>
 
