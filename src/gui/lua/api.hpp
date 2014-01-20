@@ -22,6 +22,8 @@
 #include "gui/lua/widgets.hpp"
 #include "session/session_service.hpp"
 
+#include <QImage>
+
 namespace fire
 {
     namespace gui
@@ -30,6 +32,7 @@ namespace fire
         {
             using script_ptr = std::shared_ptr<SLB::Script>;
             using widget_map = std::unordered_map<int, QWidget*>;
+            using image_map = std::unordered_map<int, std::shared_ptr<QImage>>;
             using layout_map = std::unordered_map<int, QGridLayout*>;
             using timer_map = std::unordered_map<int, QTimer*>;
 
@@ -90,10 +93,12 @@ namespace fire
                     grid_ref_map grid_refs;
                     draw_ref_map draw_refs;
                     timer_ref_map timer_refs;
+                    image_ref_map image_refs;
 
                     //all widgets referenced are stored here
                     layout_map layouts;
                     widget_map widgets;
+                    image_map images;
                     timer_map timers;
 
                     //id functions
@@ -119,6 +124,7 @@ namespace fire
                     draw_ref make_draw(int width, int height);
                     QPen make_pen(const std::string& color, int width);
                     timer_ref make_timer(int msec, const std::string& callback);
+                    image_ref make_image(const bin_data& data);
 
                     grid_ref make_grid();
                     void place(const widget_ref& w, int r, int c);

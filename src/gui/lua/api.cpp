@@ -140,6 +140,7 @@ namespace fire
                     .set("draw", &lua_api::make_draw)
                     .set("pen", &lua_api::make_pen)
                     .set("timer", &lua_api::make_timer)
+                    .set("image", &lua_api::make_image)
                     .set("place", &lua_api::place)
                     .set("place_across", &lua_api::place_across)
                     .set("height", &lua_api::height)
@@ -259,6 +260,11 @@ namespace fire
                     .set("pen", &draw_ref::set_pen)
                     .set("get_pen", &draw_ref::get_pen);
 
+                SLB::Class<image_ref>{"image_ref", &manager}
+                    .set("enabled", &image_ref::enabled)
+                    .set("enable", &image_ref::enable)
+                    .set("disable", &image_ref::disable);
+
                 SLB::Class<timer_ref>{"timer_ref", &manager}
                     .set("running", &timer_ref::running)
                     .set("start", &timer_ref::start)
@@ -303,17 +309,31 @@ namespace fire
                 return {-1, "unknown"};
             }
 
+            template <class L>
+                void delete_loose_widgets(L& l)
+                {
+                    for(auto& w : l)
+                    {
+                        if(!w.second || w.second->parentWidget() != nullptr)
+                            continue;
+                        delete w.second;
+                        w.second = 0;
+                    }
+                }
+
             void lua_api::reset_widgets()
             {
                 INVARIANT(layout);
                 std::lock_guard<std::mutex> lock(mutex);
 
+                //delete widgets without parent
+                delete_loose_widgets(widgets);
+
                 //clear widgets
                 QLayoutItem *c = 0;
                 while((c = layout->takeAt(0)) != 0)
                 {
-                    CHECK(c);
-                    CHECK(c->widget());
+                    if(!c || !c->widget()) continue;
 
                     delete c->widget();
                     delete c;
@@ -335,8 +355,10 @@ namespace fire
                 list_refs.clear();
                 timer_refs.clear();
                 grid_refs.clear();
+                image_refs.clear();
                 widgets.clear();
                 timers.clear();
+                images.clear();
 
                 ENSURE_EQUAL(layout->count(), 0);
             }
@@ -864,6 +886,31 @@ namespace fire
 
                 if(callback.empty()) return;
                 run(callback);
+            }
+
+            image_ref lua_api::make_image(const bin_data& d)
+            {
+                INVARIANT(canvas);
+                std::lock_guard<std::mutex> lock(mutex);
+                
+                //create edit reference
+                image_ref ref;
+                ref.id = new_id();
+                ref.api = this;
+
+                auto i = std::make_shared<QImage>();
+                bool loaded = i->loadFromData(reinterpret_cast<const u::ubyte*>(d.data.data()),d.data.size());
+
+                auto l = new QLabel;
+                if(loaded) l->setPixmap(QPixmap::fromImage(*i));
+
+                image_refs[ref.id] = ref;
+                widgets[ref.id] = l;
+                images[ref.id] = i;
+
+                ENSURE_FALSE(ref.id == 0);
+                ENSURE(ref.api);
+                return ref;
             }
 
             std::string get_file_name(QWidget* canvas)
