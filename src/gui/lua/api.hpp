@@ -32,7 +32,7 @@ namespace fire
         {
             using script_ptr = std::shared_ptr<SLB::Script>;
             using widget_map = std::unordered_map<int, QWidget*>;
-            using image_map = std::unordered_map<int, QImage*>;
+            using image_map = std::unordered_map<int, std::shared_ptr<QImage>>;
             using layout_map = std::unordered_map<int, QGridLayout*>;
             using timer_map = std::unordered_map<int, QTimer*>;
 
