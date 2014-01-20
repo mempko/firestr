@@ -309,17 +309,31 @@ namespace fire
                 return {-1, "unknown"};
             }
 
+            template <class L>
+                void delete_loose_widgets(L& l)
+                {
+                    for(auto& w : l)
+                    {
+                        if(!w.second || w.second->parentWidget() != nullptr)
+                            continue;
+                        delete w.second;
+                        w.second = 0;
+                    }
+                }
+
             void lua_api::reset_widgets()
             {
                 INVARIANT(layout);
                 std::lock_guard<std::mutex> lock(mutex);
 
+                //delete widgets without parent
+                delete_loose_widgets(widgets);
+
                 //clear widgets
                 QLayoutItem *c = 0;
                 while((c = layout->takeAt(0)) != 0)
                 {
-                    CHECK(c);
-                    CHECK(c->widget());
+                    if(!c || !c->widget()) continue;
 
                     delete c->widget();
                     delete c;
@@ -884,7 +898,7 @@ namespace fire
                 ref.id = new_id();
                 ref.api = this;
 
-                auto i = new QImage;
+                auto i = std::make_shared<QImage>();
                 bool loaded = i->loadFromData(reinterpret_cast<const u::ubyte*>(d.data.data()),d.data.size());
 
                 auto l = new QLabel;
