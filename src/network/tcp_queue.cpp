@@ -452,11 +452,12 @@ namespace fire
         tcp_queue::~tcp_queue() 
         {
             INVARIANT(_io);
+            if(_out) _out->close();
+
             _done = true;
             _io->stop();
             if(_p.block) _in_queue.done();
             if(_p.wait > 0) u::sleep_thread(_p.wait);
-            if(_out) _out->close();
             if(_run_thread) _run_thread->join();
         }
 
@@ -639,12 +640,12 @@ namespace fire
             catch(std::exception& e)
             {
                 LOG << "error in tcp thread. " << e.what() << std::endl;
-                q->_out->close();
+                if(q->_out) q->_out->close();
             }
             catch(...)
             {
                 LOG << "unknown error in tcp thread." << std::endl;
-                q->_out->close();
+                if(q->_out) q->_out->close();
             }
         }
 
