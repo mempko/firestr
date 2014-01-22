@@ -153,27 +153,13 @@ namespace fire
             }
 
 
-            //if we ran out of connections in the out pool then first check if any 
-            //are connected. If any are connected then the message is not sent and
-            //we are screwed for now with the algorithm. Otherwise we must have lost
-            //internet connection and need to tear down and recreate the out connection
-            //pool
+            //If we ran out of connections in the out pool then we tear down our tcp connections
+            //and repool. Obviously this algorithm won't work well if we have as many greeters
+            //as the pool size. Still figuring this out.
             if(_next_available >= _pool.size()) 
             {
                 u::mutex_scoped_lock l(_mutex);
-                bool any_connected = false;
-                for(auto& c : _pool) 
-                {
-                    CHECK(c);
-                    if(c->is_connected()) 
-                        any_connected = true;
-                }
-
-                if(any_connected)
-                {
-                    LOG << "ran out of outgoing tcp connections..." << std::endl;
-                    return {};
-                } 
+                LOG << "ran out of outgoing tcp connections..." << std::endl;
                 teardown_and_repool_tcp_connections();
             }
 
