@@ -127,6 +127,22 @@ namespace fire
             INVARIANT(_sender);
         }        
 
+        session_service::~session_service()
+        {
+            //copy sessions
+            session_map sessions;
+            {
+                u::mutex_scoped_lock l(_mutex);
+                sessions = _sessions;
+            }
+
+            for(const auto& s : sessions)
+            {
+                CHECK(s.second);
+                quit_session(s.second->id());
+            }
+        }
+
         void session_service::message_recieved(const message::message& m)
         {
             INVARIANT(mail());

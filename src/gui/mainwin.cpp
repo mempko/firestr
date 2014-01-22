@@ -85,6 +85,7 @@ namespace fire
             _root{0},
             _layout{0},
             _sessions{0},
+            _focus{true},
             _context(c)
         {
             setup_post();
@@ -233,6 +234,7 @@ namespace fire
             _layout->addWidget(_sessions);
             _sessions->hide();
             connect(_sessions, SIGNAL(currentChanged(int)), this, SLOT(tab_changed(int)));
+            connect(qApp, SIGNAL(focusChanged(QWidget*,QWidget*)), this, SLOT(focus_changed(QWidget*,QWidget*)));
 
             create_alert_screen();
             create_start_screen();
@@ -836,6 +838,20 @@ namespace fire
             return s.str();
         }
 
+        bool main_window::should_alert(int tab_index)
+        {
+            INVARIANT(_sessions);
+            auto ct = _sessions->currentIndex();
+            return (tab_index != -1 && tab_index != ct) || !_focus;
+        }
+
+        void main_window::alert_tab(int tab_index)
+        {
+            INVARIANT(_sessions);
+            _sessions->setTabTextColor(tab_index, QColor{"red"});
+            QApplication::alert(this);
+        }
+
         void main_window::show_alert(QWidget* a)
         {
             REQUIRE(a);
@@ -872,9 +888,9 @@ namespace fire
 
             //add alert to list
             _alerts->add(w);
-            _sessions->setTabTextColor(_alert_tab_index, QColor{"red"});
 
-            QApplication::alert(this);
+            if(should_alert(_alert_tab_index)) 
+                alert_tab(_alert_tab_index);
 
             ENSURE(_sessions->isVisible());
         }
@@ -884,6 +900,18 @@ namespace fire
             REQUIRE(a);
             INVARIANT(_alerts);
             _alerts->remove(a);
+        }
+
+        void main_window::focus_changed(QWidget* old, QWidget* now)
+        {
+            INVARIANT(_sessions);
+            if(now && old == nullptr && isAncestorOf(now)) 
+            {
+                _focus = true;
+                tab_changed(_sessions->currentIndex());
+            }
+            else if(old && isAncestorOf(old) && now == nullptr) 
+                _focus = false;
         }
 
         void main_window::new_session_event(const std::string& id)
@@ -978,11 +1006,8 @@ namespace fire
             INVARIANT(_sessions);
 
             auto t = find_session(_sessions, e.session_id);
-            auto ct = _sessions->currentIndex();
-            if(t == -1 || t == ct) return;
-
-            _sessions->setTabTextColor(t, QColor{"red"});
-            QApplication::alert(this);
+            if(should_alert(t)) 
+                alert_tab(t);
         }
 
         void main_window::contact_removed_or_added_from_session_event(const m::message& e)

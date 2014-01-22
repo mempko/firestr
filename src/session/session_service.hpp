@@ -39,6 +39,7 @@ namespace fire
                         message::post_office_ptr,
                         user::user_service_ptr,
                         message::mailbox_ptr event = nullptr);
+                ~session_service();
 
             public:
                 session_ptr sync_session(const std::string& id, const user::contact_list&);
