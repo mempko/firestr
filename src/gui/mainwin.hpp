@@ -76,6 +76,7 @@ namespace fire
                 void load_app_into_session(QString id);
                 void show_debug_window();
                 void remove_alert(QWidget*);
+                void focus_changed(QWidget* old, QWidget* now);
 
             private:
                 void setup_post();
@@ -93,6 +94,8 @@ namespace fire
                 void attach_start_screen();
                 void create_alert_screen();
                 void show_alert(QWidget*);
+                bool should_alert(int tab_index);
+                void alert_tab(int tab_index);
 
             private:
                 //gui service event handlers
@@ -143,6 +146,7 @@ namespace fire
                 session::session_service_ptr _session_service;
                 app::app_service_ptr _app_service;
                 main_window_context _context;
+                bool _focus;
         };
     }
 }
