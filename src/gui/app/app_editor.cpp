@@ -49,7 +49,7 @@ namespace fire
 
             namespace
             {
-                const size_t TIMER_SLEEP = 100; //in milliseconds
+                const size_t TIMER_SLEEP = 50; //in milliseconds
                 const size_t TIMER_UPDATE = 1000; //in milliseconds
                 const size_t PADDING = 20;
                 const size_t MIN_EDIT_HEIGHT = 500;
