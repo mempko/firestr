@@ -409,9 +409,16 @@ namespace fire
                         auto code = gui::convert(_script->toPlainText());
                         if(t.text == code) continue;
 
-                        auto cursor = _script->textCursor();
+                        //update text
+                        auto pos = _script->textCursor().position();
                         _script->setText(t.text.c_str());
+
+                        //put cursor back
+                        auto cursor = _script->textCursor();
+                        cursor.setPosition(pos);
                         _script->setTextCursor(cursor);
+
+                        //run code
                         _prev_code = t.text;
                         _run_state = READY;
                         run_script();
