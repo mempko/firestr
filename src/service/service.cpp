@@ -41,7 +41,7 @@ namespace fire
                 if(!s->_mail->pop_inbox(m, true))
                     continue;
 
-                s->message_recieved(m);
+                s->message_received(m);
             }
             catch(std::exception& e)
             {

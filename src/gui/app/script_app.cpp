@@ -188,7 +188,7 @@ namespace fire
                             continue;
 
                         l::script_message sm{m, _api.get()};
-                        _api->message_recieved(sm);
+                        _api->message_received(sm);
                     }
                 }
             }

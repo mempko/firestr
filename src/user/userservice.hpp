@@ -92,7 +92,7 @@ namespace fire
                 bool contact_available(const std::string& id) const;
 
             protected:
-                virtual void message_recieved(const message::message&);
+                virtual void message_received(const message::message&);
 
             private:
                 int add_introduction(const contact_introduction&);

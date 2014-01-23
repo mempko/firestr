@@ -64,7 +64,7 @@ namespace fire
                 _code = u::to_str(m.data);
 
                 if(_meta.id.empty()) 
-                    throw std::runtime_error("recieved app `" + _meta.name + "' with empty id");
+                    throw std::runtime_error("received app `" + _meta.name + "' with empty id");
             }
 
             app::operator m::message()
