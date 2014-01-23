@@ -330,7 +330,7 @@ namespace fire
             _session_library->create_session(address, key, public_val);
         }
 
-        void user_service::message_recieved(const message::message& m)
+        void user_service::message_received(const message::message& m)
         {
             if(m.meta.type == PING)
             {

@@ -224,7 +224,7 @@ namespace fire
                     }
                     else
                     {
-                        LOG << "chat sample recieved unknown message `" << m.meta.type << "'" << std::endl;
+                        LOG << "chat sample received unknown message `" << m.meta.type << "'" << std::endl;
                     }
                 }
             }

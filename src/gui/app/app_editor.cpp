@@ -421,11 +421,11 @@ namespace fire
                     else if(m.meta.type == l::SCRIPT_MESSAGE)
                     {
                         l::script_message sm{m, _api.get()};
-                        _api->message_recieved(sm);
+                        _api->message_received(sm);
                     }
                     else
                     {
-                        LOG << "app_editor recieved unknown message `" << m.meta.type << "'" << std::endl;
+                        LOG << "app_editor received unknown message `" << m.meta.type << "'" << std::endl;
                     }
                 }
             }

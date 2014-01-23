@@ -401,7 +401,7 @@ namespace fire
                 session_service->fire_session_alert(session->id());
             }
 
-            void lua_api::message_recieved(const script_message& m)
+            void lua_api::message_received(const script_message& m)
             try
             {
                 INVARIANT(state);

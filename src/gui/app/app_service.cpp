@@ -78,7 +78,7 @@ namespace fire
                 INVARIANT_FALSE(_app_home.empty());
             }
 
-            void app_service::message_recieved(const message::message& m)
+            void app_service::message_received(const message::message& m)
             {
                 INVARIANT(mail());
                 INVARIANT(_user_service);
