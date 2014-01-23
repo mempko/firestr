@@ -2,7 +2,7 @@
 
 #include "gui/messagelist.hpp"
 #include "gui/unknown_message.hpp"
-#include "gui/app/chat_sample.hpp"
+#include "gui/app/chat.hpp"
 #include "gui/app/app_editor.hpp"
 #include "gui/app/script_app.hpp"
 #include "util/dbc.hpp"
@@ -124,16 +124,16 @@ namespace fire
             INVARIANT(_session);
             INVARIANT(_app_service);
 
-            if(n.type() == a::CHAT_SAMPLE)
+            if(n.type() == a::CHAT)
             {
                 if(auto post = _session->parent_post().lock())
                 {
-                    auto c = new a::chat_sample{n.id(), _session_service, _session};
+                    auto c = new a::chat_app{n.id(), _session_service, _session};
                     post->add(c->mail());
                     add(c);
                 }
             }
-            else if(n.type() == a::SCRIPT_SAMPLE)
+            else if(n.type() == a::APP_EDITOR)
             {
                 if(auto post = _session->parent_post().lock())
                 {

@@ -143,7 +143,7 @@ namespace fire
             }
         }
 
-        void session_service::message_recieved(const message::message& m)
+        void session_service::message_received(const message::message& m)
         {
             INVARIANT(mail());
             INVARIANT(_user_service);
@@ -195,7 +195,7 @@ namespace fire
             }
             else
             {
-                throw std::runtime_error(SERVICE_ADDRESS + " recieved unknown message type `" + m.meta.type + "'");
+                throw std::runtime_error(SERVICE_ADDRESS + " received unknown message type `" + m.meta.type + "'");
             }
         }
 

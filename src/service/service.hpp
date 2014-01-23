@@ -41,7 +41,7 @@ namespace fire
                 message::mailbox_ptr mail();
 
             protected:
-                virtual void message_recieved(const message::message&) = 0;
+                virtual void message_received(const message::message&) = 0;
 
             protected:
                 void send_event(const message::message&);

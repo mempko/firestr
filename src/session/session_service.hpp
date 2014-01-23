@@ -70,7 +70,7 @@ namespace fire
                 void fire_session_alert(const std::string& id);
 
             protected:
-                virtual void message_recieved(const message::message&);
+                virtual void message_received(const message::message&);
 
             private:
                 void fire_new_session_event(const std::string& id);

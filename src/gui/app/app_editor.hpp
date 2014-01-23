@@ -130,7 +130,7 @@ namespace fire
                     enum run_state { CODE_CHANGED, DONE_TYPING, READY};
                     run_state  _run_state;
             };
-            extern const std::string SCRIPT_SAMPLE;
+            extern const std::string APP_EDITOR;
 
         }
     }

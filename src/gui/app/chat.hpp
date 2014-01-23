@@ -15,8 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef FIRESTR_APP_CHAT_SAMPLE_H
-#define FIRESTR_APP_CHAT_SAMPLE_H
+#ifndef FIRESTR_APP_CHAT_H
+#define FIRESTR_APP_CHAT_H
 
 #ifndef Q_MOC_RUN
 #include "gui/list.hpp"
@@ -40,19 +40,19 @@ namespace fire
     {
         namespace app
         {
-            class chat_sample : public message
+            class chat_app : public message
             {
                 Q_OBJECT
 
                 public:
-                    chat_sample(
+                    chat_app(
                             session::session_service_ptr,
                             session::session_ptr);
-                    chat_sample(
+                    chat_app(
                             const std::string& id, 
                             session::session_service_ptr,
                             session::session_ptr);
-                    ~chat_sample();
+                    ~chat_app();
 
                 public:
                     const std::string& id();
@@ -77,7 +77,7 @@ namespace fire
                     QLineEdit* _message;
                     QPushButton* _send;
             };
-            extern const std::string CHAT_SAMPLE;
+            extern const std::string CHAT;
 
         }
     }

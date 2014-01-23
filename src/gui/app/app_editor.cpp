@@ -40,7 +40,7 @@ namespace fire
     {
         namespace app
         {
-            const std::string SCRIPT_SAMPLE = "SCRIPT_SAMPLE";
+            const std::string APP_EDITOR = "APP_EDITOR";
             const std::string LUA_KEYWORDS = "\\b(app|and|break|do|else|elseif|end|false|for|function|if|in|local|nil|not|or|repeat|return|then|true|until|while)\\b";
             const std::string LUA_QUOTE = "\".*[^\\\\]\"";
             const std::string LUA_API_KEYWORDS = "\\b(add|remove|size|button|callback|clear|contact|disable|edit|edited_callback|enable|enabled|finished_callback|from|get|label|last_contact|list|message|name|online|place|place_across|print|send|send_to|set|set_text|text|text_edit|total_contacts|when_clicked|when_edited|when_finished|when_message_received|draw|line|circle|when_mouse_moved|when_mouse_pressed|when_mouse_released|when_mouse_dragged|clear|pen|get_pen|when_local_message_received|is_local|send_local|timer|interval|stop|start|running|when_triggered|save_file|save_bin_file|open_file|open_bin_file|id|str|get_bin|set_bin|sub|append|grow|height|grid|alert|good|image|data)\\b";
@@ -207,8 +207,8 @@ namespace fire
 
             const std::string& app_editor::type()
             {
-                ENSURE_FALSE(SCRIPT_SAMPLE.empty());
-                return SCRIPT_SAMPLE;
+                ENSURE_FALSE(APP_EDITOR.empty());
+                return APP_EDITOR;
             }
 
             m::mailbox_ptr app_editor::mail()
@@ -421,11 +421,11 @@ namespace fire
                     else if(m.meta.type == l::SCRIPT_MESSAGE)
                     {
                         l::script_message sm{m, _api.get()};
-                        _api->message_recieved(sm);
+                        _api->message_received(sm);
                     }
                     else
                     {
-                        LOG << "app_editor recieved unknown message `" << m.meta.type << "'" << std::endl;
+                        LOG << "app_editor received unknown message `" << m.meta.type << "'" << std::endl;
                     }
                 }
             }
