@@ -64,7 +64,7 @@ namespace fire
                 void about();
                 void show_contact_list();
                 void show_contact_list_start();
-                void make_chat_sample();
+                void make_chat_app();
                 void make_app_editor();
                 void closeEvent(QCloseEvent*);
                 void check_mail();
@@ -122,7 +122,7 @@ namespace fire
                 QAction *_rename_session_action;
                 QAction *_quit_session_action;
                 QMenu *_app_menu;
-                QAction *_chat_sample_action;
+                QAction *_chat_app_action;
                 QAction *_app_editor_action;
                 QMenu *_debug_menu;
                 QAction *_debug_window_action;

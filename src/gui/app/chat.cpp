@@ -17,9 +17,8 @@
 
 #include <QtWidgets>
 
-#include "gui/app/chat_sample.hpp"
+#include "gui/app/chat.hpp"
 #include "gui/util.hpp"
-#include "util/uuid.hpp"
 #include "util/dbc.hpp"
 #include "util/log.hpp"
 
@@ -37,7 +36,7 @@ namespace fire
     {
         namespace app
         {
-            const std::string CHAT_SAMPLE = "CHAT_SAMPLE";
+            const std::string CHAT = "CHAT_APP";
 
             namespace
             {
@@ -74,7 +73,7 @@ namespace fire
                 return new QLabel{m.c_str()};
             }
 
-            chat_sample::chat_sample(
+            chat_app::chat_app(
                     s::session_service_ptr session_s,
                     s::session_ptr session) :
                 message{},
@@ -87,7 +86,7 @@ namespace fire
                 init();
             }
 
-            chat_sample::chat_sample(
+            chat_app::chat_app(
                     const std::string& id, 
                     s::session_service_ptr session_s,
                     s::session_ptr session) :
@@ -101,13 +100,13 @@ namespace fire
                 init();
             }
 
-            chat_sample::~chat_sample()
+            chat_app::~chat_app()
             {
                 INVARIANT(_session_service);
                 INVARIANT(_session);
             }
 
-            void chat_sample::init()
+            void chat_app::init()
             {
                 INVARIANT(root());
                 INVARIANT(layout());
@@ -153,25 +152,25 @@ namespace fire
                 INVARIANT(_sender);
             }
 
-            const std::string& chat_sample::id()
+            const std::string& chat_app::id()
             {
                 ENSURE_FALSE(_id.empty());
                 return _id;
             }
 
-            const std::string& chat_sample::type()
+            const std::string& chat_app::type()
             {
-                ENSURE_FALSE(CHAT_SAMPLE.empty());
-                return CHAT_SAMPLE;
+                ENSURE_FALSE(CHAT.empty());
+                return CHAT;
             }
 
-            m::mailbox_ptr chat_sample::mail()
+            m::mailbox_ptr chat_app::mail()
             {
                 ENSURE(_mail);
                 return _mail;
             }
 
-            void chat_sample::send_message()
+            void chat_app::send_message()
             {
                 INVARIANT(_message);
                 INVARIANT(_send);
@@ -198,7 +197,7 @@ namespace fire
                 if(!sent) _messages->add(make_message_widget("app", "nobody here..."));
             }
 
-            void chat_sample::check_mail() 
+            void chat_app::check_mail() 
             try
             {
                 INVARIANT(_mail);
@@ -228,11 +227,11 @@ namespace fire
             }
             catch(std::exception& e)
             {
-                LOG << "chat_sample: error in check_mail. " << e.what() << std::endl;
+                LOG << "chat_app: error in check_mail. " << e.what() << std::endl;
             }
             catch(...)
             {
-                LOG << "chat_sample: unexpected error in check_mail." << std::endl;
+                LOG << "chat_app: unexpected error in check_mail." << std::endl;
             }
         }
     }
