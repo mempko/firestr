@@ -21,6 +21,8 @@
 #include "gui/util.hpp"
 #include "util/dbc.hpp"
 #include "util/log.hpp"
+#include "util/time.hpp"
+#include "util/uuid.hpp"
 
 #include <QTimer>
 
@@ -69,8 +71,9 @@ namespace fire
 
             QWidget* make_message_widget(const std::string& name, const std::string& text)
             {
-                std::string m = "<b>" + name + "</b>: " + text; 
-                return new QLabel{m.c_str()};
+                std::stringstream s;
+                s << "<font color='gray'>" << u::timestamp() << "</font> <b>" << name << "</b>: " << text;
+                return new QLabel{s.str().c_str()};
             }
 
             chat_app::chat_app(
