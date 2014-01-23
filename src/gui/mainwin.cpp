@@ -16,7 +16,7 @@
  */
 #include "gui/mainwin.hpp"
 
-#include "gui/app/chat_sample.hpp"
+#include "gui/app/chat.hpp"
 #include "gui/app/app_editor.hpp"
 #include "gui/app/script_app.hpp"
 
@@ -326,7 +326,7 @@ namespace fire
             REQUIRE(_about_action);
             REQUIRE(_close_action);
             REQUIRE(_contact_list_action);
-            REQUIRE(_chat_sample_action);
+            REQUIRE(_chat_app_action);
             REQUIRE(_app_editor_action);
             REQUIRE(_create_session_action);
 
@@ -382,7 +382,7 @@ namespace fire
 
             _app_menu->clear();
 
-            _app_menu->addAction(_chat_sample_action);
+            _app_menu->addAction(_chat_app_action);
             _app_menu->addAction(_app_editor_action);
 
             for( auto p : _app_service->available_apps())
@@ -427,8 +427,8 @@ namespace fire
             _contact_list_action = new QAction{tr("&Contacts"), this};
             connect(_contact_list_action, SIGNAL(triggered()), this, SLOT(show_contact_list()));
 
-            _chat_sample_action = new QAction{tr("&Chat"), this};
-            connect(_chat_sample_action, SIGNAL(triggered()), this, SLOT(make_chat_sample()));
+            _chat_app_action = new QAction{tr("&Chat"), this};
+            connect(_chat_app_action, SIGNAL(triggered()), this, SLOT(make_chat_app()));
 
             _app_editor_action = new QAction{tr("&App Editor"), this};
             connect(_app_editor_action, SIGNAL(triggered()), this, SLOT(make_app_editor()));
@@ -523,7 +523,7 @@ namespace fire
             db->activateWindow();
         }
 
-        void main_window::make_chat_sample()
+        void main_window::make_chat_app()
         {
             INVARIANT(_sessions);
             INVARIANT(_session_service);
@@ -532,7 +532,7 @@ namespace fire
             if(!s) return;
 
             //create chat sample
-            auto t = new a::chat_sample{_session_service, s->session()};
+            auto t = new a::chat_app{_session_service, s->session()};
             s->add(t);
             s->session()->add_app_id(t->mail()->address());
 
