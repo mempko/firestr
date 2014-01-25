@@ -263,7 +263,10 @@ namespace fire
                 SLB::Class<image_ref>{"image_ref", &manager}
                     .set("enabled", &image_ref::enabled)
                     .set("enable", &image_ref::enable)
-                    .set("disable", &image_ref::disable);
+                    .set("disable", &image_ref::disable)
+                    .set("width", &image_ref::width)
+                    .set("height", &image_ref::height)
+                    .set("good", &image_ref::good);
 
                 SLB::Class<timer_ref>{"timer_ref", &manager}
                     .set("running", &timer_ref::running)
@@ -897,12 +900,22 @@ namespace fire
                 image_ref ref;
                 ref.id = new_id();
                 ref.api = this;
+                ref.w = 0;
+                ref.h = 0;
+                ref.g = false;
 
                 auto i = std::make_shared<QImage>();
                 bool loaded = i->loadFromData(reinterpret_cast<const u::ubyte*>(d.data.data()),d.data.size());
 
                 auto l = new QLabel;
-                if(loaded) l->setPixmap(QPixmap::fromImage(*i));
+                if(loaded) 
+                {
+                    ref.w = i->width();
+                    ref.h = i->height();
+                    ref.g = true;
+                    l->setPixmap(QPixmap::fromImage(*i));
+                    l->setMinimumSize(i->width(), i->height());
+                }
 
                 image_refs[ref.id] = ref;
                 widgets[ref.id] = l;

@@ -640,6 +640,21 @@ namespace fire
                 rp->second.callback = c;
                 callback = c;
             }
+
+            int image_ref::width() const
+            {
+                return w;
+            }
+
+            int image_ref::height() const
+            {
+                return h;
+            }
+
+            bool image_ref::good() const
+            {
+                return g;
+            }
         }
     }
 }
