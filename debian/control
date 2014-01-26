@@ -1,0 +1,15 @@
+Source: firestr
+Section: unknown
+Priority: extra
+Maintainer: mempko <firestr.dev@gmail.com>
+Build-Depends: debhelper (>= 8.0.0), cmake, qtbase5-dev, libbotan1.10-dev, libboost-system-dev, libboost-program-options-dev, libboost-filesystem-dev, libboost-regex-dev, cdbs
+Standards-Version: 3.9.4
+Homepage: http://www.firestr.com
+#Vcs-Git: git://git.debian.org/collab-maint/firestr.git
+#Vcs-Browser: http://git.debian.org/?p=collab-maint/firestr.git;a=summary
+
+Package: firestr
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: A simple platform for p2p communication and computation
+ A simple platform for p2p communication and computation. Create and distribute p2p apps in a chat like user interface.
