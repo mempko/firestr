@@ -160,9 +160,13 @@ namespace fire
             };
             using timer_ref_map = std::unordered_map<int, timer_ref>;
 
-            class image_ref : public widget_ref
+            struct image_ref : public widget_ref
             {
-
+                int width() const;
+                int height() const;
+                bool good() const;
+                int w, h;
+                bool g;
             };
             using image_ref_map = std::unordered_map<int, image_ref>;
 

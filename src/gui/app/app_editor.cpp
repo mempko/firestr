@@ -43,14 +43,14 @@ namespace fire
             const std::string APP_EDITOR = "APP_EDITOR";
             const std::string LUA_KEYWORDS = "\\b(app|and|break|do|else|elseif|end|false|for|function|if|in|local|nil|not|or|repeat|return|then|true|until|while)\\b";
             const std::string LUA_QUOTE = "\".*[^\\\\]\"";
-            const std::string LUA_API_KEYWORDS = "\\b(add|remove|size|button|callback|clear|contact|disable|edit|edited_callback|enable|enabled|finished_callback|from|get|label|last_contact|list|message|name|online|place|place_across|print|send|send_to|set|set_text|text|text_edit|total_contacts|when_clicked|when_edited|when_finished|when_message_received|draw|line|circle|when_mouse_moved|when_mouse_pressed|when_mouse_released|when_mouse_dragged|clear|pen|get_pen|when_local_message_received|is_local|send_local|timer|interval|stop|start|running|when_triggered|save_file|save_bin_file|open_file|open_bin_file|id|str|get_bin|set_bin|sub|append|grow|height|grid|alert|good|image|data)\\b";
+            const std::string LUA_API_KEYWORDS = "\\b(add|remove|size|button|callback|clear|contact|disable|edit|edited_callback|enable|enabled|finished_callback|from|get|label|last_contact|list|message|name|online|place|place_across|print|send|send_to|set|set_text|text|text_edit|total_contacts|when_clicked|when_edited|when_finished|when_message_received|draw|line|circle|when_mouse_moved|when_mouse_pressed|when_mouse_released|when_mouse_dragged|clear|pen|get_pen|when_local_message_received|is_local|send_local|timer|interval|stop|start|running|when_triggered|save_file|save_bin_file|open_file|open_bin_file|id|str|get_bin|set_bin|sub|append|grow|width|height|grid|alert|good|image|data)\\b";
             const std::string LUA_NUMBERS = "[0-9\\.]+";
             const std::string LUA_OPERATORS = "[=+-\\*\\^:%#~<>\\(\\){}\\[\\];:,]+";
 
             namespace
             {
-                const size_t TIMER_SLEEP = 100; //in milliseconds
-                const size_t TIMER_UPDATE = 1500; //in milliseconds
+                const size_t TIMER_SLEEP = 50; //in milliseconds
+                const size_t TIMER_UPDATE = 1000; //in milliseconds
                 const size_t PADDING = 20;
                 const size_t MIN_EDIT_HEIGHT = 500;
                 const std::string SCRIPT_CODE_MESSAGE = "script";
@@ -187,7 +187,7 @@ namespace fire
                 t2->start(TIMER_UPDATE);
 
                 //send script
-                send_script();
+                run_script();
 
                 INVARIANT(_session);
                 INVARIANT(_mail);
@@ -248,13 +248,14 @@ namespace fire
                 auto code = gui::convert(_script->toPlainText());
                 if(code.empty()) return true;
 
-                send_script();
-
                 //run the code
                 _api->reset_widgets();
                 _api->run(code);
                 update_error(_api->get_error());
-                return _api->get_error().line == -1;
+                bool has_no_errors = _api->get_error().line == -1;
+                if(has_no_errors) update_status_to_no_errors();
+                else update_status_to_errors();
+                return has_no_errors;
             }
             
             void app_editor::update_error(l::error_info e)
@@ -376,9 +377,8 @@ namespace fire
                                 update_status_to_running();
 
                                 //update status bar
-                                if(run_script()) update_status_to_no_errors();
-                                else update_status_to_errors();
-
+                                run_script();
+                                send_script();
                             }
                             _run_state = READY;
                             break;
@@ -407,16 +407,21 @@ namespace fire
                         if(!c) continue;
 
                         auto code = gui::convert(_script->toPlainText());
-                        if(t.text != code)
-                        {
-                            _prev_code = t.text;
-                            auto cursor = _script->textCursor();
-                            _script->setText(t.text.c_str());
-                            _script->setTextCursor(cursor);
-                            _api->reset_widgets();
-                            _api->run(t.text);
-                            update_error(_api->get_error());
-                        }
+                        if(t.text == code) continue;
+
+                        //update text
+                        auto pos = _script->textCursor().position();
+                        _script->setText(t.text.c_str());
+
+                        //put cursor back
+                        auto cursor = _script->textCursor();
+                        cursor.setPosition(pos);
+                        _script->setTextCursor(cursor);
+
+                        //run code
+                        _prev_code = t.text;
+                        _run_state = READY;
+                        run_script();
                     }
                     else if(m.meta.type == l::SCRIPT_MESSAGE)
                     {

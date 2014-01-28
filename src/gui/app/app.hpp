@@ -22,6 +22,8 @@
 #include "message/message.hpp"
 #endif
 
+#include "util/disk_store.hpp"
+
 #include <string>
 #include <memory>
 
@@ -33,6 +35,7 @@ namespace fire
         {
             struct app_metadata
             {
+                std::string path;
                 std::string id;
                 std::string name;
             };
@@ -46,16 +49,30 @@ namespace fire
                     operator fire::message::message();
 
                 public:
+                    const std::string& path() const;
                     const std::string& name() const;
                     const std::string& id() const;
                     const std::string& code() const;
 
+                public:
+                    void path(const std::string&);
                     void name(const std::string&);
                     void code(const std::string&);
+
+                public:
+                    //local storage that is transfered
+                    const util::disk_store& data() const;
+                    util::disk_store& data();
+
+                    //data only stored on users computer
+                    const util::disk_store& local_data() const;
+                    util::disk_store& local_data();
 
                 private:
                     app_metadata _meta;
                     std::string _code;
+                    util::disk_store _data;
+                    util::disk_store _local_data;
             };
 
             using app_ptr = std::shared_ptr<app>;

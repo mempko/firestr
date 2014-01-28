@@ -15,7 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "util/log.hpp"
+
 #include "util/dbc.hpp"
+#include "util/filesystem.hpp"
 
 #include <exception>
 #include <fstream>
@@ -35,15 +37,6 @@ namespace fire
         }
 
         log_ptr log::_log;
-
-        bool create_directory(const std::string& dir)
-        {
-            if(bf::exists(dir)) return true;
-
-            bf::create_directories(dir);
-
-            return bf::exists(dir);
-        }
 
         std::string get_log_path(bf::path home)
         {

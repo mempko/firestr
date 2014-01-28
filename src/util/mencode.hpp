@@ -18,10 +18,12 @@
 #ifndef FIRESTR_UIL_MENCODE_H
 #define FIRESTR_UIL_MENCODE_H
 
-#include <map>
-#include <iostream>
-#include <sstream>
+#include <fstream>
 #include <initializer_list>
+#include <iostream>
+#include <map>
+#include <sstream>
+#include <stdexcept>
 
 #include <boost/any.hpp>
 
@@ -202,6 +204,25 @@ namespace fire
                 std::stringstream s{to_str(b)};
                 s >> v;
                 return v;
+            }
+
+        template<class R>
+            bool load_from_file(const std::string& f, R& r)
+            {
+                std::ifstream in(f.c_str());
+                if(!in.good()) return false;
+                in >> r;
+                return true;
+            }
+
+        template<class D>
+            void save_to_file(const std::string& f, const D& d)
+            {
+                std::ofstream out(f.c_str());
+                if(!out.good()) 
+                    throw std::runtime_error{"unable to save `" + f + "'"};
+
+                out << d;
             }
     }
 }
