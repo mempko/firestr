@@ -43,11 +43,18 @@ namespace fire
             {
                 const std::string SERVICE_ADDRESS = "app_service";
                 const std::string APP_HOME = "apps";
+                const std::string LOCAL_DATA = "data";
             }
 
             std::string get_app_home(bf::path home)
             {
                 bf::path app_home = home / APP_HOME;
+                return app_home.string();
+            }
+
+            std::string get_local_data_dir(bf::path home)
+            {
+                bf::path app_home = home / LOCAL_DATA;
                 return app_home.string();
             }
 
@@ -62,7 +69,13 @@ namespace fire
 
                 _sender = std::make_shared<ms::sender>(_user_service, mail());
                 _app_home = get_app_home(_user_service->home());
-                u::create_directory(_app_home);
+
+                //setup local data store
+                auto local_data_dir = get_local_data_dir(_user_service->home());
+                u::create_directory(local_data_dir);
+                _local_data.load(local_data_dir);
+
+                //load app metadata
                 load_apps();
 
                 INVARIANT(_user_service);
@@ -120,7 +133,23 @@ namespace fire
 
                 LOG << "loading app `" << p->second.name << "' (" << p->second.id << ") from `" << p->second.path << "'" << std::endl;
 
-                return a::load_app(p->second.path);
+                return a::load_app(_local_data, p->second.path);
+            }
+
+            app_ptr app_service::create_app(const m::message& m) const
+            {
+                u::mutex_scoped_lock l(_mutex);
+                auto a = std::make_shared<app>(_local_data, m);
+                ENSURE(a);
+                return a;
+            }
+
+            app_ptr app_service::create_new_app() const
+            {
+                u::mutex_scoped_lock l(_mutex);
+                auto a = std::make_shared<app>(_local_data);
+                ENSURE(a);
+                return a;
             }
 
             bool app_service::save_app(const app& a)
@@ -147,7 +176,7 @@ namespace fire
                 INVARIANT_FALSE(_app_home.empty());
                 REQUIRE_FALSE(a.name().empty());
 
-                app na; //make new id
+                app na{_local_data}; //make new id
                 na.name(a.name());
                 na.code(a.code());
                 a = na;

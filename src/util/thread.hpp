@@ -27,6 +27,7 @@ namespace fire
     {
         using thread_uptr = std::unique_ptr<std::thread>;
         using mutex_scoped_lock = std::lock_guard<std::mutex>;
+        using mutex_ptr = std::shared_ptr<std::mutex>;
 
         void sleep_thread(size_t milliseconds);
 

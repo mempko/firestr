@@ -40,10 +40,14 @@ namespace fire
             class app
             {
                 public:
-                    app();
-                    app(const std::string& id);
-                    app(const fire::message::message&);
+                    app(util::disk_store& local);
+                    app(util::disk_store& local, const std::string& id);
+                    app(util::disk_store& local, const fire::message::message&);
                     operator fire::message::message();
+
+                public:
+                    app(const app&);
+                    app& operator=(const app&);
 
                 public:
                     const std::string& path() const;
@@ -69,14 +73,14 @@ namespace fire
                     app_metadata _meta;
                     std::string _code;
                     util::disk_store _data;
-                    util::disk_store _local_data;
+                    util::disk_store& _local_data;
             };
 
             using app_ptr = std::shared_ptr<app>;
             using app_wptr = std::weak_ptr<app>;
 
             bool save_app(const std::string& dir, const app&);
-            app_ptr load_app(const std::string& dir);
+            app_ptr load_app(util::disk_store& local, const std::string& dir);
             bool load_app_metadata(const std::string& dir, app_metadata&);
         }
     }

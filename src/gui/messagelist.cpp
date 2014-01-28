@@ -146,8 +146,7 @@ namespace fire
             {
                 if(auto post = _session->parent_post().lock())
                 {
-                    app::app_ptr app{new app::app{u::decode<m::message>(n.data())}};
-
+                    auto app = _app_service->create_app(u::decode<m::message>(n.data()));
                     auto c = new a::script_app{n.id(), app, _app_service, _session_service, _session};
                     post->add(c->mail());
                     add(c);

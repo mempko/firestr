@@ -23,6 +23,7 @@
 #include <iostream>
 #include <map>
 #include <sstream>
+#include <memory>
 
 #include <boost/any.hpp>
 
@@ -122,6 +123,8 @@ namespace fire
             private:
                 value_map _m;
         };
+
+        using dict_ptr = std::shared_ptr<dict>;
 
         class array
         {

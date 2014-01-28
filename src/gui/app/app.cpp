@@ -42,23 +42,22 @@ namespace fire
                 const std::string METADATA_FILE = "metadata";
                 const std::string CODE_FILE = "code.lua";
                 const std::string DATA_PATH = "data";
-                const std::string LOCAL_DATA_PATH = "local_data";
             }
 
-            app::app(const std::string& id) 
+            app::app(u::disk_store& s, const std::string& id) : _local_data(s)
             {
                 REQUIRE_FALSE(id.empty());
                 _meta.id = id;
                 INVARIANT_FALSE(_meta.id.empty());
             }
 
-            app::app() 
+            app::app(u::disk_store& s) : _local_data(s)
             {
                 _meta.id = u::uuid();
                 INVARIANT_FALSE(_meta.id.empty());
             }
 
-            app::app(const m::message& m)
+            app::app(u::disk_store& s, const m::message& m) : _local_data(s)
             {
                 REQUIRE_EQUAL(m.meta.type, APP_MESSAGE);
 
@@ -82,6 +81,23 @@ namespace fire
                 m.data = u::to_bytes(_code);
 
                 return m;
+            }
+
+            app::app(const app& o) : 
+                _meta(o._meta),
+                _code(o._code),
+                _local_data(o._local_data), 
+                _data(o.data())
+            {
+            }
+
+            app& app::operator=(const app& o)
+            {
+                if(this == &o) return *this;
+                _meta = o._meta;
+                _code = o._code;
+                _data = o._data;
+                return *this;
             }
 
             const std::string& app::path() const
@@ -164,14 +180,6 @@ namespace fire
                 return p.string();
             }
 
-            std::string get_local_data_path(const std::string& dir)
-            {
-                bf::path p = dir;
-
-                p /= LOCAL_DATA_PATH;
-                return p.string();
-            }
-
             bool save_app(const std::string& dir, const app& a)
             {
                 REQUIRE_FALSE(a.id().empty());
@@ -195,12 +203,11 @@ namespace fire
 
                 //create data directories if they don't exist
                 u::create_directory(get_data_path(dir));
-                u::create_directory(get_local_data_path(dir));
                 
                 return true;
             }
 
-            app_ptr load_app(const std::string& dir)
+            app_ptr load_app(u::disk_store& local, const std::string& dir)
             {
                 if(!bf::exists(dir)) return nullptr;
 
@@ -220,18 +227,16 @@ namespace fire
                     code.append("\n");
                 } 
 
-                app_ptr a{new app{m.id}};
+                app_ptr a{new app{local, m.id}};
                 a->path(m.path);
                 a->name(m.name);
                 a->code(code);
 
                 //create data directories if they don't exist
                 u::create_directory(get_data_path(dir));
-                u::create_directory(get_local_data_path(dir));
 
-                //load disk data
+                //load app data
                 a->data().load(get_data_path(dir));
-                a->local_data().load(get_local_data_path(dir));
 
                 ENSURE(a);
                 ENSURE_FALSE(a->path().empty());

@@ -53,7 +53,7 @@ namespace fire
                             session::session_service_ptr, 
                             session::session_ptr);
                     script_app(
-                            const std::string& address, 
+                            const std::string& id, 
                             app_ptr, 
                             app_service_ptr, 
                             session::session_service_ptr, 
