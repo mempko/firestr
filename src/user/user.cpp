@@ -255,26 +255,6 @@ namespace fire
             return bf::exists(get_local_user_file(home_dir));
         }
 
-
-        template<class R>
-            bool load_from_file(const std::string& f, R& r)
-            {
-                std::ifstream in(f.c_str());
-                if(!in.good()) return false;
-                in >> r;
-                return true;
-            }
-
-        template<class D>
-            void save_to_file(const std::string& f, const D& d)
-            {
-                std::ofstream out(f.c_str());
-                if(!out.good()) 
-                    throw std::runtime_error{"unable to save `" + f + "'"};
-
-                out << d;
-            }
-
         local_user_ptr load_user(const std::string& home_dir, const std::string& passphrase)
         {
             auto local_user_file = get_local_user_file(home_dir);
@@ -285,7 +265,7 @@ namespace fire
 
             //load user info
             user_info info;
-            if(!load_from_file(local_user_file, info)) return {};
+            if(!u::load_from_file(local_user_file, info)) return {};
 
             //load private key
             std::ifstream key_in(local_prv_key_file.c_str());
@@ -296,13 +276,13 @@ namespace fire
 
             //load other user information
             users us;
-            load_from_file(local_contacts_file, us);
+            u::load_from_file(local_contacts_file, us);
 
             greet_servers greeters;
-            load_from_file(local_greaters_file, greeters);
+            u::load_from_file(local_greaters_file, greeters);
 
             contact_introductions introductions;
-            load_from_file(local_introductions_file, introductions);
+            u::load_from_file(local_introductions_file, introductions);
 
             contact_list contacts{us};
             local_user_ptr lu{new local_user{info, contacts, greeters, introductions, prv_key}};
@@ -321,7 +301,7 @@ namespace fire
             auto local_greaters_file = get_local_greeters_file(home_dir);
             auto local_introductions_file = get_local_introductions_file(home_dir);
 
-            save_to_file(local_user_file, lu.info());
+            u::save_to_file(local_user_file, lu.info());
 
             if(!bf::exists(local_prv_key_file))
             {
@@ -332,9 +312,9 @@ namespace fire
                 sc::encode(key_out, lu.private_key());
             }
 
-            save_to_file(local_contacts_file, lu.contacts().list());
-            save_to_file(local_greaters_file, lu.greeters());
-            save_to_file(local_introductions_file, lu.introductions());
+            u::save_to_file(local_contacts_file, lu.contacts().list());
+            u::save_to_file(local_greaters_file, lu.greeters());
+            u::save_to_file(local_introductions_file, lu.introductions());
         }
 
         user_info_ptr load_contact(const std::string& file)

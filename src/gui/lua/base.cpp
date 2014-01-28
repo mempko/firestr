@@ -291,6 +291,36 @@ namespace fire
                 ENSURE_FALSE(r.app_id.empty());
                 return r;
             }
+
+            store_ref::store_ref(u::disk_store& d) : _d(d){}
+
+            std::string store_ref::get(const std::string& k) const
+            {
+                if(!_d.has(k)) return "";
+                return _d.get(k).as_string();
+            }
+
+            void store_ref::set(const std::string& k, const std::string& v) 
+            {
+                _d.set(k, v);
+            }
+
+            bin_data store_ref::get_bin(const std::string& k) const
+            {
+                if(!_d.has(k)) return {};
+                if(!_d.get(k).is_bytes()) return {};
+                return {_d.get(k).as_bytes()};
+            }
+
+            void store_ref::set_bin(const std::string& k, const bin_data& v) 
+            {
+                _d.set(k,v.data);
+            }
+
+            bool store_ref::has(const std::string& k) const
+            {
+                return _d.has(k);
+            }
         }
     }
 }
