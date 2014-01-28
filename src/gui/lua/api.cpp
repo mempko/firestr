@@ -190,6 +190,13 @@ namespace fire
                     .set("is_local", &script_message::is_local)
                     .set("app", &script_message::app);
 
+                SLB::Class<store_ref>{"store_ref", &manager}
+                    .set("get", &store_ref::get)
+                    .set("set", &store_ref::set)
+                    .set("get_bin", &store_ref::get_bin)
+                    .set("set_bin", &store_ref::set_bin)
+                    .set("has", &store_ref::has);
+
                 SLB::Class<grid_ref>{"grid", &manager}
                     .set("place", &grid_ref::place)
                     .set("place_across", &grid_ref::place_across)

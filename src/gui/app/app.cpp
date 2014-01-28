@@ -19,6 +19,7 @@
 #include "util/mencode.hpp"
 #include "util/uuid.hpp"
 #include "util/dbc.hpp"
+#include "util/filesystem.hpp"
 
 #include <boost/filesystem.hpp>
 
@@ -40,6 +41,8 @@ namespace fire
                 const std::string APP_MESSAGE = "app_message";
                 const std::string METADATA_FILE = "metadata";
                 const std::string CODE_FILE = "code.lua";
+                const std::string DATA_PATH = "data";
+                const std::string LOCAL_DATA_PATH = "local_data";
             }
 
             app::app(const std::string& id) 
@@ -81,6 +84,11 @@ namespace fire
                 return m;
             }
 
+            const std::string& app::path() const
+            {
+                return _meta.path;
+            }
+
             const std::string& app::name() const
             {
                 return _meta.name;
@@ -97,6 +105,11 @@ namespace fire
                 return _code;
             }
 
+            void app::path(const std::string& v)
+            {
+                _meta.path = v;
+            }
+
             void app::name(const std::string& v)
             {
                 _meta.name = v;
@@ -105,6 +118,26 @@ namespace fire
             void app::code(const std::string& v)
             {
                 _code = v;
+            }
+
+            const u::disk_store& app::data() const
+            {
+                return _data;
+            }
+
+            u::disk_store& app::data()
+            {
+                return _data;
+            }
+
+            const u::disk_store& app::local_data() const
+            {
+                return _local_data;
+            }
+
+            u::disk_store& app::local_data()
+            {
+                return _local_data;
             }
 
             std::string get_metadata_file(const std::string& dir)
@@ -123,6 +156,22 @@ namespace fire
                 return p.string();
             }
 
+            std::string get_data_path(const std::string& dir)
+            {
+                bf::path p = dir;
+
+                p /= DATA_PATH;
+                return p.string();
+            }
+
+            std::string get_local_data_path(const std::string& dir)
+            {
+                bf::path p = dir;
+
+                p /= LOCAL_DATA_PATH;
+                return p.string();
+            }
+
             bool save_app(const std::string& dir, const app& a)
             {
                 REQUIRE_FALSE(a.id().empty());
@@ -131,14 +180,11 @@ namespace fire
                 if(!bf::exists(dir)) return false;
 
                 //write metadata
-                std::ofstream m(get_metadata_file(dir).c_str());
-                if(!m.good()) return false;
-
                 u::dict d;
                 d["id"] = a.id();
                 d["name"] = a.name();
 
-                m << d;
+                u::save_to_file(get_metadata_file(dir), d);
 
                 //write code
                 std::ofstream c(get_code_file(dir).c_str());
@@ -146,6 +192,10 @@ namespace fire
 
                 const auto& code = a.code();
                 c.write(code.c_str(), code.size());
+
+                //create data directories if they don't exist
+                u::create_directory(get_data_path(dir));
+                u::create_directory(get_local_data_path(dir));
                 
                 return true;
             }
@@ -171,10 +221,20 @@ namespace fire
                 } 
 
                 app_ptr a{new app{m.id}};
+                a->path(m.path);
                 a->name(m.name);
                 a->code(code);
 
+                //create data directories if they don't exist
+                u::create_directory(get_data_path(dir));
+                u::create_directory(get_local_data_path(dir));
+
+                //load disk data
+                a->data().load(get_data_path(dir));
+                a->local_data().load(get_local_data_path(dir));
+
                 ENSURE(a);
+                ENSURE_FALSE(a->path().empty());
                 ENSURE_FALSE(a->id().empty());
                 ENSURE_FALSE(a->name().empty());
                 ENSURE_EQUAL(a->name(), m.name);
@@ -185,12 +245,13 @@ namespace fire
 
             bool load_app_metadata(const std::string& dir, app_metadata& m)
             {
-                std::ifstream in(get_metadata_file(dir).c_str());
-                if(!in.good()) return false;
+                REQUIRE_FALSE(dir.empty());
 
                 util::dict d;
-                in >> d;
+                if(!u::load_from_file(get_metadata_file(dir), d))
+                    return false;
 
+                m.path = dir;
                 m.id = d["id"].as_string(); 
                 m.name = d["name"].as_string(); 
 

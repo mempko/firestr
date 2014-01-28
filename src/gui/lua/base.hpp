@@ -24,6 +24,8 @@
 #include "message/mailbox.hpp"
 #include "messages/sender.hpp"
 
+#include "util/disk_store.hpp"
+
 #include <QObject>
 #include <QLabel>
 #include <QTextEdit>
@@ -132,6 +134,23 @@ namespace fire
                     std::string _local_app_id;
                     util::dict _v;
                     lua_api* _api;
+            };
+
+            class store_ref
+            {
+                public:
+                    store_ref(util::disk_store&);
+
+                public:
+                    std::string get(const std::string&) const;
+                    void set(const std::string&, const std::string&);
+
+                    void set_bin(const std::string&, const bin_data&);
+                    bin_data get_bin(const std::string&) const;
+
+                    bool has(const std::string&) const;
+                private:
+                    util::disk_store& _d;
             };
         }
     }

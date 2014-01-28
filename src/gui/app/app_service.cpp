@@ -16,8 +16,11 @@
  */
 
 #include "gui/app/app_service.hpp"
-#include "util/uuid.hpp"
+
 #include "util/dbc.hpp"
+#include "util/filesystem.hpp"
+#include "util/log.hpp"
+#include "util/uuid.hpp"
 
 #include <stdexcept>
 #include <boost/filesystem.hpp>
@@ -42,17 +45,6 @@ namespace fire
                 const std::string APP_HOME = "apps";
             }
 
-            bool create_directory(const std::string& dir)
-            {
-                REQUIRE_FALSE(dir.empty());
-
-                if(bf::exists(dir)) return true;
-
-                bf::create_directories(dir);
-
-                return bf::exists(dir);
-            }
-
             std::string get_app_home(bf::path home)
             {
                 bf::path app_home = home / APP_HOME;
@@ -70,7 +62,7 @@ namespace fire
 
                 _sender = std::make_shared<ms::sender>(_user_service, mail());
                 _app_home = get_app_home(_user_service->home());
-                create_directory(_app_home);
+                u::create_directory(_app_home);
                 load_apps();
 
                 INVARIANT(_user_service);
@@ -111,9 +103,11 @@ namespace fire
                 } 
             }
 
-            std::string get_app_dir(bf::path home, const std::string& id)
+            std::string get_app_dir(bf::path home, const app& a)
             {
-                bf::path d = home / id;
+                if(!a.path().empty()) return a.path();
+
+                bf::path d = home / a.id();
                 return d.string();
             }
 
@@ -124,8 +118,9 @@ namespace fire
                 auto p = _app_metadata.find(id);
                 if(p == _app_metadata.end()) return nullptr;
 
-                auto app_dir = get_app_dir(_app_home, p->second.id);
-                return a::load_app(app_dir);
+                LOG << "loading app `" << p->second.name << "' (" << p->second.id << ") from `" << p->second.path << "'" << std::endl;
+
+                return a::load_app(p->second.path);
             }
 
             bool app_service::save_app(const app& a)
@@ -134,8 +129,9 @@ namespace fire
 
                 INVARIANT_FALSE(_app_home.empty());
                 
-                auto app_dir = get_app_dir(_app_home, a.id());
-                create_directory(app_dir);
+                auto app_dir = get_app_dir(_app_home, a);
+                LOG << "saving app `" << a.name() << "' (" << a.id() << ") to `" << app_dir << "'" << std::endl;
+                u::create_directory(app_dir);
                 bool saved = a::save_app(app_dir, a);
 
                 app_metadata m;
