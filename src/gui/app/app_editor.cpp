@@ -300,7 +300,7 @@ namespace fire
                     if(ok && !r.isEmpty()) name = gui::convert(r);
                     else return;
 
-                    _app = std::make_shared<app>();
+                    _app = _app_service->create_new_app();
                     _app->name(name);
                 }
 

@@ -19,6 +19,7 @@
 #define FIRESTR_UIL_DISK_STORE_H
 
 #include "util/mencode.hpp"
+#include "util/thread.hpp"
 
 namespace fire
 {
@@ -29,7 +30,12 @@ namespace fire
             public:
                 disk_store();
                 disk_store(const std::string& path);
+                disk_store(const disk_store&);
+                disk_store& operator=(const disk_store&);
+
+            public:
                 void load(const std::string& path);
+                bool loaded() const;
 
             public:
                 value get(const std::string& key) const;
@@ -41,7 +47,8 @@ namespace fire
 
             private:
                 std::string _path;
-                dict _index;
+                dict_ptr _index;
+                mutable mutex_ptr _mutex;
         };
 
     }
