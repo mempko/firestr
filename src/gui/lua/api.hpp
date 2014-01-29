@@ -20,6 +20,7 @@
 
 #include "gui/lua/base.hpp"
 #include "gui/lua/widgets.hpp"
+#include "gui/app/app.hpp"
 #include "session/session_service.hpp"
 
 #include <QImage>
@@ -48,6 +49,7 @@ namespace fire
                 Q_OBJECT
                 public:
                     lua_api(
+                            app::app_ptr a,
                             const user::contact_list& con,
                             messages::sender_ptr sender,
                             session::session_ptr session,
@@ -60,6 +62,9 @@ namespace fire
 
                 public:
                     //misc
+                    app::app_ptr app;
+                    store_ref_ptr local_data;
+                    store_ref_ptr data;
                     error_infos errors; 
                     list* output;
                     QWidget* canvas;

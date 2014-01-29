@@ -16,10 +16,12 @@
  */
 
 #include "gui/app/app.hpp"
-#include "util/mencode.hpp"
-#include "util/uuid.hpp"
+
 #include "util/dbc.hpp"
 #include "util/filesystem.hpp"
+#include "util/log.hpp"
+#include "util/mencode.hpp"
+#include "util/uuid.hpp"
 
 #include <boost/filesystem.hpp>
 
@@ -44,29 +46,74 @@ namespace fire
                 const std::string DATA_PATH = "data";
             }
 
-            app::app(u::disk_store& s, const std::string& id) : _local_data(s)
+            std::string get_metadata_file(const std::string& dir)
+            {
+                bf::path p = dir;
+
+                p /= METADATA_FILE;
+                return p.string();
+            }
+
+            std::string get_code_file(const std::string& dir)
+            {
+                bf::path p = dir;
+
+                p /= CODE_FILE;
+                return p.string();
+            }
+
+            std::string get_data_path(const std::string& dir)
+            {
+                bf::path p = dir;
+
+                p /= DATA_PATH;
+                return p.string();
+            }
+
+            app::app(u::disk_store& s, const std::string& id) : 
+                _local_data(s), _is_tmp{false}
             {
                 REQUIRE_FALSE(id.empty());
                 _meta.id = id;
                 INVARIANT_FALSE(_meta.id.empty());
             }
 
-            app::app(u::disk_store& s) : _local_data(s)
+            app::app(u::disk_store& s) : 
+                _local_data(s), _is_tmp{false}
             {
                 _meta.id = u::uuid();
                 INVARIANT_FALSE(_meta.id.empty());
             }
 
-            app::app(u::disk_store& s, const m::message& m) : _local_data(s)
+            app::app(
+                    u::disk_store& s, 
+                    const std::string& app_dir,
+                    const m::message& m) : 
+                _local_data(s), _is_tmp{false}
+
             {
                 REQUIRE_EQUAL(m.meta.type, APP_MESSAGE);
 
+                _meta.path = app_dir;
                 _meta.id = m.meta.extra["app_id"].as_string();
                 _meta.name = m.meta.extra["app_name"].as_string();
-                _code = u::to_str(m.data);
+                _code = m.meta.extra["code"].as_string();
+
+                //unpack data
+                _data.load(get_data_path(app_dir));
+                u::dict data = u::decode<u::dict>(m.data);
+                _data.import_from(data);
 
                 if(_meta.id.empty()) 
                     throw std::runtime_error("received app `" + _meta.name + "' with empty id");
+            }
+
+            app::~app()
+            {
+                if(!_is_tmp) return;
+                CHECK(!_meta.path.empty());
+                LOG << "cleaning up tmp app `" << _meta.name << "' (" << _meta.id << ") at `" << _meta.path << "'" << std::endl;
+                u::delete_directory(_meta.path);
             }
 
             app::operator m::message()
@@ -78,16 +125,22 @@ namespace fire
                 m.meta.type = APP_MESSAGE;
                 m.meta.extra["app_id"] = _meta.id;
                 m.meta.extra["app_name"] = _meta.name;
-                m.data = u::to_bytes(_code);
+                m.meta.extra["code"] = _code;
+                
+                //pack data
+                u::dict data;
+                _data.export_to(data);
+                m.data = u::encode(data);
 
                 return m;
             }
 
             app::app(const app& o) : 
                 _meta(o._meta),
-                _code(o._code),
+                _code{o._code},
                 _local_data(o._local_data), 
-                _data(o.data())
+                _data{o.data()},
+                _is_tmp{o._is_tmp}
             {
             }
 
@@ -97,7 +150,16 @@ namespace fire
                 _meta = o._meta;
                 _code = o._code;
                 _data = o._data;
+                _is_tmp = o._is_tmp;
                 return *this;
+            }
+
+            app app::clone() const
+            {
+                app c = *this;
+                c._meta.id = u::uuid();
+                c._is_tmp = false;
+                return c;
             }
 
             const std::string& app::path() const
@@ -136,6 +198,11 @@ namespace fire
                 _code = v;
             }
 
+            void app::set_tmp()
+            {
+                _is_tmp = true;
+            }
+
             const u::disk_store& app::data() const
             {
                 return _data;
@@ -154,30 +221,6 @@ namespace fire
             u::disk_store& app::local_data()
             {
                 return _local_data;
-            }
-
-            std::string get_metadata_file(const std::string& dir)
-            {
-                bf::path p = dir;
-
-                p /= METADATA_FILE;
-                return p.string();
-            }
-
-            std::string get_code_file(const std::string& dir)
-            {
-                bf::path p = dir;
-
-                p /= CODE_FILE;
-                return p.string();
-            }
-
-            std::string get_data_path(const std::string& dir)
-            {
-                bf::path p = dir;
-
-                p /= DATA_PATH;
-                return p.string();
             }
 
             bool save_app(const std::string& dir, const app& a)
@@ -202,7 +245,18 @@ namespace fire
                 c.write(code.c_str(), code.size());
 
                 //create data directories if they don't exist
-                u::create_directory(get_data_path(dir));
+                auto data_path = get_data_path(dir);
+                u::create_directory(data_path);
+
+                //copy data if the destination is not the same as source
+                if(a.path() != dir)
+                {
+                    //not the most efficient way of doing this :/
+                    u::dict dc;
+                    a.data().export_to(dc);
+                    u::disk_store cs(data_path);
+                    cs.import_from(dc);
+                }
                 
                 return true;
             }

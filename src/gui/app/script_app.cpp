@@ -133,7 +133,7 @@ namespace fire
 
                 _mail = std::make_shared<m::mailbox>(_id);
                 _sender = std::make_shared<ms::sender>(_session->user_service(), _mail);
-                _api = std::make_shared<l::lua_api>(_contacts, _sender, _session, _session_service, _canvas, _canvas_layout);
+                _api = std::make_shared<l::lua_api>(_app, _contacts, _sender, _session, _session_service, _canvas, _canvas_layout);
 
                 //run script
                 _api->run(_app->code());
