@@ -25,6 +25,7 @@ namespace fire
     namespace util
     {
         bool create_directory(const std::string& dir);
+        bool delete_directory(const std::string& dir);
     }
 }
 

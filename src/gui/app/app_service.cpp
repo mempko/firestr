@@ -43,11 +43,26 @@ namespace fire
             {
                 const std::string SERVICE_ADDRESS = "app_service";
                 const std::string APP_HOME = "apps";
+                const std::string LOCAL_DATA = "data";
+                const std::string TMP_APP_HOME = "tmp";
+                const std::string DATA_DIR = "data";
             }
 
             std::string get_app_home(bf::path home)
             {
                 bf::path app_home = home / APP_HOME;
+                return app_home.string();
+            }
+
+            std::string get_tmp_app_home(bf::path home)
+            {
+                bf::path app_home = home / TMP_APP_HOME;
+                return app_home.string();
+            }
+
+            std::string get_local_data_dir(bf::path home)
+            {
+                bf::path app_home = home / LOCAL_DATA;
                 return app_home.string();
             }
 
@@ -62,12 +77,20 @@ namespace fire
 
                 _sender = std::make_shared<ms::sender>(_user_service, mail());
                 _app_home = get_app_home(_user_service->home());
-                u::create_directory(_app_home);
+                _tmp_app_home = get_tmp_app_home(_user_service->home());
+
+                //setup local data store
+                auto local_data_dir = get_local_data_dir(_user_service->home());
+                u::create_directory(local_data_dir);
+                _local_data.load(local_data_dir);
+
+                //load app metadata
                 load_apps();
 
                 INVARIANT(_user_service);
                 INVARIANT(_sender);
                 INVARIANT_FALSE(_app_home.empty());
+                INVARIANT_FALSE(_tmp_app_home.empty());
             }
 
             void app_service::message_received(const message::message& m)
@@ -103,12 +126,21 @@ namespace fire
                 } 
             }
 
-            std::string get_app_dir(bf::path home, const app& a)
+            std::string get_app_dir(bf::path root, const std::string& id)
             {
-                if(!a.path().empty()) return a.path();
-
-                bf::path d = home / a.id();
+                bf::path d = root / id;
                 return d.string();
+            }
+
+            std::string get_app_data_dir(bf::path root)
+            {
+                bf::path d = root / DATA_DIR;
+                return d.string();
+            }
+
+            std::string get_app_dir(bf::path root, const app& a)
+            {
+                return get_app_dir(root, a.id());
             }
 
             app_ptr app_service::load_app(const std::string& id) const
@@ -120,7 +152,51 @@ namespace fire
 
                 LOG << "loading app `" << p->second.name << "' (" << p->second.id << ") from `" << p->second.path << "'" << std::endl;
 
-                return a::load_app(p->second.path);
+                return a::load_app(_local_data, p->second.path);
+            }
+
+            std::string setup_tmp_dir(
+                    const m::message& m, 
+                    const std::string& tmp_root)
+            {
+                auto id = m.meta.extra["app_id"].as_string();
+                auto t = get_app_dir(tmp_root, id);
+                auto d = get_app_data_dir(t);
+                u::create_directory(d);
+                return t;
+            }
+
+            void setup_tmp_app(app& a, const std::string& tmp_root)
+            {
+                auto t = get_app_dir(tmp_root, a);
+                auto d = get_app_data_dir(t);
+                u::create_directory(d);
+                a.path(t);
+                a.data().load(d);
+                a.set_tmp();
+            }
+
+            //create app from message
+            app_ptr app_service::create_app(const m::message& m) const
+            {
+                u::mutex_scoped_lock l(_mutex);
+
+                auto tmp_dir = setup_tmp_dir(m, _tmp_app_home);
+                auto a = std::make_shared<app>(_local_data, tmp_dir, m);
+                a->set_tmp();
+                ENSURE(a);
+                return a;
+            }
+
+            app_ptr app_service::create_new_app() const
+            {
+                u::mutex_scoped_lock l(_mutex);
+                auto a = std::make_shared<app>(_local_data);
+
+                //setup tmp app directory
+                setup_tmp_app(*a, _tmp_app_home);
+                ENSURE(a);
+                return a;
             }
 
             bool app_service::save_app(const app& a)
@@ -142,16 +218,12 @@ namespace fire
                 return saved;
             }
 
-            bool app_service::clone_app(app& a)
+            bool app_service::clone_app(const app& a)
             {
                 INVARIANT_FALSE(_app_home.empty());
                 REQUIRE_FALSE(a.name().empty());
 
-                app na; //make new id
-                na.name(a.name());
-                na.code(a.code());
-                a = na;
-                return save_app(a);
+                return save_app(a.clone());
             }
 
             void app_service::fire_apps_updated_event()

@@ -36,6 +36,16 @@ namespace fire
                 bf::create_directories(dir);
                 return bf::exists(dir);
             }
+
+            bool delete_directory(const std::string& dir)
+            {
+                REQUIRE_FALSE(dir.empty());
+
+                if(!bf::exists(dir)) return false;
+
+                bf::remove_all(dir);
+                return !bf::exists(dir);
+            }
     }
 }
 

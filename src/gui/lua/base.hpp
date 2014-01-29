@@ -154,6 +154,7 @@ namespace fire
                 private:
                     util::disk_store& _d;
             };
+            using store_ref_ptr = std::unique_ptr<store_ref>;
         }
     }
 }

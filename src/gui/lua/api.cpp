@@ -37,6 +37,7 @@ namespace ms = fire::messages;
 namespace us = fire::user;
 namespace s = fire::session;
 namespace u = fire::util;
+namespace a = fire::gui::app;
 namespace bf = boost::filesystem;
 
 namespace fire
@@ -52,6 +53,7 @@ namespace fire
             }
 
             lua_api::lua_api(
+                    a::app_ptr a,
                     const us::contact_list& con,
                     ms::sender_ptr sndr,
                     s::session_ptr s,
@@ -59,6 +61,7 @@ namespace fire
                     QWidget* c,
                     QGridLayout* cl,
                     list* o ) :
+                app{a},
                 contacts{con},
                 sender{sndr},
                 session{s},
@@ -69,17 +72,23 @@ namespace fire
                 ids{0},
                 _error{-1, ""}
             {
+                INVARIANT(app);
                 INVARIANT(sender);
                 INVARIANT(session);
                 INVARIANT(session_service);
                 INVARIANT(canvas);
                 INVARIANT(layout);
 
+                local_data.reset(new store_ref{app->local_data()});
+                data.reset(new store_ref{app->data()});
+
                 bind();
 
                 INVARIANT(canvas);
                 INVARIANT(layout);
                 INVARIANT(state);
+                INVARIANT(local_data);
+                INVARIANT(data);
             }
 
             lua_api::~lua_api()
@@ -125,6 +134,8 @@ namespace fire
             void lua_api::bind()
             {  
                 REQUIRE_FALSE(state);
+                REQUIRE(data);
+                REQUIRE(local_data);
 
                 using namespace std::placeholders;
 
@@ -296,6 +307,8 @@ namespace fire
 
                 state = std::make_shared<SLB::Script>(&manager);
                 state->set("app", this);
+                state->set("store", local_data.get());
+                state->set("data", data.get());
 
                 ENSURE(state);
             }
