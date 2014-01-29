@@ -38,12 +38,18 @@ namespace fire
                 bool loaded() const;
 
             public:
+                void import_from(const dict&);
+                void export_to(dict&) const;
+
+            public:
                 value get(const std::string& key) const;
                 bool has(const std::string& key) const;
                 void set(const std::string& key, const value&);
 
             private:
                 void save_index();
+                void set_intern(const std::string& key, const value&);
+                void get_value(const std::string& key, value&) const;
 
             private:
                 std::string _path;

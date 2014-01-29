@@ -42,12 +42,16 @@ namespace fire
                 public:
                     app(util::disk_store& local);
                     app(util::disk_store& local, const std::string& id);
-                    app(util::disk_store& local, const fire::message::message&);
+                    app(util::disk_store& local, 
+                            const std::string& app_dir, 
+                            const fire::message::message&);
+                    ~app();
                     operator fire::message::message();
 
                 public:
                     app(const app&);
                     app& operator=(const app&);
+                    app clone() const;
 
                 public:
                     const std::string& path() const;
@@ -59,6 +63,7 @@ namespace fire
                     void path(const std::string&);
                     void name(const std::string&);
                     void code(const std::string&);
+                    void set_tmp();
 
                 public:
                     //local storage that is transfered
@@ -74,6 +79,7 @@ namespace fire
                     std::string _code;
                     util::disk_store _data;
                     util::disk_store& _local_data;
+                    bool _is_tmp;
             };
 
             using app_ptr = std::shared_ptr<app>;

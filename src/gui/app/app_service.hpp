@@ -50,7 +50,7 @@ namespace fire
                     app_ptr create_app(const fire::message::message&) const;
                     app_ptr load_app(const std::string& id) const;
                     bool save_app(const app&);
-                    bool clone_app(app&);
+                    bool clone_app(const app&);
 
                 public:
                     user::user_service_ptr user_service();
@@ -66,6 +66,7 @@ namespace fire
 
                 private:
                     std::string _app_home;
+                    std::string _tmp_app_home;
                     app_metadata_map _app_metadata;
 
                     user::user_service_ptr _user_service;
