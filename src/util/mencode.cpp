@@ -110,6 +110,11 @@ namespace fire
             return _m.count(k) > 0;
         }
 
+        bool dict::remove(const std::string& k)
+        {
+            return _m.erase(k) > 0;
+        }
+
         dict::const_iterator dict::begin() const { return _m.begin(); }
         dict::const_iterator dict::end() const { return _m.end(); }
         dict::iterator dict::begin() { return _m.begin(); }
