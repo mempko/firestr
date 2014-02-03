@@ -251,6 +251,11 @@ namespace fire
                 //copy data if the destination is not the same as source
                 if(a.path() != dir)
                 {
+                    //remove existing data
+                    u::delete_directory(data_path);
+                    u::create_directory(data_path);
+
+                    //copy data
                     //not the most efficient way of doing this :/
                     u::dict dc;
                     a.data().export_to(dc);

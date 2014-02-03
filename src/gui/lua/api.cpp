@@ -946,15 +946,6 @@ namespace fire
                 return ref;
             }
 
-            std::string get_file_name(QWidget* canvas)
-            {
-                REQUIRE(canvas);
-                std::string HOME = std::getenv("HOME");
-                auto file = QFileDialog::getOpenFileName(canvas, "Open File", HOME.c_str());
-                auto sf = convert(file);
-                return sf;
-            }
-
             file_data lua_api::open_file()
             {
                 INVARIANT(canvas);
@@ -983,16 +974,8 @@ namespace fire
                 if(sf.empty()) return bin_file_data{};
                 bf::path p = sf;
 
-                std::ifstream f(sf.c_str());
-                if(!f) return bin_file_data{};
-
-                f.seekg (0, f.end);
-                size_t length = f.tellg();
-                f.seekg (0, f.beg);
-
                 bin_data bin;
-                bin.data.resize(length);
-                f.read(&bin.data[0], length);
+                if(!load_from_file(sf, bin.data)) return bin_file_data{};
 
                 bin_file_data fd;
                 fd.name = p.filename().string();
