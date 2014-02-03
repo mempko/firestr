@@ -46,6 +46,15 @@ namespace fire
                 bf::remove_all(dir);
                 return !bf::exists(dir);
             }
+
+            bool delete_file(const std::string& file)
+            {
+                REQUIRE_FALSE(file.empty());
+                if(!bf::exists(file)) return false;
+
+                bf::remove(file);
+                return !bf::exists(file);
+            }
     }
 }
 

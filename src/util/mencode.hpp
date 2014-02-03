@@ -113,6 +113,7 @@ namespace fire
 
                 size_t size() const;
                 bool has(const std::string& k) const; 
+                bool remove(const std::string& k);
 
             public:
                 const_iterator begin() const;
