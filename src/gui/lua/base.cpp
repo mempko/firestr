@@ -321,6 +321,11 @@ namespace fire
             {
                 return _d.has(k);
             }
+
+            bool store_ref::remove(const std::string& k)
+            {
+                return _d.remove(k);
+            }
         }
     }
 }

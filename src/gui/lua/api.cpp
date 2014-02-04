@@ -206,7 +206,8 @@ namespace fire
                     .set("set", &store_ref::set)
                     .set("get_bin", &store_ref::get_bin)
                     .set("set_bin", &store_ref::set_bin)
-                    .set("has", &store_ref::has);
+                    .set("has", &store_ref::has)
+                    .set("remove", &store_ref::remove);
 
                 SLB::Class<grid_ref>{"grid", &manager}
                     .set("place", &grid_ref::place)

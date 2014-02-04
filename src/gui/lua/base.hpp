@@ -149,6 +149,7 @@ namespace fire
                     bin_data get_bin(const std::string&) const;
 
                     bool has(const std::string&) const;
+                    bool remove(const std::string&);
                 private:
                     util::disk_store& _d;
             };
