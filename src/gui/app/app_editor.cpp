@@ -19,14 +19,18 @@
 
 #include "gui/app/app_editor.hpp"
 #include "gui/util.hpp"
-#include "util/uuid.hpp"
 #include "util/dbc.hpp"
 #include "util/log.hpp"
+#include "util/string.hpp"
+#include "util/uuid.hpp"
 
 #include <QTimer>
 
 #include <functional>
 #include <sstream>
+
+#include <boost/filesystem.hpp>
+#include <boost/lexical_cast.hpp>
 
 namespace m = fire::message;
 namespace ms = fire::messages;
@@ -34,6 +38,7 @@ namespace us = fire::user;
 namespace s = fire::session;
 namespace u = fire::util;
 namespace l = fire::gui::lua;
+namespace bf = boost::filesystem;
 
 namespace fire
 {
@@ -270,10 +275,12 @@ namespace fire
                 auto key_label = new QLabel{tr("key:")};
                 auto value_label = new QLabel{tr("value:")};
                 _data_key = new QLineEdit;
+                connect(_data_key, SIGNAL(textChanged(QString)), this, SLOT(data_key_edited()));
 
                 auto value_widget = new QWidget;
                 auto value_layout = new QHBoxLayout{value_widget};
                 _data_value = new QLineEdit;
+                connect(_data_value, SIGNAL(returnPressed()), this, SLOT(add_data()));
 
                 auto load_button = new QPushButton{tr("...")};
                 load_button->setMaximumSize(20,20);
@@ -282,19 +289,35 @@ namespace fire
                 value_layout->addWidget(_data_value);
                 value_layout->addWidget(load_button);
 
-                auto add_button = new QPushButton{tr("+")};
-                add_button->setMaximumSize(20,20);
-                connect(add_button, SIGNAL(clicked()), this, SLOT(add_data()));
+                _add_button = new QPushButton{tr("+")};
+                _add_button->setMaximumSize(20,20);
+                connect(_add_button, SIGNAL(clicked()), this, SLOT(add_data()));
 
                 l->addWidget(key_label, 0, 0);
                 l->addWidget(_data_key, 0, 1);
                 l->addWidget(value_label, 0, 2);
                 l->addWidget(value_widget, 0, 3);
-                l->addWidget(add_button, 0, 4);
+                l->addWidget(_add_button, 0, 4);
 
                 _data_items = new list;
                 l->addWidget(_data_items, 1, 0, 5, 0);
+
                 init_data();
+                data_key_edited();
+
+                ENSURE(_data_key);
+                ENSURE(_data_value);
+                ENSURE(_add_button);
+                ENSURE(_data_items);
+            }
+
+            void app_editor::data_key_edited()
+            {
+                INVARIANT(_data_key);
+                INVARIANT(_data_value);
+                bool enabled = !_data_key->text().isEmpty();
+                _data_value->setEnabled(enabled);
+                _add_button->setEnabled(enabled);
             }
 
             void app_editor::add_data()
@@ -303,14 +326,23 @@ namespace fire
                 INVARIANT(_data_value);
                 INVARIANT(_app);
                 auto k = gui::convert(_data_key->text());
-                auto v = gui::convert(_data_value->text());
+                u::trim(k);
+                auto vt = gui::convert(_data_value->text());
+                u::trim(vt);
+                u::value v = vt;
 
                 //must have a key
                 if(k.empty()) return;
 
                 //silly check to see loaded a file or set text value
-                if(v == "<file>") _app->data().set(k, _data_bytes);
-                else _app->data().set(k, v);
+                if(vt == "<file>") _app->data().set(k, _data_bytes);
+                else 
+                {
+                    //try to convert to number, if not a number then keep string.
+                    try { v = boost::lexical_cast<double>(vt); }catch(...){}
+
+                    _app->data().set(k, v);
+                }
 
                 //refresh ui
                 init_data();
@@ -319,6 +351,7 @@ namespace fire
                 _data_key->clear();
                 _data_value->clear();
                 _data_bytes.clear();
+                _data_key->setFocus(Qt::OtherFocusReason);
 
                 //change state to code changed so that the app recompiles
                 _run_state = CODE_CHANGED;
@@ -327,12 +360,19 @@ namespace fire
 
             void app_editor::load_data_from_file()
             {
+                INVARIANT(_data_key);
+                INVARIANT(_data_value);
                 auto sf = get_file_name(this);
                 if(sf.empty()) return;
 
                 if(!load_from_file(sf, _data_bytes)) return;
 
                 _data_value->setText("<file>");
+                if(_data_key->text().isEmpty())
+                {
+                    bf::path p = sf;
+                    _data_key->setText(p.filename().string().c_str());
+                }
             }
 
             const std::string& app_editor::id()
