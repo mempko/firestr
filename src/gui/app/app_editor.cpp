@@ -60,14 +60,16 @@ namespace fire
             struct text_script
             {
                 std::string from_id;
-                std::string text;
+                std::string code;
+                u::bytes data;
             };
 
             m::message convert(const text_script& t)
             {
                 m::message m;
                 m.meta.type = SCRIPT_CODE_MESSAGE;
-                m.data = u::to_bytes(t.text);
+                m.meta.extra["code"] = t.code;
+                m.data = t.data;
 
                 return m;
             }
@@ -76,7 +78,8 @@ namespace fire
             {
                 REQUIRE_EQUAL(m.meta.type, SCRIPT_CODE_MESSAGE);
                 t.from_id = m.meta.extra["from_id"].as_string();
-                t.text = u::to_str(m.data);
+                t.code = m.meta.extra["code"].as_string();
+                t.data = m.data;
             }
 
             app_editor::app_editor(
@@ -360,10 +363,16 @@ namespace fire
                 auto code = gui::convert(_script->toPlainText());
                 if(code.empty()) return;
 
-                //send the code
+                //set the code
                 text_script tm;
-                tm.text = code;
+                tm.code = code;
 
+                //export the data
+                u::dict data;
+                _app->data().export_to(data);
+                tm.data = u::encode(data);
+
+                //send it all
                 for(auto c : _contacts.list())
                 {
                     CHECK(c);
@@ -539,19 +548,26 @@ namespace fire
                         if(!c) continue;
 
                         auto code = gui::convert(_script->toPlainText());
-                        if(t.text == code) continue;
+                        if(t.code == code && t.data.empty()) continue;
 
                         //update text
                         auto pos = _script->textCursor().position();
-                        _script->setText(t.text.c_str());
+                        _script->setText(t.code.c_str());
+
+                        //update data
+                        u::dict data = u::decode<u::dict>(t.data);
+                        _app->data().import_from(data);
 
                         //put cursor back
                         auto cursor = _script->textCursor();
                         cursor.setPosition(pos);
                         _script->setTextCursor(cursor);
 
+                        //update data ui
+                        init_data();
+
                         //run code
-                        _prev_code = t.text;
+                        _prev_code = t.code;
                         _run_state = READY;
                         run_script();
                     }
