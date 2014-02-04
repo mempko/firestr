@@ -1,4 +1,3 @@
-
 s = app:button("send")
 app:place(s, 0,0)
 app:height(100)
@@ -10,7 +9,6 @@ sfiles = {}
 gfiles = {}
 
 s:when_clicked("send()")
-
 
 function send()
 	local file = app:open_bin_file()
@@ -137,30 +135,22 @@ end
 function send_start_file(f)
 	local m = app:message()
 	m:set("t","sf")
-	m:set("name", f.name )
-	m:set("id", f.id)
-	m:set("size", f.size)
-	m:set("chunks", f.chunks)
+	m:set("d", {name=f.name, id=f.id, size=f.size, chunks=f.chunks})
 	app:send(m)
 end
 
 function got_start_file(m)
-	
-	local n = m:get("name")
-	local orig_id = m:get("id") + 0
+	local d = m:get("d")
 	local from = m:from()
-	local id = from:id() .. "_" .. orig_id
-	local chunks = m:get("chunks")  + 0
-	local size = m:get("size")
+	local id = from:id() .. "_" .. d.id
 	local nf = {
 		from = from,
-		orig_id = orig_id,
+		orig_id = d.id,
 		id=id,
-		name=n,
-		data=d, 
-		chunks=chunks,
+		name=d.name,
+		chunks=d.chunks,
 		chunk=-1,
-		size = size,
+		size = d.size,
 		mode=4}
 
 	add_gfile(nf)
@@ -171,18 +161,14 @@ function send_get_chunk(f)
 	local m = app:message()
 	local chunk = f.chunk + 1
 	m:set("t","gc")
-	m:set("id", f.orig_id)
-	m:set("chunk", chunk)
-
+	m:set("d", {id=f.orig_id, chunk=chunk})
 	app:send_to(f.from, m)
 end
 
 function got_get_chunk(m)
-	local id = m:get("id") + 0
-	local chunk = m:get("chunk") + 0
-	local f = sfiles[id].file
-
-	send_chunk(m:from(), f, chunk)
+	local d = m:get("d")
+	local f = sfiles[d.id].file
+	send_chunk(m:from(), f, d.chunk)
 end
 
 function sent_all(f)
@@ -210,24 +196,21 @@ function send_chunk(to, f, c)
 
 	local m = app:message()
 	m:set("t", "sc")
-	m:set("id", f.id)
-	m:set("chunk", c)
+	m:set("m", {id=f.id, chunk=c})
 	m:set_bin("data", ch)
 	app:send_to(to, m)
 	update_s_status(sfiles[f.id])
 end
 
 function got_chunk(m)
-	local orig_id = m:get("id") + 0
-	local id = m:from():id() .. "_" .. orig_id
-	local chunk = m:get("chunk") + 0
-
+	local md = m:get("m")
+	local id = m:from():id() .. "_" .. md.id
 	local chunk_data = m:get_bin("data")
 
 	local fd = gfiles[id]
 	local file = fd.file
 
-	if chunk < file.chunk then
+	if md.chunk < file.chunk then
 		return
 	end
 
@@ -236,7 +219,7 @@ function got_chunk(m)
 	else
 		file.data:append(chunk_data)
 	end
-	file.chunk = chunk
+	file.chunk = md.chunk
 
 	local last_chunk = file.chunks  - 1
 
@@ -248,7 +231,6 @@ function got_chunk(m)
 
 	file.mode = 2
 	update_g_status(fd)
-
 	send_get_chunk(file)
 	
 end
