@@ -397,6 +397,10 @@ namespace fire
                 bool has_no_errors = _api->get_error().line == -1;
                 if(has_no_errors) update_status_to_no_errors();
                 else update_status_to_errors();
+
+                //update data ui
+                init_data();
+
                 return has_no_errors;
             }
             
