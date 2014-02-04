@@ -39,6 +39,11 @@ namespace fire
     {
         namespace lua
         {
+            namespace 
+            {
+                const std::string ARRAY_K = "__a";
+            }
+
             void set_enabled(int id, widget_map& map, bool enabled)
             {
                 auto w = get_widget<QWidget>(id, map);
@@ -212,15 +217,19 @@ namespace fire
                 return m;
             }
 
-            std::string script_message::get(const std::string& k) const
+            const u::value& script_message::get(const std::string& k) const
             {
-                if(!_v.has(k)) return "";
-                return _v[k].as_string();
+                return _v[k];
             }
 
-            void script_message::set(const std::string& k, const std::string& v) 
+            void script_message::set(const std::string& k, const u::value& v) 
             {
                 _v[k] = v;
+            }
+
+            bool script_message::has(const std::string& k) const 
+            {
+                return _v.has(k);
             }
 
             bin_data script_message::get_bin(const std::string& k) const
@@ -326,6 +335,210 @@ namespace fire
             {
                 return _d.remove(k);
             }
+
+            size_t store_ref::size() const
+            {
+                return _d.size();
+            }
+
+            const util::disk_store& store_ref::store() const
+            {
+                return _d;
+            }
+
+            util::disk_store& store_ref::store()
+            {
+                return _d;
+            }
+
+            u::dict to_dict(lua_State* L, int table)
+            {
+                REQUIRE(L);
+
+                u::dict d;
+                //push first key
+                lua_pushnil(L);
+                while (lua_next(L, table) != 0)
+                {
+                    //extract key
+                    std::string key;
+                    int ik = -1;
+                    if(lua_isnumber(L, -2)) ik = lua_tonumber(L, -2); 
+                    else key = lua_tostring(L, -2);
+
+                    //extract value
+                    u::value v;
+                    if(lua_isnumber(L, -1)) v = lua_tonumber(L, -1);
+                    else if(lua_isstring(L, -1)) v = std::string{lua_tostring(L, -1)};
+                    else if(lua_istable(L, -1)) v = to_dict(L, lua_gettop(L));
+
+                    //insert to dict
+                    if(ik != -1)
+                    {
+                        u::array* a = nullptr;
+                        if(!d.has(ARRAY_K))
+                        {
+                            u::array na;
+                            d[ARRAY_K] = na;
+                            a = &d[ARRAY_K].as_array();
+                        } 
+                        else a = &d[ARRAY_K].as_array();
+
+                        CHECK(a);
+
+                        //lua arrays start with 1
+                        if(ik != 0) ik --;
+                        if(ik >= a->size()) a->resize(ik + 1);
+
+                        (*a)[ik] = v;
+                    }
+                    else d[key] = v;
+
+                    lua_pop(L, 1);
+                }
+                return d;
+            }
+
+            void push_dict(lua_State* L, const u::dict& d);
+            void push_array(lua_State* L, const u::array& a);
+            void push_value(lua_State* L, const u::value& v)
+            {
+                REQUIRE(L);
+
+                if(v.is_double())
+                    lua_pushnumber(L, v.as_double());
+                else if(v.is_bytes())
+                    lua_pushstring(L, v.as_string().c_str());
+                else if(v.is_dict())
+                    push_dict(L, v.as_dict());
+                else if(v.is_array())
+                    push_array(L, v.as_array());
+            }
+
+            void push_array(lua_State* L, const u::array& a, int table)
+            {
+                REQUIRE(L);
+
+                int i = 1;
+                for(const auto& v : a)
+                {
+                    lua_pushnumber(L, i);
+                    push_value(L, v);
+                    lua_settable(L, table);
+                    i++;
+                }
+            }
+
+            void push_array(lua_State* L, const u::array& a)
+            {
+                REQUIRE(L);
+
+                lua_newtable(L);
+                auto table = lua_gettop(L);
+                push_array(L, a, table);
+            }
+
+
+            void push_dict(lua_State* L, const u::dict& d)
+            {
+                REQUIRE(L);
+
+                lua_newtable(L);
+                auto table = lua_gettop(L);
+                for(const auto& p : d)
+                {
+                    if(p.first == ARRAY_K) push_array(L, p.second, table);
+                    else
+                    {
+                        lua_pushstring(L, p.first.c_str());
+                        push_value(L, p.second);
+                        lua_settable(L, table);
+                    }
+                }
+            }
+
+            u::value to_value(lua_State* L, int param)
+            {
+                REQUIRE(L);
+
+                u::value v;
+                if(lua_istable(L, param)) v = to_dict(L, param);
+                else if(lua_isnumber(L, param)) v = lua_tonumber(L, param);
+                else if(lua_isstring(L, param)) v = std::string{lua_tostring(L, param)};
+                else if(lua_isboolean(L, param)) v = lua_toboolean(L, param) ? 1 : 0;
+                return v;
+            }
+
+            int store_ref_set(lua_State* L)
+            {
+                REQUIRE(L);
+
+                auto params = lua_gettop(L);
+                if(params != 3) return 0;
+
+                store_ref* r = SLB::Private::Type<store_ref*>::get(L, 1);
+                if(r == nullptr) return 0;
+                if(!lua_isstring(L, 2)) return 0;
+
+                auto key = lua_tostring(L, 2);
+                u::value v = to_value(L, 3);
+                r->store().set(key, v);
+
+                return 0;
+            }
+
+            int store_ref_get(lua_State* L)
+            {
+                REQUIRE(L);
+
+                auto params = lua_gettop(L);
+                if(params != 2) { lua_pushnil(L); return 1; }
+
+                //get store ref
+                store_ref* r = SLB::Private::Type<store_ref*>::get(L, 1);
+                if(!r) { lua_pushnil(L); return 1; }
+                if(!lua_isstring(L, 2)) { lua_pushnil(L); return 1; }
+
+                auto key = lua_tostring(L, 2);
+                auto v = r->store().get(key);
+                push_value(L, v);
+                return 1;
+            }
+
+            int script_message_set(lua_State* L)
+            {
+                REQUIRE(L);
+                auto params = lua_gettop(L);
+                if(params != 3) return 0;
+
+                script_message* r = SLB::Private::Type<script_message*>::get(L, 1);
+                if(r == nullptr) return 0;
+                if(!lua_isstring(L, 2)) return 0;
+
+                auto key = lua_tostring(L, 2);
+                u::value v = to_value(L, 3);
+                r->set(key, v);
+
+                return 0;
+            }
+
+            int script_message_get(lua_State* L)
+            {
+                auto params = lua_gettop(L);
+                if(params != 2) { lua_pushnil(L); return 1; }
+
+                //get store ref
+                script_message* r = SLB::Private::Type<script_message*>::get(L, 1);
+                if(!r) { lua_pushnil(L); return 1; }
+                if(!lua_isstring(L, 2)) { lua_pushnil(L); return 1; }
+
+                auto key = lua_tostring(L, 2);
+                auto v = r->get(key);
+                push_value(L, v);
+                return 1;
+            }
+
+
         }
     }
 }
