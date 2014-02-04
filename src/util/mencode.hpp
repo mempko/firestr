@@ -79,6 +79,8 @@ namespace fire
                 const bytes& as_bytes() const;
                 const dict& as_dict() const;
                 const array& as_array() const;
+                dict& as_dict();
+                array& as_array();
                 
             public:
                 bool is_int() const;
@@ -142,6 +144,7 @@ namespace fire
 
             public:
                 void add(const value&);
+                void resize(size_t size);
 
             public:
                 value& operator[](size_t);

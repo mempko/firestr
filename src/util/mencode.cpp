@@ -68,6 +68,8 @@ namespace fire
         const bytes& value::as_bytes() const { return boost::any_cast<const bytes&>(_v); }
         const dict& value::as_dict() const { return boost::any_cast<const dict&>(_v); }
         const array& value::as_array() const { return boost::any_cast<const array&>(_v); }
+        dict& value::as_dict() { return boost::any_cast<dict&>(_v); }
+        array& value::as_array() { return boost::any_cast<array&>(_v); }
                 
         bool value::is_int() const { return _v.type() == typeid(int);}
         bool value::is_size() const { return _v.type() == typeid(size_t);}
@@ -147,6 +149,7 @@ namespace fire
         array::iterator array::end() { return _a.end(); }
 
         void array::add(const value& v) { _a.push_back(v); }
+        void array::resize(size_t size) { _a.resize(size); }
 
         template <typename t>
         void enc(std::ostream& o, char s, char e, const t& v)

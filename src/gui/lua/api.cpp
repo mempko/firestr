@@ -194,20 +194,20 @@ namespace fire
 
                 SLB::Class<script_message>{"script_message", &manager}
                     .set("from", &script_message::from)
-                    .set("get", &script_message::get)
-                    .set("set", &script_message::set)
                     .set("get_bin", &script_message::get_bin)
                     .set("set_bin", &script_message::set_bin)
                     .set("is_local", &script_message::is_local)
-                    .set("app", &script_message::app);
+                    .set("app", &script_message::app)
+                    .set("set", script_message_set)
+                    .set("get", script_message_get);
 
                 SLB::Class<store_ref>{"store_ref", &manager}
-                    .set("get", &store_ref::get)
-                    .set("set", &store_ref::set)
                     .set("get_bin", &store_ref::get_bin)
                     .set("set_bin", &store_ref::set_bin)
                     .set("has", &store_ref::has)
-                    .set("remove", &store_ref::remove);
+                    .set("remove", &store_ref::remove)
+                    .set("set", store_ref_set)
+                    .set("get", store_ref_get);
 
                 SLB::Class<grid_ref>{"grid", &manager}
                     .set("place", &grid_ref::place)
@@ -310,7 +310,6 @@ namespace fire
                 state->set("app", this);
                 state->set("store", local_data.get());
                 state->set("data", data.get());
-
                 ENSURE(state);
             }
 

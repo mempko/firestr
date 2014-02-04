@@ -4432,6 +4432,8 @@ namespace SLB {
     explicit Script(Manager *m = Manager::defaultManager());
     virtual ~Script();
 
+    lua_State* getState();
+
     // Tries to load-and-execute the given file, it can throw an exception
     // If SLB was compiled with Exception support or can exit the program
     // with an error code. See safeDoFile for a safe call that doesn't fail.
@@ -4530,7 +4532,6 @@ namespace SLB {
     virtual void onGC(lua_State * /*L*/) {}
     void setAllocator(lua_Alloc f, void *ud = 0);
 
-    lua_State* getState();
     void close(); // will close lua_state
 
   private:
