@@ -123,8 +123,9 @@ namespace fire
                     operator fire::message::message() const;
 
                 public:
-                    std::string get(const std::string&) const;
-                    void set(const std::string&, const std::string&);
+                    const fire::util::value& get(const std::string&) const;
+                    void set(const std::string&, const fire::util::value&);
+                    bool has(const std::string&) const;
                     bin_data get_bin(const std::string&) const;
                     void set_bin(const std::string&, const bin_data&);
                     contact_ref from() const;
@@ -151,9 +152,21 @@ namespace fire
                     bin_data get_bin(const std::string&) const;
 
                     bool has(const std::string&) const;
+                    bool remove(const std::string&);
+                    size_t size() const;
+
+                public:
+                    const util::disk_store& store() const;
+                    util::disk_store& store();
+
                 private:
                     util::disk_store& _d;
             };
+
+            int store_ref_set(lua_State* L);
+            int store_ref_get(lua_State* L);
+            int script_message_set(lua_State* L);
+            int script_message_get(lua_State* L);
             using store_ref_ptr = std::unique_ptr<store_ref>;
         }
     }

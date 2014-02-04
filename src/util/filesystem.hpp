@@ -26,6 +26,7 @@ namespace fire
     {
         bool create_directory(const std::string& dir);
         bool delete_directory(const std::string& dir);
+        bool delete_file(const std::string& file);
     }
 }
 

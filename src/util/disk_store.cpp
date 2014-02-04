@@ -191,6 +191,42 @@ namespace fire
             save_to_file(get_value_file(_path, id), v);
         }
 
+        bool disk_store::remove(const std::string& key)
+        {
+            INVARIANT(_index);
+            INVARIANT(_mutex);
+            mutex_scoped_lock l(*_mutex);
+
+            if(!_index->has(key)) return false;
+
+            //remove data
+            auto id = (*_index)[key].as_string();
+            delete_file(get_value_file(_path, id));
+
+            //remove from index
+            _index->remove(key);
+
+            save_index();
+        }
+
+        disk_store::const_iterator disk_store::begin() const
+        {
+            INVARIANT(_index);
+            return _index->begin();
+        }
+
+        disk_store::const_iterator disk_store::end() const
+        {
+            INVARIANT(_index);
+            return _index->end();
+        }
+
+        size_t disk_store::size() const
+        {
+            INVARIANT(_index);
+            return _index->size();
+        }
+
         void disk_store::save_index()
         {
             INVARIANT_FALSE(_path.empty());

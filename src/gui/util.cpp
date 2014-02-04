@@ -17,6 +17,12 @@
 
 #include "gui/util.hpp"
 
+#include <QFileDialog>
+
+#include <fstream>
+
+namespace u = fire::util;
+
 namespace fire
 {
     namespace gui
@@ -29,6 +35,30 @@ namespace fire
         std::string app_id(const user::local_user& l)
         {
             return "firestr-" + l.info().id();
+        }
+
+        std::string get_file_name(QWidget* root)
+        {
+            REQUIRE(root);
+            std::string HOME = std::getenv("HOME");
+            auto file = QFileDialog::getOpenFileName(root, "Open File", HOME.c_str());
+            auto sf = convert(file);
+            return sf;
+        }
+
+        bool load_from_file(const std::string& f, u::bytes& data)
+        {
+            std::ifstream fs(f.c_str());
+            if(!fs) return false;
+
+            fs.seekg (0, fs.end);
+            size_t length = fs.tellg();
+            fs.seekg (0, fs.beg);
+
+            data.resize(length);
+            fs.read(data.data(), length);
+
+            return true;
         }
     }
 }

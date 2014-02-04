@@ -96,9 +96,14 @@ namespace fire
                     void save_app();
                     void check_mail();
                     void update();
+                    void add_data();
+                    void load_data_from_file();
 
                 private:
                     void init();
+                    void init_code_tab(QGridLayout*);
+                    void init_data_tab(QGridLayout*);
+                    void init_data();
                     void update_error(lua::error_info e);
                     void update_status_to_errors();
                     void update_status_to_no_errors();
@@ -122,6 +127,10 @@ namespace fire
                     QLabel* _status;
                     QGridLayout* _canvas_layout;
                     list* _output;
+                    QLineEdit* _data_key;
+                    QLineEdit* _data_value;
+                    util::bytes _data_bytes;
+                    list* _data_items;
 
                     lua::lua_api_ptr _api;
                     app_ptr _app;
@@ -131,6 +140,24 @@ namespace fire
                     run_state  _run_state;
             };
             extern const std::string APP_EDITOR;
+
+            class data_item : public QWidget
+            {
+                Q_OBJECT
+                public:
+                    data_item(util::disk_store&, const std::string& key);
+
+                public slots:
+                    void remove();
+
+                private:
+                    QLabel* _key_label;
+                    QLabel* _value_label;
+                    QPushButton* _rm;
+                    const std::string _key;
+                    util::disk_store& _d;
+            };
+
 
         }
     }

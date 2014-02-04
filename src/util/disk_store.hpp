@@ -45,6 +45,13 @@ namespace fire
                 value get(const std::string& key) const;
                 bool has(const std::string& key) const;
                 void set(const std::string& key, const value&);
+                bool remove(const std::string& key);
+
+            public:
+                using const_iterator = dict::const_iterator;
+                const_iterator begin() const;
+                const_iterator end() const;
+                size_t size() const;
 
             private:
                 void save_index();

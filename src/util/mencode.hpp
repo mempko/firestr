@@ -80,6 +80,8 @@ namespace fire
                 const bytes& as_bytes() const;
                 const dict& as_dict() const;
                 const array& as_array() const;
+                dict& as_dict();
+                array& as_array();
                 
             public:
                 bool is_int() const;
@@ -114,6 +116,7 @@ namespace fire
 
                 size_t size() const;
                 bool has(const std::string& k) const; 
+                bool remove(const std::string& k);
 
             public:
                 const_iterator begin() const;
@@ -142,6 +145,7 @@ namespace fire
 
             public:
                 void add(const value&);
+                void resize(size_t size);
 
             public:
                 value& operator[](size_t);

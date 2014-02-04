@@ -26,6 +26,7 @@
 #include <QTimer>
 
 #include <functional>
+#include <sstream>
 
 namespace m = fire::message;
 namespace ms = fire::messages;
@@ -59,14 +60,16 @@ namespace fire
             struct text_script
             {
                 std::string from_id;
-                std::string text;
+                std::string code;
+                u::bytes data;
             };
 
             m::message convert(const text_script& t)
             {
                 m::message m;
                 m.meta.type = SCRIPT_CODE_MESSAGE;
-                m.data = u::to_bytes(t.text);
+                m.meta.extra["code"] = t.code;
+                m.data = t.data;
 
                 return m;
             }
@@ -75,7 +78,8 @@ namespace fire
             {
                 REQUIRE_EQUAL(m.meta.type, SCRIPT_CODE_MESSAGE);
                 t.from_id = m.meta.extra["from_id"].as_string();
-                t.text = u::to_str(m.data);
+                t.code = m.meta.extra["code"].as_string();
+                t.data = m.data;
             }
 
             app_editor::app_editor(
@@ -148,12 +152,52 @@ namespace fire
                 if(!_app) _app = _app_service->create_new_app();
 
                 //create gui
+                auto tabs = new QTabWidget{this};
+                layout()->addWidget(tabs);
+
+                //code tab
+                auto code_tab = new QWidget{this};
+                auto code_layout = new QGridLayout{code_tab};
+                tabs->addTab(code_tab, tr("code"));
+
+                init_code_tab(code_layout);
+
+                //data tab
+                auto data_tab = new QWidget{this};
+                auto data_layout = new QGridLayout{data_tab};
+                tabs->addTab(data_tab, tr("data"));
+
+                init_data_tab(data_layout);
+
+                //run app
+                run_script();
+
+                INVARIANT(_app);
+                INVARIANT(_session);
+                INVARIANT(_mail);
+                INVARIANT(_sender);
+                INVARIANT(_save);
+                INVARIANT(_canvas);
+                INVARIANT(_canvas_layout);
+                INVARIANT(_output);
+                INVARIANT(_status);
+            }
+
+            void app_editor::init_code_tab(QGridLayout* l)
+            {
+                REQUIRE(l);
+                INVARIANT(root());
+                INVARIANT(layout());
+                INVARIANT(_session_service);
+                INVARIANT(_session);
+                INVARIANT(_app_service);
+
                 _canvas = new QWidget;
                 _canvas_layout = new QGridLayout;
                 _canvas->setLayout(_canvas_layout);
                 _output = new list;
-                layout()->addWidget(_canvas, 0, 0, 1, 2);
-                layout()->addWidget(_output, 1, 0, 1, 2);
+                l->addWidget(_canvas, 0, 0, 1, 2);
+                l->addWidget(_output, 1, 0, 1, 2);
 
                 _mail = std::make_shared<m::mailbox>(_id);
                 _sender = std::make_shared<ms::sender>(_session->user_service(), _mail);
@@ -167,15 +211,15 @@ namespace fire
                 _highlighter = new lua_highlighter(_script->document());
 
                 _script->setPlainText(_app->code().c_str());
-                layout()->addWidget(_script, 2, 0, 1, 2);
+                l->addWidget(_script, 2, 0, 1, 2);
 
                 //add status bar
                 _status = new QLabel;
-                layout()->addWidget(_status, 3, 0);
+                l->addWidget(_status, 3, 0);
 
                 //save button
                 _save = new QPushButton{tr("save")};
-                layout()->addWidget(_save, 3, 1);
+                l->addWidget(_save, 3, 1);
                 connect(_save, SIGNAL(clicked()), this, SLOT(save_app()));
 
                 setMinimumHeight(layout()->sizeHint().height() + PADDING);
@@ -189,9 +233,6 @@ namespace fire
                 connect(t2, SIGNAL(timeout()), this, SLOT(update()));
                 t2->start(TIMER_UPDATE);
 
-                //send script
-                run_script();
-
                 INVARIANT(_app);
                 INVARIANT(_session);
                 INVARIANT(_mail);
@@ -201,6 +242,97 @@ namespace fire
                 INVARIANT(_canvas_layout);
                 INVARIANT(_output);
                 INVARIANT(_status);
+            }
+
+            void app_editor::init_data()
+            {
+                INVARIANT(_data_items);
+                INVARIANT(_app);
+
+                _data_items->clear();
+
+                for(const auto& p : _app->data())
+                    _data_items->add(new data_item(_app->data(), p.first));
+
+                ENSURE_EQUAL(_data_items->size(), _app->data().size());
+            }
+
+            void app_editor::init_data_tab(QGridLayout* l)
+            {
+                REQUIRE(l);
+                INVARIANT(root());
+                INVARIANT(layout());
+                INVARIANT(_session_service);
+                INVARIANT(_session);
+                INVARIANT(_app_service);
+                INVARIANT(_app);
+
+                auto key_label = new QLabel{tr("key:")};
+                auto value_label = new QLabel{tr("value:")};
+                _data_key = new QLineEdit;
+
+                auto value_widget = new QWidget;
+                auto value_layout = new QHBoxLayout{value_widget};
+                _data_value = new QLineEdit;
+
+                auto load_button = new QPushButton{tr("...")};
+                load_button->setMaximumSize(20,20);
+                connect(load_button, SIGNAL(clicked()), this, SLOT(load_data_from_file()));
+
+                value_layout->addWidget(_data_value);
+                value_layout->addWidget(load_button);
+
+                auto add_button = new QPushButton{tr("+")};
+                add_button->setMaximumSize(20,20);
+                connect(add_button, SIGNAL(clicked()), this, SLOT(add_data()));
+
+                l->addWidget(key_label, 0, 0);
+                l->addWidget(_data_key, 0, 1);
+                l->addWidget(value_label, 0, 2);
+                l->addWidget(value_widget, 0, 3);
+                l->addWidget(add_button, 0, 4);
+
+                _data_items = new list;
+                l->addWidget(_data_items, 1, 0, 5, 0);
+                init_data();
+            }
+
+            void app_editor::add_data()
+            {
+                INVARIANT(_data_key);
+                INVARIANT(_data_value);
+                INVARIANT(_app);
+                auto k = gui::convert(_data_key->text());
+                auto v = gui::convert(_data_value->text());
+
+                //must have a key
+                if(k.empty()) return;
+
+                //silly check to see loaded a file or set text value
+                if(v == "<file>") _app->data().set(k, _data_bytes);
+                else _app->data().set(k, v);
+
+                //refresh ui
+                init_data();
+
+                //clear input
+                _data_key->clear();
+                _data_value->clear();
+                _data_bytes.clear();
+
+                //change state to code changed so that the app recompiles
+                _run_state = CODE_CHANGED;
+                update_status_to_waiting();
+            }
+
+            void app_editor::load_data_from_file()
+            {
+                auto sf = get_file_name(this);
+                if(sf.empty()) return;
+
+                if(!load_from_file(sf, _data_bytes)) return;
+
+                _data_value->setText("<file>");
             }
 
             const std::string& app_editor::id()
@@ -231,10 +363,16 @@ namespace fire
                 auto code = gui::convert(_script->toPlainText());
                 if(code.empty()) return;
 
-                //send the code
+                //set the code
                 text_script tm;
-                tm.text = code;
+                tm.code = code;
 
+                //export the data
+                u::dict data;
+                _app->data().export_to(data);
+                tm.data = u::encode(data);
+
+                //send it all
                 for(auto c : _contacts.list())
                 {
                     CHECK(c);
@@ -259,6 +397,10 @@ namespace fire
                 bool has_no_errors = _api->get_error().line == -1;
                 if(has_no_errors) update_status_to_no_errors();
                 else update_status_to_errors();
+
+                //update data ui
+                init_data();
+
                 return has_no_errors;
             }
             
@@ -366,7 +508,7 @@ namespace fire
                         }
                     case CODE_CHANGED:
                         {
-                            if(pos == _prev_pos) 
+                            if(pos == _prev_pos && code == _prev_code) 
                             {
                                 update_status_to_waiting();
                                 _run_state = DONE_TYPING;
@@ -375,7 +517,7 @@ namespace fire
                         }
                     case DONE_TYPING:
                         {
-                            if(pos == _prev_pos) 
+                            if(pos == _prev_pos && code == _prev_code) 
                             {
                                 update_status_to_running();
 
@@ -410,19 +552,26 @@ namespace fire
                         if(!c) continue;
 
                         auto code = gui::convert(_script->toPlainText());
-                        if(t.text == code) continue;
+                        if(t.code == code && t.data.empty()) continue;
 
                         //update text
                         auto pos = _script->textCursor().position();
-                        _script->setText(t.text.c_str());
+                        _script->setText(t.code.c_str());
+
+                        //update data
+                        u::dict data = u::decode<u::dict>(t.data);
+                        _app->data().import_from(data);
 
                         //put cursor back
                         auto cursor = _script->textCursor();
                         cursor.setPosition(pos);
                         _script->setTextCursor(cursor);
 
+                        //update data ui
+                        init_data();
+
                         //run code
-                        _prev_code = t.text;
+                        _prev_code = t.code;
                         _run_state = READY;
                         run_script();
                     }
@@ -506,6 +655,55 @@ namespace fire
                         i = t.indexOf(r.regex, i + size);
                     }
                 }
+            }
+
+            data_item::data_item(util::disk_store& d, const std::string& key) :
+                _key{key}, _d(d)
+            {
+                auto l = new QHBoxLayout{this};
+                setLayout(l);
+
+                std::stringstream ks;
+                ks << "<b>" << key << "</b>";
+                _key_label = new QLabel{ks.str().c_str()};
+
+                auto v = d.get(key);
+
+                std::stringstream vs;
+                if(v.is_int()) vs << v.as_int();
+                else if(v.is_size()) vs << v.as_size();
+                else if(v.is_double()) vs << v.as_double();
+                else if(v.is_dict()) vs << "<complext data>";
+                else if(v.is_array()) vs << "<array>";
+                else if(v.is_bytes()) 
+                {
+                    auto b = v.as_bytes();
+                    if(b.size() > 100) vs << "<file>";
+                    else vs << u::to_str(b);
+                }
+
+                _value_label = new QLabel{vs.str().c_str()};
+
+                _rm = new QPushButton{tr("x")};
+                _rm->setMaximumSize(20,20);
+                connect(_rm, SIGNAL(clicked()), this, SLOT(remove()));
+
+                l->addWidget(_key_label);
+                l->addWidget(_value_label);
+                l->addWidget(_rm);
+
+                INVARIANT(_key_label);
+                INVARIANT(_value_label);
+                INVARIANT(_rm);
+            }
+
+            void data_item::remove()
+            {
+                INVARIANT(_key_label);
+                INVARIANT(_value_label);
+                INVARIANT(_rm);
+                _d.remove(_key);
+                setEnabled(false);
             }
         }
     }

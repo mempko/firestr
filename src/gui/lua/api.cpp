@@ -194,19 +194,20 @@ namespace fire
 
                 SLB::Class<script_message>{"script_message", &manager}
                     .set("from", &script_message::from)
-                    .set("get", &script_message::get)
-                    .set("set", &script_message::set)
                     .set("get_bin", &script_message::get_bin)
                     .set("set_bin", &script_message::set_bin)
                     .set("is_local", &script_message::is_local)
-                    .set("app", &script_message::app);
+                    .set("app", &script_message::app)
+                    .set("set", script_message_set)
+                    .set("get", script_message_get);
 
                 SLB::Class<store_ref>{"store_ref", &manager}
-                    .set("get", &store_ref::get)
-                    .set("set", &store_ref::set)
                     .set("get_bin", &store_ref::get_bin)
                     .set("set_bin", &store_ref::set_bin)
-                    .set("has", &store_ref::has);
+                    .set("has", &store_ref::has)
+                    .set("remove", &store_ref::remove)
+                    .set("set", store_ref_set)
+                    .set("get", store_ref_get);
 
                 SLB::Class<grid_ref>{"grid", &manager}
                     .set("place", &grid_ref::place)
@@ -309,7 +310,6 @@ namespace fire
                 state->set("app", this);
                 state->set("store", local_data.get());
                 state->set("data", data.get());
-
                 ENSURE(state);
             }
 
@@ -946,15 +946,6 @@ namespace fire
                 return ref;
             }
 
-            std::string get_file_name(QWidget* canvas)
-            {
-                REQUIRE(canvas);
-                std::string HOME = std::getenv("HOME");
-                auto file = QFileDialog::getOpenFileName(canvas, "Open File", HOME.c_str());
-                auto sf = convert(file);
-                return sf;
-            }
-
             file_data lua_api::open_file()
             {
                 INVARIANT(canvas);
@@ -983,16 +974,8 @@ namespace fire
                 if(sf.empty()) return bin_file_data{};
                 bf::path p = sf;
 
-                std::ifstream f(sf.c_str());
-                if(!f) return bin_file_data{};
-
-                f.seekg (0, f.end);
-                size_t length = f.tellg();
-                f.seekg (0, f.beg);
-
                 bin_data bin;
-                bin.data.resize(length);
-                f.read(&bin.data[0], length);
+                if(!load_from_file(sf, bin.data)) return bin_file_data{};
 
                 bin_file_data fd;
                 fd.name = p.filename().string();

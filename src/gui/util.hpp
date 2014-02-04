@@ -19,6 +19,7 @@
 #define FIRESTR_GUI_UTIL_H
 
 #include <QString>
+#include <QWidget>
 #include "user/user.hpp"
 
 namespace fire
@@ -27,6 +28,8 @@ namespace fire
     {
         std::string convert(const QString&);
         std::string app_id(const user::local_user& l);
+        std::string get_file_name(QWidget* root);
+        bool load_from_file(const std::string& f, fire::util::bytes& data);
     }
 }
 
