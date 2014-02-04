@@ -96,6 +96,8 @@ namespace fire
                     void update();
                     void add_data();
                     void load_data_from_file();
+                    void data_key_edited();
+                    void key_was_clicked(QString);
 
                 private:
                     void init();
@@ -118,6 +120,7 @@ namespace fire
                     messages::sender_ptr _sender;
                     user::contact_list _contacts;
 
+                    //code tab
                     QTextEdit* _script;
                     lua_highlighter* _highlighter;
                     QPushButton* _save;
@@ -125,8 +128,11 @@ namespace fire
                     QLabel* _status;
                     QGridLayout* _canvas_layout;
                     list* _output;
+
+                    //data tab
                     QLineEdit* _data_key;
                     QLineEdit* _data_value;
+                    QPushButton* _add_button;
                     util::bytes _data_bytes;
                     list* _data_items;
 

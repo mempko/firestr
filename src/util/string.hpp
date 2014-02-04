@@ -31,6 +31,8 @@ namespace fire
 {
     namespace util
     {
+        inline void trim(std::string& t) { boost::algorithm::trim(t);}
+
         template <class container>
             container split(
                     const std::string& s, 
@@ -41,7 +43,7 @@ namespace fire
                 boost::tokenizer<boost::char_separator<char>> tokens{s, d};
                 for(auto t : tokens)
                 {
-                    boost::algorithm::trim(t);
+                    trim(t);
                     if(!t.empty()) result.insert(result.end(), t);
                 }
                 ENSURE_FALSE(result.empty());
