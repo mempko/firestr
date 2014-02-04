@@ -500,6 +500,7 @@ namespace fire
                 if(!lua_isstring(L, 2)) { lua_pushnil(L); return 1; }
 
                 auto key = lua_tostring(L, 2);
+                if(!r->store().has(key)) { lua_pushnil(L); return 1;} 
                 auto v = r->store().get(key);
                 push_value(L, v);
                 return 1;
@@ -533,6 +534,8 @@ namespace fire
                 if(!lua_isstring(L, 2)) { lua_pushnil(L); return 1; }
 
                 auto key = lua_tostring(L, 2);
+                if(!r->has(key)) { lua_pushnil(L); return 1;} 
+
                 auto v = r->get(key);
                 push_value(L, v);
                 return 1;
