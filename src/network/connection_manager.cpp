@@ -173,8 +173,10 @@ namespace fire
             _next_available++;
 
             //assign address to socket and connect
-            u::mutex_scoped_lock l(_mutex);
-            _out[address] = i;
+            {
+                u::mutex_scoped_lock l(_mutex);
+                _out[address] = i;
+            }
             _pool[i]->connect(a.host, a.port);
 
             ENSURE_BETWEEN(_next_available, 0, _pool.size());
@@ -246,7 +248,6 @@ namespace fire
 
         bool connection_manager::receive(endpoint& ep, u::bytes& b)
         {
-
             //if we quite in prior call and got to done state
             //or returned with a message in OUT_TCP case, we
             //reset to IN_UPD and start over
