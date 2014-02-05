@@ -54,6 +54,22 @@ namespace fire
             public has_size
         {
             public:
+                queue() {}
+                queue(const queue& o)
+                {
+                    std::lock_guard<std::mutex> lock(o._m);
+                    _q = o._q;
+                    _done = o._done;
+                }
+                queue& operator=(const queue& o)
+                {
+                    if(this == &o) return *this;
+                    std::lock_guard<std::mutex> lock(o._m);
+                    _q = o._q;
+                    _done = o._done;
+                    return *this;
+                }
+
                 virtual void push(const t& v) 
                 {
                     std::lock_guard<std::mutex> lock(_m);

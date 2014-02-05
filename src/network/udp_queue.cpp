@@ -37,6 +37,7 @@ namespace fire
     {
         namespace
         {
+            const size_t ERASE_COUNT = 10;
             const size_t BLOCK_SLEEP = 10;
             const size_t THREAD_SLEEP = 40;
             const size_t RESEND_THREAD_SLEEP = 1000;
@@ -72,6 +73,7 @@ namespace fire
         {
             boost::system::error_code error;
             _socket->open(udp::v4(), error);
+            _next_out_queue = _out_queues.end();
 
             INVARIANT(_socket);
         }
@@ -133,6 +135,56 @@ namespace fire
             _out_queue.emplace_push(c);
         }
 
+        void udp_connection::queue_chunk(udp_chunk& c)
+        {
+            chunk_queue* q = nullptr;
+            {
+                u::mutex_scoped_lock l(_ring_mutex);
+                auto p = _out_queue_map.insert(std::make_pair(c.sequence, _out_queues.end()));
+                if(p.second)
+                {
+                    auto i = _out_queues.insert(_out_queues.end(), {{}, c.sequence, ERASE_COUNT});
+                    p.first->second = i;
+                }
+                q = &(p.first->second->queue);
+            }
+            CHECK(q);
+            q->emplace_push(c);
+        }
+
+        void udp_connection::queue_next_chunk()
+        {
+            if(_next_out_queue == _out_queues.end()) 
+                _next_out_queue = _out_queues.begin();
+
+            while(_next_out_queue != _out_queues.end())
+            {
+                udp_chunk c;
+                if(_next_out_queue->queue.pop(c))
+                {
+                    {
+                        auto addr = make_address_str({ UDP, c.host, c.port});
+                        u::mutex_scoped_lock l(_mutex);
+                        remember_chunk(addr, c, _out_working);
+                    }
+                    _out_queue.emplace_push(c);
+                    return;
+                } 
+                else //queue empty, so erase it if erase count is 0
+                {
+                    u::mutex_scoped_lock l(_ring_mutex);
+                    _next_out_queue->erase_count--;
+                    if(_next_out_queue->erase_count == 0)
+                    {
+                        _out_queue_map.erase(_next_out_queue->sequence);
+                        _next_out_queue = _out_queues.erase(_next_out_queue);
+                    }
+                }
+
+                _next_out_queue++;
+            }
+        }
+
         size_t udp_connection::chunkify(
                 const std::string& host, 
                 port_type port, 
@@ -173,11 +225,7 @@ namespace fire
                 std::copy(b.begin() + s, b.begin() + e, c.data.begin());
 
                 //push to out queue
-                {
-                    u::mutex_scoped_lock l(_mutex);
-                    remember_chunk(make_address_str({ UDP, host, port}), c, _out_working);
-                }
-                send(c);
+                queue_chunk(c);
 
                 //step
                 chunk++;
@@ -380,6 +428,9 @@ namespace fire
 
             //check to see if a write is in progress
             if(!force && _writing) return;
+
+            //get next chunk
+            if(_out_queue.empty()) queue_next_chunk();
             if(_out_queue.empty()) return;
 
             _writing = true;
@@ -409,6 +460,7 @@ namespace fire
             if(error) LOG << "error sending chunk, " << _out_queue.size() << " remaining..." << std::endl;
 
             //if we are done sending finish the async write chain
+            if(_out_queue.empty()) queue_next_chunk();
             if(_out_queue.empty()) 
             {
                 _writing = false;
