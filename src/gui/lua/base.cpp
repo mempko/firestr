@@ -476,11 +476,16 @@ namespace fire
                 auto params = lua_gettop(L);
                 if(params != 3) return 0;
 
+                //get store ref
                 store_ref* r = SLB::Private::Type<store_ref*>::get(L, 1);
                 if(r == nullptr) return 0;
                 if(!lua_isstring(L, 2)) return 0;
 
-                auto key = lua_tostring(L, 2);
+                //get key
+                std::string key = lua_tostring(L, 2);
+                if(key.empty()) return 0;
+
+                //set value
                 u::value v = to_value(L, 3);
                 r->store().set(key, v);
 
@@ -499,8 +504,11 @@ namespace fire
                 if(!r) { lua_pushnil(L); return 1; }
                 if(!lua_isstring(L, 2)) { lua_pushnil(L); return 1; }
 
-                auto key = lua_tostring(L, 2);
+                //get key
+                std::string key = lua_tostring(L, 2);
                 if(!r->store().has(key)) { lua_pushnil(L); return 1;} 
+
+                //return value
                 auto v = r->store().get(key);
                 push_value(L, v);
                 return 1;
@@ -512,11 +520,16 @@ namespace fire
                 auto params = lua_gettop(L);
                 if(params != 3) return 0;
 
+                //get script message
                 script_message* r = SLB::Private::Type<script_message*>::get(L, 1);
                 if(r == nullptr) return 0;
                 if(!lua_isstring(L, 2)) return 0;
 
-                auto key = lua_tostring(L, 2);
+                //get key
+                std::string key = lua_tostring(L, 2);
+                if(key.empty()) return 0;
+
+                //set value
                 u::value v = to_value(L, 3);
                 r->set(key, v);
 
@@ -528,14 +541,16 @@ namespace fire
                 auto params = lua_gettop(L);
                 if(params != 2) { lua_pushnil(L); return 1; }
 
-                //get store ref
+                //get script message
                 script_message* r = SLB::Private::Type<script_message*>::get(L, 1);
                 if(!r) { lua_pushnil(L); return 1; }
                 if(!lua_isstring(L, 2)) { lua_pushnil(L); return 1; }
 
-                auto key = lua_tostring(L, 2);
+                //get key
+                std::string key = lua_tostring(L, 2);
                 if(!r->has(key)) { lua_pushnil(L); return 1;} 
 
+                //return value
                 auto v = r->get(key);
                 push_value(L, v);
                 return 1;
