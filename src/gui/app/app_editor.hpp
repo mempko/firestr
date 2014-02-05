@@ -153,6 +153,10 @@ namespace fire
 
                 public slots:
                     void remove();
+                    void key_clicked();
+
+                signals:
+                    void key_was_clicked(QString);
 
                 private:
                     QLabel* _key_label;

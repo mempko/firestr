@@ -257,7 +257,11 @@ namespace fire
                 _data_items->clear();
 
                 for(const auto& p : _app->data())
-                    _data_items->add(new data_item(_app->data(), p.first));
+                {
+                    auto di = new data_item(_app->data(), p.first);
+                    connect(di, SIGNAL(key_was_clicked(QString)), this, SLOT(key_was_clicked(QString)));
+                    _data_items->add(di);
+                }
 
                 ENSURE_EQUAL(_data_items->size(), _app->data().size());
             }
@@ -318,6 +322,12 @@ namespace fire
                 bool enabled = !_data_key->text().isEmpty();
                 _data_value->setEnabled(enabled);
                 _add_button->setEnabled(enabled);
+            }
+
+            void app_editor::key_was_clicked(QString key)
+            {
+                INVARIANT(_data_key);
+                _data_key->setText(key);
             }
 
             void app_editor::add_data()
@@ -704,7 +714,7 @@ namespace fire
                 setLayout(l);
 
                 std::stringstream ks;
-                ks << "<b>" << key << "</b>";
+                ks << "<a href='" << key <<"'>" << key << "</a>";
                 _key_label = new QLabel{ks.str().c_str()};
 
                 auto v = d.get(key);
@@ -727,6 +737,7 @@ namespace fire
                 _rm = new QPushButton{tr("x")};
                 _rm->setMaximumSize(20,20);
                 connect(_rm, SIGNAL(clicked()), this, SLOT(remove()));
+                connect(_key_label, SIGNAL(linkActivated(QString)), this, SLOT(key_clicked()));
 
                 l->addWidget(_key_label);
                 l->addWidget(_value_label);
@@ -744,6 +755,11 @@ namespace fire
                 INVARIANT(_rm);
                 _d.remove(_key);
                 setEnabled(false);
+            }
+            void data_item::key_clicked()
+            {
+                QString k{_key.c_str()};
+                emit key_was_clicked(k);
             }
         }
     }
