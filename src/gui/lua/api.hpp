@@ -23,8 +23,6 @@
 #include "gui/app/app.hpp"
 #include "session/session_service.hpp"
 
-#include <QImage>
-
 namespace fire
 {
     namespace gui
@@ -33,7 +31,7 @@ namespace fire
         {
             using script_ptr = std::shared_ptr<SLB::Script>;
             using widget_map = std::unordered_map<int, QWidget*>;
-            using image_map = std::unordered_map<int, std::shared_ptr<QImage>>;
+            using image_map = std::unordered_map<int, QImage_ptr>;
             using layout_map = std::unordered_map<int, QGridLayout*>;
             using timer_map = std::unordered_map<int, QTimer*>;
 
@@ -173,11 +171,18 @@ namespace fire
 
             using lua_api_ptr = std::shared_ptr<lua_api>;
 
-            template<class W>
-                W* get_widget(int id, widget_map& map)
+            template<class W, class M>
+                W* get_widget(int id, M& map)
                 {
                     auto wp = map.find(id);
                     return wp != map.end() ? dynamic_cast<W*>(wp->second) : nullptr;
+                }
+
+            template<class W, class M>
+                W get_ptr_from_map(int id, M& map)
+                {
+                    auto wp = map.find(id);
+                    return wp != map.end() ? wp->second : nullptr;
                 }
         }
     }
