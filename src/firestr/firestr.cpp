@@ -114,7 +114,9 @@ try
     fg::main_window w{c};
     w.show();
 
-    return a.exec();
+    auto rc = a.exec();
+    LOG << "firestr shutting down..." << std::endl;
+    return rc;
 }
 catch(std::exception& e)
 {
