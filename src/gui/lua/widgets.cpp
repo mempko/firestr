@@ -24,7 +24,7 @@
 #include "util/log.hpp"
 
 #include <QTimer>
-#include <QImage>
+#include <QIcon>
 
 #include <functional>
 
@@ -69,6 +69,25 @@ namespace fire
 
                 CHECK(button);
                 button->setText(t.c_str());
+            }
+
+            void button_ref::set_image(const image_ref& i)
+            {
+                INVARIANT(api);
+                std::lock_guard<std::mutex> lock(api->mutex);
+
+                auto rp = api->button_refs.find(id);
+                if(rp == api->button_refs.end()) return;
+
+                auto button = get_widget<QPushButton>(id, api->widgets);
+                CHECK(button);
+
+                auto image = get_ptr_from_map<QImage_ptr>(i.id, api->images);
+                if(!image) return;
+
+                auto pm = QPixmap::fromImage(*image);
+                button->setIcon(pm);
+                button->setIconSize(pm.rect().size());
             }
 
             void button_ref::set_callback(const std::string& c)

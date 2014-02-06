@@ -20,18 +20,23 @@
 
 #include "gui/lua/base.hpp"
 
+#include <QImage>
+
 namespace fire
 {
     namespace gui
     {
         namespace lua
         {
+            struct image_ref;
             struct button_ref : public widget_ref
             {
                 std::string callback;
 
                 std::string get_text() const; 
                 void set_text(const std::string&);
+
+                void set_image(const image_ref&);
 
                 const std::string& get_callback() const { return callback;}
                 void set_callback(const std::string&);  
@@ -168,6 +173,8 @@ namespace fire
                 int w, h;
                 bool g;
             };
+
+            using QImage_ptr = std::shared_ptr<QImage>;
             using image_ref_map = std::unordered_map<int, image_ref>;
 
         }
