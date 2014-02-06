@@ -412,16 +412,17 @@ namespace fire
                 mouse_dragged_callback = c;
             }  
 
-            void draw_ref::set_pen(QPen p)
+            void draw_ref::set_pen(QPen* p)
             {
                 INVARIANT(api);
+                if(!p) return;
                 std::lock_guard<std::mutex> lock(api->mutex);
 
                 auto rp = api->draw_refs.find(id);
                 if(rp == api->draw_refs.end()) return;
 
-                rp->second.pen = p;
-                pen = p;
+                rp->second.pen = *p;
+                pen = *p;
             }
 
             void draw_ref::mouse_pressed(int button, int x, int y)
