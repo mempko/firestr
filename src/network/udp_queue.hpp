@@ -22,6 +22,9 @@
 #include "network/message_queue.hpp"
 #include "util/thread.hpp"
 
+#include <list>
+#include <unordered_map>
+
 namespace fire
 {
     namespace network
@@ -49,6 +52,7 @@ namespace fire
             chunk_total_type total_chunks;
             chunk_id_type chunk;
             util::bytes data;
+            bool resent = false;
             enum msg_type { msg, ack} type;
         };
 
@@ -59,13 +63,26 @@ namespace fire
         {
             udp_chunks chunks;
             boost::dynamic_bitset<> set;
+            boost::dynamic_bitset<> sent;
             size_t ticks = 0;
             size_t resent = 0;
         };
 
+        //working set for both incoming and outgoing messages
         using working_udp_endpoints = std::unordered_map<sequence_type, working_udp_chunks>;
         using working_udp_messages = std::unordered_map<std::string, working_udp_endpoints>;
         using resolve_map = std::unordered_map<std::string, std::string>;
+
+        //outgoing chunks are send round robin in the chunk_queue_ring
+        //the chunk_queue_map links to the chunk queue for that address
+        struct queue_ring_item
+        {
+            chunk_queue queue;
+            sequence_type sequence;
+            size_t erase_count;
+        };
+        using chunk_queue_ring = std::list<queue_ring_item>;
+        using chunk_queue_map = std::unordered_map<sequence_type, chunk_queue_ring::iterator>;
 
         class udp_queue;
         class udp_connection
@@ -73,8 +90,7 @@ namespace fire
             public:
                 udp_connection(
                         endpoint_queue& in,
-                        boost::asio::io_service& io, 
-                        std::mutex& in_mutex);
+                        boost::asio::io_service& io);
             public:
                 bool send(const endpoint_message& m, bool block = false);
 
@@ -90,6 +106,9 @@ namespace fire
             private:
                 size_t chunkify(const std::string& host, port_type port, const fire::util::bytes& b);
                 void send(udp_chunk& c);
+                void queue_chunk(udp_chunk& c);
+                void queue_next_chunk();
+                bool next_chunk_incr();
                 void resend();
 
             private:
@@ -98,11 +117,16 @@ namespace fire
                 boost::asio::ip::udp::endpoint _in_endpoint;
                 working_udp_messages _in_working;
                 working_udp_messages _out_working;
-                std::mutex& _in_mutex;
                 endpoint_queue& _in_queue;
 
                 //writing
-                chunk_queue _out_queue;
+                mutable std::mutex _ring_mutex;
+                chunk_queue_ring::iterator _next_out_queue;
+                chunk_queue_ring _out_queues; //messages get chunked to here
+                chunk_queue_map _out_queue_map; //address are mapped to queue
+
+                //queue for chunks ready to go
+                chunk_queue _out_queue; //the queue loop adds next message to here to be sent
                 util::bytes _out_buffer;
 
                 //other
@@ -144,7 +168,6 @@ namespace fire
                 endpoint_queue _in_queue;
                 udp_resolver_ptr _resolver;
                 resolve_map _rmap;
-                mutable std::mutex _mutex;
                 bool _done;
 
             private:
