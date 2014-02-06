@@ -37,7 +37,7 @@ namespace fire
     {
         namespace
         {
-            const size_t ERASE_COUNT = 10;
+            const size_t ERASE_COUNT = 5;
             const size_t BLOCK_SLEEP = 10;
             const size_t THREAD_SLEEP = 40;
             const size_t RESEND_THREAD_SLEEP = 1000;
@@ -62,11 +62,9 @@ namespace fire
 
         udp_connection::udp_connection(
                 endpoint_queue& in,
-                boost::asio::io_service& io, 
-                std::mutex& in_mutex) :
+                boost::asio::io_service& io) :
             _in_queue(in),
             _socket{new udp::socket{io}},
-            _in_mutex(in_mutex),
             _io(io),
             _writing{false},
             _in_buffer(MAX_UDP_BUFF_SIZE)
@@ -101,9 +99,11 @@ namespace fire
 
                 wm.chunks.resize(c.total_chunks);
                 wm.set.resize(c.total_chunks);
+                wm.sent.resize(c.total_chunks);
             }
             wm.chunks[c.chunk] = c;
             wm.set[c.chunk] = 0;
+            wm.sent[c.chunk] = 1;
         }
 
         void validate_chunk(const std::string& addr, const udp_chunk& c, working_udp_messages& w)
@@ -137,51 +137,64 @@ namespace fire
 
         void udp_connection::queue_chunk(udp_chunk& c)
         {
-            chunk_queue* q = nullptr;
+            u::mutex_scoped_lock l(_ring_mutex);
+            auto p = _out_queue_map.insert(std::make_pair(c.sequence, _out_queues.end()));
+            if(p.second)
             {
-                u::mutex_scoped_lock l(_ring_mutex);
-                auto p = _out_queue_map.insert(std::make_pair(c.sequence, _out_queues.end()));
-                if(p.second)
-                {
-                    auto i = _out_queues.insert(_out_queues.end(), {{}, c.sequence, ERASE_COUNT});
-                    p.first->second = i;
-                }
-                q = &(p.first->second->queue);
+                auto i = _out_queues.insert(_out_queues.end(), {{}, c.sequence, ERASE_COUNT});
+                p.first->second = i;
             }
-            CHECK(q);
-            q->emplace_push(c);
+            p.first->second->queue.emplace_push(c);
+        }
+
+        bool udp_connection::next_chunk_incr()
+        {
+            if(_out_queues.empty())
+            {
+                _next_out_queue = _out_queues.end();
+                return false;
+            }
+
+            if(_next_out_queue == _out_queues.end()) 
+                _next_out_queue = _out_queues.begin();
+            else _next_out_queue++;
+
+            if(_next_out_queue == _out_queues.end()) 
+                _next_out_queue = _out_queues.begin();
+            return true;
         }
 
         void udp_connection::queue_next_chunk()
         {
-            if(_next_out_queue == _out_queues.end()) 
-                _next_out_queue = _out_queues.begin();
+            u::mutex_scoped_lock l(_ring_mutex);
+            //do round robin
+            if(!next_chunk_incr()) return;
+            auto end = _next_out_queue;
 
-            while(_next_out_queue != _out_queues.end())
+            do
             {
                 udp_chunk c;
                 if(_next_out_queue->queue.pop(c))
                 {
-                    {
-                        auto addr = make_address_str({ UDP, c.host, c.port});
-                        u::mutex_scoped_lock l(_mutex);
-                        remember_chunk(addr, c, _out_working);
-                    }
                     _out_queue.emplace_push(c);
-                    return;
+                    break;
                 } 
-                else //queue empty, so erase it if erase count is 0
-                {
-                    u::mutex_scoped_lock l(_ring_mutex);
-                    _next_out_queue->erase_count--;
-                    if(_next_out_queue->erase_count == 0)
-                    {
-                        _out_queue_map.erase(_next_out_queue->sequence);
-                        _next_out_queue = _out_queues.erase(_next_out_queue);
-                    }
-                }
+                next_chunk_incr();
+            }
+            while(_next_out_queue != end);
 
-                _next_out_queue++;
+            //collect garbage
+            for(auto j = _out_queues.begin();j != _out_queues.end(); j++)
+            {
+                if(!j->queue.empty()) continue;
+
+                j->erase_count--;
+                if(j->erase_count > 0) continue;
+
+                _out_queue_map.erase(j->sequence);
+                bool is_next = _next_out_queue == j;
+                j = _out_queues.erase(j);
+                if(is_next) _next_out_queue = j;
             }
         }
 
@@ -249,6 +262,7 @@ namespace fire
             }
 
             size_t chunks = chunkify(m.ep.address, m.ep.port, m.data);
+            queue_next_chunk();
 
             //post to do send
             _io.post(boost::bind(&udp_connection::do_send, this, false));
@@ -439,6 +453,15 @@ namespace fire
 
             //encode bytes to wire format
             const auto& chunk = _out_queue.front();
+
+            //ignore acks or resends
+            if(!chunk.resent && chunk.type == udp_chunk::msg)
+            {
+                auto addr = make_address_str({ UDP, chunk.host, chunk.port});
+                u::mutex_scoped_lock l(_mutex);
+                remember_chunk(addr, chunk, _out_working);
+            }
+
             encode_udp_wire(_out_buffer, chunk);
 
             auto p = chunk.port;
@@ -447,6 +470,7 @@ namespace fire
             _socket->async_send_to(ba::buffer(&_out_buffer[0], _out_buffer.size()), ep,
                     boost::bind(&udp_connection::handle_write, this,
                         ba::placeholders::error));
+
 
             ENSURE(_writing);
         }
@@ -547,8 +571,10 @@ namespace fire
         {
             if(error)
             {
-                u::mutex_scoped_lock l(_mutex);
-                _error = error;
+                {
+                    u::mutex_scoped_lock l(_mutex);
+                    _error = error;
+                }
                 LOG << "error getting message of size " << transferred  << ". " << error.message() << std::endl;
                 start_read();
                 return;
@@ -586,7 +612,6 @@ namespace fire
                     bool inserted = false;
                     {
                         u::mutex_scoped_lock l(_mutex);
-                        //create ack
 
                         //insert chunk to message buffer
                         inserted = insert_chunk(make_address_str(ep), chunk, _in_working, data);
@@ -599,7 +624,6 @@ namespace fire
 
                     if(inserted)
                     {
-                        u::mutex_scoped_lock l(_in_mutex);
                         endpoint_message em = {ep, data};
                         _in_queue.emplace_push(em);
                     }
@@ -630,17 +654,20 @@ namespace fire
                     bool resent_m = false;
                     bool skip = wm.ticks <= RESEND_TICK_THRESHOLD;
                     bool gaps = wm.set.count() != wm.chunks.size(); 
-                    if(gaps)
+                    if(gaps && !skip)
                     {
                         for(const auto& c : wm.chunks)
                         {
-                            //skip validated
-                            if(skip || wm.set[c.chunk]) continue;
+                            //skip validated or not sent
+                            if(wm.set[c.chunk] || !wm.sent[c.chunk]) continue;
 
                             auto mc = c;//copy
                             resent_m = true;
-                            send(mc);
+                            LOG << "resent " << sequence << ":" << c.chunk << std::endl; 
+                            mc.resent = true;
+                            queue_chunk(mc);
                         }
+                        if(!resent_m) wm.ticks = 0;
                     }
 
                     if(resent_m) 
@@ -687,7 +714,7 @@ namespace fire
             CHECK_FALSE(_con);
             INVARIANT(_io);
 
-            _con = udp_connection_ptr{new udp_connection{_in_queue, *_io, _mutex}};
+            _con = udp_connection_ptr{new udp_connection{_in_queue, *_io}};
             _con->bind(_p.local_port);
             
             ENSURE(_con);

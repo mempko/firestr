@@ -52,6 +52,7 @@ namespace fire
             chunk_total_type total_chunks;
             chunk_id_type chunk;
             util::bytes data;
+            bool resent = false;
             enum msg_type { msg, ack} type;
         };
 
@@ -62,6 +63,7 @@ namespace fire
         {
             udp_chunks chunks;
             boost::dynamic_bitset<> set;
+            boost::dynamic_bitset<> sent;
             size_t ticks = 0;
             size_t resent = 0;
         };
@@ -88,8 +90,7 @@ namespace fire
             public:
                 udp_connection(
                         endpoint_queue& in,
-                        boost::asio::io_service& io, 
-                        std::mutex& in_mutex);
+                        boost::asio::io_service& io);
             public:
                 bool send(const endpoint_message& m, bool block = false);
 
@@ -107,6 +108,7 @@ namespace fire
                 void send(udp_chunk& c);
                 void queue_chunk(udp_chunk& c);
                 void queue_next_chunk();
+                bool next_chunk_incr();
                 void resend();
 
             private:
@@ -115,7 +117,6 @@ namespace fire
                 boost::asio::ip::udp::endpoint _in_endpoint;
                 working_udp_messages _in_working;
                 working_udp_messages _out_working;
-                std::mutex& _in_mutex;
                 endpoint_queue& _in_queue;
 
                 //writing
@@ -167,7 +168,6 @@ namespace fire
                 endpoint_queue _in_queue;
                 udp_resolver_ptr _resolver;
                 resolve_map _rmap;
-                mutable std::mutex _mutex;
                 bool _done;
 
             private:
