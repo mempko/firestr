@@ -219,6 +219,7 @@ namespace fire
                 SLB::Class<button_ref>{"button", &manager}
                     .set("text", &button_ref::get_text)
                     .set("set_text", &button_ref::set_text)
+                    .set("set_image", &button_ref::set_image)
                     .set("callback", &button_ref::get_callback)
                     .set("when_clicked", &button_ref::set_callback)
                     .set("enabled", &widget_ref::enabled)
