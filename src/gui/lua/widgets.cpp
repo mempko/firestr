@@ -25,6 +25,7 @@
 
 #include <QTimer>
 #include <QIcon>
+#include <QTransform>
 
 #include <functional>
 
@@ -540,6 +541,34 @@ namespace fire
                 w->scene()->addEllipse(sp.x()-rx, sp.y()-ry, 2*rx, 2*ry, pen);
             }
 
+            void draw_ref::image(const image_ref& i, double x, double y, double w, double h)
+            {
+                INVARIANT(api);
+
+                auto v = get_view();
+                if(!v) return;
+                if(!i.good()) return;
+
+                auto image = get_ptr_from_map<QImage_ptr>(i.id, api->images);
+                if(!image) return;
+
+                auto item = v->scene()->addPixmap(QPixmap::fromImage(*image));
+
+                CHECK(item);
+                CHECK_GREATER(image->width(), 0);
+                CHECK_GREATER(image->height(), 0);
+
+                auto o = v->mapToScene(x,y);
+                double sx = w / image->width();
+                double sy = h / image->height();
+
+                item->setTransformationMode(Qt::SmoothTransformation);
+                QTransform t;
+                t.translate(o.x(), o.y());
+                t.scale(sx, sy);
+                item->setTransform(t);
+            }
+
             void draw_ref::clear()
             {
                 INVARIANT(api);
@@ -570,8 +599,8 @@ namespace fire
 
                 _button = e->button();
                 ref->second.mouse_pressed(e->button(), e->pos().x(), e->pos().y());
-
             }
+
             void draw_view::mouseReleaseEvent(QMouseEvent* e)
             {
                 if(!e) return;
@@ -594,8 +623,8 @@ namespace fire
                 auto ref = _ref.api->draw_refs.find(_ref.id);
                 if(ref == _ref.api->draw_refs.end()) return;
 
-                ref->second.mouse_moved(e->pos().x(), e->pos().y());
                 if(_button != 0) ref->second.mouse_dragged(_button, e->pos().x(), e->pos().y());
+                ref->second.mouse_moved(e->pos().x(), e->pos().y());
             }
 
             QTimer* get_timer(int id, timer_map& m)

@@ -277,6 +277,7 @@ namespace fire
                     .set("clear", &draw_ref::clear)
                     .set("line", &draw_ref::line)
                     .set("circle", &draw_ref::circle)
+                    .set("image", &draw_ref::image)
                     .set("pen", &draw_ref::set_pen)
                     .set("get_pen", &draw_ref::get_pen);
 

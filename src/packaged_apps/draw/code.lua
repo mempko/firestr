@@ -1,45 +1,46 @@
+function init_color(col, pt)
+	local c = {}
+	c.name=col
+	c.button = app:button("")
+	c.button:set_image(app:image(data:get_bin(col..".png")))
+	c.pen = app:pen(col, 2)
+	pens[pt] = c.pen
+	c.button:when_clicked("set_color('"..pt.."' )")
+	return c
+end
+
 d = app:draw(300,300)
+pens={}
+black = init_color("black", "bl")
+red = init_color("red", "r")
+green = init_color("green", "g")
+blue = init_color("blue", "b")
+brown = init_color("brown", "br")
+
 cl = app:button("clear")
-blackb = app:button("black")
-redb = app:button("red")
-greenb = app:button("green")
-blueb = app:button("blue")
-brownb = app:button("brown")
 
 app:place_across(d,0,0,1,6)
-app:place(cl,1,4)
-app:place(blackb, 1,0)
-app:place(redb,1,1)
-app:place(greenb,1,2)
-app:place(blueb,1,3)
-app:place(brownb,1,4)
+app:place(black.button, 1,0)
+app:place(red.button,1,1)
+app:place(green.button,1,2)
+app:place(blue.button,1,3)
+app:place(brown.button,1,4)
 app:place(cl,1,5)
 
 d:when_mouse_pressed("pressed")
 d:when_mouse_dragged("dragged")
 cl:when_clicked("clear()")
 
-redp = app:pen("red",2)
-greenp = app:pen("green",2)
-bluep = app:pen("blue",2)
-blackp = app:pen("black",2)
-brownp = app:pen("brown",2)
-
-redb:when_clicked("set_color(redp,'r' )")
-greenb:when_clicked("set_color(greenp,'g')")
-blueb:when_clicked("set_color(bluep,'b')")
-blackb:when_clicked("set_color(blackp,\"bl\")")
-brownb:when_clicked("set_color(brownp,\"br\")")
 
 px = -1
 py = -1
 
 cur_pen = ""
-function set_color(p, pt)
-	d:pen(p)
+function set_color(pt)
+	d:pen(pens[pt])
 	cur_pen = pt
 end
-set_color(blackp, "bl")
+set_color("bl")
 
 function pressed(b, x, y)
 	px = x
@@ -58,21 +59,6 @@ function clear()
 	send_clear()
 end
 
-function get_color(p)
-	if p == 'r' then
-		return redp
-	elseif p == 'g' then
-		return greenp
-	elseif p == 'b' then
-		return bluep
-	elseif p == 'br' then
-		return brownp
-	elseif p == "bl" then
-		return blackp
-	end
-	return blackp
-end
-
 app:when_message_received("got")
 
 function got(m)
@@ -80,7 +66,7 @@ function got(m)
 	if type == "l" then
 		local l = m:get("ln")
 		local prev_pen = d:get_pen()
-		local cp = get_color(l.p)
+		local cp = pens[l.p]
 		d:pen(cp)
 		d:line(l.xs, l.ys, l.xe, l.ye)
 		d:pen(prev_pen)
