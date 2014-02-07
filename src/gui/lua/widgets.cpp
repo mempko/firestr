@@ -623,8 +623,8 @@ namespace fire
                 auto ref = _ref.api->draw_refs.find(_ref.id);
                 if(ref == _ref.api->draw_refs.end()) return;
 
-                ref->second.mouse_moved(e->pos().x(), e->pos().y());
                 if(_button != 0) ref->second.mouse_dragged(_button, e->pos().x(), e->pos().y());
+                ref->second.mouse_moved(e->pos().x(), e->pos().y());
             }
 
             QTimer* get_timer(int id, timer_map& m)
