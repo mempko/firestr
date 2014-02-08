@@ -76,6 +76,7 @@ namespace fire
                 std::string get_id() const;
                 std::string get_name() const;
                 bool is_online() const;
+                bool is_self = false;
             };
             contact_ref empty_contact_ref(lua_api& api);
 

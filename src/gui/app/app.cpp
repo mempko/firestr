@@ -71,7 +71,8 @@ namespace fire
             }
 
             app::app(u::disk_store& s, const std::string& id) : 
-                _local_data(s), _is_tmp{false}
+                _local_data(s), _is_tmp{false},
+                _launched_local{true}
             {
                 REQUIRE_FALSE(id.empty());
                 _meta.id = id;
@@ -79,7 +80,8 @@ namespace fire
             }
 
             app::app(u::disk_store& s) : 
-                _local_data(s), _is_tmp{false}
+                _local_data(s), _is_tmp{false},
+                _launched_local{true}
             {
                 _meta.id = u::uuid();
                 INVARIANT_FALSE(_meta.id.empty());
@@ -89,8 +91,8 @@ namespace fire
                     u::disk_store& s, 
                     const std::string& app_dir,
                     const m::message& m) : 
-                _local_data(s), _is_tmp{false}
-
+                _local_data(s), _is_tmp{false},
+                _launched_local{false}
             {
                 REQUIRE_EQUAL(m.meta.type, APP_MESSAGE);
 
@@ -183,6 +185,11 @@ namespace fire
                 return _code;
             }
 
+            bool app::launched_local() const
+            {
+                return _launched_local;
+            }
+
             void app::path(const std::string& v)
             {
                 _meta.path = v;
@@ -196,6 +203,11 @@ namespace fire
             void app::code(const std::string& v)
             {
                 _code = v;
+            }
+
+            void app::launched_local(bool v)
+            {
+                _launched_local = v;
             }
 
             void app::set_tmp()

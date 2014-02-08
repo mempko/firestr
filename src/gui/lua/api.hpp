@@ -69,6 +69,7 @@ namespace fire
                     QGridLayout* layout;
                     SLB::Manager manager;
                     script_ptr state;
+                    std::string who_started_id;
                     std::mutex mutex;
 
 
@@ -148,10 +149,13 @@ namespace fire
                     size_t total_contacts() const;
                     int last_contact() const;
                     contact_ref get_contact(size_t);
+                    contact_ref who_started();
+                    contact_ref self();
 
                     //apps
                     size_t total_apps() const;
                     app_ref get_app(size_t);
+                    bool launched_local() const;
 
                     //file
                     file_data open_file();

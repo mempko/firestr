@@ -580,10 +580,11 @@ namespace fire
             std::string id; 
             if(!ask_user_to_select_app(this, *_app_service, id)) return;
 
-            a::app_ptr app;
+            a::app_ptr app = id.empty() ? 
+                _app_service->create_new_app() : 
+                _app_service->load_app(id);
 
-            //if the app exists, load it
-            if(!id.empty()) app = _app_service->load_app(id);
+            CHECK(app);
 
             //create app editor
             auto t = new a::app_editor{_app_service, _session_service, s->session(), app};
