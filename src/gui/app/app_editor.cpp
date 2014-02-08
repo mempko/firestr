@@ -369,9 +369,7 @@ namespace fire
                 _data_bytes.clear();
                 _data_key->setFocus(Qt::OtherFocusReason);
 
-                //change state to code changed so that the app recompiles
                 _run_state = CODE_CHANGED;
-                update_status_to_waiting();
             }
 
             void app_editor::load_data_from_file()
@@ -580,8 +578,22 @@ namespace fire
                                 //update status bar
                                 run_script();
                                 send_script();
+                                _run_state = READY;
+                            } 
+                            else
+                            {
+                                if(code != _prev_code) 
+                                {
+                                    update_status_to_typing();
+                                    _run_state = CODE_CHANGED;
+                                }
+                                else
+                                {
+                                    update_status_to_waiting();
+                                    _run_state = DONE_TYPING;
+                                }
                             }
-                            _run_state = READY;
+
                             break;
                         }
                 }
