@@ -49,7 +49,7 @@ namespace fire
             const std::string APP_EDITOR = "APP_EDITOR";
             const std::string LUA_KEYWORDS = "\\b(app|and|break|do|else|elseif|end|false|for|function|if|in|local|nil|not|or|repeat|return|then|true|until|while|pairs)\\b";
             const std::string LUA_QUOTE = "\".*[^\\\\]\"";
-            const std::string LUA_API_KEYWORDS = "\\b(add|remove|size|button|callback|clear|contact|disable|edit|edited_callback|enable|enabled|finished_callback|from|get|label|last_contact|list|message|name|online|place|place_across|print|send|send_to|set|set_text|text|set_image|text_edit|total_contacts|when_clicked|when_edited|when_finished|when_message_received|draw|line|circle|when_mouse_moved|when_mouse_pressed|when_mouse_released|when_mouse_dragged|clear|pen|get_pen|when_local_message_received|is_local|send_local|timer|interval|stop|start|running|when_triggered|save_file|save_bin_file|open_file|open_bin_file|id|str|get_bin|set_bin|sub|append|grow|width|height|grid|alert|good|image|data|store)\\b";
+            const std::string LUA_API_KEYWORDS = "\\b(add|remove|size|button|callback|clear|contact|disable|edit|edited_callback|enable|enabled|finished_callback|from|get|label|last_contact|list|message|name|online|place|place_across|print|send|send_to|set|set_text|text|set_image|text_edit|total_contacts|when_clicked|when_edited|when_finished|when_message_received|draw|line|circle|when_mouse_moved|when_mouse_pressed|when_mouse_released|when_mouse_dragged|clear|pen|get_pen|when_local_message_received|is_local|send_local|timer|interval|stop|start|running|when_triggered|save_file|save_bin_file|open_file|open_bin_file|id|str|get_bin|set_bin|sub|append|grow|width|height|grid|alert|good|image|data|store|i_started|who_started|self)\\b";
             const std::string LUA_NUMBERS = "[0-9\\.]+";
             const std::string LUA_OPERATORS = "[=+-\\*\\^:%#~<>\\(\\){}\\[\\];:,]+";
 
@@ -93,6 +93,7 @@ namespace fire
                     s::session_ptr session, 
                     app_ptr app) :
                 message{},
+                _from_id{session->user_service()->user().info().id()},
                 _id{u::uuid()},
                 _app_service{app_service},
                 _session_service{session_s},
@@ -105,9 +106,11 @@ namespace fire
                 REQUIRE(app_service);
                 REQUIRE(session_s);
                 REQUIRE(session);
+                REQUIRE(app);
 
                 init();
 
+                INVARIANT(_app);
                 ENSURE(_api);
                 ENSURE(_session_service);
                 ENSURE(_session);
@@ -115,12 +118,14 @@ namespace fire
             }
 
             app_editor::app_editor(
+                    const std::string& from_id, 
                     const std::string& id, 
                     app_service_ptr app_service, 
                     s::session_service_ptr session_s, 
                     s::session_ptr session,
                     app_ptr app) :
                 message{},
+                _from_id{from_id},
                 _id{id},
                 _app_service{app_service},
                 _session_service{session_s},
@@ -131,9 +136,11 @@ namespace fire
                 REQUIRE(app_service);
                 REQUIRE(session_s);
                 REQUIRE(session);
+                REQUIRE(app);
 
                 init();
 
+                INVARIANT(_app);
                 ENSURE(_api);
                 ENSURE(_session_service);
                 ENSURE(_session);
@@ -152,9 +159,10 @@ namespace fire
                 INVARIANT(_session_service);
                 INVARIANT(_session);
                 INVARIANT(_app_service);
+                INVARIANT(_app);
 
-                //create new app if none specified
-                if(!_app) _app = _app_service->create_new_app();
+                _mail = std::make_shared<m::mailbox>(_id);
+                _sender = std::make_shared<ms::sender>(_session->user_service(), _mail);
 
                 //create gui
                 auto tabs = new QTabWidget{this};
@@ -204,8 +212,6 @@ namespace fire
                 l->addWidget(_canvas, 0, 0, 1, 2);
                 l->addWidget(_output, 1, 0, 1, 2);
 
-                _mail = std::make_shared<m::mailbox>(_id);
-                _sender = std::make_shared<ms::sender>(_session->user_service(), _mail);
                 _api = std::make_shared<l::lua_api>(_app, _contacts, _sender, _session, _session_service, _canvas, _canvas_layout, _output);
 
                 //text edit
@@ -448,7 +454,7 @@ namespace fire
                 if(has_no_errors) update_status_to_no_errors();
                 else update_status_to_errors();
 
-                //update data ui
+                //update ui
                 init_data();
 
                 return has_no_errors;

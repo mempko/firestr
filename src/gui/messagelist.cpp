@@ -137,7 +137,9 @@ namespace fire
             {
                 if(auto post = _session->parent_post().lock())
                 {
-                    auto c = new a::app_editor{n.id(), _app_service, _session_service, _session, nullptr};
+                    auto app = _app_service->create_new_app();
+                    app->launched_local(false);
+                    auto c = new a::app_editor{n.from_id(), n.id(), _app_service, _session_service, _session, app};
                     post->add(c->mail());
                     add(c);
                 }
@@ -147,7 +149,7 @@ namespace fire
                 if(auto post = _session->parent_post().lock())
                 {
                     auto app = _app_service->create_app(u::decode<m::message>(n.data()));
-                    auto c = new a::script_app{n.id(), app, _app_service, _session_service, _session};
+                    auto c = new a::script_app{n.from_id(), n.id(), app, _app_service, _session_service, _session};
                     post->add(c->mail());
                     add(c);
                 }

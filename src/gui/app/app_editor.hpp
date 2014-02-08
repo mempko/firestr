@@ -76,6 +76,7 @@ namespace fire
                             session::session_ptr, 
                             app_ptr a = nullptr);
                     app_editor(
+                            const std::string& from_id, 
                             const std::string& id, 
                             app_service_ptr, 
                             session::session_service_ptr, 
@@ -112,6 +113,7 @@ namespace fire
                     void update_status_to_running();
 
                 private:
+                    std::string _from_id;
                     std::string _id;
                     app_service_ptr _app_service;
                     session::session_service_ptr _session_service;

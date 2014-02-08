@@ -159,6 +159,8 @@ namespace fire
                     .set("total_contacts", &lua_api::total_contacts)
                     .set("last_contact", &lua_api::last_contact)
                     .set("contact", &lua_api::get_contact)
+                    .set("who_started", &lua_api::who_started)
+                    .set("self", &lua_api::self)
                     .set("total_apps", &lua_api::total_apps)
                     .set("app", &lua_api::get_app)
                     .set("message", &lua_api::make_message)
@@ -170,7 +172,8 @@ namespace fire
                     .set("save_file", &lua_api::save_file)
                     .set("open_file", &lua_api::open_file)
                     .set("save_bin_file", &lua_api::save_bin_file)
-                    .set("open_bin_file", &lua_api::open_bin_file);
+                    .set("open_bin_file", &lua_api::open_bin_file)
+                    .set("i_started", &lua_api::launched_local);
 
                 SLB::Class<QPen>{"pen", &manager}
                     .set("set_width", &QPen::setWidth);
@@ -523,6 +526,47 @@ namespace fire
                 return r;
             }
 
+            contact_ref lua_api::self() 
+            {
+                INVARIANT(app);
+                INVARIANT(session);
+                INVARIANT(session->user_service());
+
+                contact_ref r;
+                r.id = 0;
+                r.user_id = session->user_service()->user().info().id();
+                r.api = this;
+                r.is_self = true;
+                return r;
+            }
+
+            contact_ref lua_api::who_started() 
+            {
+                INVARIANT(app);
+                INVARIANT(session);
+                INVARIANT(session->user_service());
+
+                contact_ref r;
+                if(app->launched_local())
+                {
+                    r.id = 0;
+                    r.user_id = session->user_service()->user().info().id();
+                    r.api = this;
+                    r.is_self = true;
+                } 
+                else
+                {
+                    auto c = contacts.by_id(who_started_id);
+                    CHECK(c);
+                    r.id = 0;
+                    r.user_id = c->id();
+                    r.api = this;
+                }
+                ENSURE_EQUAL(r.api, this);
+                ENSURE_FALSE(r.user_id.empty());
+                return r;
+            }
+
             size_t lua_api::total_apps() const
             {
                 INVARIANT(session);
@@ -546,6 +590,12 @@ namespace fire
                 ENSURE_EQUAL(r.api, this);
                 ENSURE_FALSE(r.app_id.empty());
                 return r;
+            }
+
+            bool lua_api::launched_local() const
+            {
+                INVARIANT(app);
+                return app->launched_local();
             }
 
             void lua_api::send_local(const script_message& m)
