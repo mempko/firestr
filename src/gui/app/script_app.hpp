@@ -55,6 +55,7 @@ namespace fire
                             session::session_service_ptr, 
                             session::session_ptr);
                     script_app(
+                            const std::string& from_id, 
                             const std::string& id, 
                             app_ptr, 
                             app_service_ptr, 
@@ -75,6 +76,7 @@ namespace fire
                     void init();
 
                 private:
+                    std::string _from_id;
                     std::string _id;
                     session::session_service_ptr _session_service;
                     session::session_ptr _session;

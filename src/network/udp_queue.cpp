@@ -41,9 +41,10 @@ namespace fire
             const size_t BLOCK_SLEEP = 10;
             const size_t THREAD_SLEEP = 40;
             const size_t RESEND_THREAD_SLEEP = 1000;
-            const size_t RESEND_TICK_THRESHOLD = 10; //resend after 10 seconds
-            const size_t RESEND_THRESHOLD = 1; //resend one time
-            const size_t MAX_UDP_BUFF_SIZE = 1024*500; //500k in bytes
+            const size_t RESEND_TICK_THRESHOLD = 3; //resend after 10 seconds
+            const size_t RESEND_THRESHOLD = 2; //resend one time
+            const size_t UDP_PACKET_SIZE = 512; //500k in bytes
+            const size_t MAX_UDP_BUFF_SIZE = UDP_PACKET_SIZE*1024; //500k in bytes
             const size_t SEQUENCE_BASE = 1;
             const size_t CHUNK_TOTAL_BASE = SEQUENCE_BASE + sizeof(sequence_type);
             const size_t CHUNK_BASE = CHUNK_TOTAL_BASE + sizeof(chunk_total_type);
@@ -51,7 +52,7 @@ namespace fire
 
             //<mark> <sequence num> <chunk total> <chunk>
             const size_t HEADER_SIZE = MESSAGE_BASE;
-            const size_t UDP_CHuNK_SIZE = 1024-HEADER_SIZE; //in bytes
+            const size_t UDP_CHuNK_SIZE = UDP_PACKET_SIZE - HEADER_SIZE; //in bytes
             const size_t MAX_MESSAGE_SIZE = std::pow(2,sizeof(chunk_total_type)*8) * UDP_CHuNK_SIZE;
         }
 
@@ -66,8 +67,8 @@ namespace fire
             _in_queue(in),
             _socket{new udp::socket{io}},
             _io(io),
-            _writing{false},
-            _in_buffer(MAX_UDP_BUFF_SIZE)
+            _in_buffer(MAX_UDP_BUFF_SIZE),
+            _writing{false}
         {
             boost::system::error_code error;
             _socket->open(udp::v4(), error);
@@ -265,7 +266,7 @@ namespace fire
             queue_next_chunk();
 
             //post to do send
-            _io.post(boost::bind(&udp_connection::do_send, this, false));
+            _io.post(boost::bind(&udp_connection::do_send, this));
 
             //if we are blocking, block until all messages are sent
             while(block && !_out_queue.empty()) u::sleep_thread(BLOCK_SLEEP);
@@ -436,19 +437,13 @@ namespace fire
             return ch;
         }
 
-        void udp_connection::do_send(bool force)
+        void udp_connection::do_send()
         {
             ENSURE(_socket);
-
-            //check to see if a write is in progress
-            if(!force && _writing) return;
 
             //get next chunk
             if(_out_queue.empty()) queue_next_chunk();
             if(_out_queue.empty()) return;
-
-            _writing = true;
-
             CHECK_FALSE(_out_queue.empty());
 
             //encode bytes to wire format
@@ -462,38 +457,25 @@ namespace fire
                 remember_chunk(addr, chunk, _out_working);
             }
 
-            encode_udp_wire(_out_buffer, chunk);
+            u::bytes_ptr out_buffer{new u::bytes{UDP_PACKET_SIZE}};
+            encode_udp_wire(*out_buffer, chunk);
 
             auto p = chunk.port;
             udp::endpoint ep(address::from_string(chunk.host), p);
 
-            _socket->async_send_to(ba::buffer(&_out_buffer[0], _out_buffer.size()), ep,
-                    boost::bind(&udp_connection::handle_write, this,
+            _socket->async_send_to(ba::buffer(out_buffer->data(), out_buffer->size()), ep,
+                    boost::bind(&udp_connection::handle_write, this, out_buffer,
                         ba::placeholders::error));
 
-
-            ENSURE(_writing);
-        }
-
-        void udp_connection::handle_write(const boost::system::error_code& error)
-        {
             //remove sent message
             _out_queue.pop_front();
+            _io.post(boost::bind(&udp_connection::do_send, this));
+        }
+
+        void udp_connection::handle_write(u::bytes_ptr buff, const boost::system::error_code& error)
+        {
             _error = error;
-
             if(error) LOG << "error sending chunk, " << _out_queue.size() << " remaining..." << std::endl;
-
-            //if we are done sending finish the async write chain
-            if(_out_queue.empty()) queue_next_chunk();
-            if(_out_queue.empty()) 
-            {
-                _writing = false;
-                return;
-            }
-
-            //otherwise do another async write
-            do_send(true);
-            ENSURE(_writing);
         }
 
         void udp_connection::bind(port_type port)
@@ -598,7 +580,6 @@ namespace fire
                 //add message to in queue if we got complete message
                 endpoint ep = { UDP, _in_endpoint.address().to_string(), _in_endpoint.port()};
 
-
                 if(chunk.type == udp_chunk::msg)
                 { 
                     udp_chunk ack;
@@ -620,7 +601,7 @@ namespace fire
 
                     //send ack
                     send(ack);
-                    _io.post(boost::bind(&udp_connection::do_send, this, false));
+                    _io.post(boost::bind(&udp_connection::do_send, this));
 
                     if(inserted)
                     {
@@ -653,8 +634,9 @@ namespace fire
                     sequence_type sequence = wmp.first;
                     bool resent_m = false;
                     bool skip = wm.ticks <= RESEND_TICK_THRESHOLD;
+                    bool all_sent = wm.sent.count() == wm.chunks.size();
                     bool gaps = wm.set.count() != wm.chunks.size(); 
-                    if(gaps && !skip)
+                    if(gaps && !skip && all_sent)
                     {
                         for(const auto& c : wm.chunks)
                         {
@@ -667,7 +649,7 @@ namespace fire
                             mc.resent = true;
                             queue_chunk(mc);
                         }
-                        if(!resent_m) wm.ticks = 0;
+                        wm.ticks = 0;
                     }
 
                     if(resent_m) 
@@ -676,8 +658,9 @@ namespace fire
                         wm.ticks = 0;
                         wm.resent++;
                         CHECK_FALSE(wm.chunks.empty());
-                        const auto& c = wm.chunks[0];
-                    }
+                    } 
+                    else if(!skip && !all_sent)
+                        wm.ticks = 0;
 
                     if(!gaps || wm.resent >= RESEND_THRESHOLD) 
                         em.insert(sequence);
@@ -687,7 +670,7 @@ namespace fire
                 for(auto sequence : em) 
                     wms.second.erase(sequence);
             }
-            if(resent) _io.post(boost::bind(&udp_connection::do_send, this, false));
+            if(resent) _io.post(boost::bind(&udp_connection::do_send, this));
         }
 
         void udp_run_thread(udp_queue*);

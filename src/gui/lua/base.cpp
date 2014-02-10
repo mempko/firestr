@@ -99,7 +99,12 @@ namespace fire
             std::string contact_ref::get_name() const
             {
                 INVARIANT(api);
+                INVARIANT(api->session);
 
+                if(is_self) 
+                    return api->session->user_service()->user().info().name();
+
+                //otherwise find user
                 auto c = api->contacts.by_id(user_id);
                 if(!c) return "";
 
@@ -110,6 +115,9 @@ namespace fire
             {
                 INVARIANT(api);
                 INVARIANT(api->session);
+
+                if(is_self) return true;
+
                 std::lock_guard<std::mutex> lock(api->mutex);
                 return api->session->user_service()->contact_available(user_id);
             }

@@ -96,8 +96,8 @@ namespace fire
 
             public:
                 void bind(port_type port);
-                void do_send(bool force);
-                void handle_write(const boost::system::error_code& error);
+                void do_send();
+                void handle_write(util::bytes_ptr, const boost::system::error_code& error);
                 void handle_read(const boost::system::error_code& error, size_t transferred);
                 void close();
                 void start_read();
@@ -127,7 +127,6 @@ namespace fire
 
                 //queue for chunks ready to go
                 chunk_queue _out_queue; //the queue loop adds next message to here to be sent
-                util::bytes _out_buffer;
 
                 //other
                 boost::asio::io_service& _io;

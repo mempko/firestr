@@ -61,12 +61,14 @@ namespace fire
                     const std::string& name() const;
                     const std::string& id() const;
                     const std::string& code() const;
+                    bool launched_local() const;
 
                 public:
                     void path(const std::string&);
                     void name(const std::string&);
                     void code(const std::string&);
                     void set_tmp();
+                    void launched_local(bool);
 
                 public:
                     //local storage that is transfered
@@ -82,6 +84,7 @@ namespace fire
                     std::string _code;
                     util::disk_store _data;
                     util::disk_store& _local_data;
+                    bool _launched_local;
                     bool _is_tmp;
             };
 
