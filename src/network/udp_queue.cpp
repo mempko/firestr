@@ -42,8 +42,9 @@ namespace fire
             const size_t THREAD_SLEEP = 40;
             const size_t RESEND_THREAD_SLEEP = 1000;
             const size_t RESEND_TICK_THRESHOLD = 3; //resend after 10 seconds
-            const size_t RESEND_THRESHOLD = 1; //resend one time
-            const size_t MAX_UDP_BUFF_SIZE = 1024*500; //500k in bytes
+            const size_t RESEND_THRESHOLD = 2; //resend one time
+            const size_t UDP_PACKET_SIZE = 512; //500k in bytes
+            const size_t MAX_UDP_BUFF_SIZE = UDP_PACKET_SIZE*1024; //500k in bytes
             const size_t SEQUENCE_BASE = 1;
             const size_t CHUNK_TOTAL_BASE = SEQUENCE_BASE + sizeof(sequence_type);
             const size_t CHUNK_BASE = CHUNK_TOTAL_BASE + sizeof(chunk_total_type);
@@ -51,7 +52,7 @@ namespace fire
 
             //<mark> <sequence num> <chunk total> <chunk>
             const size_t HEADER_SIZE = MESSAGE_BASE;
-            const size_t UDP_CHuNK_SIZE = 1024-HEADER_SIZE; //in bytes
+            const size_t UDP_CHuNK_SIZE = UDP_PACKET_SIZE - HEADER_SIZE; //in bytes
             const size_t MAX_MESSAGE_SIZE = std::pow(2,sizeof(chunk_total_type)*8) * UDP_CHuNK_SIZE;
         }
 
