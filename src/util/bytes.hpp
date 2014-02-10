@@ -19,6 +19,7 @@
 
 #include <vector>
 #include <string>
+#include <memory>
 
 namespace fire 
 {
@@ -28,6 +29,7 @@ namespace fire
         using ubyte = unsigned char;
         using bytes = std::vector<byte>;
         using ubytes = std::vector<ubyte>;
+        using bytes_ptr = std::shared_ptr<bytes>;
 
         bytes to_bytes(const std::string&);
         std::string to_str(const bytes&);
