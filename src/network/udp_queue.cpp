@@ -41,7 +41,7 @@ namespace fire
             const size_t BLOCK_SLEEP = 10;
             const size_t THREAD_SLEEP = 40;
             const size_t RESEND_THREAD_SLEEP = 1000;
-            const size_t RESEND_TICK_THRESHOLD = 10; //resend after 10 seconds
+            const size_t RESEND_TICK_THRESHOLD = 3; //resend after 10 seconds
             const size_t RESEND_THRESHOLD = 1; //resend one time
             const size_t MAX_UDP_BUFF_SIZE = 1024*500; //500k in bytes
             const size_t SEQUENCE_BASE = 1;
@@ -620,7 +620,7 @@ namespace fire
 
                     //send ack
                     send(ack);
-                    _io.post(boost::bind(&udp_connection::do_send, this, false));
+                    do_send(false);
 
                     if(inserted)
                     {
@@ -667,7 +667,7 @@ namespace fire
                             mc.resent = true;
                             queue_chunk(mc);
                         }
-                        if(!resent_m) wm.ticks = 0;
+                        wm.ticks = 0;
                     }
 
                     if(resent_m) 
@@ -676,7 +676,6 @@ namespace fire
                         wm.ticks = 0;
                         wm.resent++;
                         CHECK_FALSE(wm.chunks.empty());
-                        const auto& c = wm.chunks[0];
                     }
 
                     if(!gaps || wm.resent >= RESEND_THRESHOLD) 
