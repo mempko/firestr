@@ -455,6 +455,9 @@ namespace fire
             //encode bytes to wire format
             const auto& chunk = _out_queue.front();
 
+            //remove sent message
+            _out_queue.pop_front();
+
             //ignore acks or resends
             if(!chunk.resent && chunk.type == udp_chunk::msg)
             {
@@ -463,26 +466,15 @@ namespace fire
                 remember_chunk(addr, chunk, _out_working);
             }
 
-            encode_udp_wire(_out_buffer, chunk);
+            u::bytes_ptr out_buffer{new u::bytes{UDP_PACKET_SIZE}};
+            encode_udp_wire(*out_buffer, chunk);
 
             auto p = chunk.port;
             udp::endpoint ep(address::from_string(chunk.host), p);
 
-            _socket->async_send_to(ba::buffer(&_out_buffer[0], _out_buffer.size()), ep,
-                    boost::bind(&udp_connection::handle_write, this,
+            _socket->async_send_to(ba::buffer(out_buffer->data(), out_buffer->size()), ep,
+                    boost::bind(&udp_connection::handle_write, this, out_buffer,
                         ba::placeholders::error));
-
-
-            ENSURE(_writing);
-        }
-
-        void udp_connection::handle_write(const boost::system::error_code& error)
-        {
-            //remove sent message
-            _out_queue.pop_front();
-            _error = error;
-
-            if(error) LOG << "error sending chunk, " << _out_queue.size() << " remaining..." << std::endl;
 
             //if we are done sending finish the async write chain
             if(_out_queue.empty()) queue_next_chunk();
@@ -492,9 +484,13 @@ namespace fire
                 return;
             }
 
-            //otherwise do another async write
             do_send(true);
-            ENSURE(_writing);
+        }
+
+        void udp_connection::handle_write(u::bytes_ptr buff, const boost::system::error_code& error)
+        {
+            _error = error;
+            if(error) LOG << "error sending chunk, " << _out_queue.size() << " remaining..." << std::endl;
         }
 
         void udp_connection::bind(port_type port)
