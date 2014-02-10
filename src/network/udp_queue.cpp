@@ -67,8 +67,8 @@ namespace fire
             _in_queue(in),
             _socket{new udp::socket{io}},
             _io(io),
-            _writing{false},
-            _in_buffer(MAX_UDP_BUFF_SIZE)
+            _in_buffer(MAX_UDP_BUFF_SIZE),
+            _writing{false}
         {
             boost::system::error_code error;
             _socket->open(udp::v4(), error);
@@ -266,7 +266,7 @@ namespace fire
             queue_next_chunk();
 
             //post to do send
-            _io.post(boost::bind(&udp_connection::do_send, this, false));
+            _io.post(boost::bind(&udp_connection::do_send, this));
 
             //if we are blocking, block until all messages are sent
             while(block && !_out_queue.empty()) u::sleep_thread(BLOCK_SLEEP);
@@ -437,26 +437,17 @@ namespace fire
             return ch;
         }
 
-        void udp_connection::do_send(bool force)
+        void udp_connection::do_send()
         {
             ENSURE(_socket);
-
-            //check to see if a write is in progress
-            if(!force && _writing) return;
 
             //get next chunk
             if(_out_queue.empty()) queue_next_chunk();
             if(_out_queue.empty()) return;
-
-            _writing = true;
-
             CHECK_FALSE(_out_queue.empty());
 
             //encode bytes to wire format
             const auto& chunk = _out_queue.front();
-
-            //remove sent message
-            _out_queue.pop_front();
 
             //ignore acks or resends
             if(!chunk.resent && chunk.type == udp_chunk::msg)
@@ -476,15 +467,9 @@ namespace fire
                     boost::bind(&udp_connection::handle_write, this, out_buffer,
                         ba::placeholders::error));
 
-            //if we are done sending finish the async write chain
-            if(_out_queue.empty()) queue_next_chunk();
-            if(_out_queue.empty()) 
-            {
-                _writing = false;
-                return;
-            }
-
-            do_send(true);
+            //remove sent message
+            _out_queue.pop_front();
+            _io.post(boost::bind(&udp_connection::do_send, this));
         }
 
         void udp_connection::handle_write(u::bytes_ptr buff, const boost::system::error_code& error)
@@ -595,7 +580,6 @@ namespace fire
                 //add message to in queue if we got complete message
                 endpoint ep = { UDP, _in_endpoint.address().to_string(), _in_endpoint.port()};
 
-
                 if(chunk.type == udp_chunk::msg)
                 { 
                     udp_chunk ack;
@@ -617,7 +601,7 @@ namespace fire
 
                     //send ack
                     send(ack);
-                    do_send(false);
+                    _io.post(boost::bind(&udp_connection::do_send, this));
 
                     if(inserted)
                     {
@@ -650,8 +634,9 @@ namespace fire
                     sequence_type sequence = wmp.first;
                     bool resent_m = false;
                     bool skip = wm.ticks <= RESEND_TICK_THRESHOLD;
+                    bool all_sent = wm.sent.count() == wm.chunks.size();
                     bool gaps = wm.set.count() != wm.chunks.size(); 
-                    if(gaps && !skip)
+                    if(gaps && !skip && all_sent)
                     {
                         for(const auto& c : wm.chunks)
                         {
@@ -673,7 +658,9 @@ namespace fire
                         wm.ticks = 0;
                         wm.resent++;
                         CHECK_FALSE(wm.chunks.empty());
-                    }
+                    } 
+                    else if(!skip && !all_sent)
+                        wm.ticks = 0;
 
                     if(!gaps || wm.resent >= RESEND_THRESHOLD) 
                         em.insert(sequence);
@@ -683,7 +670,7 @@ namespace fire
                 for(auto sequence : em) 
                     wms.second.erase(sequence);
             }
-            if(resent) _io.post(boost::bind(&udp_connection::do_send, this, false));
+            if(resent) _io.post(boost::bind(&udp_connection::do_send, this));
         }
 
         void udp_run_thread(udp_queue*);
