@@ -457,7 +457,7 @@ namespace fire
                 remember_chunk(addr, chunk, _out_working);
             }
 
-            u::bytes_ptr out_buffer{new u::bytes{UDP_PACKET_SIZE}};
+            u::bytes_ptr out_buffer{new u::bytes(UDP_PACKET_SIZE)};
             encode_udp_wire(*out_buffer, chunk);
 
             auto p = chunk.port;
