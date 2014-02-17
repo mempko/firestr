@@ -1047,8 +1047,11 @@ namespace fire
             bool lua_api::save_file(const std::string& suggested_name, const std::string& data)
             {
                 if(data.empty()) return false;
-
+#ifdef _WIN64
+                std::string home = std::getenv("USERPROFILE");
+#else
                 std::string home = std::getenv("HOME");
+#endif
                 std::string suggested_path = home + "/" + sanatize(suggested_name);
                 auto file = QFileDialog::getSaveFileName(canvas, tr("Save File"), suggested_path.c_str());
                 if(file.isEmpty()) return false;
@@ -1065,8 +1068,11 @@ namespace fire
             bool lua_api::save_bin_file(const std::string& suggested_name, const bin_data& bin)
             {
                 if(bin.data.empty()) return false;
-
+#ifdef _WIN64
+                std::string home = std::getenv("USERPROFILE");
+#else
                 std::string home = std::getenv("HOME");
+#endif
                 std::string suggested_path = home + "/" + sanatize(suggested_name);
                 auto file = QFileDialog::getSaveFileName(canvas, tr("Save File"), suggested_path.c_str());
                 if(file.isEmpty()) return false;

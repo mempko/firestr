@@ -40,7 +40,11 @@ namespace fire
         std::string get_file_name(QWidget* root)
         {
             REQUIRE(root);
+#ifdef _WIN64
+            std::string HOME = std::getenv("USERPROFILE");
+#else
             std::string HOME = std::getenv("HOME");
+#endif
             auto file = QFileDialog::getOpenFileName(root, "Open File", HOME.c_str());
             auto sf = convert(file);
             return sf;
