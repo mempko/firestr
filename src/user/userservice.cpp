@@ -860,7 +860,7 @@ namespace fire
 
         bool load_contact_file(const std::string& file, contact_file& cf)
         {
-            std::ifstream in(file.c_str());
+            std::ifstream in(file.c_str(), std::fstream::in | std::fstream::binary);
             if(!in.good()) 
             {
                 return false;
@@ -879,7 +879,7 @@ namespace fire
 
         bool save_contact_file(const std::string& file, const contact_file& cf)
         {
-            std::ofstream o(file.c_str());
+            std::ofstream o(file.c_str(), std::fstream::out | std::fstream::binary);
             if(!o.good()) return false;
 
             o << cf.contact;

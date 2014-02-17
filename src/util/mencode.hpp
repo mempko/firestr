@@ -215,7 +215,7 @@ namespace fire
         template<class R>
             bool load_from_file(const std::string& f, R& r)
             {
-                std::ifstream in(f.c_str());
+                std::ifstream in(f.c_str(), std::fstream::in | std::fstream::binary);
                 if(!in.good()) return false;
                 in >> r;
                 return true;
@@ -224,7 +224,7 @@ namespace fire
         template<class D>
             void save_to_file(const std::string& f, const D& d)
             {
-                std::ofstream out(f.c_str());
+                std::ofstream out(f.c_str(), std::fstream::out | std::fstream::binary);
                 if(!out.good()) 
                     throw std::runtime_error{"unable to save `" + f + "'"};
 

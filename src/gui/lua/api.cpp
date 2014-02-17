@@ -1072,7 +1072,7 @@ namespace fire
                 if(file.isEmpty()) return false;
 
                 auto fs = convert(file);
-                std::ofstream o(fs.c_str());
+                std::ofstream o(fs.c_str(), std::fstream::out | std::fstream::binary);
                 if(!o) return false;
 
                 o.write(bin.data.data(), bin.data.size());
