@@ -85,6 +85,7 @@ namespace fire
                 _local_data.load(local_data_dir);
 
                 //load app metadata
+                u::create_directory(_app_home);
                 load_apps();
 
                 INVARIANT(_user_service);
