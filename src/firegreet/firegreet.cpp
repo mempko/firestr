@@ -238,7 +238,7 @@ void create_new_key(const std::string& key, const std::string& pass)
     auto k = std::make_shared<sc::private_key>(pass);
     CHECK(k);
 
-    std::ofstream key_out(key.c_str());
+    std::ofstream key_out(key.c_str(), std::fstream::out | std::fstream::binary);
     if(!key_out.good()) 
         throw std::runtime_error{"unable to save `" + key + "'"};
 
@@ -249,7 +249,7 @@ sc::private_key_ptr load_private_key(const std::string& key, const std::string& 
 {
     if(!bf::exists(key)) create_new_key(key, pass);
 
-    std::ifstream key_in(key.c_str());
+    std::ifstream key_in(key.c_str(), std::fstream::in | std::fstream::binary);
     if(!key_in.good()) 
         throw std::runtime_error{"unable to load `" + key + "' for reading"};
 

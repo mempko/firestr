@@ -48,7 +48,7 @@ namespace fire
 
         bool load_from_file(const std::string& f, u::bytes& data)
         {
-            std::ifstream fs(f.c_str());
+            std::ifstream fs(f.c_str(), std::fstream::in | std::fstream::binary);
             if(!fs) return false;
 
             fs.seekg (0, fs.end);
