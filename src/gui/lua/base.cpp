@@ -139,7 +139,7 @@ namespace fire
 
             std::string bin_data::to_str() const
             {
-                return {data.begin(), data.end()};
+                return std::string{data.begin(), data.end()};
             }
 
             bin_data bin_data::sub(size_t p, size_t s) const

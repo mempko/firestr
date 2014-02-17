@@ -119,7 +119,7 @@ namespace fire
         {
             greet_server g{
                 d["host"].as_string(),
-                d["port"].as_int(),
+                static_cast<n::port_type>(d["port"].as_int()),
                 d["pub_key"].as_string(),
             };
             return g;

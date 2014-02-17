@@ -70,8 +70,9 @@ namespace fire
                 layout{cl},
                 output{o},
                 ids{0},
-                _error{-1, ""}
+                _error{}
             {
+				_error.line = -1;
                 INVARIANT(app);
                 INVARIANT(sender);
                 INVARIANT(session);

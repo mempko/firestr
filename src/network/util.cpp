@@ -16,17 +16,28 @@
  */
 #include "network/util.hpp"
 
+#ifdef _WIN64
+
+#else
 #include <ifaddrs.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/unistd.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#endif
+
 
 namespace fire 
 {
     namespace network 
     {
+#ifdef _WIN64
+		std::string get_lan_ip()
+		{
+			return "";
+		}
+#else
         std::string get_lan_ip()
         {
             std::string ip;
@@ -60,5 +71,6 @@ namespace fire
             freeifaddrs(iflist);
             return ip;
         }
+#endif
     }
 }

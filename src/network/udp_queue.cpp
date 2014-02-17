@@ -142,7 +142,8 @@ namespace fire
             auto p = _out_queue_map.insert(std::make_pair(c.sequence, _out_queues.end()));
             if(p.second)
             {
-                auto i = _out_queues.insert(_out_queues.end(), {{}, c.sequence, ERASE_COUNT});
+				queue_ring_item ri = { chunk_queue(), c.sequence, ERASE_COUNT };
+                auto i = _out_queues.insert(_out_queues.end(), ri);
                 p.first->second = i;
             }
             p.first->second->queue.emplace_push(c);

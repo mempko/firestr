@@ -582,7 +582,7 @@ namespace fire
             draw_view::draw_view(draw_ref ref, int width, int height) : 
                 QGraphicsView(), _ref{ref}, _button{0}
             {
-                setScene(new QGraphicsScene{0.0,0.0,width,height});
+                setScene(new QGraphicsScene{0.0,0.0,static_cast<qreal>(width),static_cast<qreal>(height)});
                 setMinimumSize(width,height);
                 setMouseTracking(true);
                 setRenderHint(QPainter::Antialiasing);
