@@ -47,9 +47,15 @@ po::options_description create_descriptions()
 {
     po::options_description d{"Options"};
 
-    std::string user = std::getenv("HOME");
-    if(user.empty()) user = ".";
+#ifdef _WIN64
+	std::string user = std::getenv("USERPROFILE");
+	if(user.empty()) user = ".";
+	const std::string home = user + "/_firestr";
+#else
+	std::string user = std::getenv("HOME");
+	if(user.empty()) user = ".";
     const std::string home = user + "/.firestr";
+#endif
 
     std::string host = ip::host_name();
     std::string ip = fn::get_lan_ip();

@@ -19,6 +19,7 @@
 
 #include <sstream>
 #include <chrono>
+#include <ctime>
 
 namespace fire 
 {

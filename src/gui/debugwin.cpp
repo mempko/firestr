@@ -270,7 +270,7 @@ namespace fire
 
             const auto& log_file = LOG_PATH;
             auto modified = QFileInfo(log_file.c_str()).lastModified();
-            if(_log_last_file_pos != 0 && _log_last_modified == modified) return;
+			if (_log_last_file_pos != std::streampos{0} && _log_last_modified == modified) return;
 
             std::ifstream i(log_file.c_str());
             if(!i.good()) return;

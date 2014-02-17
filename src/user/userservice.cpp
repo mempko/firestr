@@ -293,7 +293,7 @@ namespace fire
             ms::greet_register gr
             {
                 _user->info().id(), 
-                {_in_host, _in_port},
+                ms::greet_endpoint{_in_host, _in_port},
                 _user->info().key().key(),
                 SERVICE_ADDRESS
             };

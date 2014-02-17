@@ -217,7 +217,7 @@ namespace fire
         {
             u::value v;
             in >> v;
-            return {v.as_string()};
+            return public_key{v.as_string()};
         }
 
         u::bytes private_key::decrypt(const u::bytes& b) const
