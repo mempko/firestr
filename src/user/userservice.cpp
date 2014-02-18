@@ -859,12 +859,11 @@ namespace fire
         }
 
         bool load_contact_file(const std::string& file, contact_file& cf)
+        try
         {
             std::ifstream in(file.c_str(), std::fstream::in | std::fstream::binary);
             if(!in.good()) 
-            {
                 return false;
-            }
 
             user_info u;
             in >> u;
@@ -875,9 +874,15 @@ namespace fire
             cf.contact = u;
             cf.greeter = gv.as_string();
             return true;
+        } 
+        catch(std::exception& e)
+        {
+            LOG << "error loading contact file `" << file << "'. " << e.what() << std::endl;
+            return false;
         }
 
         bool save_contact_file(const std::string& file, const contact_file& cf)
+        try
         {
             std::ofstream o(file.c_str(), std::fstream::out | std::fstream::binary);
             if(!o.good()) return false;
@@ -886,6 +891,11 @@ namespace fire
             o << u::value{cf.greeter};
 
             return true;
+        }
+        catch(std::exception& e)
+        {
+            LOG << "error saving contact file `" << file << "'. " << e.what() << std::endl;
+            return false;
         }
 
         void user_service::confirm_contact(const contact_file& cf)
