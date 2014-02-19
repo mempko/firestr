@@ -139,7 +139,7 @@ namespace fire
 
             std::string bin_data::to_str() const
             {
-                return {data.begin(), data.end()};
+                return std::string{data.begin(), data.end()};
             }
 
             bin_data bin_data::sub(size_t p, size_t s) const
@@ -242,9 +242,11 @@ namespace fire
 
             bin_data script_message::get_bin(const std::string& k) const
             {
-                if(!_v.has(k)) return {};
-                if(!_v[k].is_bytes()) return {};
-                return {_v[k].as_bytes()};
+                if(!_v.has(k)) return bin_data{};
+
+                auto v = _v[k];
+                if(!v.is_bytes()) return bin_data{};
+                return bin_data{v.as_bytes()};
             }
 
             void script_message::set_bin(const std::string& k, const bin_data& v) 
@@ -324,9 +326,11 @@ namespace fire
 
             bin_data store_ref::get_bin(const std::string& k) const
             {
-                if(!_d.has(k)) return {};
-                if(!_d.get(k).is_bytes()) return {};
-                return {_d.get(k).as_bytes()};
+                if(!_d.has(k)) return bin_data{};
+
+                auto v = _d.get(k);
+                if(!v.is_bytes()) return bin_data{};
+                return bin_data{v.as_bytes()};
             }
 
             void store_ref::set_bin(const std::string& k, const bin_data& v) 

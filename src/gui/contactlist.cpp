@@ -269,7 +269,11 @@ namespace fire
             INVARIANT(_service);
 
             //get file name to load
+#ifdef _WIN64
+            std::string home = std::getenv("USERPROFILE");
+#else
             std::string home = std::getenv("HOME");
+#endif
             auto file = QFileDialog::getOpenFileName(this,
                     tr("Open Invite File"), home.c_str(), tr("Invite File (*.finvite)"));
 
@@ -450,7 +454,11 @@ namespace fire
         void contact_list_dialog::create_contact_file()
         {
             //have user select contact file 
+#ifdef _WIN64
+            std::string home = std::getenv("USERPROFILE");
+#else
             std::string home = std::getenv("HOME");
+#endif
             std::string default_file = home + "/" + _service->user().info().name() + ".finvite";
             auto file = QFileDialog::getSaveFileName(this, tr("Save File"),
                     default_file.c_str(),

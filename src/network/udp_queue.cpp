@@ -142,7 +142,8 @@ namespace fire
             auto p = _out_queue_map.insert(std::make_pair(c.sequence, _out_queues.end()));
             if(p.second)
             {
-                auto i = _out_queues.insert(_out_queues.end(), {{}, c.sequence, ERASE_COUNT});
+				queue_ring_item ri = { chunk_queue(), c.sequence, ERASE_COUNT };
+                auto i = _out_queues.insert(_out_queues.end(), ri);
                 p.first->second = i;
             }
             p.first->second->queue.emplace_push(c);
@@ -457,7 +458,7 @@ namespace fire
                 remember_chunk(addr, chunk, _out_working);
             }
 
-            u::bytes_ptr out_buffer{new u::bytes{UDP_PACKET_SIZE}};
+            u::bytes_ptr out_buffer{new u::bytes(UDP_PACKET_SIZE)};
             encode_udp_wire(*out_buffer, chunk);
 
             auto p = chunk.port;

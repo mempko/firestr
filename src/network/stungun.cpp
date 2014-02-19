@@ -103,7 +103,7 @@ namespace fire
 
         transaction_id out_tranaction_id(QDataStream& out)
         {
-            std::uniform_int_distribution<uint8_t> distribution(0, 255);
+            std::uniform_int_distribution<int> distribution(0, 255);
             std::mt19937 engine; 
             auto generator = std::bind(distribution, engine);
 
@@ -319,7 +319,7 @@ namespace fire
             auto& a = attrs[xored ? XOR_MAPPED_ADDRESS_ATTR : MAPPED_ADDRESS_ATTR];
             auto& data = a.data;
 
-            QByteArray ba{&data[0], data.size()};
+            QByteArray ba{&data[0], static_cast<int>(data.size())};
             QDataStream in{&ba, QIODevice::ReadOnly};
 
             uint8_t id;

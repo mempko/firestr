@@ -30,6 +30,15 @@ if(APPLE)
     #botan from macports
     include_directories(/usr/local/include/botan-1.10/)
     link_directories(/usr/local/lib/)
+elseif(CMAKE_HOST_WIN32)
+    link_directories(C:/botan/lib)
+    link_directories(C:/Boost/lib)
+    include_directories(C:/botan/include)
+    include_directories(C:/Boost/include/boost_1_55_0)
+    add_definitions(-DWIN32_LEAN_AND_MEAN)
+    add_definitions(-DNOMINMAX)
+    set(CMAKE_CXX_FLAGS "/EHsc")
+
 else()
     #botan
     include_directories(/usr/include/botan-1.10/)
@@ -37,7 +46,7 @@ endif()
 
 #setup boost
 set(Boost_USE_STATIC_LIBS on)
-find_package(Boost COMPONENTS system program_options filesystem regex REQUIRED)
+find_package(Boost COMPONENTS system program_options filesystem regex thread REQUIRED)
 link_directories(${Boost_LIBRARY_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})
 
@@ -55,6 +64,8 @@ set(CMAKE_CXX_FLAGS "${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
 
 if(APPLE)
     set(MISC_LIBRARIES libuuid.dylib libpthread.dylib libbotan-1.10.a)
+elseif(CMAKE_HOST_WIN32)
+    set(MISC_LIBRARIES botan.lib)
 else()
     set(MISC_LIBRARIES libuuid.so libpthread.so librt.so libbotan-1.10.a libcrypto.so libgmp.so)
 endif()

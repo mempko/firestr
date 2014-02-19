@@ -70,8 +70,9 @@ namespace fire
                 layout{cl},
                 output{o},
                 ids{0},
-                _error{-1, ""}
+                _error{}
             {
+				_error.line = -1;
                 INVARIANT(app);
                 INVARIANT(sender);
                 INVARIANT(session);
@@ -1046,8 +1047,11 @@ namespace fire
             bool lua_api::save_file(const std::string& suggested_name, const std::string& data)
             {
                 if(data.empty()) return false;
-
+#ifdef _WIN64
+                std::string home = std::getenv("USERPROFILE");
+#else
                 std::string home = std::getenv("HOME");
+#endif
                 std::string suggested_path = home + "/" + sanatize(suggested_name);
                 auto file = QFileDialog::getSaveFileName(canvas, tr("Save File"), suggested_path.c_str());
                 if(file.isEmpty()) return false;
@@ -1064,14 +1068,17 @@ namespace fire
             bool lua_api::save_bin_file(const std::string& suggested_name, const bin_data& bin)
             {
                 if(bin.data.empty()) return false;
-
+#ifdef _WIN64
+                std::string home = std::getenv("USERPROFILE");
+#else
                 std::string home = std::getenv("HOME");
+#endif
                 std::string suggested_path = home + "/" + sanatize(suggested_name);
                 auto file = QFileDialog::getSaveFileName(canvas, tr("Save File"), suggested_path.c_str());
                 if(file.isEmpty()) return false;
 
                 auto fs = convert(file);
-                std::ofstream o(fs.c_str());
+                std::ofstream o(fs.c_str(), std::fstream::out | std::fstream::binary);
                 if(!o) return false;
 
                 o.write(bin.data.data(), bin.data.size());

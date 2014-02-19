@@ -118,7 +118,7 @@ namespace fire
         {
             greet_server g{
                 d["host"].as_string(),
-                d["port"].as_int(),
+                static_cast<n::port_type>(d["port"].as_int()),
                 d["pub_key"].as_string(),
             };
             return g;
@@ -267,7 +267,7 @@ namespace fire
             if(!u::load_from_file(local_user_file, info)) return {};
 
             //load private key
-            std::ifstream key_in(local_prv_key_file.c_str());
+            std::ifstream key_in(local_prv_key_file.c_str(), std::fstream::in | std::fstream::binary);
             if(!key_in.good()) return {};
 
             auto prv_key = sc::decode_private_key(key_in, passphrase);
@@ -304,7 +304,7 @@ namespace fire
 
             if(!bf::exists(local_prv_key_file))
             {
-                std::ofstream key_out(local_prv_key_file.c_str());
+                std::ofstream key_out(local_prv_key_file.c_str(), std::fstream::out | std::fstream::binary);
                 if(!key_out.good()) 
                     throw std::runtime_error{"unable to save `" + local_prv_key_file + "'"};
 
@@ -318,7 +318,7 @@ namespace fire
 
         user_info_ptr load_contact(const std::string& file)
         {
-            std::ifstream in(file.c_str());
+            std::ifstream in(file.c_str(), std::fstream::in | std::fstream::binary);
             if(!in.good()) return {};
 
             user_info_ptr u{new user_info};
@@ -328,7 +328,7 @@ namespace fire
 
         void save_contact(const std::string& file, const user_info& u)
         {
-            std::ofstream out(file.c_str());
+            std::ofstream out(file.c_str(), std::fstream::out | std::fstream::binary);
             if(!out.good()) return;
 
             out << u;

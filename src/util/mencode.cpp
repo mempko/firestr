@@ -223,7 +223,7 @@ namespace fire
         {
             if(i.good()) return;
             std::stringstream e;
-            e << "unexpected end of stream at byte " << e.tellg();
+            e << "unexpected end of stream at byte " << i.tellg();
             throw std::runtime_error{e.str()}; 
         }
 
@@ -254,7 +254,7 @@ namespace fire
                 if(c != b)
                 {
                     std::stringstream e;
-                    e << "expected " << type << " at byte " << e.tellg();
+                    e << "expected " << type << " at byte " << i.tellg();
                     throw std::runtime_error{e.str()}; 
                 }
 
@@ -286,7 +286,7 @@ namespace fire
             if(c < '0' || c > '9')
             {
                 std::stringstream e;
-                e << "expected byte string at byte " << e.tellg() << " but got `" << char(c) << "'";
+                e << "expected byte string at byte " << i.tellg() << " but got `" << char(c) << "'";
                 throw std::runtime_error{e.str()}; 
             }
 
@@ -335,7 +335,7 @@ namespace fire
             if(c != 'd') 
             {
                 std::stringstream e;
-                e << "expected dictionary at byte " << e.tellg();
+                e << "expected dictionary at byte " << i.tellg();
                 throw std::runtime_error{e.str()};
             }
 
@@ -363,7 +363,7 @@ namespace fire
             if(c != 'a') 
             {
                 std::stringstream e;
-                e << "expected array at byte " << e.tellg();
+                e << "expected array at byte " << i.tellg();
                 throw std::runtime_error{e.str()};
             }
 

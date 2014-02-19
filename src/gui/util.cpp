@@ -40,7 +40,11 @@ namespace fire
         std::string get_file_name(QWidget* root)
         {
             REQUIRE(root);
+#ifdef _WIN64
+            std::string HOME = std::getenv("USERPROFILE");
+#else
             std::string HOME = std::getenv("HOME");
+#endif
             auto file = QFileDialog::getOpenFileName(root, "Open File", HOME.c_str());
             auto sf = convert(file);
             return sf;
@@ -48,7 +52,7 @@ namespace fire
 
         bool load_from_file(const std::string& f, u::bytes& data)
         {
-            std::ifstream fs(f.c_str());
+            std::ifstream fs(f.c_str(), std::fstream::in | std::fstream::binary);
             if(!fs) return false;
 
             fs.seekg (0, fs.end);
