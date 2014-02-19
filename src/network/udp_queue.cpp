@@ -41,7 +41,7 @@ namespace fire
             const size_t BLOCK_SLEEP = 10;
             const size_t THREAD_SLEEP = 40;
             const size_t RESEND_THREAD_SLEEP = 1000;
-            const size_t RESEND_TICK_THRESHOLD = 3; //resend after 10 seconds
+            const size_t RESEND_TICK_THRESHOLD = 3; //resend after 3 seconds
             const size_t RESEND_THRESHOLD = 2; //resend one time
             const size_t UDP_PACKET_SIZE = 512; //500k in bytes
             const size_t MAX_UDP_BUFF_SIZE = UDP_PACKET_SIZE*1024; //500k in bytes
@@ -103,7 +103,6 @@ namespace fire
                 wm.sent.resize(c.total_chunks);
             }
             wm.chunks[c.chunk] = c;
-            wm.set[c.chunk] = 0;
             wm.sent[c.chunk] = 1;
         }
 
@@ -631,18 +630,29 @@ namespace fire
                 for(auto& wmp : wms.second)
                 {
                     auto& wm = wmp.second;
-                    wm.ticks++;
-                    sequence_type sequence = wmp.first;
-                    bool resent_m = false;
-                    bool skip = wm.ticks <= RESEND_TICK_THRESHOLD;
+                    CHECK(!wm.chunks.empty());
+
+                    //did we send all?
                     bool all_sent = wm.sent.count() == wm.chunks.size();
+                    if(!all_sent) continue;
+
+                    sequence_type sequence = wmp.first;
+
+                    //are there any dropped chunks?
                     bool gaps = wm.set.count() != wm.chunks.size(); 
-                    if(gaps && !skip && all_sent)
+
+                    //check if we should try to resend
+                    wm.ticks++;
+                    bool skip = wm.ticks <= RESEND_TICK_THRESHOLD;
+                    if(!skip) wm.ticks = 0;
+
+                    if(!skip && gaps)
                     {
+                        bool resent_m = false;
                         for(const auto& c : wm.chunks)
                         {
                             //skip validated or not sent
-                            if(wm.set[c.chunk] || !wm.sent[c.chunk]) continue;
+                            if(wm.set[c.chunk]) continue;
 
                             auto mc = c;//copy
                             resent_m = true;
@@ -650,18 +660,14 @@ namespace fire
                             mc.resent = true;
                             queue_chunk(mc);
                         }
-                        wm.ticks = 0;
-                    }
 
-                    if(resent_m) 
-                    {
-                        resent = true;
-                        wm.ticks = 0;
-                        wm.resent++;
-                        CHECK_FALSE(wm.chunks.empty());
-                    } 
-                    else if(!skip && !all_sent)
-                        wm.ticks = 0;
+                        if(resent_m) 
+                        {
+                            resent = true;
+                            wm.resent++;
+                            CHECK_FALSE(wm.chunks.empty());
+                        } 
+                    }
 
                     if(!gaps || wm.resent >= RESEND_THRESHOLD) 
                         em.insert(sequence);
