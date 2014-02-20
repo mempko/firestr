@@ -43,7 +43,7 @@ namespace fire
             const size_t RESEND_THREAD_SLEEP = 1000;
             const size_t RESEND_TICK_THRESHOLD = 3; //resend after 3 seconds
             const size_t RESEND_THRESHOLD = 2; //resend one time
-            const size_t UDP_PACKET_SIZE = 512; //500k in bytes
+            const size_t UDP_PACKET_SIZE = 512; //in bytes
             const size_t MAX_UDP_BUFF_SIZE = UDP_PACKET_SIZE*1024; //500k in bytes
             const size_t SEQUENCE_BASE = 1;
             const size_t CHUNK_TOTAL_BASE = SEQUENCE_BASE + sizeof(sequence_type);
@@ -92,6 +92,9 @@ namespace fire
 
         void remember_chunk(const std::string& addr, const udp_chunk& c, working_udp_messages& w)
         {
+            REQUIRE(c.type != udp_chunk::ack);
+            REQUIRE_FALSE(c.resent);
+
             auto& wms = w[addr];
             auto& wm = wms[c.sequence];
             if(wm.chunks.empty())
@@ -108,6 +111,8 @@ namespace fire
 
         void validate_chunk(const std::string& addr, const udp_chunk& c, working_udp_messages& w)
         {
+            REQUIRE(c.type == udp_chunk::ack);
+
             auto chunk_n = c.chunk;
             auto sequence_n = c.sequence;
 
@@ -156,10 +161,12 @@ namespace fire
                 return false;
             }
 
+            //if at end, go to beginning
             if(_next_out_queue == _out_queues.end()) 
                 _next_out_queue = _out_queues.begin();
             else _next_out_queue++;
 
+            //if was at one before end and hit end, go to the beginning
             if(_next_out_queue == _out_queues.end()) 
                 _next_out_queue = _out_queues.begin();
             return true;
@@ -195,6 +202,8 @@ namespace fire
                 _out_queue_map.erase(j->sequence);
                 bool is_next = _next_out_queue == j;
                 j = _out_queues.erase(j);
+
+                //move next if we erased it
                 if(is_next) _next_out_queue = j;
             }
         }
@@ -263,7 +272,6 @@ namespace fire
             }
 
             size_t chunks = chunkify(m.ep.address, m.ep.port, m.data);
-            queue_next_chunk();
 
             //post to do send
             _io.post(boost::bind(&udp_connection::do_send, this));
@@ -429,6 +437,7 @@ namespace fire
 
             if(data_size > 0)
             {
+                if(data_size > MAX_UDP_BUFF_SIZE) return ch;
                 ch.data.resize(data_size);
                 std::copy(b.begin() + MESSAGE_BASE, b.end(), ch.data.begin());
             }
@@ -449,6 +458,15 @@ namespace fire
             //encode bytes to wire format
             const auto& chunk = _out_queue.front();
 
+            u::bytes_ptr out_buffer{new u::bytes(UDP_PACKET_SIZE)};
+            encode_udp_wire(*out_buffer, chunk);
+
+            //async send chunk
+            udp::endpoint ep(address::from_string(chunk.host), chunk.port);
+            _socket->async_send_to(ba::buffer(out_buffer->data(), out_buffer->size()), ep,
+                    boost::bind(&udp_connection::handle_write, this, out_buffer,
+                        ba::placeholders::error));
+
             //ignore acks or resends
             if(!chunk.resent && chunk.type == udp_chunk::msg)
             {
@@ -457,18 +475,14 @@ namespace fire
                 remember_chunk(addr, chunk, _out_working);
             }
 
-            u::bytes_ptr out_buffer{new u::bytes(UDP_PACKET_SIZE)};
-            encode_udp_wire(*out_buffer, chunk);
-
-            auto p = chunk.port;
-            udp::endpoint ep(address::from_string(chunk.host), p);
-
-            _socket->async_send_to(ba::buffer(out_buffer->data(), out_buffer->size()), ep,
-                    boost::bind(&udp_connection::handle_write, this, out_buffer,
-                        ba::placeholders::error));
-
             //remove sent message
             _out_queue.pop_front();
+
+            //queue next message
+            if(_out_queue.empty()) queue_next_chunk();
+            if(_out_queue.empty()) return;
+
+            //post send
             _io.post(boost::bind(&udp_connection::do_send, this));
         }
 
@@ -504,6 +518,8 @@ namespace fire
 
         bool insert_chunk(const std::string& addr, const udp_chunk& c, working_udp_messages& w, u::bytes& complete_message)
         {
+            REQUIRE(c.type == udp_chunk::msg);
+
             auto& wms = w[addr];
             auto& wm = wms[c.sequence];
             if(wm.chunks.empty())
@@ -563,9 +579,8 @@ namespace fire
             }
 
             //get bytes
-            u::bytes data;
             CHECK_LESS_EQUAL(transferred, _in_buffer.size());
-            data.resize(transferred);
+            u::bytes data(transferred);
             std::copy(_in_buffer.begin(), _in_buffer.begin() + transferred, data.begin());
 
             //decode message
@@ -589,15 +604,11 @@ namespace fire
                     ack.sequence = chunk.sequence;
                     ack.total_chunks = chunk.total_chunks;
                     ack.chunk = chunk.chunk;
+                    CHECK(ack.data.empty());
 
-                    bool inserted = false;
-                    {
-                        u::mutex_scoped_lock l(_mutex);
-
-                        //insert chunk to message buffer
-                        inserted = insert_chunk(make_address_str(ep), chunk, _in_working, data);
-                        //chunk is no longer valid after insert_chunk call because a move is done.
-                    }
+                    //insert chunk to message buffer
+                    bool inserted = insert_chunk(make_address_str(ep), chunk, _in_working, data);
+                    //chunk is no longer valid after insert_chunk call because a move is done.
 
                     //send ack
                     send(ack);
