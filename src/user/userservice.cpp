@@ -858,10 +858,17 @@ namespace fire
             send_event(event::convert(n));
         }
 
+#ifdef _WIN64
+        bool load_contact_file(const unsigned short* file, contact_file& cf)
+        try
+        {
+            std::ifstream in(file, std::fstream::in | std::fstream::binary);
+#else
         bool load_contact_file(const std::string& file, contact_file& cf)
         try
         {
             std::ifstream in(file.c_str(), std::fstream::in | std::fstream::binary);
+#endif
             if(!in.good()) 
                 return false;
 

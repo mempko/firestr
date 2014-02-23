@@ -278,7 +278,12 @@ namespace fire
 
             //load contact file
             us::contact_file cf;
+
+#ifdef _WIN64
+            if(!us::load_contact_file(convert16(file), cf)) { return; }
+#else
             if(!us::load_contact_file(convert(file), cf)) { return; }
+#endif
 
             //add greeter
             if(!cf.greeter.empty())
