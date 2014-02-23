@@ -183,6 +183,7 @@ namespace fire
                 m::message m;
                 while(_mail->pop_inbox(m))
                 {
+                    m::expect_symmetric(m);
                     if(m.meta.type == l::SCRIPT_MESSAGE)
                     {
                         bool local = m.meta.extra.has("local_app_id");
