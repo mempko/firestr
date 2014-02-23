@@ -21,6 +21,7 @@
 #include "gui/mainwin.hpp"
 #include "network/util.hpp"
 
+#include "util/env.hpp"
 #include "util/log.hpp"
 
 #include <string>
@@ -47,13 +48,10 @@ po::options_description create_descriptions()
 {
     po::options_description d{"Options"};
 
+	auto user = fu::get_home_dir();
 #ifdef _WIN64
-	std::string user = std::getenv("USERPROFILE");
-	if(user.empty()) user = ".";
 	const std::string home = user + "/_firestr";
 #else
-	std::string user = std::getenv("HOME");
-	if(user.empty()) user = ".";
     const std::string home = user + "/.firestr";
 #endif
 
