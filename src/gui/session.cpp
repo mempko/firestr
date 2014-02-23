@@ -189,10 +189,12 @@ namespace fire
                 {
                     auto id = _messages->add_new_app(m);
                     _session->add_app_id(id);
+                    _session_service->fire_session_alert(_session->id());
                 }
                 else if(m.meta.type == s::event::SESSION_SYNCED)
                 {
                     update_contacts();
+                    _session_service->fire_session_alert(_session->id());
                 }
                 else if(m.meta.type == s::event::CONTACT_REMOVED)
                 {
@@ -208,6 +210,7 @@ namespace fire
 
                     _messages->remove_from_contact_lists(c);
                     update_contacts();
+                    _session_service->fire_session_alert(_session->id());
                 }
                 else if(m.meta.type == s::event::CONTACT_ADDED)
                 {
@@ -221,6 +224,7 @@ namespace fire
 
                     add(contact_alert(c, convert(tr("added to session"))));
                     update_contacts();
+                    _session_service->fire_session_alert(_session->id());
                 }
                 else if(m.meta.type == us::event::CONTACT_CONNECTED)
                 {
