@@ -17,14 +17,40 @@
  */
 #include "util/dbc.hpp"
 #include "util/log.hpp"
+#include <cstdlib>
+
+#ifndef _WIN64
+#include <execinfo.h>
+#endif
 
 namespace fire 
 {
     namespace util 
     {
+        namespace 
+        {
+            const size_t TRACE_SIZE = 16;
+        }
+
+#ifdef _WIN64
+        void trace() {}
+#else
+        void trace()
+        {
+            void *t[TRACE_SIZE];
+            auto size = backtrace(t, 16);
+            auto s = backtrace_symbols (t, size);
+            for (size_t i = 0; i < size; i++)
+                LOG << s[i] << std::endl;
+
+            std::free(s);
+        }
+#endif
+
         void raise(const char * msg) 
         {
             LOG << msg << std::endl;
+            trace();
             exit(1);
         }
 
