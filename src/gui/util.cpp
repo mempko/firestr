@@ -33,6 +33,11 @@ namespace fire
             return q.toUtf8().constData();
         }
 
+        const unsigned short* convert16(const QString& q)
+        {
+            return q.utf16();
+        }
+
         std::string app_id(const user::local_user& l)
         {
             return "firestr-" + l.info().id();

@@ -46,7 +46,11 @@ namespace fire
             std::string greeter;
         };
 
+#ifdef _WIN64
+        bool load_contact_file(const unsigned short* file, contact_file& cf)
+#else
         bool load_contact_file(const std::string& file, contact_file& cf);
+#endif
         bool save_contact_file(const std::string& file, const contact_file& cf);
 
         struct register_with_greeters {};
