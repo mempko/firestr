@@ -611,6 +611,7 @@ namespace fire
                 m::message m;
                 while(_mail->pop_inbox(m))
                 {
+                    m::expect_symmetric(m);
                     if(m.meta.type == SCRIPT_CODE_MESSAGE)
                     {
                         text_script t;

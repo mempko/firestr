@@ -183,6 +183,7 @@ namespace fire
             m::message m;
             while(_session->mail()->pop_inbox(m))
             {
+                m::expect_symmetric(m);
                 //for now show encoded message
                 //TODO: use factory class to create gui from messages
                 if(m.meta.type == ms::NEW_APP)

@@ -147,6 +147,7 @@ namespace fire
         {
             INVARIANT(mail());
             INVARIANT(_user_service);
+            m::expect_symmetric(m);
 
             if(m.meta.type == SYNC_SESSION)
             {
