@@ -38,7 +38,7 @@ namespace fire
         void trace()
         {
             void *t[TRACE_SIZE];
-            auto size = backtrace(t, 16);
+            auto size = backtrace(t, TRACE_SIZE);
             auto s = backtrace_symbols (t, size);
             for (size_t i = 0; i < size; i++)
                 LOG << s[i] << std::endl;
