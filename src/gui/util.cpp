@@ -16,6 +16,7 @@
  */
 
 #include "gui/util.hpp"
+#include "util/env.hpp"
 
 #include <QFileDialog>
 
@@ -32,6 +33,11 @@ namespace fire
             return q.toUtf8().constData();
         }
 
+        const unsigned short* convert16(const QString& q)
+        {
+            return q.utf16();
+        }
+
         std::string app_id(const user::local_user& l)
         {
             return "firestr-" + l.info().id();
@@ -40,12 +46,8 @@ namespace fire
         std::string get_file_name(QWidget* root)
         {
             REQUIRE(root);
-#ifdef _WIN64
-            std::string HOME = std::getenv("USERPROFILE");
-#else
-            std::string HOME = std::getenv("HOME");
-#endif
-            auto file = QFileDialog::getOpenFileName(root, "Open File", HOME.c_str());
+            auto home = u::get_home_dir();
+            auto file = QFileDialog::getOpenFileName(root, "Open File", home.c_str());
             auto sf = convert(file);
             return sf;
         }

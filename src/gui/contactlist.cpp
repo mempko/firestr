@@ -18,9 +18,10 @@
 
 #include "gui/contactlist.hpp"
 #include "gui/util.hpp"
-#include "util/dbc.hpp"
-#include "util/log.hpp"
 #include "network/message_queue.hpp"
+#include "util/dbc.hpp"
+#include "util/env.hpp"
+#include "util/log.hpp"
 
 #include <QtWidgets>
 #include <QGridLayout>
@@ -269,11 +270,7 @@ namespace fire
             INVARIANT(_service);
 
             //get file name to load
-#ifdef _WIN64
-            std::string home = std::getenv("USERPROFILE");
-#else
-            std::string home = std::getenv("HOME");
-#endif
+            auto home = u::get_home_dir();
             auto file = QFileDialog::getOpenFileName(this,
                     tr("Open Invite File"), home.c_str(), tr("Invite File (*.finvite)"));
 
@@ -281,7 +278,12 @@ namespace fire
 
             //load contact file
             us::contact_file cf;
+
+#ifdef _WIN64
+            if(!us::load_contact_file(convert16(file), cf)) { return; }
+#else
             if(!us::load_contact_file(convert(file), cf)) { return; }
+#endif
 
             //add greeter
             if(!cf.greeter.empty())
@@ -454,11 +456,7 @@ namespace fire
         void contact_list_dialog::create_contact_file()
         {
             //have user select contact file 
-#ifdef _WIN64
-            std::string home = std::getenv("USERPROFILE");
-#else
-            std::string home = std::getenv("HOME");
-#endif
+            auto home = u::get_home_dir();
             std::string default_file = home + "/" + _service->user().info().name() + ".finvite";
             auto file = QFileDialog::getSaveFileName(this, tr("Save File"),
                     default_file.c_str(),

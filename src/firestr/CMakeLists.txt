@@ -34,12 +34,14 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 if(APPLE)
     set(PROGNAME firestr)
+    set(plugin_dest_dir bin)
+    set(MACOSX_BUNDLE_GUI_IDENTIFIER "com.mempko.firestr")
     set(MACOSX_BUNDLE_SHORT_VERSION_STRING 0.1)
     set(MACOSX_BUNDLE_VERSION 0.1)
     set(MACOSX_BUNDLE_LONG_VERSION Version 0.1)
-    set(MAXOSX_BUNDLE_NAME firestr)
-    set(MAXOSX_BUNDLE_INFO_STRING firestr)
-    set(MAXOSX_BUNDLE_COPYRIGHT "(C) 2013 Maxim Noah Khailo")
+    set(MACOSX_BUNDLE_NAME firestr)
+    set(MACOSX_BUNDLE_INFO_STRING firestr)
+    set(MACOSX_BUNDLE_COPYRIGHT "(C) 2013 Maxim Noah Khailo")
 
     add_executable(
         firestr
@@ -52,8 +54,20 @@ if(APPLE)
         command mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/firestr.app/Contents/Resources
         command cp -p ${CMAKE_CURRENT_BINARY_DIR}/firestr.app/Contents/MacOS
         command cp *.qm ${CMAKE_CURRENT_BINARY_DIR}/firestr.app/Contents/Resources/)
-    
-        
+
+    set_target_properties(firestr PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/cmake/mac_bundle.plist.in)
+
+    set(APPS ${CMAKE_CURRENT_BINARY_DIR}/firestr.app)
+
+    install(CODE "
+        file(GLOB_RECURSE QTPLUGINS
+            \"\${CMAKE_INSTALL_PREFIX}/${plugin_dest_dir}/plugins/*${CMAKE_SHARED_LIBRARY_SUFFIX}\")
+        include(BundleUtilities)
+        fixup_bundle(\"${APPS}\" \"\${QTPLUGINS}\" \"${QT_LIBRARY_DIRS}\")
+        " COMPONENT Runtime)
+
+    set(CPACK_BINARY_DRAGNDROP ON)
+    include(CPack)
 
 else(APPLE)
     add_executable(

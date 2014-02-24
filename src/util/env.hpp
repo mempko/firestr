@@ -15,22 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef FIRESTR_GUI_UTIL_H
-#define FIRESTR_GUI_UTIL_H
+#ifndef FIRESTR_ENV_UTIL_H
+#define FIRESTR_ENV_UTIL_H
 
-#include <QString>
-#include <QWidget>
-#include "user/user.hpp"
+#include <string>
 
 namespace fire
 {
-    namespace gui
+    namespace util
     {
-        std::string convert(const QString&);
-        const unsigned short* convert16(const QString&);
-        std::string app_id(const user::local_user& l);
-        std::string get_file_name(QWidget* root);
-        bool load_from_file(const std::string& f, fire::util::bytes& data);
+        std::string get_home_dir();
     }
 }
 
