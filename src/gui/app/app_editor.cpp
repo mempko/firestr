@@ -49,7 +49,87 @@ namespace fire
             const std::string APP_EDITOR = "APP_EDITOR";
             const std::string LUA_KEYWORDS = "\\b(app|and|break|do|else|elseif|end|false|for|function|if|in|local|nil|not|or|repeat|return|then|true|until|while|pairs)\\b";
             const std::string LUA_QUOTE = "\".*[^\\\\]\"";
-            const std::string LUA_API_KEYWORDS = "\\b(add|remove|size|button|callback|clear|contact|disable|edit|edited_callback|enable|enabled|finished_callback|from|get|label|last_contact|list|message|name|online|place|place_across|print|send|send_to|set|set_text|text|set_image|text_edit|total_contacts|when_clicked|when_edited|when_finished|when_message_received|draw|line|circle|when_mouse_moved|when_mouse_pressed|when_mouse_released|when_mouse_dragged|clear|pen|get_pen|when_local_message_received|is_local|send_local|timer|interval|stop|start|running|when_triggered|save_file|save_bin_file|open_file|open_bin_file|id|str|get_bin|set_bin|sub|append|grow|width|height|grid|alert|good|image|data|store|i_started|who_started|self)\\b";
+
+            const u::string_vect API_KEYWORDS{
+                "add",
+                "remove",
+                "size",
+                "button",
+                "callback",
+                "clear",
+                "contact",
+                "disable",
+                "edit",
+                "edited_callback",
+                "enable",
+                "enabled",
+                "finished_callback",
+                "from",
+                "get",
+                "label",
+                "last_contact",
+                "list",
+                "message",
+                "name",
+                "online",
+                "place",
+                "place_across",
+                "print",
+                "send",
+                "send_to",
+                "set",
+                "set_text",
+                "text",
+                "set_image",
+                "text_edit",
+                "total_contacts",
+                "when_clicked",
+                "when_edited",
+                "when_finished",
+                "when_message_received",
+                "draw",
+                "line",
+                "circle",
+                "when_mouse_moved",
+                "when_mouse_pressed",
+                "when_mouse_released",
+                "when_mouse_dragged",
+                "clear",
+                "pen",
+                "get_pen",
+                "when_local_message_received",
+                "is_local",
+                "send_local",
+                "timer",
+                "interval",
+                "stop",
+                "start",
+                "running",
+                "when_triggered",
+                "save_file",
+                "save_bin_file",
+                "open_file",
+                "open_bin_file",
+                "id",
+                "str",
+                "get_bin",
+                "set_bin",
+                "sub",
+                "append",
+                "grow",
+                "width",
+                "height",
+                "grid",
+                "alert",
+                "good",
+                "image",
+                "data",
+                "store",
+                "i_started",
+                "who_started",
+                "self"
+            };
+
             const std::string LUA_NUMBERS = "[0-9\\.]+";
             const std::string LUA_OPERATORS = "[=+-\\*\\^:%#~<>\\(\\){}\\[\\];:,]+";
 
@@ -86,6 +166,7 @@ namespace fire
                 t.code = m.meta.extra["code"].as_string();
                 t.data = m.data;
             }
+
 
             app_editor::app_editor(
                     app_service_ptr app_service, 
@@ -667,6 +748,15 @@ namespace fire
             lua_highlighter::lua_highlighter(QTextDocument* parent) :
                 QSyntaxHighlighter{parent}
             {
+                //create api keyword regex
+                std::string api_keywords = "\\b(";
+                for(int i = 0; i < API_KEYWORDS.size();i++)
+                {
+                    if(i != 0) api_keywords.append("|");
+                    api_keywords.append(API_KEYWORDS[i]);
+                }
+                api_keywords.append(")\\b");
+
                 //keywords
                 {
                     highlight_rule r;
@@ -681,7 +771,7 @@ namespace fire
                     highlight_rule r;
                     r.format.setForeground(Qt::darkMagenta);
                     r.format.setFontWeight(QFont::Bold);
-                    r.regex = QRegExp{LUA_API_KEYWORDS.c_str()};
+                    r.regex = QRegExp{api_keywords.c_str()};
                     _rules.emplace_back(r);
                 }
 
