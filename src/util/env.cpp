@@ -18,6 +18,9 @@
 #include "util/env.hpp"
 
 #include <cstdlib>
+#include <boost/filesystem.hpp>
+
+namespace bf = boost::filesystem;
 
 namespace fire
 {
@@ -31,6 +34,28 @@ namespace fire
             const char* home = std::getenv("HOME");
 #endif
             return home != nullptr ? home : ".";
+        }
+
+        std::string get_default_firestr_home()
+        {
+#ifdef _WIN64
+            //root in /Users/<user>/Application Data/
+            const char* app_data = std::getenv("APPDATA");
+            bf::path root = app_data != nullptr ? app_data : "./";
+#elif defined(TARGET_OS_MAC)
+            //~/Library/Application Support/
+            const char* home = std::getenv("HOME");
+            bf::path root = home != nullptr ? home : "./";
+            root /= "Library" / "Application Support";
+#else
+            //~/.config/firestr
+            const char* home = std::getenv("HOME");
+            bf::path root = home != nullptr ? home : "./";
+            root /= ".config";
+#endif
+
+            bf::path r = root / "firestr";
+            return r.string();
         }
     }
 }

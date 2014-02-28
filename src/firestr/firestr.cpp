@@ -48,12 +48,7 @@ po::options_description create_descriptions()
 {
     po::options_description d{"Options"};
 
-	auto user = fu::get_home_dir();
-#ifdef _WIN64
-	const std::string home = user + "/_firestr";
-#else
-    const std::string home = user + "/.firestr";
-#endif
+    auto firestr_home = fu::get_default_firestr_home();
 
     std::string host = ip::host_name();
     std::string ip = fn::get_lan_ip();
@@ -62,7 +57,7 @@ po::options_description create_descriptions()
 
     d.add_options()
         ("help", "prints help")
-        ("home", po::value<std::string>()->default_value(home), "configuration directory")
+        ("home", po::value<std::string>()->default_value(firestr_home), "configuration directory")
         ("host", po::value<std::string>()->default_value(host), "host/ip of this machine") 
         ("port", po::value<int>()->default_value(DEFAULT_PORT), "port this machine will receive messages on")
         ("debug", "if set, turns on the debug menu");

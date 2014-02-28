@@ -25,6 +25,7 @@ namespace fire
     namespace util
     {
         std::string get_home_dir();
+        std::string get_default_firestr_home();
     }
 }
 
