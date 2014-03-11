@@ -667,7 +667,6 @@ namespace fire
 
                             auto mc = c;//copy
                             resent_m = true;
-                            LOG << "resent " << sequence << ":" << c.chunk << std::endl; 
                             mc.resent = true;
                             queue_chunk(mc);
                         }
