@@ -24,7 +24,7 @@ namespace fire
 {
     namespace security 
     {
-        session_library::session_library(const private_key& pk) : _pk(pk) {}
+        encrypted_channels::encrypted_channels(const private_key& pk) : _pk(pk) {}
 
         u::bytes append_prefix(char p, const u::bytes& bs)
         {
@@ -35,7 +35,7 @@ namespace fire
             return rs;
         }
 
-        u::bytes session_library::encrypt_asymmetric(session_map::const_iterator s, const u::bytes& bs) const
+        u::bytes encrypted_channels::encrypt_asymmetric(channel_map::const_iterator s, const u::bytes& bs) const
         {
             if(bs.empty()) return {};
 
@@ -45,19 +45,19 @@ namespace fire
             return append_prefix(encryption_type::asymmetric, es);
         }
 
-        u::bytes session_library::encrypt_asymmetric(const id& i, const u::bytes& bs) const
+        u::bytes encrypted_channels::encrypt_asymmetric(const id& i, const u::bytes& bs) const
         {
             u::mutex_scoped_lock l(_mutex);
             return encrypt_asymmetric(_s.find(i), bs);
         }
 
 
-        u::bytes session_library::encrypt_plaintext(const u::bytes& bs) const
+        u::bytes encrypted_channels::encrypt_plaintext(const u::bytes& bs) const
         {
             return append_prefix(encryption_type::plaintext, bs);
         }
 
-        u::bytes session_library::encrypt_symmetric(session_map::const_iterator s, const u::bytes& bs) const
+        u::bytes encrypted_channels::encrypt_symmetric(channel_map::const_iterator s, const u::bytes& bs) const
         {
             if(s == _s.end()) return {};
             REQUIRE(s->second.shared_secret.ready());
@@ -66,13 +66,13 @@ namespace fire
             return append_prefix(encryption_type::symmetric, es);
         }
 
-        u::bytes session_library::encrypt_symmetric(const id& i, const u::bytes& bs) const
+        u::bytes encrypted_channels::encrypt_symmetric(const id& i, const u::bytes& bs) const
         {
             u::mutex_scoped_lock l(_mutex);
             return encrypt_symmetric(_s.find(i), bs);
         }
 
-        u::bytes session_library::encrypt(const id& i, const u::bytes& bs) const
+        u::bytes encrypted_channels::encrypt(const id& i, const u::bytes& bs) const
         {
             u::mutex_scoped_lock l(_mutex);
             auto s = _s.find(i);
@@ -86,7 +86,7 @@ namespace fire
             return encrypt_symmetric(s, bs);
         }
 
-        u::bytes session_library::decrypt(const id& i, const u::bytes& bs, encryption_type& et) const
+        u::bytes encrypted_channels::decrypt(const id& i, const u::bytes& bs, encryption_type& et) const
         {
             if(bs.size() < 2) return {};
 
@@ -132,7 +132,7 @@ namespace fire
             return ds;
         }
 
-        void session_library::create_session(const id& i, const public_key& key)
+        void encrypted_channels::create_channel(const id& i, const public_key& key)
         {
             REQUIRE(key.valid());
 
@@ -141,7 +141,7 @@ namespace fire
             auto& s = _s[i];
             if(s.key.valid() && s.key.key() == key.key()) return;
 
-            LOG << "creating pk security session for: " << i << std::endl;
+            LOG << "creating pk security channel for: " << i << std::endl;
 
             s.key = key;
             s.shared_secret = dh_secret{};
@@ -149,12 +149,12 @@ namespace fire
             ENSURE(s.key.valid());
         }
 
-        void session_library::create_session(const id& i, const public_key& key, const util::bytes& public_val)
+        void encrypted_channels::create_channel(const id& i, const public_key& key, const util::bytes& public_val)
         {
             REQUIRE(key.valid());
             u::mutex_scoped_lock l(_mutex);
 
-            LOG << "creating pk/dh security session for: " << i << std::endl;
+            LOG << "creating pk/dh security channel for: " << i << std::endl;
 
             auto& s = _s[i];
 
@@ -167,7 +167,7 @@ namespace fire
             ENSURE(s.shared_secret.ready());
         }
 
-        const session& session_library::get_session(const id& i) const
+        const channel& encrypted_channels::get_channel(const id& i) const
         {
             u::mutex_scoped_lock l(_mutex);
             auto r = _s.find(i);
@@ -176,7 +176,7 @@ namespace fire
             return r->second;
         }
 
-        void session_library::remove_session(const id& i)
+        void encrypted_channels::remove_channel(const id& i)
         {
             u::mutex_scoped_lock l(_mutex);
             if(!_s.count(i)) return;

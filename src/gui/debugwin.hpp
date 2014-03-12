@@ -19,7 +19,7 @@
 #define FIRESTR_DEBUGWIN_H
 
 #include "user/userservice.hpp"
-#include "session/session_service.hpp"
+#include "conversation/conversation_service.hpp"
 #include "message/postoffice.hpp"
 
 #include "gui/list.hpp"
@@ -78,7 +78,7 @@ namespace fire
                 debug_win(
                         fire::message::post_office_ptr,
                         user::user_service_ptr, 
-                        session::session_service_ptr, 
+                        conversation::conversation_service_ptr, 
                         QWidget* parent = nullptr);
 
             public slots:
@@ -102,7 +102,7 @@ namespace fire
                 std::streampos _log_last_file_pos;
                 fire::message::post_office_ptr _post;
                 user::user_service_ptr _user_service;
-                session::session_service_ptr _session_service;
+                conversation::conversation_service_ptr _conversation_service;
         };
     }
 }

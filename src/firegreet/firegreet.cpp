@@ -123,7 +123,7 @@ void update_address(
 
 void register_user(
         n::connection_manager& con, 
-        sc::session_library& sec, 
+        sc::encrypted_channels& sec, 
         const n::endpoint& ep, 
         const ms::greet_register& r, 
         user_info_map& m)
@@ -153,13 +153,13 @@ void register_user(
         LOG << "registered " << i.id << " " << i.ext.ip << ":" << i.ext.port << " prot: " << ep.protocol << std::endl;
     }
 
-    sec.create_session(address, r.pub_key());
+    sec.create_channel(address, r.pub_key());
 
 }
 
 void send_response(
         n::connection_manager& con, 
-        sc::session_library& sec, 
+        sc::encrypted_channels& sec, 
         const ms::greet_find_response& r, 
         const user_info& u)
 {
@@ -179,7 +179,7 @@ void send_response(
 
 void find_user(
         n::connection_manager& con, 
-        sc::session_library& sec, 
+        sc::encrypted_channels& sec, 
         const n::endpoint& ep, 
         const ms::greet_find_request& r, 
         user_info_map& users)
@@ -213,7 +213,7 @@ void find_user(
 
 void send_pub_key(
         n::connection_manager& con, 
-        sc::session_library& sec, 
+        sc::encrypted_channels& sec, 
         const n::endpoint& ep,  
         const ms::greet_key_request& req, 
         user_info_map& users, 
@@ -309,7 +309,7 @@ int main(int argc, char *argv[])
     CHECK(pkey);
 
     n::connection_manager con{POOL_SIZE, port};
-    sc::session_library sec{*pkey};
+    sc::encrypted_channels sec{*pkey};
     user_info_map users;
 
     u::bytes data;

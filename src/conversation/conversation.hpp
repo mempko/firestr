@@ -15,8 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef FIRESTR_SESSION_SESSION_H
-#define FIRESTR_SESSION_SESSION_H
+#ifndef FIRESTR_CONVERSATION_CONVERSATION_H
+#define FIRESTR_CONVERSATION_CONVERSATION_H
 
 #include "user/user.hpp"
 #include "user/userservice.hpp"
@@ -31,14 +31,14 @@
 
 namespace fire
 {
-    namespace session
+    namespace conversation
     {
         using app_mailbox_ids = std::vector<std::string>;
-        class session 
+        class conversation 
         {
             public:
-                session(user::user_service_ptr, message::post_office_wptr);
-                session(const std::string id, user::user_service_ptr, message::post_office_wptr);
+                conversation(user::user_service_ptr, message::post_office_wptr);
+                conversation(const std::string id, user::user_service_ptr, message::post_office_wptr);
 
             public:
                 const user::contact_list& contacts() const;
@@ -77,8 +77,8 @@ namespace fire
                 bool _initiated_by_user;
         };
 
-        using session_ptr = std::shared_ptr<session>;
-        using session_wptr = std::weak_ptr<session>;
+        using conversation_ptr = std::shared_ptr<conversation>;
+        using conversation_wptr = std::weak_ptr<conversation>;
     }
 }
 

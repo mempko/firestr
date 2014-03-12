@@ -169,7 +169,7 @@ namespace fire
             _home{c.home},
             _in_host{c.host},
             _in_port{c.port},
-            _session_library{c.session_library},
+            _encrypted_channels{c.encrypted_channels},
             _done{false}
         {
             REQUIRE_FALSE(c.home.empty());
@@ -184,7 +184,7 @@ namespace fire
             init_reconnect();
 
             INVARIANT(_user);
-            INVARIANT(_session_library);
+            INVARIANT(_encrypted_channels);
             INVARIANT(mail());
             ENSURE(_ping_thread);
         }
@@ -298,9 +298,9 @@ namespace fire
                 SERVICE_ADDRESS
             };
 
-            //create security session
-            _session_library->create_session(tcp_addr, pub_key);
-            _session_library->create_session(udp_addr, pub_key);
+            //create security conversation
+            _encrypted_channels->create_channel(tcp_addr, pub_key);
+            _encrypted_channels->create_channel(udp_addr, pub_key);
 
             //send registration request to greeter
             m::message tcp_gm = gr; tcp_gm.meta.to = {tcp_addr, "outside"};
@@ -319,15 +319,15 @@ namespace fire
 
         bool available(size_t ticks) { return ticks <= PING_THRESH; }
 
-        void user_service::setup_security_session(
+        void user_service::setup_security_conversation(
                 const std::string& address, 
                 const sc::public_key& key, 
                 const u::bytes& public_val)
         {
             REQUIRE_FALSE(address.empty());
-            INVARIANT(_session_library);
+            INVARIANT(_encrypted_channels);
 
-            _session_library->create_session(address, key, public_val);
+            _encrypted_channels->create_channel(address, key, public_val);
         }
 
         void user_service::message_received(const message::message& m)
@@ -406,9 +406,9 @@ namespace fire
                 if(r.send_back) send_ping_request(c, false);
                 contact_connecting(c->id());
 
-                //update session to use DH 
+                //update conversation to use DH 
                 auto address = n::make_udp_address(r.from_ip, r.from_port);
-                setup_security_session(address, c->key(), r.public_secret);
+                setup_security_conversation(address, c->key(), r.public_secret);
                 send_ping_to(CONNECTED, c->id(), true);
             }
             else if(m.meta.type == REGISTER_WITH_GREETER)
@@ -446,18 +446,18 @@ namespace fire
                     auto external = n::make_udp_address(rs.external().ip, rs.external().port);
 
                     LOG << "got greet response for: " << c->name() << " (" << c->id() << " ) local: " << local << " external: " << external <<  " sending requests..." << std::endl;
-                    //create security sessions for local 
-                    _session_library->create_session(local, c->key());
+                    //create security conversations for local 
+                    _encrypted_channels->create_channel(local, c->key());
 
                     //send ping request via local network 
                     send_ping_request(local);
 
                     //if external is different from local, create a security
-                    //session and send a ping request. First one to make it
+                    //conversation and send a ping request. First one to make it
                     //wins the race.
                     if(external != local)
                     {
-                        _session_library->create_session(external, c->key());
+                        _encrypted_channels->create_channel(external, c->key());
                         send_ping_request(external);
                     }
                 }
@@ -485,7 +485,7 @@ namespace fire
         void user_service::update_contact_address(const std::string& id, const std::string& ip, n::port_type port)
         {
             INVARIANT(_user);
-            INVARIANT(_session_library);
+            INVARIANT(_encrypted_channels);
             u::mutex_scoped_lock l(_mutex);
 
             auto c = by_id(id);
@@ -493,7 +493,7 @@ namespace fire
 
             auto a = n::make_udp_address(ip, port);
 
-            _session_library->create_session(a, c->key());
+            _encrypted_channels->create_channel(a, c->key());
 
             if(c->address() == a) return;
 
@@ -535,12 +535,12 @@ namespace fire
         void user_service::remove_contact(const std::string& id)
         {
             INVARIANT(_user);
-            INVARIANT(_session_library);
+            INVARIANT(_encrypted_channels);
             auto c = by_id(id);
             if(!c) return;
             
-            //remove security session
-            _session_library->remove_session(c->address());
+            //remove security conversation
+            _encrypted_channels->remove_channel(c->address());
 
             //remove contact
             fire_contact_disconnected_event(id);
@@ -636,7 +636,7 @@ namespace fire
             size_t reconnect_ticks = 0;
             REQUIRE(s);
             REQUIRE(s->_user);
-            REQUIRE(s->_session_library);
+            REQUIRE(s->_encrypted_channels);
             while(!s->_done)
             try
             {
@@ -751,7 +751,7 @@ namespace fire
             INVARIANT(_user);
             INVARIANT(mail());
 
-            const auto& s = _session_library->get_session(address);
+            const auto& s = _encrypted_channels->get_channel(address);
             ping_request a
             {
                 address, 
@@ -776,7 +776,7 @@ namespace fire
             REQUIRE_FALSE(contact_available(c->id()));
 
             LOG << "sending connection request to " << c->name() << " (" << c->id() << ", " << c->address() << ")" << std::endl;
-            _session_library->create_session(c->address(), c->key());
+            _encrypted_channels->create_channel(c->address(), c->key());
             send_ping_request(c->address(), send_back);
         }
 
@@ -843,7 +843,7 @@ namespace fire
             if(prev_state == contact_data::CONNECTED)
             {
                 LOG << cd.contact->name() << " disconnected" << std::endl;
-                _session_library->remove_session(cd.contact->address());
+                _encrypted_channels->remove_channel(cd.contact->address());
                 event::contact_disconnected e{id, cd.contact->name()};
                 send_event(event::convert(e));
             }

@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef FIRESTR_GUI_SESSION_H
-#define FIRESTR_GUI_SESSION_H
+#ifndef FIRESTR_GUI_CONVERSATION_H
+#define FIRESTR_GUI_CONVERSATION_H
 
 #include "gui/messagelist.hpp"
 #include "gui/contactlist.hpp"
 #include "gui/contactselect.hpp"
 #include "gui/app/app_service.hpp"
-#include "session/session.hpp"
-#include "session/session_service.hpp"
+#include "conversation/conversation.hpp"
+#include "conversation/conversation_service.hpp"
 
 #include <QWidget>
 #include <QGridLayout>
@@ -34,17 +34,17 @@ namespace fire
 {
     namespace gui
     {
-        class session_widget : public QWidget
+        class conversation_widget : public QWidget
         {
             Q_OBJECT
             public:
-                session_widget(
-                        session::session_service_ptr, 
-                        session::session_ptr,
+                conversation_widget(
+                        conversation::conversation_service_ptr, 
+                        conversation::conversation_ptr,
                         app::app_service_ptr);
 
             public:
-                session::session_ptr session();
+                conversation::conversation_ptr conversation();
 
                 void name(const QString&);
                 QString name() const;
@@ -64,8 +64,8 @@ namespace fire
                 QSplitter* _splitter;
                 QString _name;
                 message_list* _messages;
-                session::session_ptr _session;
-                session::session_service_ptr _session_service;
+                conversation::conversation_ptr _conversation;
+                conversation::conversation_service_ptr _conversation_service;
                 app::app_service_ptr _app_service;
         };
 

@@ -24,7 +24,7 @@
 #include "gui/message.hpp"
 #include "gui/app/app_service.hpp"
 #include "gui/contactlist.hpp"
-#include "session/session_service.hpp"
+#include "conversation/conversation_service.hpp"
 #include "messages/new_app.hpp"
 
 namespace fire
@@ -37,11 +37,11 @@ namespace fire
             public:
                 message_list(
                         app::app_service_ptr,
-                        session::session_service_ptr,
-                        session::session_ptr);
+                        conversation::conversation_service_ptr,
+                        conversation::conversation_ptr);
 
             public:
-                session::session_ptr session();
+                conversation::conversation_ptr conversation();
                 app::app_service_ptr app_service();
 
             public:
@@ -54,8 +54,8 @@ namespace fire
                 void add(QWidget*);
 
             private:
-                session::session_service_ptr _session_service;
-                session::session_ptr _session;
+                conversation::conversation_service_ptr _conversation_service;
+                conversation::conversation_ptr _conversation;
                 app::app_service_ptr _app_service;
 
                 using contact_list_ptrs = std::vector<contact_list*>;

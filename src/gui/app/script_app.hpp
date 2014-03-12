@@ -21,7 +21,7 @@
 #include "gui/list.hpp"
 #include "gui/message.hpp"
 #include "gui/app/app_service.hpp"
-#include "session/session_service.hpp"
+#include "conversation/conversation_service.hpp"
 #include "message/mailbox.hpp"
 #include "messages/sender.hpp"
 #include "gui/lua/api.hpp"
@@ -50,15 +50,15 @@ namespace fire
                     script_app(
                             app_ptr, 
                             app_service_ptr, 
-                            session::session_service_ptr, 
-                            session::session_ptr);
+                            conversation::conversation_service_ptr, 
+                            conversation::conversation_ptr);
                     script_app(
                             const std::string& from_id, 
                             const std::string& id, 
                             app_ptr, 
                             app_service_ptr, 
-                            session::session_service_ptr, 
-                            session::session_ptr);
+                            conversation::conversation_service_ptr, 
+                            conversation::conversation_ptr);
                     ~script_app();
 
                 public:
@@ -76,8 +76,8 @@ namespace fire
                 private:
                     std::string _from_id;
                     std::string _id;
-                    session::session_service_ptr _session_service;
-                    session::session_ptr _session;
+                    conversation::conversation_service_ptr _conversation_service;
+                    conversation::conversation_ptr _conversation;
                     fire::message::mailbox_ptr _mail;
                     messages::sender_ptr _sender;
                     user::contact_list _contacts;

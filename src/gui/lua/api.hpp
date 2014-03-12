@@ -21,7 +21,7 @@
 #include "gui/lua/base.hpp"
 #include "gui/lua/widgets.hpp"
 #include "gui/app/app.hpp"
-#include "session/session_service.hpp"
+#include "conversation/conversation_service.hpp"
 
 namespace fire
 {
@@ -50,8 +50,8 @@ namespace fire
                             app::app_ptr a,
                             const user::contact_list& con,
                             messages::sender_ptr sender,
-                            session::session_ptr session,
-                            session::session_service_ptr session_service,
+                            conversation::conversation_ptr conversation,
+                            conversation::conversation_service_ptr conversation_service,
                             QWidget* can,
                             QGridLayout* lay,
                             list* out = nullptr);
@@ -75,8 +75,8 @@ namespace fire
 
                     //message
                     user::contact_list contacts;
-                    session::session_ptr session;
-                    session::session_service_ptr session_service;
+                    conversation::conversation_ptr conversation;
+                    conversation::conversation_service_ptr conversation_service;
                     messages::sender_ptr sender;
                     std::string message_callback;
                     std::string local_message_callback;

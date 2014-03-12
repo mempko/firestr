@@ -19,12 +19,12 @@
 #define FIRESTR_MAINWIN_H
 
 #include <QMainWindow>
-#include "gui/session.hpp"
+#include "gui/conversation.hpp"
 #include "gui/app/app_service.hpp"
 #include "message/postoffice.hpp"
 #include "user/userservice.hpp"
-#include "session/session.hpp"
-#include "session/session_service.hpp"
+#include "conversation/conversation.hpp"
+#include "conversation/conversation_service.hpp"
 #include "security/security_library.hpp"
 #include "util/dbc.hpp"
 
@@ -68,12 +68,12 @@ namespace fire
                 void make_app_editor();
                 void closeEvent(QCloseEvent*);
                 void check_mail();
-                void create_session();
-                void create_session(QString id);
-                void rename_session();
-                void quit_session();
+                void create_conversation();
+                void create_conversation(QString id);
+                void rename_conversation();
+                void quit_conversation();
                 void tab_changed(int);
-                void load_app_into_session(QString id);
+                void load_app_into_conversation(QString id);
                 void show_debug_window();
                 void remove_alert(QWidget*);
                 void focus_changed(QWidget* old, QWidget* now);
@@ -100,16 +100,16 @@ namespace fire
             private:
                 //gui service event handlers
 
-                void new_session_event(const std::string& id);
-                void quit_session_event(const std::string& id);
-                void session_synced_event(const fire::message::message& m);
-                void contact_removed_or_added_from_session_event(const fire::message::message& e);
+                void new_conversation_event(const std::string& id);
+                void quit_conversation_event(const std::string& id);
+                void conversation_synced_event(const fire::message::message& m);
+                void contact_removed_or_added_from_conversation_event(const fire::message::message& e);
                 void new_contact_event(const std::string& id);
                 void contact_connected_event(const user::event::contact_connected&);
                 void contact_disconnected_event(const user::event::contact_disconnected&);
                 void apps_updated_event(const app::event::apps_updated&);
                 void new_intro_event(const user::event::new_introduction&);
-                void session_alert_event(const session::event::session_alert&);
+                void conversation_alert_event(const conversation::event::conversation_alert&);
 
             private:
                 QMenu *_main_menu;
@@ -117,17 +117,17 @@ namespace fire
                 QAction *_close_action;
                 QAction *_about_action;
                 QAction *_contact_list_action;
-                QMenu *_session_menu;
-                QAction *_create_session_action;
-                QAction *_rename_session_action;
-                QAction *_quit_session_action;
+                QMenu *_conversation_menu;
+                QAction *_create_conversation_action;
+                QAction *_rename_conversation_action;
+                QAction *_quit_conversation_action;
                 QMenu *_app_menu;
                 QAction *_chat_app_action;
                 QAction *_app_editor_action;
                 QMenu *_debug_menu;
                 QAction *_debug_window_action;
 
-                MainTabs* _sessions;
+                MainTabs* _conversations;
                 QWidget* _start_screen;
                 bool _start_screen_attached;
 
@@ -141,9 +141,9 @@ namespace fire
             private:
                 fire::message::post_office_ptr _master;
                 fire::message::mailbox_ptr _mail;
-                fire::security::session_library_ptr _session_library;
+                fire::security::encrypted_channels_ptr _encrypted_channels;
                 user::user_service_ptr _user_service;
-                session::session_service_ptr _session_service;
+                conversation::conversation_service_ptr _conversation_service;
                 app::app_service_ptr _app_service;
                 main_window_context _context;
                 bool _focus;

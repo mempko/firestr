@@ -20,7 +20,7 @@
 
 #include "gui/list.hpp"
 #include "gui/message.hpp"
-#include "session/session_service.hpp"
+#include "conversation/conversation_service.hpp"
 #include "message/mailbox.hpp"
 #include "messages/sender.hpp"
 #include "gui/lua/api.hpp"
@@ -72,15 +72,15 @@ namespace fire
                 public:
                     app_editor(
                             app_service_ptr, 
-                            session::session_service_ptr, 
-                            session::session_ptr, 
+                            conversation::conversation_service_ptr, 
+                            conversation::conversation_ptr, 
                             app_ptr a = nullptr);
                     app_editor(
                             const std::string& from_id, 
                             const std::string& id, 
                             app_service_ptr, 
-                            session::session_service_ptr, 
-                            session::session_ptr, 
+                            conversation::conversation_service_ptr, 
+                            conversation::conversation_ptr, 
                             app_ptr a = nullptr);
                     ~app_editor();
 
@@ -116,8 +116,8 @@ namespace fire
                     std::string _from_id;
                     std::string _id;
                     app_service_ptr _app_service;
-                    session::session_service_ptr _session_service;
-                    session::session_ptr _session;
+                    conversation::conversation_service_ptr _conversation_service;
+                    conversation::conversation_ptr _conversation;
                     fire::message::mailbox_ptr _mail;
                     messages::sender_ptr _sender;
                     user::contact_list _contacts;

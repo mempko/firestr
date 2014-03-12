@@ -23,5 +23,5 @@ include_directories(..)
 
 file(GLOB src *.cpp)
 
-add_library(fire_session STATIC
+add_library(fire_conversation STATIC
     ${src})
