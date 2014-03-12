@@ -183,11 +183,10 @@ namespace fire
             m::message m;
             while(_conversation->mail()->pop_inbox(m))
             {
-                m::expect_symmetric(m);
-                //for now show encoded message
-                //TODO: use factory class to create gui from messages
                 if(m.meta.type == ms::NEW_APP)
                 {
+                    m::expect_symmetric(m);
+
                     auto id = _messages->add_new_app(m);
                     _conversation->add_app_id(id);
                     _conversation_service->fire_conversation_alert(_conversation->id());
