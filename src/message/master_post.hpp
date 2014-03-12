@@ -39,7 +39,7 @@ namespace fire
                 master_post_office(
                         const std::string& in_host,
                         network::port_type in_port,
-                        security::session_library_ptr);
+                        security::encrypted_channels_ptr);
                 virtual ~master_post_office();
 
             protected:
@@ -54,7 +54,7 @@ namespace fire
                 util::thread_uptr _out_thread;
                 queue _out;
                 network::connection_manager _connections;
-                security::session_library_ptr _session_library;
+                security::encrypted_channels_ptr _encrypted_channels;
 
             private:
                 friend void in_thread(master_post_office* o);

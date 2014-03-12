@@ -35,7 +35,7 @@
 namespace m = fire::message;
 namespace ms = fire::messages;
 namespace us = fire::user;
-namespace s = fire::session;
+namespace s = fire::conversation;
 namespace u = fire::util;
 namespace l = fire::gui::lua;
 namespace bf = boost::filesystem;
@@ -170,31 +170,31 @@ namespace fire
 
             app_editor::app_editor(
                     app_service_ptr app_service, 
-                    s::session_service_ptr session_s, 
-                    s::session_ptr session, 
+                    s::conversation_service_ptr conversation_s, 
+                    s::conversation_ptr conversation, 
                     app_ptr app) :
                 message{},
-                _from_id{session->user_service()->user().info().id()},
+                _from_id{conversation->user_service()->user().info().id()},
                 _id{u::uuid()},
                 _app_service{app_service},
-                _session_service{session_s},
-                _session{session},
-                _contacts{session->contacts()},
+                _conversation_service{conversation_s},
+                _conversation{conversation},
+                _contacts{conversation->contacts()},
                 _app{app},
                 _prev_pos{0},
                 _run_state{READY}
             {
                 REQUIRE(app_service);
-                REQUIRE(session_s);
-                REQUIRE(session);
+                REQUIRE(conversation_s);
+                REQUIRE(conversation);
                 REQUIRE(app);
 
                 init();
 
                 INVARIANT(_app);
                 ENSURE(_api);
-                ENSURE(_session_service);
-                ENSURE(_session);
+                ENSURE(_conversation_service);
+                ENSURE(_conversation);
                 ENSURE(_app_service);
             }
 
@@ -202,48 +202,48 @@ namespace fire
                     const std::string& from_id, 
                     const std::string& id, 
                     app_service_ptr app_service, 
-                    s::session_service_ptr session_s, 
-                    s::session_ptr session,
+                    s::conversation_service_ptr conversation_s, 
+                    s::conversation_ptr conversation,
                     app_ptr app) :
                 message{},
                 _from_id{from_id},
                 _id{id},
                 _app_service{app_service},
-                _session_service{session_s},
-                _session{session},
-                _contacts{session->contacts()},
+                _conversation_service{conversation_s},
+                _conversation{conversation},
+                _contacts{conversation->contacts()},
                 _app{app}
             {
                 REQUIRE(app_service);
-                REQUIRE(session_s);
-                REQUIRE(session);
+                REQUIRE(conversation_s);
+                REQUIRE(conversation);
                 REQUIRE(app);
 
                 init();
 
                 INVARIANT(_app);
                 ENSURE(_api);
-                ENSURE(_session_service);
-                ENSURE(_session);
+                ENSURE(_conversation_service);
+                ENSURE(_conversation);
                 ENSURE(_app_service);
             }
 
             app_editor::~app_editor()
             {
-                INVARIANT(_session);
+                INVARIANT(_conversation);
             }
 
             void app_editor::init()
             {
                 INVARIANT(root());
                 INVARIANT(layout());
-                INVARIANT(_session_service);
-                INVARIANT(_session);
+                INVARIANT(_conversation_service);
+                INVARIANT(_conversation);
                 INVARIANT(_app_service);
                 INVARIANT(_app);
 
                 _mail = std::make_shared<m::mailbox>(_id);
-                _sender = std::make_shared<ms::sender>(_session->user_service(), _mail);
+                _sender = std::make_shared<ms::sender>(_conversation->user_service(), _mail);
 
                 //create gui
                 auto tabs = new QTabWidget{this};
@@ -267,7 +267,7 @@ namespace fire
                 run_script();
 
                 INVARIANT(_app);
-                INVARIANT(_session);
+                INVARIANT(_conversation);
                 INVARIANT(_mail);
                 INVARIANT(_sender);
                 INVARIANT(_save);
@@ -282,8 +282,8 @@ namespace fire
                 REQUIRE(l);
                 INVARIANT(root());
                 INVARIANT(layout());
-                INVARIANT(_session_service);
-                INVARIANT(_session);
+                INVARIANT(_conversation_service);
+                INVARIANT(_conversation);
                 INVARIANT(_app_service);
 
                 _canvas = new QWidget;
@@ -293,7 +293,7 @@ namespace fire
                 l->addWidget(_canvas, 0, 0, 1, 2);
                 l->addWidget(_output, 1, 0, 1, 2);
 
-                _api = std::make_shared<l::lua_api>(_app, _contacts, _sender, _session, _session_service, _canvas, _canvas_layout, _output);
+                _api = std::make_shared<l::lua_api>(_app, _contacts, _sender, _conversation, _conversation_service, _canvas, _canvas_layout, _output);
 
                 //text edit
                 _script = new QTextEdit;
@@ -326,7 +326,7 @@ namespace fire
                 t2->start(TIMER_UPDATE);
 
                 INVARIANT(_app);
-                INVARIANT(_session);
+                INVARIANT(_conversation);
                 INVARIANT(_mail);
                 INVARIANT(_sender);
                 INVARIANT(_save);
@@ -358,8 +358,8 @@ namespace fire
                 REQUIRE(l);
                 INVARIANT(root());
                 INVARIANT(layout());
-                INVARIANT(_session_service);
-                INVARIANT(_session);
+                INVARIANT(_conversation_service);
+                INVARIANT(_conversation);
                 INVARIANT(_app_service);
                 INVARIANT(_app);
 
@@ -491,7 +491,7 @@ namespace fire
             void app_editor::send_script()
             {
                 INVARIANT(_script);
-                INVARIANT(_session);
+                INVARIANT(_conversation);
                 INVARIANT(_api);
 
                 //get the code
@@ -518,7 +518,7 @@ namespace fire
             bool app_editor::run_script()
             {
                 INVARIANT(_script);
-                INVARIANT(_session);
+                INVARIANT(_conversation);
                 INVARIANT(_api);
 
                 //get the code
@@ -564,7 +564,7 @@ namespace fire
 
             void app_editor::save_app() 
             {
-                INVARIANT(_session);
+                INVARIANT(_conversation);
                 INVARIANT(_app_service);
 
                 if(_app->name().empty())
@@ -687,7 +687,7 @@ namespace fire
             try
             {
                 INVARIANT(_mail);
-                INVARIANT(_session);
+                INVARIANT(_conversation);
 
                 m::message m;
                 while(_mail->pop_inbox(m))

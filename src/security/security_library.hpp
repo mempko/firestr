@@ -31,20 +31,20 @@ namespace fire
         using id = std::string;
         using shared_secret = std::string;
 
-        struct session
+        struct channel
         {
             dh_secret shared_secret;
             public_key key;
         };
 
-        using session_map = std::unordered_map<id, session>;
+        using channel_map = std::unordered_map<id, channel>;
 
         enum encryption_type { plaintext='P', symmetric='S', asymmetric='A', unknown='U'};
 
-        class session_library
+        class encrypted_channels
         {
             public:
-                session_library(const private_key&);
+                encrypted_channels(const private_key&);
 
             public:
                 util::bytes encrypt(const id&, const util::bytes&) const;
@@ -55,22 +55,22 @@ namespace fire
                 util::bytes decrypt(const id&, const util::bytes&, encryption_type&) const;
 
             public:
-                void create_session(const id&, const public_key&);
-                void create_session(const id&, const public_key&, const util::bytes& public_val);
-                const session& get_session(const id&) const;
-                void remove_session(const id&);
+                void create_channel(const id&, const public_key&);
+                void create_channel(const id&, const public_key&, const util::bytes& public_val);
+                const channel& get_channel(const id&) const;
+                void remove_channel(const id&);
 
             private:
-                util::bytes encrypt_asymmetric(session_map::const_iterator, const util::bytes&) const;
-                util::bytes encrypt_symmetric(session_map::const_iterator, const util::bytes&) const;
+                util::bytes encrypt_asymmetric(channel_map::const_iterator, const util::bytes&) const;
+                util::bytes encrypt_symmetric(channel_map::const_iterator, const util::bytes&) const;
 
             private:
-                session_map _s;
+                channel_map _s;
                 const private_key& _pk;
                 mutable std::mutex _mutex;
         };
 
-        using session_library_ptr = std::shared_ptr<session_library>;
+        using encrypted_channels_ptr = std::shared_ptr<encrypted_channels>;
     }
 }
 

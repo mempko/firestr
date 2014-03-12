@@ -30,7 +30,7 @@
 namespace m = fire::message;
 namespace ms = fire::messages;
 namespace us = fire::user;
-namespace s = fire::session;
+namespace s = fire::conversation;
 namespace u = fire::util;
 
 namespace fire
@@ -99,10 +99,10 @@ namespace fire
             std::string contact_ref::get_name() const
             {
                 INVARIANT(api);
-                INVARIANT(api->session);
+                INVARIANT(api->conversation);
 
                 if(is_self) 
-                    return api->session->user_service()->user().info().name();
+                    return api->conversation->user_service()->user().info().name();
 
                 //otherwise find user
                 auto c = api->contacts.by_id(user_id);
@@ -114,12 +114,12 @@ namespace fire
             bool contact_ref::is_online() const
             {
                 INVARIANT(api);
-                INVARIANT(api->session);
+                INVARIANT(api->conversation);
 
                 if(is_self) return true;
 
                 std::lock_guard<std::mutex> lock(api->mutex);
-                return api->session->user_service()->contact_available(user_id);
+                return api->conversation->user_service()->contact_available(user_id);
             }
 
             size_t bin_data::get_size() const

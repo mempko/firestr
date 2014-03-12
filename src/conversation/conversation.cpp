@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "session/session.hpp"
+#include "conversation/conversation.hpp"
 
 #include "util/uuid.hpp"
 #include "util/dbc.hpp"
@@ -27,9 +27,9 @@ namespace ms = fire::messages;
 
 namespace fire
 {
-    namespace session
+    namespace conversation
     {
-        session::session(
+        conversation::conversation(
                 us::user_service_ptr s,
                 m::post_office_wptr pp) :
             _id{u::uuid()},
@@ -40,7 +40,7 @@ namespace fire
             init();
         }
 
-        session::session(
+        conversation::conversation(
                 const std::string id, 
                 us::user_service_ptr s,
                 m::post_office_wptr pp) :
@@ -52,7 +52,7 @@ namespace fire
             init();
         }
 
-        void session::init()
+        void conversation::init()
         {
             INVARIANT_FALSE(_id.empty());
             INVARIANT(_user_service);
@@ -64,73 +64,73 @@ namespace fire
             INVARIANT(_sender);
         }
 
-        const user::contact_list& session::contacts() const
+        const user::contact_list& conversation::contacts() const
         {
             return _contacts;
         }
 
-        user::contact_list& session::contacts() 
+        user::contact_list& conversation::contacts() 
         {
             return _contacts;
         }
 
-        const std::string& session::id() const
+        const std::string& conversation::id() const
         {
             ENSURE_FALSE(_id.empty());
             return _id;
         }
 
-        bool session::initiated_by_user() const
+        bool conversation::initiated_by_user() const
         {
             return _initiated_by_user;
         }
 
-        void session::initiated_by_user(bool v)
+        void conversation::initiated_by_user(bool v)
         {
             _initiated_by_user = v;
         }
 
-        m::post_office_wptr session::parent_post()
+        m::post_office_wptr conversation::parent_post()
         {
             return _parent_post;
         }
 
-        m::mailbox_ptr session::mail()
+        m::mailbox_ptr conversation::mail()
         {
             ENSURE(_mail);
             return _mail;
         }
 
-        messages::sender_ptr session::sender()
+        messages::sender_ptr conversation::sender()
         {
             ENSURE(_sender);
             return _sender;
         }
 
-        user::user_service_ptr session::user_service()
+        user::user_service_ptr conversation::user_service()
         {
             ENSURE(_user_service);
             return _user_service;
         }
 
-        const app_mailbox_ids& session::app_ids() const
+        const app_mailbox_ids& conversation::app_ids() const
         {
             return _app_mailbox_ids;
         }
 
-        void session::add_app_id(const std::string& id)
+        void conversation::add_app_id(const std::string& id)
         {
             REQUIRE_FALSE(id.empty());
             _app_mailbox_ids.push_back(id);
         }
 
-        bool session::send(const std::string& to, const message::message& m)
+        bool conversation::send(const std::string& to, const message::message& m)
         {
             INVARIANT(_sender);
             return _sender->send(to, m);
         }
 
-        bool session::send(const message::message& m)
+        bool conversation::send(const message::message& m)
         {
             bool sent = false;
             for(auto c : _contacts.list())

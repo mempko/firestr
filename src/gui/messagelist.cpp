@@ -12,7 +12,7 @@
 namespace m = fire::message;
 namespace ms = fire::messages;
 namespace us = fire::user;
-namespace s = fire::session;
+namespace s = fire::conversation;
 namespace a = fire::gui::app;
 namespace u = fire::util;
 
@@ -29,22 +29,22 @@ namespace fire
 
         message_list::message_list(
                 a::app_service_ptr app_service,
-                s::session_service_ptr session_s,
-                s::session_ptr session) :
+                s::conversation_service_ptr conversation_s,
+                s::conversation_ptr conversation) :
             _app_service{app_service},
-            _session_service{session_s},
-            _session{session}
+            _conversation_service{conversation_s},
+            _conversation{conversation}
         {
             REQUIRE(app_service);
-            REQUIRE(session_s);
-            REQUIRE(session);
+            REQUIRE(conversation_s);
+            REQUIRE(conversation);
 
             auto_scroll(true);
 
             INVARIANT(_root);
             INVARIANT(_layout);
-            INVARIANT(_session_service);
-            INVARIANT(_session);
+            INVARIANT(_conversation_service);
+            INVARIANT(_conversation);
             INVARIANT(_app_service);
         }
 
@@ -52,12 +52,12 @@ namespace fire
         {
             REQUIRE(m);
             INVARIANT(_layout);
-            INVARIANT(_session);
+            INVARIANT(_conversation);
 
-            auto contacts = _session->contacts();
+            auto contacts = _conversation->contacts();
 
             //add contact list along right side of message
-            auto cw = new contact_list{_session->user_service(), contacts};
+            auto cw = new contact_list{_conversation->user_service(), contacts};
             cw->resize(CW_WIDTH, cw->height());
 
             auto s = new QSplitter{Qt::Horizontal};
@@ -82,13 +82,13 @@ namespace fire
                 auto cl = _contact_lists[i];
                 const auto& mc = _message_contacts[i];
 
-                auto is_in_session = [&](us::user_info& u) -> bool 
+                auto is_in_conversation = [&](us::user_info& u) -> bool 
                 {
-                    return _session->contacts().has(u.id()) && mc.has(u.id());
+                    return _conversation->contacts().has(u.id()) && mc.has(u.id());
                 };
 
                 CHECK(cl);
-                cl->update_status(is_in_session);
+                cl->update_status(is_in_conversation);
             }
         }
 
@@ -106,10 +106,10 @@ namespace fire
             list::add(w);
         }
 
-        s::session_ptr message_list::session()
+        s::conversation_ptr message_list::conversation()
         {
-            ENSURE(_session);
-            return _session;
+            ENSURE(_conversation);
+            return _conversation;
         }
 
         a::app_service_ptr message_list::app_service()
@@ -120,36 +120,36 @@ namespace fire
 
         std::string message_list::add_new_app(const ms::new_app& n) 
         {
-            INVARIANT(_session_service);
-            INVARIANT(_session);
+            INVARIANT(_conversation_service);
+            INVARIANT(_conversation);
             INVARIANT(_app_service);
 
             if(n.type() == a::CHAT)
             {
-                if(auto post = _session->parent_post().lock())
+                if(auto post = _conversation->parent_post().lock())
                 {
-                    auto c = new a::chat_app{n.id(), _session_service, _session};
+                    auto c = new a::chat_app{n.id(), _conversation_service, _conversation};
                     post->add(c->mail());
                     add(c);
                 }
             }
             else if(n.type() == a::APP_EDITOR)
             {
-                if(auto post = _session->parent_post().lock())
+                if(auto post = _conversation->parent_post().lock())
                 {
                     auto app = _app_service->create_new_app();
                     app->launched_local(false);
-                    auto c = new a::app_editor{n.from_id(), n.id(), _app_service, _session_service, _session, app};
+                    auto c = new a::app_editor{n.from_id(), n.id(), _app_service, _conversation_service, _conversation, app};
                     post->add(c->mail());
                     add(c);
                 }
             }
             else if(n.type() == a::SCRIPT_APP)
             {
-                if(auto post = _session->parent_post().lock())
+                if(auto post = _conversation->parent_post().lock())
                 {
                     auto app = _app_service->create_app(u::decode<m::message>(n.data()));
-                    auto c = new a::script_app{n.from_id(), n.id(), app, _app_service, _session_service, _session};
+                    auto c = new a::script_app{n.from_id(), n.id(), app, _app_service, _conversation_service, _conversation};
                     post->add(c->mail());
                     add(c);
                 }

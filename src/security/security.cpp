@@ -41,7 +41,7 @@ namespace fire
             const size_t RSA_SIZE = 4096;
             const std::string EME_SCHEME = "EME1(SHA-256)";
             const std::string KEY_AGREEMENT_ALGO = "KDF2(SHA-256)";
-            const std::string SESSION_PARAM = "firestr";
+            const std::string CONVERSATION_PARAM = "firestr";
             const std::string CYPHER = "AES-256/CBC";
             const std::string SHARED_DOMAIN = "modp/ietf/2048";
             const size_t DH_KEY_SIZE = 32;
@@ -323,7 +323,7 @@ namespace fire
                         k.derive_key(
                             DH_KEY_SIZE, 
                             reinterpret_cast<const unsigned char*>(pv.data()), pv.size(),
-                            SESSION_PARAM));
+                            CONVERSATION_PARAM));
 
             _other_pub_value = pv;
             ENSURE(_skey);
