@@ -36,6 +36,8 @@ namespace fire
             address from;
             util::dict extra;
             enum encryption_type { conversation, asymmetric, symmetric, plaintext};
+            enum source_type {local, remote};
+            source_type source = source_type::local;
             encryption_type encryption = encryption_type::conversation;
         };
 
@@ -51,6 +53,14 @@ namespace fire
         std::string external_address(const std::string& host, const std::string& port);
         std::string external_address(const std::string& host_port);
 
+        bool is_local(const message& m);
+        bool is_remote(const message& m);
+        bool is_symmetric(const message& m);
+        bool is_asymmetric(const message& m);
+        bool is_plaintext(const message& m);
+
+        void expect_local(const message& m);
+        void expect_remote(const message& m);
         void expect_symmetric(const message& m);
         void expect_asymmetric(const message& m);
         void expect_plaintext(const message& m);

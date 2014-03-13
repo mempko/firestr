@@ -210,7 +210,9 @@ namespace fire
                 m::message m;
                 while(_mail->pop_inbox(m))
                 {
-                    m::expect_symmetric(m);
+                    if(m::is_remote(m)) m::expect_symmetric(m);
+                    else m::expect_plaintext(m);
+
                     if(m.meta.type == MESSAGE)
                     {
                         text_message t;
