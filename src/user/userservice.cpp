@@ -334,6 +334,7 @@ namespace fire
         {
             if(m.meta.type == PING)
             {
+                m::expect_remote(m);
                 m::expect_symmetric(m);
 
                 ping r;
@@ -375,6 +376,7 @@ namespace fire
             }
             else if(m.meta.type == PING_REQUEST)
             {
+                m::expect_remote(m);
                 m::expect_asymmetric(m);
 
                 ping_request r;
@@ -413,12 +415,15 @@ namespace fire
             }
             else if(m.meta.type == REGISTER_WITH_GREETER)
             {
+                m::expect_local(m);
+
                 register_with_greeter r;
                 convert(m, r);
                 do_regiser_with_greeter(r.tcp_addr, r.udp_addr, r.pub_key);
             }
             else if(m.meta.type == ms::GREET_KEY_RESPONSE)
             {
+                m::expect_remote(m);
                 m::expect_plaintext(m);
 
                 ms::greet_key_response rs{m};
@@ -426,6 +431,7 @@ namespace fire
             }
             else if(m.meta.type == ms::GREET_FIND_RESPONSE)
             {
+                m::expect_remote(m);
                 m::expect_asymmetric(m);
 
                 ms::greet_find_response rs{m};
@@ -464,6 +470,7 @@ namespace fire
             }
             else if(m.meta.type == INTRODUCTION)
             {
+                m::expect_remote(m);
                 m::expect_symmetric(m);
 
                 contact_introduction i;

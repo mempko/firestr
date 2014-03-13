@@ -185,6 +185,7 @@ namespace fire
             {
                 if(m.meta.type == ms::NEW_APP)
                 {
+                    m::expect_remote(m);
                     m::expect_symmetric(m);
 
                     auto id = _messages->add_new_app(m);
@@ -193,11 +194,15 @@ namespace fire
                 }
                 else if(m.meta.type == s::event::CONVERSATION_SYNCED)
                 {
+                    m::expect_local(m);
+
                     update_contacts();
                     _conversation_service->fire_conversation_alert(_conversation->id());
                 }
                 else if(m.meta.type == s::event::CONTACT_REMOVED)
                 {
+                    m::expect_local(m);
+
                     s::event::contact_removed r;
                     s::event::convert(m, r);
 
@@ -214,6 +219,8 @@ namespace fire
                 }
                 else if(m.meta.type == s::event::CONTACT_ADDED)
                 {
+                    m::expect_local(m);
+
                     s::event::contact_added r;
                     s::event::convert(m, r);
 
@@ -228,10 +235,14 @@ namespace fire
                 }
                 else if(m.meta.type == us::event::CONTACT_CONNECTED)
                 {
+                    m::expect_local(m);
+
                     update_contacts();
                 }
                 else if(m.meta.type == us::event::CONTACT_DISCONNECTED)
                 {
+                    m::expect_local(m);
+
                     us::event::contact_disconnected r;
                     us::event::convert(m, r);
 

@@ -91,6 +91,7 @@ namespace fire
                 m.meta.extra["from_ip"] = ep.address;
                 m.meta.extra["from_port"] = ep.port;
                 m.meta.encryption = to_message_encryption_type(et);
+                m.meta.source = metadata::remote;
 
                 //pop off master address
                 m.meta.to.pop_front();
