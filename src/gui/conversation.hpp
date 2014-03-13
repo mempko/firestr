@@ -25,6 +25,7 @@
 #include "gui/app/app_service.hpp"
 #include "conversation/conversation.hpp"
 #include "conversation/conversation_service.hpp"
+#endif
 
 #include <QWidget>
 #include <QGridLayout>
