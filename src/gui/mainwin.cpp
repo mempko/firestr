@@ -23,7 +23,7 @@
 #include "gui/contactlist.hpp"
 #include "gui/debugwin.hpp"
 #include "gui/message.hpp"
-#include "gui/session.hpp"
+#include "gui/conversation.hpp"
 #include "gui/util.hpp"
 
 #include "network/message_queue.hpp"
@@ -47,7 +47,7 @@ namespace m = fire::message;
 namespace ms = fire::messages;
 namespace u = fire::util;
 namespace us = fire::user;
-namespace s = fire::session;
+namespace s = fire::conversation;
 namespace a = fire::gui::app;
 namespace n = fire::network;
 namespace sc = fire::security;
@@ -61,7 +61,7 @@ namespace fire
         {
             const std::string NEW_APP_S = "<new app>";
             const std::string GUI_MAIL = "gui";
-            const QString NEW_SESSION_NAME = "new"; 
+            const QString NEW_CONVERSATION_NAME = "new"; 
             const size_t TIMER_SLEEP = 100; //in milliseconds
         }
 
@@ -74,9 +74,9 @@ namespace fire
             _master{0},
             _about_action{0},
             _close_action{0},
-            _create_session_action{0},
-            _rename_session_action{0},
-            _quit_session_action{0},
+            _create_conversation_action{0},
+            _rename_conversation_action{0},
+            _quit_conversation_action{0},
             _debug_window_action{0},
             _main_menu{0},
             _contact_menu{0},
@@ -84,7 +84,7 @@ namespace fire
             _debug_menu{0},
             _root{0},
             _layout{0},
-            _sessions{0},
+            _conversations{0},
             _focus{true},
             _context(c)
         {
@@ -198,42 +198,42 @@ namespace fire
         {
             REQUIRE(!_master);
 
-            //setup the session library which will handle security sessions
+            //setup the encrypted channels which will handle security conversations
             //with contacts
-            _session_library = std::make_shared<sc::session_library>(_context.user->private_key());
+            _encrypted_channels = std::make_shared<sc::encrypted_channels>(_context.user->private_key());
 
             //create post office to handle incoming and outgoing messages
             _master = std::make_shared<m::master_post_office>(
                     _context.host, 
                     _context.port, 
-                    _session_library);
+                    _encrypted_channels);
 
             //create mailbox just for gui specific messages.
             //This mailbox is not connected to a post and is only internally accessible
             _mail = std::make_shared<m::mailbox>(GUI_MAIL);
             INVARIANT(_master);
             INVARIANT(_mail);
-            INVARIANT(_session_library);
+            INVARIANT(_encrypted_channels);
         }
 
         void main_window::create_main()
         {
             REQUIRE_FALSE(_root);
             REQUIRE_FALSE(_layout);
-            REQUIRE_FALSE(_sessions);
+            REQUIRE_FALSE(_conversations);
             REQUIRE(_master);
             REQUIRE(_user_service);
-            REQUIRE(_session_service);
+            REQUIRE(_conversation_service);
 
             //setup main
             _root = new QWidget{this};
             _layout = new QVBoxLayout{_root};
 
-            //create the sessions widget
-            _sessions = new MainTabs;
-            _layout->addWidget(_sessions);
-            _sessions->hide();
-            connect(_sessions, SIGNAL(currentChanged(int)), this, SLOT(tab_changed(int)));
+            //create the conversations widget
+            _conversations = new MainTabs;
+            _layout->addWidget(_conversations);
+            _conversations->hide();
+            connect(_conversations, SIGNAL(currentChanged(int)), this, SLOT(tab_changed(int)));
             connect(qApp, SIGNAL(focusChanged(QWidget*,QWidget*)), this, SLOT(focus_changed(QWidget*,QWidget*)));
 
             create_alert_screen();
@@ -247,7 +247,7 @@ namespace fire
 
             ENSURE(_root);
             ENSURE(_layout);
-            ENSURE(_sessions);
+            ENSURE(_conversations);
             ENSURE(_start_screen);
         }
 
@@ -274,27 +274,27 @@ namespace fire
                         ));
                 auto add_contact = new QPushButton(tr("add contact"));
 
-                auto intro2 = new QLabel(tr("Once connected, create a session"));
-                auto add_session = new QPushButton(tr("create session"));
+                auto intro2 = new QLabel(tr("Once connected, create a conversation"));
+                auto add_conversation = new QPushButton(tr("create conversation"));
                 l->addWidget(intro);
                 l->addWidget(add_contact);
                 l->addWidget(intro2);
-                l->addWidget(add_session);
+                l->addWidget(add_conversation);
 
                 connect(add_contact, SIGNAL(clicked()), this, SLOT(show_contact_list_start()));
-                connect(add_session, SIGNAL(clicked()), this, SLOT(create_session()));
+                connect(add_conversation, SIGNAL(clicked()), this, SLOT(create_conversation()));
             }
             else
             {
                 auto intro = new QLabel(
                         tr(
                         "<b>Welcome!</b><br><br>"
-                        "Start by creating a session"
+                        "Start by creating a conversation"
                         ));
-                auto add_session = new QPushButton(tr("create session"));
+                auto add_conversation = new QPushButton(tr("create conversation"));
                 l->addWidget(intro);
-                l->addWidget(add_session);
-                connect(add_session, SIGNAL(clicked()), this, SLOT(create_session()));
+                l->addWidget(add_conversation);
+                connect(add_conversation, SIGNAL(clicked()), this, SLOT(create_conversation()));
             }
             l->setContentsMargins(20,10,20,10);
 
@@ -328,7 +328,7 @@ namespace fire
             REQUIRE(_contact_list_action);
             REQUIRE(_chat_app_action);
             REQUIRE(_app_editor_action);
-            REQUIRE(_create_session_action);
+            REQUIRE(_create_conversation_action);
 
             _main_menu = new QMenu{tr("&Main"), this};
             _main_menu->addAction(_about_action);
@@ -338,10 +338,10 @@ namespace fire
             _contact_menu = new QMenu{tr("&Contacts"), this};
             _contact_menu->addAction(_contact_list_action);
 
-            _session_menu = new QMenu{tr("&Session"), this};
-            _session_menu->addAction(_create_session_action);
-            _session_menu->addAction(_rename_session_action);
-            _session_menu->addAction(_quit_session_action);
+            _conversation_menu = new QMenu{tr("&Conversation"), this};
+            _conversation_menu->addAction(_create_conversation_action);
+            _conversation_menu->addAction(_rename_conversation_action);
+            _conversation_menu->addAction(_quit_conversation_action);
 
             create_app_menu();
 
@@ -354,7 +354,7 @@ namespace fire
 
             menuBar()->addMenu(_main_menu);
             menuBar()->addMenu(_contact_menu);
-            menuBar()->addMenu(_session_menu);
+            menuBar()->addMenu(_conversation_menu);
             menuBar()->addMenu(_app_menu);
             if(_debug_menu) menuBar()->addMenu(_debug_menu);
 
@@ -394,7 +394,7 @@ namespace fire
                 auto action  = new QAction{name.c_str(), this};
                 mapper->setMapping(action, QString(id.c_str()));
                 connect(action, SIGNAL(triggered()), mapper, SLOT(map()));
-                connect(mapper, SIGNAL(mapped(QString)), this, SLOT(load_app_into_session(QString)));
+                connect(mapper, SIGNAL(mapped(QString)), this, SLOT(load_app_into_conversation(QString)));
 
                 _app_menu->addAction(action);
             }
@@ -413,9 +413,9 @@ namespace fire
         {
             REQUIRE_FALSE(_about_action);
             REQUIRE_FALSE(_close_action);
-            REQUIRE_FALSE(_create_session_action);
-            REQUIRE_FALSE(_rename_session_action);
-            REQUIRE_FALSE(_quit_session_action);
+            REQUIRE_FALSE(_create_conversation_action);
+            REQUIRE_FALSE(_rename_conversation_action);
+            REQUIRE_FALSE(_quit_conversation_action);
             REQUIRE_FALSE(_debug_window_action);
 
             _about_action = new QAction{tr("&About"), this};
@@ -433,14 +433,14 @@ namespace fire
             _app_editor_action = new QAction{tr("&App Editor"), this};
             connect(_app_editor_action, SIGNAL(triggered()), this, SLOT(make_app_editor()));
 
-            _create_session_action = new QAction{tr("&Create"), this};
-            connect(_create_session_action, SIGNAL(triggered()), this, SLOT(create_session()));
+            _create_conversation_action = new QAction{tr("&Create"), this};
+            connect(_create_conversation_action, SIGNAL(triggered()), this, SLOT(create_conversation()));
 
-            _rename_session_action = new QAction{tr("&Rename"), this};
-            connect(_rename_session_action, SIGNAL(triggered()), this, SLOT(rename_session()));
+            _rename_conversation_action = new QAction{tr("&Rename"), this};
+            connect(_rename_conversation_action, SIGNAL(triggered()), this, SLOT(rename_conversation()));
 
-            _quit_session_action = new QAction{tr("&Close"), this};
-            connect(_quit_session_action, SIGNAL(triggered()), this, SLOT(quit_session()));
+            _quit_conversation_action = new QAction{tr("&Close"), this};
+            connect(_quit_conversation_action, SIGNAL(triggered()), this, SLOT(quit_conversation()));
 
             if(_context.debug)
             {
@@ -451,21 +451,21 @@ namespace fire
             ENSURE(_about_action);
             ENSURE(_close_action);
             ENSURE(_contact_list_action);
-            ENSURE(_create_session_action);
-            ENSURE(_rename_session_action);
-            ENSURE(_quit_session_action);
+            ENSURE(_create_conversation_action);
+            ENSURE(_rename_conversation_action);
+            ENSURE(_quit_conversation_action);
             ENSURE(!_context.debug || _debug_window_action);
         }
 
         void main_window::setup_services()
         {
             REQUIRE_FALSE(_user_service);
-            REQUIRE_FALSE(_session_service);
+            REQUIRE_FALSE(_conversation_service);
             REQUIRE_FALSE(_app_service);
             REQUIRE(_master);
             REQUIRE(_mail);
             REQUIRE(_context.user);
-            REQUIRE(_session_library);
+            REQUIRE(_encrypted_channels);
 
             us::user_service_context uc
             {
@@ -474,20 +474,20 @@ namespace fire
                 _context.port,
                 _context.user,
                 _mail,
-                _session_library,
+                _encrypted_channels,
             };
 
             _user_service = std::make_shared<us::user_service>(uc);
             _master->add(_user_service->mail());
 
-            _session_service = std::make_shared<s::session_service>(_master, _user_service, _mail);
-            _master->add(_session_service->mail());
+            _conversation_service = std::make_shared<s::conversation_service>(_master, _user_service, _mail);
+            _master->add(_conversation_service->mail());
 
             _app_service = std::make_shared<a::app_service>(_user_service, _mail);
 
             ENSURE(_user_service);
-            ENSURE(_session_service);
-            ENSURE(_session_library);
+            ENSURE(_conversation_service);
+            ENSURE(_encrypted_channels);
             ENSURE(_app_service);
         }
 
@@ -514,9 +514,9 @@ namespace fire
             REQUIRE(_debug_window_action);
             REQUIRE(_master);
             REQUIRE(_user_service);
-            REQUIRE(_session_service);
+            REQUIRE(_conversation_service);
 
-            auto db = new debug_win{_master,_user_service, _session_service};
+            auto db = new debug_win{_master,_user_service, _conversation_service};
             db->setAttribute(Qt::WA_DeleteOnClose);
             db->show();
             db->raise();
@@ -525,25 +525,25 @@ namespace fire
 
         void main_window::make_chat_app()
         {
-            INVARIANT(_sessions);
-            INVARIANT(_session_service);
+            INVARIANT(_conversations);
+            INVARIANT(_conversation_service);
 
-            auto s = dynamic_cast<session_widget*>(_sessions->currentWidget());
+            auto s = dynamic_cast<conversation_widget*>(_conversations->currentWidget());
             if(!s) return;
 
             //create chat sample
-            auto t = new a::chat_app{_session_service, s->session()};
+            auto t = new a::chat_app{_conversation_service, s->conversation()};
             s->add(t);
-            s->session()->add_app_id(t->mail()->address());
+            s->conversation()->add_app_id(t->mail()->address());
 
             //add to master post so it can receive messages
             //from outside world
             _master->add(t->mail());
 
-            //send new app message to contacts in session
+            //send new app message to contacts in conversation
             ms::new_app n{t->id(), t->type()}; 
 
-            s->session()->send(n);
+            s->conversation()->send(n);
         }
 
         bool ask_user_to_select_app(QWidget* w, const a::app_service& apps, std::string& id)
@@ -570,11 +570,11 @@ namespace fire
 
         void main_window::make_app_editor()
         {
-            INVARIANT(_sessions);
+            INVARIANT(_conversations);
             INVARIANT(_app_service);
-            INVARIANT(_session_service);
+            INVARIANT(_conversation_service);
 
-            auto s = dynamic_cast<session_widget*>(_sessions->currentWidget());
+            auto s = dynamic_cast<conversation_widget*>(_conversations->currentWidget());
             if(!s) return;
 
             std::string id; 
@@ -587,29 +587,29 @@ namespace fire
             CHECK(app);
 
             //create app editor
-            auto t = new a::app_editor{_app_service, _session_service, s->session(), app};
+            auto t = new a::app_editor{_app_service, _conversation_service, s->conversation(), app};
 
             s->add(t);
-            s->session()->add_app_id(t->mail()->address());
+            s->conversation()->add_app_id(t->mail()->address());
 
             //add to master post so it can receive messages
             //from outside world
             _master->add(t->mail());
 
-            //send new app message to contacts in session
+            //send new app message to contacts in conversation
             ms::new_app n{t->id(), t->type()}; 
 
-            s->session()->send(n);
+            s->conversation()->send(n);
         }
 
-        void main_window::load_app_into_session(QString qid)
+        void main_window::load_app_into_conversation(QString qid)
         {
             INVARIANT(_app_service);
-            INVARIANT(_sessions);
-            INVARIANT(_session_service);
+            INVARIANT(_conversations);
+            INVARIANT(_conversation_service);
 
-            //get current session
-            auto s = dynamic_cast<session_widget*>(_sessions->currentWidget());
+            //get current conversation
+            auto s = dynamic_cast<conversation_widget*>(_conversations->currentWidget());
             if(!s) return;
 
             //load app
@@ -618,20 +618,20 @@ namespace fire
             if(!a) return;
 
             //create app widget
-            auto t = new a::script_app{a, _app_service, _session_service, s->session()};
+            auto t = new a::script_app{a, _app_service, _conversation_service, s->conversation()};
 
-            //add to session
+            //add to conversation
             s->add(t);
-            s->session()->add_app_id(t->mail()->address());
+            s->conversation()->add_app_id(t->mail()->address());
 
             //add widget mailbox to master
             _master->add(t->mail());
 
-            //send new app message to contacts in session
+            //send new app message to contacts in conversation
             m::message app_message = *a;
             ms::new_app n{t->id(), t->type(), u::encode(app_message)}; 
 
-            s->session()->send(n);
+            s->conversation()->send(n);
         }
 
         void main_window::about()
@@ -655,33 +655,33 @@ namespace fire
             while(_mail->pop_inbox(m))
             try
             {
-                if(m.meta.type == s::event::NEW_SESSION)
+                if(m.meta.type == s::event::NEW_CONVERSATION)
                 {
-                    s::event::new_session r;
+                    s::event::new_conversation r;
                     s::event::convert(m, r);
 
-                    new_session_event(r.session_id);
+                    new_conversation_event(r.conversation_id);
                 }
-                else if(m.meta.type == s::event::QUIT_SESSION)
+                else if(m.meta.type == s::event::QUIT_CONVERSATION)
                 {
-                    s::event::quit_session r;
+                    s::event::quit_conversation r;
                     s::event::convert(m, r);
 
-                    quit_session_event(r.session_id);
+                    quit_conversation_event(r.conversation_id);
                 }
-                else if(m.meta.type == s::event::SESSION_SYNCED)
+                else if(m.meta.type == s::event::CONVERSATION_SYNCED)
                 {
-                    session_synced_event(m);
+                    conversation_synced_event(m);
                 }
                 else if(m.meta.type == s::event::CONTACT_REMOVED || m.meta.type == s::event::CONTACT_ADDED)
                 {
-                    contact_removed_or_added_from_session_event(m);
+                    contact_removed_or_added_from_conversation_event(m);
                 }
-                else if(m.meta.type == s::event::SESSION_ALERT)
+                else if(m.meta.type == s::event::CONVERSATION_ALERT)
                 {
-                    s::event::session_alert e;
+                    s::event::conversation_alert e;
                     s::event::convert(m, e);
-                    session_alert_event(e);
+                    conversation_alert_event(e);
                 }
                 else if(m.meta.type == us::event::CONTACT_CONNECTED)
                 {
@@ -732,39 +732,39 @@ namespace fire
 
         void main_window::tab_changed(int i)
         {
-            INVARIANT(_create_session_action);
-            INVARIANT(_rename_session_action);
-            INVARIANT(_quit_session_action);
-            INVARIANT(_sessions);
+            INVARIANT(_create_conversation_action);
+            INVARIANT(_rename_conversation_action);
+            INVARIANT(_quit_conversation_action);
+            INVARIANT(_conversations);
             INVARIANT(_app_menu);
-            INVARIANT(_sessions);
+            INVARIANT(_conversations);
 
-            _alert_tab_index = _sessions->indexOf(_alert_screen);
+            _alert_tab_index = _conversations->indexOf(_alert_screen);
 
-            session_widget* s = nullptr;
+            conversation_widget* s = nullptr;
 
-            auto sw = _sessions->widget(i);
-            if(i != -1 && sw != nullptr) s = dynamic_cast<session_widget*>(sw);
+            auto sw = _conversations->widget(i);
+            if(i != -1 && sw != nullptr) s = dynamic_cast<conversation_widget*>(sw);
 
             bool enabled = s != nullptr;
 
-            _rename_session_action->setEnabled(enabled);
-            _quit_session_action->setEnabled(enabled);
+            _rename_conversation_action->setEnabled(enabled);
+            _quit_conversation_action->setEnabled(enabled);
             _app_menu->setEnabled(enabled);
 
             if(i != -1 && (i == _alert_tab_index || enabled))
-                _sessions->setTabTextColor(i, QColor{"black"});
+                _conversations->setTabTextColor(i, QColor{"black"});
         }
         
-        void main_window::create_session()
+        void main_window::create_conversation()
         {
-            REQUIRE(_session_service);
-            _session_service->create_session();
+            REQUIRE(_conversation_service);
+            _conversation_service->create_conversation();
         }
 
-        void main_window::create_session(QString id)
+        void main_window::create_conversation(QString id)
         {
-            REQUIRE(_session_service);
+            REQUIRE(_conversation_service);
 
             auto sid = convert(id);
 
@@ -774,62 +774,62 @@ namespace fire
             us::contact_list l;
             l.add(c);
             
-            _session_service->create_session(l);
+            _conversation_service->create_conversation(l);
         }
 
-        void main_window::rename_session()
+        void main_window::rename_conversation()
         {
-            REQUIRE(_sessions);
+            REQUIRE(_conversations);
 
-            auto s = dynamic_cast<session_widget*>(_sessions->currentWidget());
+            auto s = dynamic_cast<conversation_widget*>(_conversations->currentWidget());
             if(!s) return;
 
             bool ok = false;
-            QString name = s->name().isEmpty() ? NEW_SESSION_NAME : s->name();
+            QString name = s->name().isEmpty() ? NEW_CONVERSATION_NAME : s->name();
 
             name = QInputDialog::getText(
                     0, 
-                    tr("Rename Session"),
+                    tr("Rename Conversation"),
                     tr("Name"),
                     QLineEdit::Normal, name, &ok);
 
             if(!ok || name.isEmpty()) return;
 
             s->name(name);
-            _sessions->setTabText(_sessions->currentIndex(), name);
+            _conversations->setTabText(_conversations->currentIndex(), name);
         }
 
-        void main_window::quit_session()
+        void main_window::quit_conversation()
         {
-            REQUIRE(_sessions);
+            REQUIRE(_conversations);
 
-            auto sw = dynamic_cast<session_widget*>(_sessions->currentWidget());
+            auto sw = dynamic_cast<conversation_widget*>(_conversations->currentWidget());
             if(!sw) return;
 
-            auto s = sw->session();
+            auto s = sw->conversation();
             CHECK(s);
 
             std::stringstream msg;
-            msg << "Are you sure you want to close the session `" << convert(sw->name()) << "'?";
-            auto a = QMessageBox::warning(this, tr("Close Session?"), tr(msg.str().c_str()), QMessageBox::Yes | QMessageBox::No);
+            msg << "Are you sure you want to close the conversation `" << convert(sw->name()) << "'?";
+            auto a = QMessageBox::warning(this, tr("Close Conversation?"), tr(msg.str().c_str()), QMessageBox::Yes | QMessageBox::No);
             if(a != QMessageBox::Yes) return;
 
-            _session_service->quit_session(s->id());
+            _conversation_service->quit_conversation(s->id());
         }
 
         void main_window::attach_start_screen()
         {
             INVARIANT(_start_screen);
-            INVARIANT(_sessions);
+            INVARIANT(_conversations);
 
             if(_start_screen_attached) return;
 
-            _sessions->addTab(_start_screen, "start");
-            _sessions->show();
+            _conversations->addTab(_start_screen, "start");
+            _conversations->show();
             _start_screen_attached = true;
 
             ENSURE(_start_screen_attached);
-            ENSURE(_sessions->isVisible());
+            ENSURE(_conversations->isVisible());
         }
 
         std::string formatted_timestamp()
@@ -841,15 +841,15 @@ namespace fire
 
         bool main_window::should_alert(int tab_index)
         {
-            INVARIANT(_sessions);
-            auto ct = _sessions->currentIndex();
+            INVARIANT(_conversations);
+            auto ct = _conversations->currentIndex();
             return (tab_index != -1 && tab_index != ct) || !_focus;
         }
 
         void main_window::alert_tab(int tab_index)
         {
-            INVARIANT(_sessions);
-            _sessions->setTabTextColor(tab_index, QColor{"red"});
+            INVARIANT(_conversations);
+            _conversations->setTabTextColor(tab_index, QColor{"red"});
             QApplication::alert(this);
         }
 
@@ -862,13 +862,13 @@ namespace fire
             if(!_alert_screen->isVisible())
             {
                 attach_start_screen();
-                CHECK(_sessions->isVisible());
+                CHECK(_conversations->isVisible());
 
                 _alert_screen->show();
-                _alert_tab_index = _sessions->addTab(_alert_screen, tr("alert"));
+                _alert_tab_index = _conversations->addTab(_alert_screen, tr("alert"));
             }
 
-            CHECK_RANGE(_alert_tab_index, 0, _sessions->count());
+            CHECK_RANGE(_alert_tab_index, 0, _conversations->count());
 
             //create timestamp and put it to left of widget 
             auto w = new QWidget;
@@ -893,7 +893,7 @@ namespace fire
             if(should_alert(_alert_tab_index)) 
                 alert_tab(_alert_tab_index);
 
-            ENSURE(_sessions->isVisible());
+            ENSURE(_conversations->isVisible());
         }
 
         void main_window::remove_alert(QWidget* a)
@@ -905,64 +905,64 @@ namespace fire
 
         void main_window::focus_changed(QWidget* old, QWidget* now)
         {
-            INVARIANT(_sessions);
+            INVARIANT(_conversations);
             if(now && old == nullptr && isAncestorOf(now)) 
             {
                 _focus = true;
-                tab_changed(_sessions->currentIndex());
+                tab_changed(_conversations->currentIndex());
             }
             else if(old && isAncestorOf(old) && now == nullptr) 
                 _focus = false;
         }
 
-        void main_window::new_session_event(const std::string& id)
+        void main_window::new_conversation_event(const std::string& id)
         {
             INVARIANT(_app_service);
-            INVARIANT(_session_service);
-            INVARIANT(_sessions);
+            INVARIANT(_conversation_service);
+            INVARIANT(_conversations);
 
             attach_start_screen();
 
-            auto s = _session_service->session_by_id(id);
+            auto s = _conversation_service->conversation_by_id(id);
             if(!s) return;
 
-            auto sw = new session_widget{_session_service, s, _app_service};
+            auto sw = new conversation_widget{_conversation_service, s, _app_service};
 
-            std::string name = convert(NEW_SESSION_NAME);
+            std::string name = convert(NEW_CONVERSATION_NAME);
 
             //make default name to be first person in contact list
             if(!s->contacts().empty()) 
                 name = s->contacts().list()[0]->name();
 
-            //create the sessions widget
+            //create the conversations widget
             sw->name(name.c_str());
-            auto tab_index = _sessions->addTab(sw, name.c_str());
+            auto tab_index = _conversations->addTab(sw, name.c_str());
 
 
             //switch to new tab if initiated by user
             if(s->initiated_by_user()) 
-                _sessions->setCurrentIndex(_sessions->count()-1);
+                _conversations->setCurrentIndex(_conversations->count()-1);
             else
             {
-                _sessions->setTabTextColor(tab_index, QColor{"red"});
+                _conversations->setTabTextColor(tab_index, QColor{"red"});
                 QApplication::alert(this);
             }
 
-            ENSURE(_sessions->isVisible());
+            ENSURE(_conversations->isVisible());
         }
 
-        int find_session(QTabWidget* sessions, const std::string& id)
+        int find_conversation(QTabWidget* conversations, const std::string& id)
         {
-            REQUIRE(sessions);
+            REQUIRE(conversations);
 
             //find correct tab
             int ri = -1;
-            for(int i = 0; i < sessions->count(); i++)
+            for(int i = 0; i < conversations->count(); i++)
             {
-                auto sw = dynamic_cast<session_widget*>(sessions->widget(i));
+                auto sw = dynamic_cast<conversation_widget*>(conversations->widget(i));
                 if(!sw) continue;
 
-                auto s = sw->session();
+                auto s = sw->conversation();
                 CHECK(s);
                 if(s->id() == id)
                 {
@@ -973,53 +973,53 @@ namespace fire
             return ri;
         }
 
-        void main_window::quit_session_event(const std::string& id)
+        void main_window::quit_conversation_event(const std::string& id)
         {
             INVARIANT(_app_service);
-            INVARIANT(_session_service);
-            INVARIANT(_sessions);
+            INVARIANT(_conversation_service);
+            INVARIANT(_conversations);
 
             //find correct tab
-            int ri = find_session(_sessions, id);
+            int ri = find_conversation(_conversations, id);
             if(ri == -1) return;
 
-            QWidget* w = _sessions->widget(ri);
-            _sessions->removeTab(ri);
+            QWidget* w = _conversations->widget(ri);
+            _conversations->removeTab(ri);
             if(w) delete w;
         }
 
-        void main_window::session_synced_event(const m::message& m)
+        void main_window::conversation_synced_event(const m::message& m)
         {
-            INVARIANT(_session_service);
+            INVARIANT(_conversation_service);
 
-            s::event::session_synced e;
+            s::event::conversation_synced e;
             s::event::convert(m, e);
 
-            auto s = _session_service->session_by_id(e.session_id);
+            auto s = _conversation_service->conversation_by_id(e.conversation_id);
             if(!s) return;
 
             CHECK(s->mail());
             s->mail()->push_inbox(m);
         }
 
-        void main_window::session_alert_event(const s::event::session_alert& e)
+        void main_window::conversation_alert_event(const s::event::conversation_alert& e)
         {
-            INVARIANT(_sessions);
+            INVARIANT(_conversations);
 
-            auto t = find_session(_sessions, e.session_id);
+            auto t = find_conversation(_conversations, e.conversation_id);
             if(should_alert(t)) 
                 alert_tab(t);
         }
 
-        void main_window::contact_removed_or_added_from_session_event(const m::message& e)
+        void main_window::contact_removed_or_added_from_conversation_event(const m::message& e)
         {
-            _session_service->broadcast_message(e);
+            _conversation_service->broadcast_message(e);
         }
 
         void main_window::contact_connected_event(const us::event::contact_connected& r)
         {
             INVARIANT(_user_service);
-            INVARIANT(_session_service);
+            INVARIANT(_conversation_service);
 
             //get user
             auto c = _user_service->user().contacts().by_id(r.id);
@@ -1036,17 +1036,17 @@ namespace fire
             auto t = new QLabel{tr(s.str().c_str())};
             l->addWidget(t);
 
-            auto b = new QPushButton{tr("new session")};
+            auto b = new QPushButton{tr("new conversation")};
             l->addWidget(b);
             auto m = new QSignalMapper{w};
 
             m->setMapping(b, QString{r.id.c_str()});
             connect(b, SIGNAL(clicked()), m, SLOT(map()));
-            connect(m, SIGNAL(mapped(QString)), this, SLOT(create_session(QString)));
+            connect(m, SIGNAL(mapped(QString)), this, SLOT(create_conversation(QString)));
 
             //display alert
             show_alert(w);
-            _session_service->broadcast_message(us::event::convert(r));
+            _conversation_service->broadcast_message(us::event::convert(r));
         }
 
         void main_window::contact_disconnected_event(const us::event::contact_disconnected& r)
@@ -1065,7 +1065,7 @@ namespace fire
 
             //display alert
             show_alert(w);
-            _session_service->broadcast_message(us::event::convert(r));
+            _conversation_service->broadcast_message(us::event::convert(r));
         }
 
         void main_window::new_intro_event(const user::event::new_introduction& i)

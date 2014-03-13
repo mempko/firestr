@@ -21,7 +21,7 @@
 #ifndef Q_MOC_RUN
 #include "gui/list.hpp"
 #include "gui/message.hpp"
-#include "session/session_service.hpp"
+#include "conversation/conversation_service.hpp"
 #include "message/mailbox.hpp"
 #include "messages/sender.hpp"
 #endif
@@ -46,12 +46,12 @@ namespace fire
 
                 public:
                     chat_app(
-                            session::session_service_ptr,
-                            session::session_ptr);
+                            conversation::conversation_service_ptr,
+                            conversation::conversation_ptr);
                     chat_app(
                             const std::string& id, 
-                            session::session_service_ptr,
-                            session::session_ptr);
+                            conversation::conversation_service_ptr,
+                            conversation::conversation_ptr);
                     ~chat_app();
 
                 public:
@@ -68,8 +68,8 @@ namespace fire
 
                 private:
                     std::string _id;
-                    session::session_service_ptr _session_service;
-                    session::session_ptr _session;
+                    conversation::conversation_service_ptr _conversation_service;
+                    conversation::conversation_ptr _conversation;
                     fire::message::mailbox_ptr _mail;
                     messages::sender_ptr _sender;
 

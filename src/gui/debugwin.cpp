@@ -31,7 +31,7 @@
 #include <QSettings>
 
 namespace us = fire::user;
-namespace s = fire::session;
+namespace s = fire::conversation;
 namespace m = fire::message;
 
 namespace fire
@@ -171,11 +171,11 @@ namespace fire
         debug_win::debug_win(
                 m::post_office_ptr p,
                 us::user_service_ptr us, 
-                s::session_service_ptr ss, 
+                s::conversation_service_ptr ss, 
                 QWidget* parent) :
             _post{p},
             _user_service{us},
-            _session_service{ss},
+            _conversation_service{ss},
             _log_last_file_pos{0},
             _total_mailboxes{0},
             QDialog{parent}
@@ -229,7 +229,7 @@ namespace fire
             ENSURE(_log);
             ENSURE(_post);
             ENSURE(_user_service);
-            ENSURE(_session_service);
+            ENSURE(_conversation_service);
         }
 
         void add_mailboxes(m::post_office& o, list& l, added_mailboxes& added)

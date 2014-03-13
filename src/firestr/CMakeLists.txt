@@ -83,7 +83,7 @@ qt5_use_modules(firestr Widgets Network)
 target_link_libraries(
     firestr
     fire_gui
-    fire_session
+    fire_conversation
     fire_user
     fire_messages
     fire_service
@@ -98,7 +98,7 @@ target_link_libraries(
 add_dependencies(
     firestr 
     fire_gui
-    fire_session
+    fire_conversation
     fire_messages
     fire_user
     fire_message

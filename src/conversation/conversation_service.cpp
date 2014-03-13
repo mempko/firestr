@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "session/session_service.hpp"
+#include "conversation/conversation_service.hpp"
 #include "util/thread.hpp"
 #include "util/uuid.hpp"
 #include "util/dbc.hpp"
@@ -30,13 +30,13 @@ namespace ms = fire::messages;
 
 namespace fire
 {
-    namespace session
+    namespace conversation
     {
         namespace 
         {
-            const std::string SERVICE_ADDRESS = "session_service";
-            const std::string SYNC_SESSION = "sync_session_msg";
-            const std::string QUIT_SESSION = "quit_session_msg";
+            const std::string SERVICE_ADDRESS = "conversation_service";
+            const std::string SYNC_CONVERSATION = "sync_conversation_msg";
+            const std::string QUIT_CONVERSATION = "quit_conversation_msg";
         }
 
         using contact_ids = std::set<std::string>;
@@ -53,62 +53,62 @@ namespace fire
             for(auto v : a) ids.insert(v.as_string());
         }
 
-        struct sync_session_msg
+        struct sync_conversation_msg
         {
             std::string from_id;
-            std::string session_id;
+            std::string conversation_id;
             contact_ids ids;
         };
 
-        m::message convert(const sync_session_msg& s)
+        m::message convert(const sync_conversation_msg& s)
         {
-            REQUIRE_FALSE(s.session_id.empty());
+            REQUIRE_FALSE(s.conversation_id.empty());
 
             m::message m;
-            m.meta.type = SYNC_SESSION;
-            m.meta.extra["session_id"] = s.session_id;
+            m.meta.type = SYNC_CONVERSATION;
+            m.meta.extra["conversation_id"] = s.conversation_id;
             m.data = u::encode(convert(s.ids));
 
             return m;
         }
 
-        void convert(const m::message& m, sync_session_msg& s)
+        void convert(const m::message& m, sync_conversation_msg& s)
         {
-            REQUIRE_EQUAL(m.meta.type, SYNC_SESSION);
+            REQUIRE_EQUAL(m.meta.type, SYNC_CONVERSATION);
 
             s.from_id = m.meta.extra["from_id"].as_string();
-            s.session_id = m.meta.extra["session_id"].as_string();
+            s.conversation_id = m.meta.extra["conversation_id"].as_string();
             u::array a;
             u::decode(m.data, a);
             convert(a, s.ids);
         }
 
-        struct quit_session_msg
+        struct quit_conversation_msg
         {
             std::string from_id;
-            std::string session_id;
+            std::string conversation_id;
         };
 
-        m::message convert(const quit_session_msg& s)
+        m::message convert(const quit_conversation_msg& s)
         {
-            REQUIRE_FALSE(s.session_id.empty());
+            REQUIRE_FALSE(s.conversation_id.empty());
 
             m::message m;
-            m.meta.type = QUIT_SESSION;
-            m.data = u::to_bytes(s.session_id);
+            m.meta.type = QUIT_CONVERSATION;
+            m.data = u::to_bytes(s.conversation_id);
 
             return m;
         }
 
-        void convert(const m::message& m, quit_session_msg& s)
+        void convert(const m::message& m, quit_conversation_msg& s)
         {
-            REQUIRE_EQUAL(m.meta.type, QUIT_SESSION);
+            REQUIRE_EQUAL(m.meta.type, QUIT_CONVERSATION);
 
             s.from_id = m.meta.extra["from_id"].as_string();
-            s.session_id = u::to_str(m.data);
+            s.conversation_id = u::to_str(m.data);
         }
 
-        session_service::session_service(
+        conversation_service::conversation_service(
                 message::post_office_ptr post,
                 user::user_service_ptr user_service,
                 message::mailbox_ptr event) :
@@ -127,31 +127,31 @@ namespace fire
             INVARIANT(_sender);
         }        
 
-        session_service::~session_service()
+        conversation_service::~conversation_service()
         {
-            //copy sessions
-            session_map sessions;
+            //copy conversations
+            conversation_map conversations;
             {
                 u::mutex_scoped_lock l(_mutex);
-                sessions = _sessions;
+                conversations = _conversations;
             }
 
-            for(const auto& s : sessions)
+            for(const auto& s : conversations)
             {
                 CHECK(s.second);
-                quit_session(s.second->id());
+                quit_conversation(s.second->id());
             }
         }
 
-        void session_service::message_received(const message::message& m)
+        void conversation_service::message_received(const message::message& m)
         {
             INVARIANT(mail());
             INVARIANT(_user_service);
             m::expect_symmetric(m);
 
-            if(m.meta.type == SYNC_SESSION)
+            if(m.meta.type == SYNC_CONVERSATION)
             {
-                sync_session_msg s;
+                sync_conversation_msg s;
                 convert(m, s);
 
                 auto c = _user_service->user().contacts().by_id(s.from_id);
@@ -162,7 +162,7 @@ namespace fire
 
                 auto self = _user_service->user().info().id();
 
-                //also get other contacts in the session and add them
+                //also get other contacts in the conversation and add them
                 //only if the user knows them
                 for(auto id : s.ids)
                 {
@@ -175,24 +175,24 @@ namespace fire
                     contacts.push_back(oc);
                 }
 
-                sync_session(s.session_id, contacts);
+                sync_conversation(s.conversation_id, contacts);
             }
-            else if(m.meta.type == QUIT_SESSION)
+            else if(m.meta.type == QUIT_CONVERSATION)
             {
-                quit_session_msg q;
+                quit_conversation_msg q;
                 convert(m, q);
 
                 auto c = _user_service->user().contacts().by_id(q.from_id);
                 if(!c) return;
 
-                auto s = session_by_id(q.session_id);
+                auto s = conversation_by_id(q.conversation_id);
                 if(!s) return;
 
                 c = s->contacts().by_id(q.from_id);
                 if(!c) return;
 
                 s->contacts().remove(c);
-                fire_contact_removed(q.session_id, q.from_id);
+                fire_contact_removed(q.conversation_id, q.from_id);
             }
             else
             {
@@ -202,7 +202,7 @@ namespace fire
 
         using added_contacts = std::vector<std::string>;
 
-        session_ptr session_service::sync_session(const std::string& id, const user::contact_list& contacts)
+        conversation_ptr conversation_service::sync_conversation(const std::string& id, const user::contact_list& contacts)
         {
             INVARIANT(_post);
             INVARIANT(_user_service);
@@ -211,18 +211,18 @@ namespace fire
             u::mutex_scoped_lock l(_mutex);
 
             bool is_new = false;
-            session_ptr s;
+            conversation_ptr s;
 
-            auto sp = _sessions.find(id);
+            auto sp = _conversations.find(id);
 
-            //session does not exist, create it
-            if(sp == _sessions.end())
+            //conversation does not exist, create it
+            if(sp == _conversations.end())
             {
-                //create new session
-                s = std::make_shared<session>(id, _user_service, _post);
-                _sessions[id] = s;
+                //create new conversation
+                s = std::make_shared<conversation>(id, _user_service, _post);
+                _conversations[id] = s;
 
-                //add new session to post office
+                //add new conversation to post office
                 _post->add(s->mail());
                 is_new = true;
             }
@@ -233,21 +233,21 @@ namespace fire
             for(auto c : contacts.list())
             {
                 CHECK(c);
-                //skip contact who is in our session
+                //skip contact who is in our conversation
                 if(s->contacts().by_id(c->id())) continue;
 
                 s->contacts().add(c);
                 added.push_back(c->id());
             }
 
-            //done creating session, fire event
-            if(is_new) fire_new_session_event(id);
+            //done creating conversation, fire event
+            if(is_new) fire_new_conversation_event(id);
 
-            //sync session
+            //sync conversation
             if(!added.empty()) 
             {
-                sync_existing_session(s);
-                fire_session_synced_event(id);
+                sync_existing_conversation(s);
+                fire_conversation_synced_event(id);
 
                 for(const auto& cid : added)
                     fire_contact_added(id, cid);
@@ -256,10 +256,10 @@ namespace fire
             return s;
         }
 
-        session_ptr session_service::create_session(const std::string& id)
+        conversation_ptr conversation_service::create_conversation(const std::string& id)
         {
             us::users nobody;
-            auto sp = sync_session(id, nobody);
+            auto sp = sync_conversation(id, nobody);
             CHECK(sp);
 
             sp->initiated_by_user(true);
@@ -268,10 +268,10 @@ namespace fire
             return sp;
         }
 
-        session_ptr session_service::create_session(user::contact_list& contacts)
+        conversation_ptr conversation_service::create_conversation(user::contact_list& contacts)
         {
             std::string id = u::uuid();
-            auto sp = sync_session(id, contacts);
+            auto sp = sync_conversation(id, contacts);
             CHECK(sp);
 
             sp->initiated_by_user(true);
@@ -280,30 +280,30 @@ namespace fire
             return sp;
         }
 
-        session_ptr session_service::create_session()
+        conversation_ptr conversation_service::create_conversation()
         {
             us::contact_list nobody;
-            auto sp =  create_session(nobody);
+            auto sp =  create_conversation(nobody);
 
             ENSURE(sp);
             return sp;
         }
 
-        void session_service::quit_session(const std::string& id)
+        void conversation_service::quit_conversation(const std::string& id)
         {
             u::mutex_scoped_lock l(_mutex);
             INVARIANT(_sender);
             INVARIANT(_post);
 
-            //find session
-            auto s = _sessions.find(id);
-            if(s == _sessions.end()) return;
+            //find conversation
+            auto s = _conversations.find(id);
+            if(s == _conversations.end()) return;
 
             CHECK(s->second);
 
-            //send quit message to contacts in the session
-            quit_session_msg ns;
-            ns.session_id = s->second->id(); 
+            //send quit message to contacts in the conversation
+            quit_conversation_msg ns;
+            ns.conversation_id = s->second->id(); 
 
             for(auto c : s->second->contacts().list())
             {
@@ -311,24 +311,24 @@ namespace fire
                 _sender->send(c->id(), convert(ns));
             }
 
-            //remove session from map
-            _sessions.erase(s);
+            //remove conversation from map
+            _conversations.erase(s);
             _post->remove_mailbox(s->second->mail()->address());
-            fire_quit_session_event(id);
+            fire_quit_conversation_event(id);
         }
 
-        session_ptr session_service::session_by_id(const std::string& id)
+        conversation_ptr conversation_service::conversation_by_id(const std::string& id)
         {
             u::mutex_scoped_lock l(_mutex);
-            auto s = _sessions.find(id);
-            return s != _sessions.end() ? s->second : nullptr;
+            auto s = _conversations.find(id);
+            return s != _conversations.end() ? s->second : nullptr;
         }
 
-        void session_service::sync_existing_session(session_ptr s)
+        void conversation_service::sync_existing_conversation(conversation_ptr s)
         {
             REQUIRE(s);
 
-            //get current contacts in the session.
+            //get current contacts in the conversation.
             //these will be sent to the contact 
             contact_ids ids;
             for(auto c : s->contacts().list()) 
@@ -337,9 +337,9 @@ namespace fire
                 ids.insert(c->id());
             }
 
-            //send request to all contacts in session
-            sync_session_msg ns;
-            ns.session_id = s->id(); 
+            //send request to all contacts in conversation
+            sync_conversation_msg ns;
+            ns.conversation_id = s->id(); 
             ns.ids = ids;
 
             for(auto c : s->contacts().list())
@@ -349,17 +349,17 @@ namespace fire
             }
         }
 
-        void session_service::sync_existing_session(const std::string& session_id)
+        void conversation_service::sync_existing_conversation(const std::string& conversation_id)
         {
-            auto s = session_by_id(session_id);
+            auto s = conversation_by_id(conversation_id);
             if(!s) return;
 
-            sync_existing_session(s);
+            sync_existing_conversation(s);
         }
 
-        void session_service::add_contact_to_session( 
+        void conversation_service::add_contact_to_conversation( 
                 const user::user_info_ptr contact, 
-                session_ptr s)
+                conversation_ptr s)
         {
             REQUIRE(contact);
             REQUIRE(s);
@@ -368,43 +368,43 @@ namespace fire
             //if contact exists, we return
             if(s->contacts().by_id(contact->id())) return;
 
-            //add contact to session
+            //add contact to conversation
             s->contacts().add(contact);
 
-            sync_existing_session(s);
+            sync_existing_conversation(s);
         }
 
-        bool session_service::add_contact_to_session(
+        bool conversation_service::add_contact_to_conversation(
                 const us::user_info_ptr contact, 
-                const std::string& session_id)
+                const std::string& conversation_id)
         {
             REQUIRE(contact);
-            REQUIRE_FALSE(session_id.empty());
+            REQUIRE_FALSE(conversation_id.empty());
             INVARIANT(_sender);
 
-            auto s = session_by_id(session_id);
+            auto s = conversation_by_id(conversation_id);
             if(!s) return false;
 
-            add_contact_to_session(contact, s);
+            add_contact_to_conversation(contact, s);
             return true;
         }
 
-        void session_service::broadcast_message(const message::message& m)
+        void conversation_service::broadcast_message(const message::message& m)
         {
             u::mutex_scoped_lock l(_mutex);
-            for(auto p : _sessions)
+            for(auto p : _conversations)
             {
-                auto session = p.second;
-                CHECK(session);
+                auto conversation = p.second;
+                CHECK(conversation);
 
-                auto mail = session->mail();
+                auto mail = conversation->mail();
                 CHECK(mail);
 
                 mail->push_inbox(m);
             }
         }
 
-        user::user_service_ptr session_service::user_service()
+        user::user_service_ptr conversation_service::user_service()
         {
             ENSURE(_user_service);
             return _user_service;
@@ -412,53 +412,53 @@ namespace fire
 
         namespace event
         {
-            const std::string NEW_SESSION = "new_session_event";
-            const std::string QUIT_SESSION = "quit_session_event";
-            const std::string SESSION_SYNCED = "session_synced_event";
-            const std::string CONTACT_REMOVED = "session_contact_removed";
-            const std::string CONTACT_ADDED = "session_contact_added";
-            const std::string SESSION_ALERT = "session_alert";
+            const std::string NEW_CONVERSATION = "new_conversation_event";
+            const std::string QUIT_CONVERSATION = "quit_conversation_event";
+            const std::string CONVERSATION_SYNCED = "conversation_synced_event";
+            const std::string CONTACT_REMOVED = "conversation_contact_removed";
+            const std::string CONTACT_ADDED = "conversation_contact_added";
+            const std::string CONVERSATION_ALERT = "conversation_alert";
 
-            m::message convert(const new_session& s)
+            m::message convert(const new_conversation& s)
             {
                 m::message m;
-                m.meta.type = NEW_SESSION;
-                m.data = u::to_bytes(s.session_id);
+                m.meta.type = NEW_CONVERSATION;
+                m.data = u::to_bytes(s.conversation_id);
                 return m;
             }
 
-            void convert(const m::message& m, new_session& s)
+            void convert(const m::message& m, new_conversation& s)
             {
-                REQUIRE_EQUAL(m.meta.type, NEW_SESSION);
-                s.session_id = u::to_str(m.data);
+                REQUIRE_EQUAL(m.meta.type, NEW_CONVERSATION);
+                s.conversation_id = u::to_str(m.data);
             }
 
-            m::message convert(const quit_session& s)
+            m::message convert(const quit_conversation& s)
             {
                 m::message m;
-                m.meta.type = QUIT_SESSION;
-                m.data = u::to_bytes(s.session_id);
+                m.meta.type = QUIT_CONVERSATION;
+                m.data = u::to_bytes(s.conversation_id);
                 return m;
             }
 
-            void convert(const m::message& m, quit_session& s)
+            void convert(const m::message& m, quit_conversation& s)
             {
-                REQUIRE_EQUAL(m.meta.type, QUIT_SESSION);
-                s.session_id = u::to_str(m.data);
+                REQUIRE_EQUAL(m.meta.type, QUIT_CONVERSATION);
+                s.conversation_id = u::to_str(m.data);
             }
 
-            m::message convert(const session_synced& s)
+            m::message convert(const conversation_synced& s)
             {
                 m::message m;
-                m.meta.type = SESSION_SYNCED;
-                m.data = u::to_bytes(s.session_id);
+                m.meta.type = CONVERSATION_SYNCED;
+                m.data = u::to_bytes(s.conversation_id);
                 return m;
             }
 
-            void convert(const m::message& m, session_synced& s)
+            void convert(const m::message& m, conversation_synced& s)
             {
-                REQUIRE_EQUAL(m.meta.type, SESSION_SYNCED);
-                s.session_id = u::to_str(m.data);
+                REQUIRE_EQUAL(m.meta.type, CONVERSATION_SYNCED);
+                s.conversation_id = u::to_str(m.data);
             }
 
             m::message convert(const contact_removed& s)
@@ -466,14 +466,14 @@ namespace fire
                 m::message m;
                 m.meta.type = CONTACT_REMOVED;
                 m.meta.extra["contact_id"] = s.contact_id;
-                m.data = u::to_bytes(s.session_id);
+                m.data = u::to_bytes(s.conversation_id);
                 return m;
             }
 
             void convert(const m::message& m, contact_removed& s)
             {
                 REQUIRE_EQUAL(m.meta.type, CONTACT_REMOVED);
-                s.session_id = u::to_str(m.data);
+                s.conversation_id = u::to_str(m.data);
                 s.contact_id = m.meta.extra["contact_id"].as_string();
             }
 
@@ -482,69 +482,69 @@ namespace fire
                 m::message m;
                 m.meta.type = CONTACT_ADDED;
                 m.meta.extra["contact_id"] = s.contact_id;
-                m.data = u::to_bytes(s.session_id);
+                m.data = u::to_bytes(s.conversation_id);
                 return m;
             }
 
             void convert(const m::message& m, contact_added& s)
             {
                 REQUIRE_EQUAL(m.meta.type, CONTACT_ADDED);
-                s.session_id = u::to_str(m.data);
+                s.conversation_id = u::to_str(m.data);
                 s.contact_id = m.meta.extra["contact_id"].as_string();
             }
 
-            message::message convert(const session_alert& s)
+            message::message convert(const conversation_alert& s)
             {
                 m::message m;
-                m.meta.type = SESSION_ALERT;
-                m.data = u::to_bytes(s.session_id);
+                m.meta.type = CONVERSATION_ALERT;
+                m.data = u::to_bytes(s.conversation_id);
                 return m;
             }
 
-            void convert(const m::message& m, session_alert& s)
+            void convert(const m::message& m, conversation_alert& s)
             {
-                REQUIRE_EQUAL(m.meta.type, SESSION_ALERT);
-                s.session_id = u::to_str(m.data);
+                REQUIRE_EQUAL(m.meta.type, CONVERSATION_ALERT);
+                s.conversation_id = u::to_str(m.data);
             }
         }
 
-        void session_service::fire_new_session_event(const std::string& id)
+        void conversation_service::fire_new_conversation_event(const std::string& id)
         {
-            event::new_session e{id};
+            event::new_conversation e{id};
             send_event(event::convert(e));
         }
 
-        void session_service::fire_quit_session_event(const std::string& id)
+        void conversation_service::fire_quit_conversation_event(const std::string& id)
         {
-            event::quit_session e{id};
+            event::quit_conversation e{id};
             send_event(event::convert(e));
         }
 
-        void session_service::fire_session_synced_event(const std::string& id)
+        void conversation_service::fire_conversation_synced_event(const std::string& id)
         {
-            event::session_synced e{id};
+            event::conversation_synced e{id};
             send_event(event::convert(e));
         }
 
-        void session_service::fire_contact_removed(
-                const std::string& session_id, 
+        void conversation_service::fire_contact_removed(
+                const std::string& conversation_id, 
                 const std::string& contact_id)
         {
-            event::contact_removed e{session_id, contact_id};
+            event::contact_removed e{conversation_id, contact_id};
             send_event(event::convert(e));
         }
 
-        void session_service::fire_contact_added(
-                const std::string& session_id, 
+        void conversation_service::fire_contact_added(
+                const std::string& conversation_id, 
                 const std::string& contact_id)
         {
-            event::contact_added e{session_id, contact_id};
+            event::contact_added e{conversation_id, contact_id};
             send_event(event::convert(e));
         }
 
-        void session_service::fire_session_alert(const std::string& id)
+        void conversation_service::fire_conversation_alert(const std::string& id)
         {
-            event::session_alert e{id};
+            event::conversation_alert e{id};
             send_event(event::convert(e));
         }
 

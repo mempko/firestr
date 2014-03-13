@@ -64,7 +64,7 @@ namespace fire
             network::port_type port;
             local_user_ptr user;
             message::mailbox_ptr events;
-            security::session_library_ptr session_library;
+            security::encrypted_channels_ptr encrypted_channels;
         };
 
         class user_service : public service::service
@@ -136,7 +136,7 @@ namespace fire
                 void send_ping(char t);
                 void send_ping_to(char t, const std::string& id, bool force = false);
                 void add_contact_data(user::user_info_ptr);
-                void setup_security_session(
+                void setup_security_conversation(
                         const std::string& address, 
                         const security::public_key& key, 
                         const util::bytes& public_val);
@@ -152,9 +152,9 @@ namespace fire
                 std::string _in_host;
                 network::port_type _in_port;
 
-                //stores session security information for 
+                //stores conversation security information for 
                 //a connection with a user
-                security::session_library_ptr _session_library;
+                security::encrypted_channels_ptr _encrypted_channels;
 
                 bool _done;
 

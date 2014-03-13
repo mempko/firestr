@@ -42,11 +42,12 @@ namespace fire
             //root in /Users/<user>/Application Data/
             const char* app_data = std::getenv("APPDATA");
             bf::path root = app_data != nullptr ? app_data : "./";
-#elif defined(TARGET_OS_MAC)
+#elif __APPLE__
             //~/Library/Application Support/
             const char* home = std::getenv("HOME");
             bf::path root = home != nullptr ? home : "./";
-            root /= "Library" / "Application Support";
+            root /= "Library"; 
+            root /= "Application Support";
 #else
             //~/.config/firestr
             const char* home = std::getenv("HOME");

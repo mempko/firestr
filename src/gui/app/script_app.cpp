@@ -30,7 +30,7 @@
 namespace m = fire::message;
 namespace ms = fire::messages;
 namespace us = fire::user;
-namespace s = fire::session;
+namespace s = fire::conversation;
 namespace u = fire::util;
 namespace l = fire::gui::lua;
 
@@ -51,27 +51,27 @@ namespace fire
             script_app::script_app(
                     app_ptr app, 
                     app_service_ptr as,
-                    s::session_service_ptr session_s,
-                    s::session_ptr session) :
+                    s::conversation_service_ptr conversation_s,
+                    s::conversation_ptr conversation) :
                 message{},
-                _from_id{session->user_service()->user().info().id()},
+                _from_id{conversation->user_service()->user().info().id()},
                 _id{u::uuid()},
-                _session_service{session_s},
-                _session{session},
+                _conversation_service{conversation_s},
+                _conversation{conversation},
                 _app{app},
                 _app_service{as},
-                _contacts{session->contacts()}
+                _contacts{conversation->contacts()}
             {
-                REQUIRE(session_s);
-                REQUIRE(session);
+                REQUIRE(conversation_s);
+                REQUIRE(conversation);
                 REQUIRE(app);
                 REQUIRE(as);
 
                 init();
 
                 INVARIANT(_api);
-                INVARIANT(_session_service);
-                INVARIANT(_session);
+                INVARIANT(_conversation_service);
+                INVARIANT(_conversation);
                 INVARIANT(_app);
                 INVARIANT(_app_service);
                 INVARIANT_FALSE(_id.empty());
@@ -81,19 +81,19 @@ namespace fire
                     const std::string& from_id, 
                     const std::string& id, 
                     app_ptr app, app_service_ptr as, 
-                    s::session_service_ptr session_s,
-                    s::session_ptr session) :
+                    s::conversation_service_ptr conversation_s,
+                    s::conversation_ptr conversation) :
                 message{},
                 _from_id{from_id},
                 _id{id},
-                _session_service{session_s},
-                _session{session},
+                _conversation_service{conversation_s},
+                _conversation{conversation},
                 _app{app},
                 _app_service{as},
-                _contacts{session->contacts()}
+                _contacts{conversation->contacts()}
             {
-                REQUIRE(session_s);
-                REQUIRE(session);
+                REQUIRE(conversation_s);
+                REQUIRE(conversation);
                 REQUIRE(app);
                 REQUIRE(as);
                 REQUIRE_FALSE(id.empty());
@@ -101,8 +101,8 @@ namespace fire
                 init();
 
                 INVARIANT(_api);
-                INVARIANT(_session_service);
-                INVARIANT(_session);
+                INVARIANT(_conversation_service);
+                INVARIANT(_conversation);
                 INVARIANT(_app);
                 INVARIANT(_app_service);
                 INVARIANT_FALSE(_id.empty());
@@ -111,7 +111,7 @@ namespace fire
             script_app::~script_app()
             {
                 INVARIANT(_app);
-                INVARIANT(_session);
+                INVARIANT(_conversation);
 
                 LOG << "closed app " << _app->name() << "(" << _app->id() << ")" << std::endl;
             }
@@ -120,7 +120,7 @@ namespace fire
             {
                 INVARIANT(root());
                 INVARIANT(layout());
-                INVARIANT(_session);
+                INVARIANT(_conversation);
                 INVARIANT(_app);
 
                 _clone = new QPushButton("+");
@@ -135,8 +135,8 @@ namespace fire
                 layout()->addWidget(_canvas, 0,0,2,1);
 
                 _mail = std::make_shared<m::mailbox>(_id);
-                _sender = std::make_shared<ms::sender>(_session->user_service(), _mail);
-                _api = std::make_shared<l::lua_api>(_app, _contacts, _sender, _session, _session_service, _canvas, _canvas_layout);
+                _sender = std::make_shared<ms::sender>(_conversation->user_service(), _mail);
+                _api = std::make_shared<l::lua_api>(_app, _contacts, _sender, _conversation, _conversation_service, _canvas, _canvas_layout);
                 _api->who_started_id = _from_id;
 
                 //run script
@@ -150,7 +150,7 @@ namespace fire
                 t->start(TIMER_SLEEP);
 
 
-                INVARIANT(_session);
+                INVARIANT(_conversation);
                 INVARIANT(_mail);
                 INVARIANT(_sender);
             }
@@ -177,19 +177,21 @@ namespace fire
             try
             {
                 INVARIANT(_mail);
-                INVARIANT(_session);
+                INVARIANT(_conversation);
                 INVARIANT(_api);
 
                 m::message m;
                 while(_mail->pop_inbox(m))
                 {
-                    m::expect_symmetric(m);
+                    if(m::is_remote(m)) m::expect_symmetric(m);
+                    else m::expect_plaintext(m);
+
                     if(m.meta.type == l::SCRIPT_MESSAGE)
                     {
                         bool local = m.meta.extra.has("local_app_id");
                         auto id = m.meta.extra["from_id"].as_string();
 
-                        if(!local && !_session->user_service()->by_id(id)) 
+                        if(!local && !_conversation->user_service()->by_id(id)) 
                             continue;
 
                         l::script_message sm{m, _api.get()};

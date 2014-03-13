@@ -36,7 +36,7 @@
 namespace m = fire::message;
 namespace ms = fire::messages;
 namespace us = fire::user;
-namespace s = fire::session;
+namespace s = fire::conversation;
 namespace u = fire::util;
 namespace a = fire::gui::app;
 namespace bf = boost::filesystem;
@@ -57,16 +57,16 @@ namespace fire
                     a::app_ptr a,
                     const us::contact_list& con,
                     ms::sender_ptr sndr,
-                    s::session_ptr s,
-                    s::session_service_ptr ss,
+                    s::conversation_ptr s,
+                    s::conversation_service_ptr ss,
                     QWidget* c,
                     QGridLayout* cl,
                     list* o ) :
                 app{a},
                 contacts{con},
                 sender{sndr},
-                session{s},
-                session_service{ss},
+                conversation{s},
+                conversation_service{ss},
                 canvas{c},
                 layout{cl},
                 output{o},
@@ -76,8 +76,8 @@ namespace fire
 				_error.line = -1;
                 INVARIANT(app);
                 INVARIANT(sender);
-                INVARIANT(session);
-                INVARIANT(session_service);
+                INVARIANT(conversation);
+                INVARIANT(conversation_service);
                 INVARIANT(canvas);
                 INVARIANT(layout);
 
@@ -411,8 +411,8 @@ namespace fire
             void lua_api::print(const std::string& a)
             {
                 std::lock_guard<std::mutex> lock(mutex);
-                INVARIANT(session);
-                INVARIANT(session->user_service());
+                INVARIANT(conversation);
+                INVARIANT(conversation->user_service());
 
                 if(!output) 
                 {
@@ -420,15 +420,15 @@ namespace fire
                     return;
                 }
 
-                auto self = session->user_service()->user().info().name();
+                auto self = conversation->user_service()->user().info().name();
                 output->add(make_output_widget(self, a));
             }
 
             void lua_api::alert()
             {
-                INVARIANT(session);
-                INVARIANT(session_service);
-                session_service->fire_session_alert(session->id());
+                INVARIANT(conversation);
+                INVARIANT(conversation_service);
+                conversation_service->fire_conversation_alert(conversation->id());
             }
 
             void lua_api::message_received(const script_message& m)
@@ -476,8 +476,8 @@ namespace fire
             void lua_api::send_to_helper(us::user_info_ptr c, const script_message& m)
             {
                 REQUIRE(c);
-                if( !session->user_service()->contact_available(c->id()) || 
-                    !session->contacts().has(c->id()))
+                if( !conversation->user_service()->contact_available(c->id()) || 
+                    !conversation->contacts().has(c->id()))
                     return;
 
                 sender->send(c->id(), m); 
@@ -496,7 +496,7 @@ namespace fire
             void lua_api::send_to(const contact_ref& cr, const script_message& m)
             {
                 INVARIANT(sender);
-                INVARIANT(session);
+                INVARIANT(conversation);
 
                 auto c = contacts.by_id(cr.user_id);
                 if(!c) return;
@@ -531,12 +531,12 @@ namespace fire
             contact_ref lua_api::self() 
             {
                 INVARIANT(app);
-                INVARIANT(session);
-                INVARIANT(session->user_service());
+                INVARIANT(conversation);
+                INVARIANT(conversation->user_service());
 
                 contact_ref r;
                 r.id = 0;
-                r.user_id = session->user_service()->user().info().id();
+                r.user_id = conversation->user_service()->user().info().id();
                 r.api = this;
                 r.is_self = true;
                 return r;
@@ -545,14 +545,14 @@ namespace fire
             contact_ref lua_api::who_started() 
             {
                 INVARIANT(app);
-                INVARIANT(session);
-                INVARIANT(session->user_service());
+                INVARIANT(conversation);
+                INVARIANT(conversation->user_service());
 
                 contact_ref r;
                 if(app->launched_local())
                 {
                     r.id = 0;
-                    r.user_id = session->user_service()->user().info().id();
+                    r.user_id = conversation->user_service()->user().info().id();
                     r.api = this;
                     r.is_self = true;
                 } 
@@ -571,15 +571,15 @@ namespace fire
 
             size_t lua_api::total_apps() const
             {
-                INVARIANT(session);
+                INVARIANT(conversation);
 
-                return session->app_ids().size();
+                return conversation->app_ids().size();
             }
 
             app_ref lua_api::get_app(size_t i)
             {
-                INVARIANT(session);
-                const auto& ids = session->app_ids();
+                INVARIANT(conversation);
+                const auto& ids = conversation->app_ids();
                 if(i >= ids.size()) return empty_app_ref(*this);
 
                 auto id = ids[i];
@@ -602,8 +602,8 @@ namespace fire
 
             void lua_api::send_local(const script_message& m)
             {
-                INVARIANT(session);
-                for(const auto& id : session->app_ids())
+                INVARIANT(conversation);
+                for(const auto& id : conversation->app_ids())
                     sender->send_to_local_app(id, m);
             }
 

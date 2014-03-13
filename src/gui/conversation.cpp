@@ -16,7 +16,7 @@
  */
 
 
-#include "gui/session.hpp"
+#include "gui/conversation.hpp"
 #include "gui/unknown_message.hpp"
 #include "gui/util.hpp"
 
@@ -24,7 +24,7 @@
 
 #include <QtWidgets>
 
-namespace s = fire::session;
+namespace s = fire::conversation;
 namespace m = fire::message;
 namespace ms = fire::messages;
 namespace us = fire::user;
@@ -40,25 +40,25 @@ namespace fire
             const size_t ADD_CONTACT_WIDTH = 10;
         }
 
-        session_widget::session_widget(
-                s::session_service_ptr session_service,
-                s::session_ptr session,
+        conversation_widget::conversation_widget(
+                s::conversation_service_ptr conversation_service,
+                s::conversation_ptr conversation,
                 a::app_service_ptr app_service) :
-            _session_service{session_service},
-            _session{session},
+            _conversation_service{conversation_service},
+            _conversation{conversation},
             _app_service{app_service},
-            _messages{new message_list{app_service, session_service, session}}
+            _messages{new message_list{app_service, conversation_service, conversation}}
         {
-            REQUIRE(session_service);
-            REQUIRE(session);
+            REQUIRE(conversation_service);
+            REQUIRE(conversation);
             REQUIRE(app_service);
 
             _layout = new QGridLayout;
 
-            _contact_select = new contact_select_widget{session_service->user_service(), 
-                [session](const us::user_info& u) -> bool
+            _contact_select = new contact_select_widget{conversation_service->user_service(), 
+                [conversation](const us::user_info& u) -> bool
                 {
-                    return !session->contacts().by_id(u.id());
+                    return !conversation->contacts().by_id(u.id());
                 }
             };
 
@@ -86,14 +86,14 @@ namespace fire
             connect(t2, SIGNAL(timeout()), this, SLOT(check_mail()));
             t2->start(TIMER_SLEEP);
 
-            INVARIANT(_session_service);
-            INVARIANT(_session);
+            INVARIANT(_conversation_service);
+            INVARIANT(_conversation);
             INVARIANT(_messages);
             INVARIANT(_layout);
             INVARIANT(_app_service);
         }
         
-        void session_widget::update_contact_select()
+        void conversation_widget::update_contact_select()
         {
             INVARIANT(_contact_select);
             _contact_select->update_contacts();
@@ -102,24 +102,24 @@ namespace fire
             _add_contact->setEnabled(enabled);
         }
 
-        void session_widget::add(message* m)
+        void conversation_widget::add(message* m)
         {
             REQUIRE(m);
             INVARIANT(_messages);
             _messages->add(m);
         }
 
-        void session_widget::add(QWidget* w)
+        void conversation_widget::add(QWidget* w)
         {
             REQUIRE(w);
             INVARIANT(_messages);
             _messages->add(w);
         }
 
-        s::session_ptr session_widget::session()
+        s::conversation_ptr conversation_widget::conversation()
         {
-            ENSURE(_session);
-            return _session;
+            ENSURE(_conversation);
+            return _conversation;
         }
 
         QWidget* contact_alert(us::user_info_ptr c, const std::string message)
@@ -140,103 +140,113 @@ namespace fire
             return w;
         }
 
-        void session_widget::add_contact()
+        void conversation_widget::add_contact()
         {
             INVARIANT(_contact_select);
-            INVARIANT(_session_service);
-            INVARIANT(_session);
+            INVARIANT(_conversation_service);
+            INVARIANT(_conversation);
 
             auto contact = _contact_select->selected_contact();
             if(!contact) return;
 
-            _session_service->add_contact_to_session(contact, _session);
+            _conversation_service->add_contact_to_conversation(contact, _conversation);
 
-            add(contact_alert(contact, convert(tr("added to session"))));
+            add(contact_alert(contact, convert(tr("added to conversation"))));
             update_contacts();
         }
 
-        void session_widget::update_contacts()
+        void conversation_widget::update_contacts()
         {
             _messages->update_contact_lists();
             update_contact_select();
         }
 
-        void session_widget::name(const QString& s)
+        void conversation_widget::name(const QString& s)
         {
             _name = s;
         }
 
-        QString session_widget::name() const
+        QString conversation_widget::name() const
         {
             return _name;
         }
 
-        void session_widget::check_mail()
+        void conversation_widget::check_mail()
         try
         {
             INVARIANT(_messages);
-            INVARIANT(_session);
-            INVARIANT(_session_service);
-            INVARIANT(_session_service->user_service());
-            INVARIANT(_session->mail());
+            INVARIANT(_conversation);
+            INVARIANT(_conversation_service);
+            INVARIANT(_conversation_service->user_service());
+            INVARIANT(_conversation->mail());
 
             m::message m;
-            while(_session->mail()->pop_inbox(m))
+            while(_conversation->mail()->pop_inbox(m))
             {
-                m::expect_symmetric(m);
-                //for now show encoded message
-                //TODO: use factory class to create gui from messages
                 if(m.meta.type == ms::NEW_APP)
                 {
+                    m::expect_remote(m);
+                    m::expect_symmetric(m);
+
                     auto id = _messages->add_new_app(m);
-                    _session->add_app_id(id);
-                    _session_service->fire_session_alert(_session->id());
+                    _conversation->add_app_id(id);
+                    _conversation_service->fire_conversation_alert(_conversation->id());
                 }
-                else if(m.meta.type == s::event::SESSION_SYNCED)
+                else if(m.meta.type == s::event::CONVERSATION_SYNCED)
                 {
+                    m::expect_local(m);
+
                     update_contacts();
-                    _session_service->fire_session_alert(_session->id());
+                    _conversation_service->fire_conversation_alert(_conversation->id());
                 }
                 else if(m.meta.type == s::event::CONTACT_REMOVED)
                 {
+                    m::expect_local(m);
+
                     s::event::contact_removed r;
                     s::event::convert(m, r);
 
-                    if(r.session_id != _session->id()) continue;
+                    if(r.conversation_id != _conversation->id()) continue;
 
-                    auto c = _session_service->user_service()->by_id(r.contact_id);
+                    auto c = _conversation_service->user_service()->by_id(r.contact_id);
                     if(!c) continue;
 
-                    add(contact_alert(c, convert(tr("quit session"))));
+                    add(contact_alert(c, convert(tr("quit conversation"))));
 
                     _messages->remove_from_contact_lists(c);
                     update_contacts();
-                    _session_service->fire_session_alert(_session->id());
+                    _conversation_service->fire_conversation_alert(_conversation->id());
                 }
                 else if(m.meta.type == s::event::CONTACT_ADDED)
                 {
+                    m::expect_local(m);
+
                     s::event::contact_added r;
                     s::event::convert(m, r);
 
-                    if(r.session_id != _session->id()) continue;
+                    if(r.conversation_id != _conversation->id()) continue;
 
-                    auto c = _session_service->user_service()->by_id(r.contact_id);
+                    auto c = _conversation_service->user_service()->by_id(r.contact_id);
                     if(!c) continue;
 
-                    add(contact_alert(c, convert(tr("added to session"))));
+                    add(contact_alert(c, convert(tr("added to conversation"))));
                     update_contacts();
-                    _session_service->fire_session_alert(_session->id());
+                    _conversation_service->fire_conversation_alert(_conversation->id());
                 }
                 else if(m.meta.type == us::event::CONTACT_CONNECTED)
                 {
+                    m::expect_local(m);
+
                     update_contacts();
                 }
                 else if(m.meta.type == us::event::CONTACT_DISCONNECTED)
                 {
+                    m::expect_local(m);
+
                     us::event::contact_disconnected r;
                     us::event::convert(m, r);
 
-                    auto c = _session->contacts().by_id(r.id);
+                    auto c = _conversation->contacts().by_id(r.id);
                     if(!c) continue;
 
                     update_contacts();
@@ -252,11 +262,11 @@ namespace fire
         }
         catch(std::exception& e)
         {
-            LOG << "session: error in check_mail. " << e.what() << std::endl;
+            LOG << "conversation: error in check_mail. " << e.what() << std::endl;
         }
         catch(...)
         {
-            LOG << "session: unexpected error in check_mail." << std::endl;
+            LOG << "conversation: unexpected error in check_mail." << std::endl;
         }
     }
 }

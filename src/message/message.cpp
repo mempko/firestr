@@ -102,22 +102,58 @@ namespace fire
             return "unknown";
         }
 
+        bool is_local(const message& m)
+        {
+            return m.meta.source == metadata::local;
+        }
+
+        bool is_remote(const message& m)
+        {
+            return m.meta.source == metadata::remote;
+        }
+
+        bool is_symmetric(const message& m)
+        {
+            return m.meta.encryption == metadata::symmetric;
+        }
+
+        bool is_asymmetric(const message& m)
+        {
+            return m.meta.encryption == metadata::asymmetric;
+        }
+
+        bool is_plaintext(const message& m)
+        {
+            return m.meta.encryption == metadata::plaintext;
+        }
+
+        void expect_local(const message& m)
+        {
+            if(is_local(m)) return;
+            throw std::runtime_error{"expected message to be local but remote"};
+        }
+
+        void expect_remote(const message& m)
+        {
+            if(is_remote(m)) return;
+            throw std::runtime_error{"expected message to be remote but got local"};
+        }
 
         void expect_symmetric(const message& m)
         {
-            if(m.meta.encryption == metadata::symmetric) return;
+            if(is_symmetric(m)) return;
             throw std::runtime_error{"expected message with symmetric encryption but got `" + to_str(m.meta.encryption) + "'"};
         }
 
         void expect_asymmetric(const message& m)
         {
-            if(m.meta.encryption == metadata::asymmetric) return;
+            if(is_asymmetric(m)) return;
             throw std::runtime_error{"expected message with asymmetric encryption but got `" + to_str(m.meta.encryption) + "'"};
         }
 
         void expect_plaintext(const message& m)
         {
-            if(m.meta.encryption == metadata::plaintext) return;
+            if(is_plaintext(m)) return;
             throw std::runtime_error{"expected message with plaintext encryption but got `" + to_str(m.meta.encryption) + "'"};
         }
     }

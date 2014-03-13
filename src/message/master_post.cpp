@@ -55,7 +55,7 @@ namespace fire
         try
         {
             REQUIRE(o);
-            REQUIRE(o->_session_library);
+            REQUIRE(o->_encrypted_channels);
 
             n::endpoint ep;
             while(!o->_done)
@@ -70,11 +70,11 @@ namespace fire
                 }
                 if(o->_outside_stats.on) o->_outside_stats.in_push_count++;
 
-                //construct address as session id and decrypt message
+                //construct address as conversation id and decrypt message
                 auto sid = n::make_address_str(ep);
 
                 sc::encryption_type et;
-                data = o->_session_library->decrypt(sid, data, et);
+                data = o->_encrypted_channels->decrypt(sid, data, et);
 
                 //could not decrypt, skip
                 if(data.empty()) continue;
@@ -91,6 +91,7 @@ namespace fire
                 m.meta.extra["from_ip"] = ep.address;
                 m.meta.extra["from_port"] = ep.port;
                 m.meta.encryption = to_message_encryption_type(et);
+                m.meta.source = metadata::remote;
 
                 //pop off master address
                 m.meta.to.pop_front();
@@ -116,8 +117,8 @@ namespace fire
         void encrypt_message(
                 u::bytes& data,
                 const message& m, 
-                const std::string& session_id,
-                security::session_library& sl)
+                const std::string& conversation_id,
+                security::encrypted_channels& sl)
         {
             switch(m.meta.encryption)
             {
@@ -128,17 +129,17 @@ namespace fire
                     }
                 case metadata::encryption_type::symmetric:
                     {
-                        data = sl.encrypt_symmetric(session_id, data);
+                        data = sl.encrypt_symmetric(conversation_id, data);
                         break;
                     }
                 case metadata::encryption_type::asymmetric:
                     {
-                        data = sl.encrypt_asymmetric(session_id, data);
+                        data = sl.encrypt_asymmetric(conversation_id, data);
                         break;
                     }
-                case metadata::encryption_type::session: 
+                case metadata::encryption_type::conversation: 
                     {
-                        data = sl.encrypt(session_id, data);
+                        data = sl.encrypt(conversation_id, data);
                         break;
                     }
                 default:
@@ -182,7 +183,7 @@ namespace fire
                         data, 
                         m, 
                         outside_queue_address,
-                        *o->_session_library);
+                        *o->_encrypted_channels);
 
                 //send message over wire
                 o->_connections.send(outside_queue_address, data);
@@ -207,11 +208,11 @@ namespace fire
         master_post_office::master_post_office(
                 const std::string& in_host,
                 n::port_type in_port,
-                sc::session_library_ptr sl) : 
+                sc::encrypted_channels_ptr sl) : 
             _in_host{in_host},
             _in_port{in_port},
             _connections{POOL_SIZE, in_port},
-            _session_library{sl}
+            _encrypted_channels{sl}
         {
             _address = n::make_udp_address(_in_host,_in_port);
 

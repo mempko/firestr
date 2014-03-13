@@ -29,7 +29,7 @@
 namespace m = fire::message;
 namespace ms = fire::messages;
 namespace us = fire::user;
-namespace s = fire::session;
+namespace s = fire::conversation;
 namespace u = fire::util;
 
 namespace fire
@@ -77,46 +77,46 @@ namespace fire
             }
 
             chat_app::chat_app(
-                    s::session_service_ptr session_s,
-                    s::session_ptr session) :
+                    s::conversation_service_ptr conversation_s,
+                    s::conversation_ptr conversation) :
                 message{},
                 _id{u::uuid()},
-                _session_service{session_s},
-                _session{session}
+                _conversation_service{conversation_s},
+                _conversation{conversation}
             {
-                REQUIRE(session_s);
-                REQUIRE(session);
+                REQUIRE(conversation_s);
+                REQUIRE(conversation);
                 init();
             }
 
             chat_app::chat_app(
                     const std::string& id, 
-                    s::session_service_ptr session_s,
-                    s::session_ptr session) :
+                    s::conversation_service_ptr conversation_s,
+                    s::conversation_ptr conversation) :
                 message{},
                 _id{id},
-                _session_service{session_s},
-                _session{session}
+                _conversation_service{conversation_s},
+                _conversation{conversation}
             {
-                REQUIRE(session_s);
-                REQUIRE(session);
+                REQUIRE(conversation_s);
+                REQUIRE(conversation);
                 init();
             }
 
             chat_app::~chat_app()
             {
-                INVARIANT(_session_service);
-                INVARIANT(_session);
+                INVARIANT(_conversation_service);
+                INVARIANT(_conversation);
             }
 
             void chat_app::init()
             {
                 INVARIANT(root());
                 INVARIANT(layout());
-                INVARIANT(_session);
+                INVARIANT(_conversation);
 
                 _mail = std::make_shared<m::mailbox>(_id);
-                _sender = std::make_shared<ms::sender>(_session->user_service(), _mail);
+                _sender = std::make_shared<ms::sender>(_conversation->user_service(), _mail);
 
                 //message list
                 _messages = new list;
@@ -137,9 +137,9 @@ namespace fire
                 setMinimumHeight(layout()->sizeHint().height() + PADDING);
 
                 //if no contacts added, disable app
-                if(_session->contacts().empty())
+                if(_conversation->contacts().empty())
                 {
-                    _messages->add(make_message_widget(gui::convert(tr("alert")), gui::convert(tr("no contacts in session"))));
+                    _messages->add(make_message_widget(gui::convert(tr("alert")), gui::convert(tr("no contacts in conversation"))));
                     _message->setEnabled(false);
                     _send->setEnabled(false);
                     return;
@@ -150,7 +150,7 @@ namespace fire
                 connect(t, SIGNAL(timeout()), this, SLOT(check_mail()));
                 t->start(TIMER_SLEEP);
 
-                INVARIANT(_session);
+                INVARIANT(_conversation);
                 INVARIANT(_mail);
                 INVARIANT(_sender);
             }
@@ -177,22 +177,22 @@ namespace fire
             {
                 INVARIANT(_message);
                 INVARIANT(_send);
-                INVARIANT(_session);
+                INVARIANT(_conversation);
 
                 auto text = gui::convert(_message->text());
                 _message->clear();
 
-                auto self = _session->user_service()->user().info().name();
+                auto self = _conversation->user_service()->user().info().name();
                 _messages->add(make_message_widget(self, text));
 
                 text_message tm;
                 tm.text = text;
 
                 bool sent = false;
-                for(auto c : _session->contacts().list())
+                for(auto c : _conversation->contacts().list())
                 {
                     CHECK(c);
-                    if(!_session->user_service()->contact_available(c->id())) continue;
+                    if(!_conversation->user_service()->contact_available(c->id())) continue;
                     _sender->send(c->id(), convert(tm)); 
                     sent = true;
                 }
@@ -204,24 +204,26 @@ namespace fire
             try
             {
                 INVARIANT(_mail);
-                INVARIANT(_session);
-                INVARIANT(_session_service);
+                INVARIANT(_conversation);
+                INVARIANT(_conversation_service);
 
                 m::message m;
                 while(_mail->pop_inbox(m))
                 {
-                    m::expect_symmetric(m);
+                    if(m::is_remote(m)) m::expect_symmetric(m);
+                    else m::expect_plaintext(m);
+
                     if(m.meta.type == MESSAGE)
                     {
                         text_message t;
                         convert(m, t);
 
-                        auto c = _session->contacts().by_id(t.from_id);
+                        auto c = _conversation->contacts().by_id(t.from_id);
                         if(!c) continue;
 
                         _messages->add(make_message_widget(c->name(), t.text));
                         _messages->verticalScrollBar()->scroll(0, _messages->verticalScrollBar()->maximum());
-                        _session_service->fire_session_alert(_session->id());
+                        _conversation_service->fire_conversation_alert(_conversation->id());
                     }
                     else
                     {
