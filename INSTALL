@@ -42,10 +42,10 @@ to the parties on their public ip/port after which firestr will
 initiate a p2p connection. 
 
 Once a contact is added, they are saved as your contact and you will
-connect to them the next time you start the application automatically.
+connect to them the next time you start the application.
 
 You can have multiple contacts and multiple greeters. Once you have
-a contact to communicate with, you can initiate a session and start
+a contact to communicate with, you can initiate a conversation and start
 chatting or sharing applications.
 
 Have fun.
