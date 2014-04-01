@@ -35,6 +35,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 if(APPLE)
     set(PROGNAME firestr)
     set(plugin_dest_dir bin)
+    set(MACISX_BUNDLE_NAME "Firestr")
     set(MACOSX_BUNDLE_GUI_IDENTIFIER "com.mempko.firestr")
     set(MACOSX_BUNDLE_SHORT_VERSION_STRING 0.1)
     set(MACOSX_BUNDLE_VERSION 0.1)
@@ -45,12 +46,12 @@ if(APPLE)
 
     add_executable(
         firestr
-        MACOSX_BUNDLE
+        #MACOSX_BUNDLE
         ${src}
         ${moc_headers}
         ${moc_forms}
         ${moc_resources})
-    add_custom_command(TARGET firestr POST_BUILD
+    add_custom_command(TARGET firestr PRE_BUILD
         command mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/firestr.app/Contents/Resources
         command cp -p ${CMAKE_CURRENT_BINARY_DIR}/firestr.app/Contents/MacOS
         command cp *.qm ${CMAKE_CURRENT_BINARY_DIR}/firestr.app/Contents/Resources/)
@@ -67,6 +68,9 @@ if(APPLE)
         " COMPONENT Runtime)
 
     set(CPACK_BINARY_DRAGNDROP ON)
+    set(CPACK_BUNDLE_NAME Firestr)
+    set(CPACK_BUNDLE_PLIST ${CMAKE_SOURCE_DIR}/cmake/mac_bundle.plist.in)
+    set(CPACK_GENERATOR Bundle)
     include(CPack)
 
 else(APPLE)
