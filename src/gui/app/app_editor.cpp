@@ -319,8 +319,6 @@ namespace fire
 
                 //setup mail service
                 _mail_service = new mail_service{_mail, this};
-                qRegisterMetaType<fire::message::message>("fire::message::message");
-                connect(_mail_service, SIGNAL(got_mail(fire::message::message)), this, SLOT(check_mail(fire::message::message)));
                 _mail_service->start();
 
                 //setup update timer
