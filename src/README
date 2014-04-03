@@ -42,7 +42,7 @@ Dependency Graph
             ------------------     |         |
                  |         |       |         |
                  |  ------------------       |  
-                 |  |    session     |       | 
+                 |  |  conversation  |       | 
                  |  ------------------       |
                  |         |       |         |
                  |         |       |         |
@@ -74,7 +74,7 @@ service       - Library that simplifies the creation of threaded services.
 
 user          - Library that manages user and contact state and connectivity
 
-session       - Library that manages session state and connectivity between users
+conversation  - Library that manages conversation state and connectivity between users
 
 gui           - Various widgets which can be combined into an application
 
