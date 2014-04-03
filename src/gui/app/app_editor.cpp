@@ -135,7 +135,6 @@ namespace fire
 
             namespace
             {
-                const size_t TIMER_SLEEP = 50; //in milliseconds
                 const size_t TIMER_UPDATE = 1000; //in milliseconds
                 const size_t PADDING = 20;
                 const size_t MIN_EDIT_HEIGHT = 500;
@@ -231,6 +230,8 @@ namespace fire
             app_editor::~app_editor()
             {
                 INVARIANT(_conversation);
+                INVARIANT(_mail_service);
+                _mail_service->done();
             }
 
             void app_editor::init()
@@ -316,11 +317,13 @@ namespace fire
 
                 setMinimumHeight(layout()->sizeHint().height() + PADDING);
 
-                //setup message timer
-                auto *t = new QTimer(this);
-                connect(t, SIGNAL(timeout()), this, SLOT(check_mail()));
-                t->start(TIMER_SLEEP);
+                //setup mail service
+                _mail_service = new mail_service{_mail, this};
+                qRegisterMetaType<fire::message::message>("fire::message::message");
+                connect(_mail_service, SIGNAL(got_mail(fire::message::message)), this, SLOT(check_mail(fire::message::message)));
+                _mail_service->start();
 
+                //setup update timer
                 auto *t2 = new QTimer(this);
                 connect(t2, SIGNAL(timeout()), this, SLOT(update()));
                 t2->start(TIMER_UPDATE);
@@ -334,6 +337,7 @@ namespace fire
                 INVARIANT(_canvas_layout);
                 INVARIANT(_output);
                 INVARIANT(_status);
+                INVARIANT(_mail_service);
             }
 
             void app_editor::init_data()
@@ -683,59 +687,55 @@ namespace fire
                 _prev_pos = pos;
             }
 
-            void app_editor::check_mail() 
+            void app_editor::check_mail(m::message m) 
             try
             {
                 INVARIANT(_mail);
                 INVARIANT(_conversation);
 
-                m::message m;
-                while(_mail->pop_inbox(m))
+                if(m::is_remote(m)) m::expect_symmetric(m);
+                else m::expect_plaintext(m);
+
+                if(m.meta.type == SCRIPT_CODE_MESSAGE)
                 {
-                    if(m::is_remote(m)) m::expect_symmetric(m);
-                    else m::expect_plaintext(m);
+                    text_script t;
+                    convert(m, t);
 
-                    if(m.meta.type == SCRIPT_CODE_MESSAGE)
-                    {
-                        text_script t;
-                        convert(m, t);
+                    auto c = _contacts.by_id(t.from_id);
+                    if(!c) return;
 
-                        auto c = _contacts.by_id(t.from_id);
-                        if(!c) continue;
+                    auto code = gui::convert(_script->toPlainText());
+                    if(t.code == code && t.data.empty()) return;
 
-                        auto code = gui::convert(_script->toPlainText());
-                        if(t.code == code && t.data.empty()) continue;
+                    //update text
+                    auto pos = _script->textCursor().position();
+                    _script->setText(t.code.c_str());
 
-                        //update text
-                        auto pos = _script->textCursor().position();
-                        _script->setText(t.code.c_str());
+                    //update data
+                    u::dict data = u::decode<u::dict>(t.data);
+                    _app->data().import_from(data);
 
-                        //update data
-                        u::dict data = u::decode<u::dict>(t.data);
-                        _app->data().import_from(data);
+                    //put cursor back
+                    auto cursor = _script->textCursor();
+                    cursor.setPosition(pos);
+                    _script->setTextCursor(cursor);
 
-                        //put cursor back
-                        auto cursor = _script->textCursor();
-                        cursor.setPosition(pos);
-                        _script->setTextCursor(cursor);
+                    //update data ui
+                    init_data();
 
-                        //update data ui
-                        init_data();
-
-                        //run code
-                        _prev_code = t.code;
-                        _run_state = READY;
-                        run_script();
-                    }
-                    else if(m.meta.type == l::SCRIPT_MESSAGE)
-                    {
-                        l::script_message sm{m, _api.get()};
-                        _api->message_received(sm);
-                    }
-                    else
-                    {
-                        LOG << "app_editor received unknown message `" << m.meta.type << "'" << std::endl;
-                    }
+                    //run code
+                    _prev_code = t.code;
+                    _run_state = READY;
+                    run_script();
+                }
+                else if(m.meta.type == l::SCRIPT_MESSAGE)
+                {
+                    l::script_message sm{m, _api.get()};
+                    _api->message_received(sm);
+                }
+                else
+                {
+                    LOG << "app_editor received unknown message `" << m.meta.type << "'" << std::endl;
                 }
             }
             catch(std::exception& e)

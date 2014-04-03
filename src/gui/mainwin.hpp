@@ -21,6 +21,7 @@
 #include <QMainWindow>
 #include "gui/conversation.hpp"
 #include "gui/app/app_service.hpp"
+#include "gui/mail_service.hpp"
 #include "message/postoffice.hpp"
 #include "user/userservice.hpp"
 #include "conversation/conversation.hpp"
@@ -59,6 +60,7 @@ namespace fire
             Q_OBJECT
             public:
                 main_window(const main_window_context&);
+                ~main_window();
 
             private slots:
                 void about();
@@ -67,7 +69,7 @@ namespace fire
                 void make_chat_app();
                 void make_app_editor();
                 void closeEvent(QCloseEvent*);
-                void check_mail();
+                void check_mail(fire::message::message);
                 void create_conversation();
                 void create_conversation(QString id);
                 void rename_conversation();
@@ -139,6 +141,7 @@ namespace fire
                 QVBoxLayout* _layout;
 
             private:
+                mail_service* _mail_service;
                 fire::message::post_office_ptr _master;
                 fire::message::mailbox_ptr _mail;
                 fire::security::encrypted_channels_ptr _encrypted_channels;

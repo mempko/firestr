@@ -24,6 +24,7 @@
 #include "util/log.hpp"
 
 #include <QTimer>
+#include <QThread>
 
 #include <functional>
 
@@ -112,7 +113,9 @@ namespace fire
             {
                 INVARIANT(_app);
                 INVARIANT(_conversation);
+                INVARIANT(_mail_service);
 
+                _mail_service->done();
                 LOG << "closed app " << _app->name() << "(" << _app->id() << ")" << std::endl;
             }
 
@@ -144,11 +147,11 @@ namespace fire
 
                 setMinimumHeight(layout()->sizeHint().height() + PADDING);
 
-                //setup message timer
-                auto *t = new QTimer(this);
-                connect(t, SIGNAL(timeout()), this, SLOT(check_mail()));
-                t->start(TIMER_SLEEP);
-
+                //setup mail service
+                _mail_service = new mail_service{_mail, this};
+                qRegisterMetaType<fire::message::message>("fire::message::message");
+                connect(_mail_service, SIGNAL(got_mail(fire::message::message)), this, SLOT(check_mail(fire::message::message)));
+                _mail_service->start();
 
                 INVARIANT(_conversation);
                 INVARIANT(_mail);
@@ -173,30 +176,25 @@ namespace fire
                 return _mail;
             }
 
-            void script_app::check_mail() 
+            void script_app::check_mail(m::message m) 
             try
             {
-                INVARIANT(_mail);
                 INVARIANT(_conversation);
                 INVARIANT(_api);
 
-                m::message m;
-                while(_mail->pop_inbox(m))
+                if(m::is_remote(m)) m::expect_symmetric(m);
+                else m::expect_plaintext(m);
+
+                if(m.meta.type == l::SCRIPT_MESSAGE)
                 {
-                    if(m::is_remote(m)) m::expect_symmetric(m);
-                    else m::expect_plaintext(m);
+                    bool local = m.meta.extra.has("local_app_id");
+                    auto id = m.meta.extra["from_id"].as_string();
 
-                    if(m.meta.type == l::SCRIPT_MESSAGE)
-                    {
-                        bool local = m.meta.extra.has("local_app_id");
-                        auto id = m.meta.extra["from_id"].as_string();
+                    if(!local && !_conversation->user_service()->by_id(id)) 
+                        return;
 
-                        if(!local && !_conversation->user_service()->by_id(id)) 
-                            continue;
-
-                        l::script_message sm{m, _api.get()};
-                        _api->message_received(sm);
-                    }
+                    l::script_message sm{m, _api.get()};
+                    _api->message_received(sm);
                 }
             }
             catch(std::exception& e)
