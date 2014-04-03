@@ -40,9 +40,9 @@ namespace fire
     {
         namespace 
         {
-            const std::size_t UPDATE_GRAPH = 100;
+            const std::size_t UPDATE_GRAPH = 500;
             const std::size_t UPDATE_LOG = 1000;
-            const std::size_t UPDATE_MAILBOXES = 1000;
+            const std::size_t UPDATE_MAILBOXES = 5000;
             const std::size_t GRAPH_WIDTH = 500;
             const std::size_t GRAPH_STEP = 2;
         }
@@ -50,7 +50,6 @@ namespace fire
         void init_scene(QGraphicsView& v)
         {
             auto s = new QGraphicsScene;
-            //s->setSceneRect(v.visibleRegion().boundingRect());
             v.setScene(s);
             ENSURE(v.scene());
         }
