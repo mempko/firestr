@@ -107,6 +107,8 @@ namespace fire
             {
                 INVARIANT(_conversation_service);
                 INVARIANT(_conversation);
+                INVARIANT(_mail_service);
+                _mail_service->done();
             }
 
             void chat_app::init()
@@ -145,10 +147,11 @@ namespace fire
                     return;
                 }
 
-                //setup message timer
-                auto *t = new QTimer(this);
-                connect(t, SIGNAL(timeout()), this, SLOT(check_mail()));
-                t->start(TIMER_SLEEP);
+                //setup mail service
+                _mail_service = new mail_service{_mail, this};
+                qRegisterMetaType<fire::message::message>("fire::message::message");
+                connect(_mail_service, SIGNAL(got_mail(fire::message::message)), this, SLOT(check_mail(fire::message::message)));
+                _mail_service->start();
 
                 INVARIANT(_conversation);
                 INVARIANT(_mail);
@@ -200,35 +203,30 @@ namespace fire
                 if(!sent) _messages->add(make_message_widget("app", "nobody here..."));
             }
 
-            void chat_app::check_mail() 
+            void chat_app::check_mail(m::message m) 
             try
             {
-                INVARIANT(_mail);
                 INVARIANT(_conversation);
                 INVARIANT(_conversation_service);
 
-                m::message m;
-                while(_mail->pop_inbox(m))
+                if(m::is_remote(m)) m::expect_symmetric(m);
+                else m::expect_plaintext(m);
+
+                if(m.meta.type == MESSAGE)
                 {
-                    if(m::is_remote(m)) m::expect_symmetric(m);
-                    else m::expect_plaintext(m);
+                    text_message t;
+                    convert(m, t);
 
-                    if(m.meta.type == MESSAGE)
-                    {
-                        text_message t;
-                        convert(m, t);
+                    auto c = _conversation->contacts().by_id(t.from_id);
+                    if(!c) return;
 
-                        auto c = _conversation->contacts().by_id(t.from_id);
-                        if(!c) continue;
-
-                        _messages->add(make_message_widget(c->name(), t.text));
-                        _messages->verticalScrollBar()->scroll(0, _messages->verticalScrollBar()->maximum());
-                        _conversation_service->fire_conversation_alert(_conversation->id());
-                    }
-                    else
-                    {
-                        LOG << "chat sample received unknown message `" << m.meta.type << "'" << std::endl;
-                    }
+                    _messages->add(make_message_widget(c->name(), t.text));
+                    _messages->verticalScrollBar()->scroll(0, _messages->verticalScrollBar()->maximum());
+                    _conversation_service->fire_conversation_alert(_conversation->id());
+                }
+                else
+                {
+                    LOG << "chat sample received unknown message `" << m.meta.type << "'" << std::endl;
                 }
             }
             catch(std::exception& e)

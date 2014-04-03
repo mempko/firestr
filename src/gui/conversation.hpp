@@ -21,6 +21,7 @@
 #include "gui/messagelist.hpp"
 #include "gui/contactlist.hpp"
 #include "gui/contactselect.hpp"
+#include "gui/mail_service.hpp"
 #include "gui/app/app_service.hpp"
 #include "conversation/conversation.hpp"
 #include "conversation/conversation_service.hpp"
@@ -42,6 +43,7 @@ namespace fire
                         conversation::conversation_service_ptr, 
                         conversation::conversation_ptr,
                         app::app_service_ptr);
+                ~conversation_widget();
 
             public:
                 conversation::conversation_ptr conversation();
@@ -50,7 +52,7 @@ namespace fire
                 QString name() const;
 
             public slots:
-                void check_mail(); 
+                void check_mail(fire::message::message); 
                 void add(message*);
                 void add(QWidget*);
                 void add_contact();
@@ -58,6 +60,7 @@ namespace fire
                 void update_contact_select();
 
             private:
+                mail_service* _mail_service;
                 QGridLayout* _layout;
                 contact_select_widget* _contact_select;
                 QPushButton* _add_contact;

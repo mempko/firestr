@@ -20,6 +20,7 @@
 
 #include "gui/list.hpp"
 #include "gui/message.hpp"
+#include "gui/mail_service.hpp"
 #include "conversation/conversation_service.hpp"
 #include "message/mailbox.hpp"
 #include "messages/sender.hpp"
@@ -93,7 +94,7 @@ namespace fire
                     bool run_script();
                     void send_script();
                     void save_app();
-                    void check_mail();
+                    void check_mail(fire::message::message);
                     void update();
                     void add_data();
                     void load_data_from_file();
@@ -115,6 +116,7 @@ namespace fire
                 private:
                     std::string _from_id;
                     std::string _id;
+                    mail_service* _mail_service;
                     app_service_ptr _app_service;
                     conversation::conversation_service_ptr _conversation_service;
                     conversation::conversation_ptr _conversation;
