@@ -29,7 +29,11 @@ namespace fire
         {
             Q_OBJECT
             public:
-                mail_service(fire::message::mailbox_ptr, QObject* parent = nullptr);
+                /**
+                 * The parent QObject must have a slot of the type
+                 * void check_mail(fire::message::message)
+                 */
+                mail_service(fire::message::mailbox_ptr, QObject* parent);
                 ~mail_service();
             public:
                 void done();

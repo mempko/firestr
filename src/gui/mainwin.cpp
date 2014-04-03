@@ -410,8 +410,6 @@ namespace fire
         {
             INVARIANT(_mail);
             _mail_service = new mail_service{_mail, this};
-            qRegisterMetaType<m::message>("fire::message::message");
-            connect(_mail_service, SIGNAL(got_mail(fire::message::message)), this, SLOT(check_mail(fire::message::message)));
             _mail_service->start();
             ENSURE(_mail_service);
         }

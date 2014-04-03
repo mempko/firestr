@@ -31,9 +31,13 @@ namespace fire
             _mail{m},
             _done{false}
         {
+            REQUIRE(parent);
             REQUIRE(m);
             ENSURE(_mail);
+            qRegisterMetaType<m::message>("fire::message::message");
+            connect(this, SIGNAL(got_mail(fire::message::message)), parent, SLOT(check_mail(fire::message::message)));
         }
+
         mail_service::~mail_service()
         {
             LOG << "closing mail service " << _mail->address() << std::endl;
