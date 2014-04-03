@@ -927,7 +927,7 @@ namespace fire
                 ref.callback = callback;
 
                 //create timer 
-                auto t = new QTimer;
+                auto t = new QTimer{canvas};
 
                 //map timer to C++ callback
                 auto timer_mapper = new QSignalMapper{canvas};
