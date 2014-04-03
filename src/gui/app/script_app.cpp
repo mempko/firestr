@@ -24,7 +24,6 @@
 #include "util/log.hpp"
 
 #include <QTimer>
-#include <QThread>
 
 #include <functional>
 

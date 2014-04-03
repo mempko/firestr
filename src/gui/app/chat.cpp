@@ -24,8 +24,6 @@
 #include "util/time.hpp"
 #include "util/uuid.hpp"
 
-#include <QTimer>
-
 namespace m = fire::message;
 namespace ms = fire::messages;
 namespace us = fire::user;
