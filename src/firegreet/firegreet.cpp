@@ -308,7 +308,7 @@ int main(int argc, char *argv[])
     auto pkey = load_private_key(key, pass);
     CHECK(pkey);
 
-    n::connection_manager con{POOL_SIZE, port};
+    n::connection_manager con{POOL_SIZE, static_cast<n::port_type>(port)};
     sc::encrypted_channels sec{*pkey};
     user_info_map users;
 
