@@ -71,7 +71,7 @@ namespace fire
             {
                 Q_OBJECT
                 public:
-                    app_text_editor(lua::lua_api_ptr);
+                    app_text_editor(lua::lua_api*);
 
                 protected:
                     void keyPressEvent(QKeyEvent*);
@@ -90,7 +90,7 @@ namespace fire
 
                 private:
                     QCompleter* _c;
-                    lua::lua_api_ptr _api;
+                    lua::lua_api* _api;
             };
 
             class app_editor : public message
