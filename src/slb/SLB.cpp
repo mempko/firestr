@@ -884,6 +884,7 @@ namespace SLB {
     ci->setObject__newindex( FuncCall::create(object__newindex) );
     ci->setHybrid();
   }
+
   const HybridBase* get_hybrid(lua_State *L, int pos)
   {
     SLB_DEBUG_CALL;
@@ -1931,12 +1932,21 @@ namespace SLB {
       _elements[name] = obj;
     }
   }
+
   Object* Table::get(const String &name)
   {
     SLB_DEBUG_CALL;
     TableFind t = getTable(name, false);
     if (t.first != 0) return t.first->rawGet(t.second);
     return 0;
+  }
+
+  Table::Keys Table::getKeys()
+  {
+      Keys ks;
+      for(Elements::const_iterator i = _elements.begin(); i != _elements.end(); i++)
+          ks.insert(i->first);
+      return ks;
   }
   void Table::erase(const String &name)
   {

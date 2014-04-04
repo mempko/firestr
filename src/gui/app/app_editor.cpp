@@ -52,13 +52,17 @@ namespace fire
 
             const u::string_vect API_KEYWORDS{
                 "add",
-                "remove",
-                "size",
+                "alert",
+                "append",
                 "button",
                 "callback",
+                "circle",
+                "clear",
                 "clear",
                 "contact",
+                "data",
                 "disable",
+                "draw",
                 "edit",
                 "edited_callback",
                 "enable",
@@ -66,68 +70,64 @@ namespace fire
                 "finished_callback",
                 "from",
                 "get",
+                "get_bin",
+                "get_pen",
+                "good",
+                "grid",
+                "grow",
+                "height",
+                "i_started",
+                "id",
+                "image",
+                "interval",
+                "is_local",
                 "label",
                 "last_contact",
+                "line",
                 "list",
                 "message",
                 "name",
                 "online",
+                "open_bin_file",
+                "open_file",
+                "pen",
                 "place",
                 "place_across",
                 "print",
+                "remove",
+                "running",
+                "save_bin_file",
+                "save_file",
+                "self",
                 "send",
+                "send_local",
                 "send_to",
                 "set",
-                "set_text",
-                "text",
+                "set_bin",
                 "set_image",
+                "set_text",
+                "size",
+                "start",
+                "stop",
+                "store",
+                "str",
+                "sub",
+                "text",
                 "text_edit",
+                "timer",
                 "total_contacts",
                 "when_clicked",
                 "when_edited",
                 "when_finished",
+                "when_local_message_received",
                 "when_message_received",
-                "draw",
-                "line",
-                "circle",
+                "when_mouse_dragged",
                 "when_mouse_moved",
                 "when_mouse_pressed",
                 "when_mouse_released",
-                "when_mouse_dragged",
-                "clear",
-                "pen",
-                "get_pen",
-                "when_local_message_received",
-                "is_local",
-                "send_local",
-                "timer",
-                "interval",
-                "stop",
-                "start",
-                "running",
                 "when_triggered",
-                "save_file",
-                "save_bin_file",
-                "open_file",
-                "open_bin_file",
-                "id",
-                "str",
-                "get_bin",
-                "set_bin",
-                "sub",
-                "append",
-                "grow",
-                "width",
-                "height",
-                "grid",
-                "alert",
-                "good",
-                "image",
-                "data",
-                "store",
-                "i_started",
                 "who_started",
-                "self"
+                "width",
             };
 
             const std::string LUA_NUMBERS = "[0-9\\.]+";
@@ -297,13 +297,14 @@ namespace fire
                 _api = std::make_shared<l::lua_api>(_app, _contacts, _sender, _conversation, _conversation_service, _canvas, _canvas_layout, _output);
 
                 //text edit
-                _script = new QTextEdit;
+                _script = new app_text_editor{_api};
                 _script->setMinimumHeight(MIN_EDIT_HEIGHT);
                 _script->setWordWrapMode(QTextOption::NoWrap);
                 _script->setTabStopWidth(40);
                 _highlighter = new lua_highlighter(_script->document());
 
                 _script->setPlainText(_app->code().c_str());
+                connect(_script, SIGNAL(keyPressed(QKeyEvent*)), this, SLOT(text_typed(QKeyEvent*)));
                 l->addWidget(_script, 2, 0, 1, 2);
 
                 //add status bar
@@ -490,7 +491,182 @@ namespace fire
                 return _mail;
             }
 
-            void app_editor::send_script()
+
+
+            app_text_editor::app_text_editor(lua::lua_api_ptr api) : _api{api}
+            {
+                REQUIRE(api);
+
+                _c = new QCompleter;
+                _c->setModel(new QStringListModel{this});
+                _c->setWidget(this);
+                _c->setCompletionMode(QCompleter::PopupCompletion);
+                _c->setModelSorting(QCompleter::CaseInsensitivelySortedModel);
+                _c->setCaseSensitivity(Qt::CaseInsensitive);
+                _c->setWrapAround(false);
+                connect(_c, SIGNAL(activated(QString)), this, SLOT(insert_completion(QString)));
+
+                REQUIRE(_api);
+                REQUIRE(_c);
+            }
+
+            QStringList app_text_editor::auto_complete_list(const std::string& obj)
+            {
+                INVARIANT(_api);
+                INVARIANT(_api->state);
+                QStringList r;
+
+                //auto complete list based on global object methods
+                if(!obj.empty())
+                    for(const auto& k : _api->state->getKeys(obj.c_str()))
+                        r << k.c_str(); 
+
+                //if it is empty, then auto complete list is all api keywords
+                if(r.isEmpty())
+                    for(const auto& kw : API_KEYWORDS)
+                        r << kw.c_str();
+
+                return r;
+            }
+
+            QString app_text_editor::object_left_of_cursor() const
+            {
+                auto c = textCursor();
+                c.movePosition(QTextCursor::WordLeft, QTextCursor::KeepAnchor);
+                if(c.selectedText() == ":" )
+                {
+                    c.setPosition(c.position());
+                    c.movePosition(QTextCursor::WordLeft, QTextCursor::KeepAnchor);
+                } 
+                else
+                {
+                    c.movePosition(QTextCursor::WordLeft);
+                    c.movePosition(QTextCursor::WordLeft, QTextCursor::KeepAnchor);
+                }
+
+                return c.selectedText();
+            }
+
+            QString app_text_editor::char_left_of_word() const
+            {
+                auto c = textCursor();
+                c.movePosition(QTextCursor::WordLeft, QTextCursor::KeepAnchor);
+                if(c.selectedText() == ":" ) return ":";
+                c.setPosition(c.position());
+                c.movePosition(QTextCursor::Left, QTextCursor::KeepAnchor);
+                return c.selectedText();
+            }
+
+            QString app_text_editor::word_under_cursor() const
+            {
+                auto c = textCursor();
+                c.select(QTextCursor::WordUnderCursor);
+                return c.selectedText();
+            }
+
+            void app_text_editor::insert_completion(const QString& t)
+            {
+                INVARIANT(_c);
+                auto c = textCursor();
+                
+                //figure out diff, move to end of current word and insert remainder
+                auto diff = t.length() - _c->completionPrefix().length();
+                c.movePosition(QTextCursor::Left);
+                c.movePosition(QTextCursor::EndOfWord);
+                c.insertText(t.right(diff));
+
+                setTextCursor(c);
+
+                emit keyPressed(nullptr);
+            }
+
+            //This code was borrowed from the QT TextEdit custom completer example
+            //http://qt-project.org/doc/qt-4.8/tools-customcompleter.html
+            void app_text_editor::keyPressEvent(QKeyEvent* e)
+            {
+                INVARIANT(_c);
+                if(!e) return;
+                if (_c->popup()->isVisible()) 
+                {
+                    //let popup handle enter, tab, return, etc
+                    switch (e->key()) 
+                    {
+                        case Qt::Key_Enter:
+                        case Qt::Key_Return:
+                        case Qt::Key_Escape:
+                        case Qt::Key_Tab:
+                        case Qt::Key_Backtab: e->ignore(); return; 
+                        default: break;
+                    }
+                }
+
+                bool shortcut = ((e->modifiers() & Qt::ControlModifier) && e->key() == Qt::Key_E);
+                bool ctr_shift = e->modifiers() & (Qt::ControlModifier | Qt::ShiftModifier);
+                bool emit_e = false;
+
+                if(!shortcut) 
+                {
+                    QTextEdit::keyPressEvent(e);
+                    emit_e = true;
+                }
+
+                if(ctr_shift && e->text().isEmpty()) 
+                {
+                    if(emit_e) emit keyPressed(e);
+                    return;
+                }
+
+                static const QString EOW{"~!@#$%^&*()+{}|:\"<>?,./;'[]\\-="};
+                bool modifier = (e->modifiers() != Qt::NoModifier) && !ctr_shift;
+                auto left_char = char_left_of_word();
+                auto object = object_left_of_cursor();
+                auto prefix = word_under_cursor();
+                bool colon = left_char == ":";
+
+                auto model = dynamic_cast<QStringListModel*>(_c->model());
+                CHECK(model);
+
+                //set auto complete list to list based on all global object, 
+                //or all api keywords
+                model->setStringList(auto_complete_list(gui::convert(object)));
+
+                //hide popup if
+                // 1. is not shortcut and
+                // 2. left char of word is not a colon or 
+                // 3. modifier or
+                // 4. char is EOW character
+                if (!shortcut && (
+                            !colon
+                            || modifier 
+                            || (!prefix.isEmpty() && EOW.contains(e->text().right(1))))) 
+                {
+                    _c->popup()->hide();
+                    return;
+                }
+
+                if (prefix != _c->completionPrefix()) 
+                {
+                    _c->setCompletionPrefix(prefix);
+                    _c->popup()->setCurrentIndex(_c->completionModel()->index(0, 0));
+                }
+
+                QRect cr = cursorRect();
+                cr.setWidth(_c->popup()->sizeHintForColumn(0)
+                        + _c->popup()->verticalScrollBar()->sizeHint().width());
+
+                _c->complete(cr); 
+                    
+                if(emit_e) emit keyPressed(e);
+            }
+
+            void app_editor::text_typed(QKeyEvent* e)
+            {
+                INVARIANT(_script);
+                //TODO make more interactive by sending events instead of whole script
+                //send_script(false);
+            }
+
+            void app_editor::send_script(bool send_data)
             {
                 INVARIANT(_script);
                 INVARIANT(_conversation);
@@ -505,9 +681,12 @@ namespace fire
                 tm.code = code;
 
                 //export the data
-                u::dict data;
-                _app->data().export_to(data);
-                tm.data = u::encode(data);
+                if(send_data)
+                {
+                    u::dict data;
+                    _app->data().export_to(data);
+                    tm.data = u::encode(data);
+                }
 
                 //send it all
                 for(auto c : _contacts.list())
@@ -551,7 +730,7 @@ namespace fire
                     int line = e.line - 2;
                     if(line < 0) line = 0;
                     QTextEdit::ExtraSelection h;
-                    QTextCursor c = _script->textCursor();
+                    auto c = _script->textCursor();
                     c.movePosition(QTextCursor::Start);
                     c.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, line); 
                     h.cursor = c;
@@ -709,22 +888,25 @@ namespace fire
                     auto pos = _script->textCursor().position();
                     _script->setText(t.code.c_str());
 
-                    //update data
-                    u::dict data = u::decode<u::dict>(t.data);
-                    _app->data().import_from(data);
-
                     //put cursor back
                     auto cursor = _script->textCursor();
                     cursor.setPosition(pos);
                     _script->setTextCursor(cursor);
 
-                    //update data ui
-                    init_data();
+                    //update data
+                    bool data_changed = !t.data.empty();
+                    if(data_changed)
+                    {
+                        u::dict data = u::decode<u::dict>(t.data);
+                        _app->data().import_from(data);
 
-                    //run code
-                    _prev_code = t.code;
-                    _run_state = READY;
-                    run_script();
+                        //update data ui
+                        init_data();
+
+                        _prev_code = t.code;
+                        _run_state = READY;
+                        run_script();
+                    }
                 }
                 else if(m.meta.type == l::SCRIPT_MESSAGE)
                 {

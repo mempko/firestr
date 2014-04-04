@@ -344,10 +344,10 @@ namespace fire
                 {
                     for(auto& w : l)
                     {
-                        if(!w.second || w.second->parentWidget() != nullptr)
+                        if(w.second == nullptr || w.second->parentWidget() != nullptr)
                             continue;
                         delete w.second;
-                        w.second = 0;
+                        w.second = nullptr;
                     }
                 }
 
@@ -371,11 +371,18 @@ namespace fire
 
                 for(auto& t : timers)
                 {
-                    if(t.second) 
+                    if(t.second == nullptr)
+                        continue;
+
+                    if( t.second->parent() != nullptr) 
                     {
                         t.second->stop();
-                        delete t.second;
+                        continue;
                     }
+
+                    t.second->stop();
+                    delete t.second;
+                    t.second = nullptr;
                 }
 
                 if(output) output->clear();
