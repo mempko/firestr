@@ -40,7 +40,6 @@ namespace fire
 
         mail_service::~mail_service()
         {
-            LOG << "closing mail service " << _mail->address() << std::endl;
             done();
         }
 

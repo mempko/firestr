@@ -344,7 +344,7 @@ namespace fire
             _contact_menu = new QMenu{tr("&Contacts"), this};
             _contact_menu->addAction(_contact_list_action);
 
-            _conversation_menu = new QMenu{tr("&Conversation"), this};
+            _conversation_menu = new QMenu{tr("C&onversation"), this};
             _conversation_menu->addAction(_create_conversation_action);
             _conversation_menu->addAction(_rename_conversation_action);
             _conversation_menu->addAction(_quit_conversation_action);
