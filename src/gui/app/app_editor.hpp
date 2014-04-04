@@ -31,6 +31,7 @@
 #include <QLabel>
 #include <QTextEdit>
 #include <QPushButton>
+#include <QCompleter>
 #include <QComboBox>
 #include <QSignalMapper>
 #include <QSyntaxHighlighter>
@@ -66,6 +67,32 @@ namespace fire
                     highlight_rules _rules;
             };
 
+            class app_text_editor : public QTextEdit
+            {
+                Q_OBJECT
+                public:
+                    app_text_editor(lua::lua_api_ptr);
+
+                protected:
+                    void keyPressEvent(QKeyEvent*);
+
+                signals:
+                    void keyPressed(QKeyEvent* e);
+
+                public slots:
+                    void insert_completion(const QString&);
+
+                private:
+                    QString word_under_cursor() const;
+                    QString char_left_of_word() const;
+                    QString object_left_of_cursor() const;
+                    QStringList auto_complete_list(const std::string& obj);
+
+                private:
+                    QCompleter* _c;
+                    lua::lua_api_ptr _api;
+            };
+
             class app_editor : public message
             {
                 Q_OBJECT
@@ -92,7 +119,8 @@ namespace fire
 
                 public slots:
                     bool run_script();
-                    void send_script();
+                    void send_script(bool send_data = true);
+                    void text_typed(QKeyEvent*);
                     void save_app();
                     void check_mail(fire::message::message);
                     void update();
@@ -125,7 +153,7 @@ namespace fire
                     user::contact_list _contacts;
 
                     //code tab
-                    QTextEdit* _script;
+                    app_text_editor* _script;
                     lua_highlighter* _highlighter;
                     QPushButton* _save;
                     QWidget* _canvas;
