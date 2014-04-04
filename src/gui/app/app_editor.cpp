@@ -294,7 +294,15 @@ namespace fire
                 l->addWidget(_canvas, 0, 0, 1, 2);
                 l->addWidget(_output, 1, 0, 1, 2);
 
-                _api = std::make_shared<l::lua_api>(_app, _contacts, _sender, _conversation, _conversation_service, _canvas, _canvas_layout, _output);
+                _api = std::make_shared<l::lua_api>(
+                        _app, 
+                        _contacts, 
+                        _sender, 
+                        _conversation, 
+                        _conversation_service, 
+                        _canvas, 
+                        _canvas_layout, 
+                        _output);
 
                 //text edit
                 _script = new app_text_editor{_api.get()};
