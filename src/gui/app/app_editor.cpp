@@ -297,7 +297,7 @@ namespace fire
                 _api = std::make_shared<l::lua_api>(_app, _contacts, _sender, _conversation, _conversation_service, _canvas, _canvas_layout, _output);
 
                 //text edit
-                _script = new app_text_editor{_api};
+                _script = new app_text_editor{_api.get()};
                 _script->setMinimumHeight(MIN_EDIT_HEIGHT);
                 _script->setWordWrapMode(QTextOption::NoWrap);
                 _script->setTabStopWidth(40);
@@ -493,7 +493,7 @@ namespace fire
 
 
 
-            app_text_editor::app_text_editor(lua::lua_api_ptr api) : _api{api}
+            app_text_editor::app_text_editor(lua::lua_api* api) : _api{api}
             {
                 REQUIRE(api);
 

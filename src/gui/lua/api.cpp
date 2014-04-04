@@ -351,6 +351,19 @@ namespace fire
                     }
                 }
 
+            void delete_timers(timer_map& timers)
+            {
+                for(auto& t : timers)
+                {
+                    if(t.second == nullptr)
+                        continue;
+
+                    t.second->stop();
+                    delete t.second;
+                    t.second = nullptr;
+                }
+            }
+
             void lua_api::reset_widgets()
             {
                 INVARIANT(layout);
@@ -358,32 +371,19 @@ namespace fire
 
                 //delete widgets without parent
                 delete_loose_widgets(widgets);
+                delete_timers(timers);
 
                 //clear widgets
-                QLayoutItem *c = 0;
-                while((c = layout->takeAt(0)) != 0)
+                QLayoutItem *c = nullptr;
+
+                while((c = layout->takeAt(0)) != nullptr)
                 {
-                    if(!c || !c->widget()) continue;
+                    if(!c || !c->widget()) 
+                        continue;
 
                     delete c->widget();
                     delete c;
                 } 
-
-                for(auto& t : timers)
-                {
-                    if(t.second == nullptr)
-                        continue;
-
-                    if( t.second->parent() != nullptr) 
-                    {
-                        t.second->stop();
-                        continue;
-                    }
-
-                    t.second->stop();
-                    delete t.second;
-                    t.second = nullptr;
-                }
 
                 if(output) output->clear();
                 button_refs.clear();
@@ -934,7 +934,7 @@ namespace fire
                 ref.callback = callback;
 
                 //create timer 
-                auto t = new QTimer{canvas};
+                auto t = new QTimer;
 
                 //map timer to C++ callback
                 auto timer_mapper = new QSignalMapper{canvas};
