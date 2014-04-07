@@ -355,9 +355,7 @@ namespace fire
             {
                 for(auto& t : timers)
                 {
-                    if(t.second == nullptr)
-                        continue;
-
+                    if(t.second == nullptr) continue;
                     t.second->stop();
                     delete t.second;
                     t.second = nullptr;
@@ -378,10 +376,8 @@ namespace fire
 
                 while((c = layout->takeAt(0)) != nullptr)
                 {
-                    if(!c || !c->widget()) 
-                        continue;
-
-                    delete c->widget();
+                    if(!c) continue;
+                    if(c->widget()) delete c->widget();
                     delete c;
                 } 
 
