@@ -709,6 +709,7 @@ namespace fire
                 INVARIANT(_script);
                 INVARIANT(_conversation);
                 INVARIANT(_api);
+                INVARIANT(_output);
 
                 //get the code
                 auto code = gui::convert(_script->toPlainText());
