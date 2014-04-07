@@ -383,6 +383,11 @@ namespace fire
                     if(lua_isnumber(L, -1)) v = lua_tonumber(L, -1);
                     else if(lua_isstring(L, -1)) v = std::string{lua_tostring(L, -1)};
                     else if(lua_istable(L, -1)) v = to_dict(L, lua_gettop(L));
+                    else 
+                    {
+                        lua_pop(L, 1);
+                        continue;
+                    }
 
                     //insert to dict
                     if(ik != -1)

@@ -20,6 +20,7 @@
 
 #ifndef Q_MOC_RUN
 #include "gui/list.hpp"
+#include "gui/mail_service.hpp"
 #include "gui/message.hpp"
 #include "conversation/conversation_service.hpp"
 #include "message/mailbox.hpp"
@@ -61,13 +62,14 @@ namespace fire
 
                 public slots:
                     void send_message();
-                    void check_mail();
+                    void check_mail(fire::message::message);
 
                 private:
                     void init();
 
                 private:
                     std::string _id;
+                    mail_service* _mail_service;
                     conversation::conversation_service_ptr _conversation_service;
                     conversation::conversation_ptr _conversation;
                     fire::message::mailbox_ptr _mail;

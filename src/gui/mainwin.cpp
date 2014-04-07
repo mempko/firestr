@@ -20,10 +20,11 @@
 #include "gui/app/app_editor.hpp"
 #include "gui/app/script_app.hpp"
 
+
 #include "gui/contactlist.hpp"
+#include "gui/conversation.hpp"
 #include "gui/debugwin.hpp"
 #include "gui/message.hpp"
-#include "gui/conversation.hpp"
 #include "gui/util.hpp"
 
 #include "network/message_queue.hpp"
@@ -62,7 +63,6 @@ namespace fire
             const std::string NEW_APP_S = "<new app>";
             const std::string GUI_MAIL = "gui";
             const QString NEW_CONVERSATION_NAME = "new"; 
-            const size_t TIMER_SLEEP = 100; //in milliseconds
         }
 
         main_window::main_window(const main_window_context& c) :
@@ -98,6 +98,12 @@ namespace fire
 
             INVARIANT(_master);
             INVARIANT(_main_menu);
+        }
+
+        main_window::~main_window()
+        {
+            INVARIANT(_mail_service);
+            _mail_service->done();
         }
 
         void main_window::save_state()
@@ -338,7 +344,7 @@ namespace fire
             _contact_menu = new QMenu{tr("&Contacts"), this};
             _contact_menu->addAction(_contact_list_action);
 
-            _conversation_menu = new QMenu{tr("&Conversation"), this};
+            _conversation_menu = new QMenu{tr("C&onversation"), this};
             _conversation_menu->addAction(_create_conversation_action);
             _conversation_menu->addAction(_rename_conversation_action);
             _conversation_menu->addAction(_quit_conversation_action);
@@ -402,11 +408,10 @@ namespace fire
 
         void main_window::setup_timers()
         {
-            //setup message timer
-            //to get gui messages
-            auto *t = new QTimer(this);
-            connect(t, SIGNAL(timeout()), this, SLOT(check_mail()));
-            t->start(TIMER_SLEEP);
+            INVARIANT(_mail);
+            _mail_service = new mail_service{_mail, this};
+            _mail_service->start();
+            ENSURE(_mail_service);
         }
 
         void main_window::create_actions()
@@ -646,88 +651,75 @@ namespace fire
                         "<p>This program is created by <b>Maxim Noah Khailo</b> and is licensed as GPLv3</p>"));
         }
 
-        void main_window::check_mail()
+        void main_window::check_mail(m::message m)
         try
         {
             INVARIANT(_mail);
 
-            m::message m;
-            while(_mail->pop_inbox(m))
-            try
+            if(m.meta.type == s::event::NEW_CONVERSATION)
             {
-                if(m.meta.type == s::event::NEW_CONVERSATION)
-                {
-                    s::event::new_conversation r;
-                    s::event::convert(m, r);
+                s::event::new_conversation r;
+                s::event::convert(m, r);
 
-                    new_conversation_event(r.conversation_id);
-                }
-                else if(m.meta.type == s::event::QUIT_CONVERSATION)
-                {
-                    s::event::quit_conversation r;
-                    s::event::convert(m, r);
+                new_conversation_event(r.conversation_id);
+            }
+            else if(m.meta.type == s::event::QUIT_CONVERSATION)
+            {
+                s::event::quit_conversation r;
+                s::event::convert(m, r);
 
-                    quit_conversation_event(r.conversation_id);
-                }
-                else if(m.meta.type == s::event::CONVERSATION_SYNCED)
-                {
-                    conversation_synced_event(m);
-                }
-                else if(m.meta.type == s::event::CONTACT_REMOVED || m.meta.type == s::event::CONTACT_ADDED)
-                {
-                    contact_removed_or_added_from_conversation_event(m);
-                }
-                else if(m.meta.type == s::event::CONVERSATION_ALERT)
-                {
-                    s::event::conversation_alert e;
-                    s::event::convert(m, e);
-                    conversation_alert_event(e);
-                }
-                else if(m.meta.type == us::event::CONTACT_CONNECTED)
-                {
-                    us::event::contact_connected r;
-                    us::event::convert(m, r);
-                    contact_connected_event(r);
-                }
-                else if(m.meta.type == us::event::CONTACT_DISCONNECTED)
-                {
-                    us::event::contact_disconnected r;
-                    us::event::convert(m, r);
-                    contact_disconnected_event(r);
-                }
-                else if(m.meta.type == us::event::NEW_INTRODUCTION)
-                {
-                    us::event::new_introduction n;
-                    us::event::convert(m, n);
-                    new_intro_event(n);
-                }
-                else if(m.meta.type == a::event::APPS_UPDATED)
-                {
-                    a::event::apps_updated r;
-                    a::event::convert(m, r);
-                    apps_updated_event(r);
-                }
-                else
-                {
-                    throw std::runtime_error(m.meta.type + " is an unknown message type.");
-                }
+                quit_conversation_event(r.conversation_id);
             }
-            catch(std::exception& e)
+            else if(m.meta.type == s::event::CONVERSATION_SYNCED)
             {
-                LOG << "Error recieving message in `" << _mail->address() << "'. " << e.what() << std::endl;
+                conversation_synced_event(m);
             }
-            catch(...)
+            else if(m.meta.type == s::event::CONTACT_REMOVED || m.meta.type == s::event::CONTACT_ADDED)
             {
-                LOG << "Unexpected error recieving message in `" << _mail->address() << "'" << std::endl;
+                contact_removed_or_added_from_conversation_event(m);
+            }
+            else if(m.meta.type == s::event::CONVERSATION_ALERT)
+            {
+                s::event::conversation_alert e;
+                s::event::convert(m, e);
+                conversation_alert_event(e);
+            }
+            else if(m.meta.type == us::event::CONTACT_CONNECTED)
+            {
+                us::event::contact_connected r;
+                us::event::convert(m, r);
+                contact_connected_event(r);
+            }
+            else if(m.meta.type == us::event::CONTACT_DISCONNECTED)
+            {
+                us::event::contact_disconnected r;
+                us::event::convert(m, r);
+                contact_disconnected_event(r);
+            }
+            else if(m.meta.type == us::event::NEW_INTRODUCTION)
+            {
+                us::event::new_introduction n;
+                us::event::convert(m, n);
+                new_intro_event(n);
+            }
+            else if(m.meta.type == a::event::APPS_UPDATED)
+            {
+                a::event::apps_updated r;
+                a::event::convert(m, r);
+                apps_updated_event(r);
+            }
+            else
+            {
+                throw std::runtime_error(m.meta.type + " is an unknown message type.");
             }
         }
         catch(std::exception& e)
         {
-            LOG << "main_window: error in check_mail. " << e.what() << std::endl;
+            LOG << "Error recieving message in `" << _mail->address() << "'. " << e.what() << std::endl;
         }
         catch(...)
         {
-            LOG << "main_window: unexpected error in check_mail." << std::endl;
+            LOG << "Unexpected error recieving message in `" << _mail->address() << "'" << std::endl;
         }
 
         void main_window::tab_changed(int i)

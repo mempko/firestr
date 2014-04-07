@@ -19,14 +19,17 @@
 #define FIRESTR_APP_SCRIPT_APP_H
 
 #ifndef Q_MOC_RUN
-#include "gui/list.hpp"
-#include "gui/message.hpp"
+#include "gui/app/app.hpp"
 #include "gui/app/app_service.hpp"
+#include "gui/list.hpp"
+#include "gui/lua/api.hpp"
+#include "gui/mail_service.hpp"
+#include "gui/message.hpp"
+
 #include "conversation/conversation_service.hpp"
+
 #include "message/mailbox.hpp"
 #include "messages/sender.hpp"
-#include "gui/lua/api.hpp"
-#include "gui/app/app.hpp"
 #endif
 
 #include <QObject>
@@ -69,7 +72,7 @@ namespace fire
                     fire::message::mailbox_ptr mail();
 
                 public slots:
-                    void check_mail();
+                    void check_mail(fire::message::message);
                     void clone_app();
 
                 private:
@@ -88,6 +91,7 @@ namespace fire
                     app_service_ptr _app_service;
 
                 private:
+                    mail_service* _mail_service;
                     lua::lua_api_ptr _api;
                     QWidget* _canvas;
                     QGridLayout* _canvas_layout;

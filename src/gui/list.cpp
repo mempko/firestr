@@ -33,7 +33,8 @@ namespace fire
         {
             REQUIRE(l);
             REQUIRE(l->widget());
-            delete l->widget();
+            if(l == nullptr) return;
+            if(l->widget()) delete l->widget();
             delete l;
         }
 

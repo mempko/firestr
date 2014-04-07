@@ -36,7 +36,6 @@ namespace fire
     {
         namespace 
         {
-            const size_t TIMER_SLEEP = 200;//in milliseconds
             const size_t ADD_CONTACT_WIDTH = 10;
         }
 
@@ -82,15 +81,21 @@ namespace fire
             _layout->setContentsMargins(0,0,0,0);
 
             //setup mail timer
-            auto *t2 = new QTimer(this);
-            connect(t2, SIGNAL(timeout()), this, SLOT(check_mail()));
-            t2->start(TIMER_SLEEP);
+            _mail_service = new mail_service{_conversation->mail(), this};
+            _mail_service->start();
 
             INVARIANT(_conversation_service);
             INVARIANT(_conversation);
             INVARIANT(_messages);
             INVARIANT(_layout);
             INVARIANT(_app_service);
+            INVARIANT(_mail_service);
+        }
+
+        conversation_widget::~conversation_widget()
+        {
+            INVARIANT(_mail_service);
+            _mail_service->done();
         }
         
         void conversation_widget::update_contact_select()
@@ -171,7 +176,7 @@ namespace fire
             return _name;
         }
 
-        void conversation_widget::check_mail()
+        void conversation_widget::check_mail(m::message m)
         try
         {
             INVARIANT(_messages);
@@ -180,84 +185,80 @@ namespace fire
             INVARIANT(_conversation_service->user_service());
             INVARIANT(_conversation->mail());
 
-            m::message m;
-            while(_conversation->mail()->pop_inbox(m))
+            if(m.meta.type == ms::NEW_APP)
             {
-                if(m.meta.type == ms::NEW_APP)
-                {
-                    m::expect_remote(m);
-                    m::expect_symmetric(m);
+                m::expect_remote(m);
+                m::expect_symmetric(m);
 
-                    auto id = _messages->add_new_app(m);
-                    _conversation->add_app_id(id);
-                    _conversation_service->fire_conversation_alert(_conversation->id());
-                }
-                else if(m.meta.type == s::event::CONVERSATION_SYNCED)
-                {
-                    m::expect_local(m);
+                auto id = _messages->add_new_app(m);
+                _conversation->add_app_id(id);
+                _conversation_service->fire_conversation_alert(_conversation->id());
+            }
+            else if(m.meta.type == s::event::CONVERSATION_SYNCED)
+            {
+                m::expect_local(m);
 
-                    update_contacts();
-                    _conversation_service->fire_conversation_alert(_conversation->id());
-                }
-                else if(m.meta.type == s::event::CONTACT_REMOVED)
-                {
-                    m::expect_local(m);
+                update_contacts();
+                _conversation_service->fire_conversation_alert(_conversation->id());
+            }
+            else if(m.meta.type == s::event::CONTACT_REMOVED)
+            {
+                m::expect_local(m);
 
-                    s::event::contact_removed r;
-                    s::event::convert(m, r);
+                s::event::contact_removed r;
+                s::event::convert(m, r);
 
-                    if(r.conversation_id != _conversation->id()) continue;
+                if(r.conversation_id != _conversation->id()) return;
 
-                    auto c = _conversation_service->user_service()->by_id(r.contact_id);
-                    if(!c) continue;
+                auto c = _conversation_service->user_service()->by_id(r.contact_id);
+                if(!c) return;
 
-                    add(contact_alert(c, convert(tr("quit conversation"))));
+                add(contact_alert(c, convert(tr("quit conversation"))));
 
-                    _messages->remove_from_contact_lists(c);
-                    update_contacts();
-                    _conversation_service->fire_conversation_alert(_conversation->id());
-                }
-                else if(m.meta.type == s::event::CONTACT_ADDED)
-                {
-                    m::expect_local(m);
+                _messages->remove_from_contact_lists(c);
+                update_contacts();
+                _conversation_service->fire_conversation_alert(_conversation->id());
+            }
+            else if(m.meta.type == s::event::CONTACT_ADDED)
+            {
+                m::expect_local(m);
 
-                    s::event::contact_added r;
-                    s::event::convert(m, r);
+                s::event::contact_added r;
+                s::event::convert(m, r);
 
-                    if(r.conversation_id != _conversation->id()) continue;
+                if(r.conversation_id != _conversation->id()) return;
 
-                    auto c = _conversation_service->user_service()->by_id(r.contact_id);
-                    if(!c) continue;
+                auto c = _conversation_service->user_service()->by_id(r.contact_id);
+                if(!c) return;
 
-                    add(contact_alert(c, convert(tr("added to conversation"))));
-                    update_contacts();
-                    _conversation_service->fire_conversation_alert(_conversation->id());
-                }
-                else if(m.meta.type == us::event::CONTACT_CONNECTED)
-                {
-                    m::expect_local(m);
+                add(contact_alert(c, convert(tr("added to conversation"))));
+                update_contacts();
+                _conversation_service->fire_conversation_alert(_conversation->id());
+            }
+            else if(m.meta.type == us::event::CONTACT_CONNECTED)
+            {
+                m::expect_local(m);
 
-                    update_contacts();
-                }
-                else if(m.meta.type == us::event::CONTACT_DISCONNECTED)
-                {
-                    m::expect_local(m);
+                update_contacts();
+            }
+            else if(m.meta.type == us::event::CONTACT_DISCONNECTED)
+            {
+                m::expect_local(m);
 
-                    us::event::contact_disconnected r;
-                    us::event::convert(m, r);
+                us::event::contact_disconnected r;
+                us::event::convert(m, r);
 
-                    auto c = _conversation->contacts().by_id(r.id);
-                    if(!c) continue;
+                auto c = _conversation->contacts().by_id(r.id);
+                if(!c) return;
 
-                    update_contacts();
-                }
-                else
-                {
-                    std::stringstream s;
-                    s << m;
+                update_contacts();
+            }
+            else
+            {
+                std::stringstream s;
+                s << m;
 
-                    _messages->add(new unknown_message{s.str()});
-                }
+                _messages->add(new unknown_message{s.str()});
             }
         }
         catch(std::exception& e)

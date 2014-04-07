@@ -25,6 +25,8 @@
 	pplux@pplux.com
 */
 
+#include <set>
+
 #ifndef __SLB_CONFIG__
 #define __SLB_CONFIG__
 
@@ -1226,10 +1228,12 @@ namespace SLB {
   class SLB_EXPORT Table : public Object {
   public:
     typedef SLB_Map( String, ref_ptr<Object> ) Elements;
+    typedef std::set<String> Keys;
     Table(const String &separator = "", bool cacheable = false);
 
     void erase(const String &);
     Object* get(const String &);
+    Keys getKeys();
     void set(const String &, Object*);
 
     bool isCacheable() { return _cacheable; }
@@ -3679,7 +3683,7 @@ struct lua_State;
 namespace SLB {
 
   class HybridBase;
-    
+
   struct SLB_EXPORT InvalidMethod : public std::exception
   {  
     InvalidMethod(const HybridBase*, const char *c);
@@ -4489,6 +4493,15 @@ namespace SLB {
     template<class T>
     T get(const char *name)
     { return SLB::getGlobal<T>(getState(), name); }
+
+    Table::Keys getKeys(const char* name) 
+    {
+        lua_getglobal(getState(),name);
+        ClassInfo *ci = Manager::getInstance(getState())->getClass(getState(),-1);
+        lua_pop(getState(),1); // remove the value
+        if(!ci) return Table::Keys();
+        return ci->getKeys();
+    }
 
     static void* allocator(void *ud, void *ptr, size_t osize, size_t nsize);
 
