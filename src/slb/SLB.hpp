@@ -4498,6 +4498,7 @@ namespace SLB {
     {
         lua_getglobal(getState(),name);
         ClassInfo *ci = Manager::getInstance(getState())->getClass(getState(),-1);
+        lua_pop(getState(),1); // remove the value
         if(!ci) return Table::Keys();
         return ci->getKeys();
     }
