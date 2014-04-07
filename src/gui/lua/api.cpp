@@ -365,7 +365,6 @@ namespace fire
             void lua_api::reset_widgets()
             {
                 INVARIANT(layout);
-                std::lock_guard<std::mutex> lock(mutex);
 
                 //delete widgets without parent
                 delete_loose_widgets(widgets);
@@ -413,7 +412,6 @@ namespace fire
             //API implementation 
             void lua_api::print(const std::string& a)
             {
-                std::lock_guard<std::mutex> lock(mutex);
                 INVARIANT(conversation);
                 INVARIANT(conversation->user_service());
 
@@ -614,7 +612,6 @@ namespace fire
             {
                 INVARIANT(layout);
                 INVARIANT(canvas);
-                std::lock_guard<std::mutex> lock(mutex);
 
                 //create button reference
                 grid_ref ref;
@@ -652,7 +649,6 @@ namespace fire
             void lua_api::place(const widget_ref& wr, int r, int c)
             {
                 INVARIANT(layout);
-                std::lock_guard<std::mutex> lock(mutex);
 
                 auto w = get_widget<QWidget>(wr.id, widgets);
                 if(!w) return;
@@ -663,7 +659,6 @@ namespace fire
             void lua_api::place_across(const widget_ref& wr, int r, int c, int row_span, int col_span)
             {
                 INVARIANT(layout);
-                std::lock_guard<std::mutex> lock(mutex);
 
                 auto w = get_widget<QWidget>(wr.id, widgets);
                 if(!w) return;
@@ -674,7 +669,6 @@ namespace fire
             button_ref lua_api::make_button(const std::string& text)
             {
                 INVARIANT(canvas);
-                std::lock_guard<std::mutex> lock(mutex);
 
                 //create button reference
                 button_ref ref;
@@ -706,7 +700,6 @@ namespace fire
 
                 std::string callback;
                 {
-                    std::lock_guard<std::mutex> lock(mutex);
                     auto rp = button_refs.find(id);
                     if(rp == button_refs.end()) return;
 
@@ -720,7 +713,6 @@ namespace fire
             label_ref lua_api::make_label(const std::string& text)
             {
                 INVARIANT(canvas);
-                std::lock_guard<std::mutex> lock(mutex);
 
                 //create edit reference
                 label_ref ref;
@@ -742,7 +734,6 @@ namespace fire
             edit_ref lua_api::make_edit(const std::string& text)
             {
                 INVARIANT(canvas);
-                std::lock_guard<std::mutex> lock(mutex);
 
                 //create edit reference
                 edit_ref ref;
@@ -780,7 +771,6 @@ namespace fire
 
                 std::string callback;
                 {
-                    std::lock_guard<std::mutex> lock(mutex);
                     auto rp = edit_refs.find(id);
                     if(rp == edit_refs.end()) return;
 
@@ -797,7 +787,6 @@ namespace fire
 
                 std::string callback;
                 {
-                    std::lock_guard<std::mutex> lock(mutex);
                     auto rp = edit_refs.find(id);
                     if(rp == edit_refs.end()) return;
 
@@ -811,7 +800,6 @@ namespace fire
             text_edit_ref lua_api::make_text_edit(const std::string& text)
             {
                 INVARIANT(canvas);
-                std::lock_guard<std::mutex> lock(mutex);
 
                 //create edit reference
                 text_edit_ref ref;
@@ -843,7 +831,6 @@ namespace fire
 
                 std::string callback;
                 {
-                    std::lock_guard<std::mutex> lock(mutex);
                     auto rp = text_edit_refs.find(id);
                     if(rp == text_edit_refs.end()) return;
 
@@ -857,7 +844,6 @@ namespace fire
             list_ref lua_api::make_list()
             {
                 INVARIANT(canvas);
-                std::lock_guard<std::mutex> lock(mutex);
 
                 //create edit reference
                 list_ref ref;
@@ -880,7 +866,6 @@ namespace fire
             QPen lua_api::make_pen(const std::string& color, int width)
             try
             {
-                std::lock_guard<std::mutex> lock(mutex);
                 QPen p{QColor{color.c_str()}};
                 p.setWidth(width);
                 return p;
@@ -899,7 +884,6 @@ namespace fire
             draw_ref lua_api::make_draw(int width, int height)
             {
                 INVARIANT(canvas);
-                std::lock_guard<std::mutex> lock(mutex);
 
                 //create edit reference
                 draw_ref ref;
@@ -921,7 +905,6 @@ namespace fire
             timer_ref lua_api::make_timer(int msec, const std::string& callback)
             {
                 INVARIANT(canvas);
-                std::lock_guard<std::mutex> lock(mutex);
 
                 //create edit reference
                 timer_ref ref;
@@ -957,8 +940,6 @@ namespace fire
 
                 std::string callback;
                 {
-                    std::lock_guard<std::mutex> lock(mutex);
-
                     auto t = timer_refs.find(id);
                     if(t == timer_refs.end()) return;
                     callback = t->second.callback;
@@ -971,7 +952,6 @@ namespace fire
             image_ref lua_api::make_image(const bin_data& d)
             {
                 INVARIANT(canvas);
-                std::lock_guard<std::mutex> lock(mutex);
                 
                 //create edit reference
                 image_ref ref;
