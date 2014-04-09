@@ -89,6 +89,7 @@ namespace fire
                     QString char_left_of_word() const;
                     QString object_left_of_cursor() const;
                     QStringList auto_complete_list(const std::string& obj);
+                    void set_auto_complete_model(const QStringList&);
 
                 private:
                     QCompleter* _c;

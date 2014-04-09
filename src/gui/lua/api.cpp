@@ -356,6 +356,7 @@ namespace fire
                 for(auto& t : timers)
                 {
                     if(t.second == nullptr) continue;
+
                     t.second->stop();
                     delete t.second;
                     t.second = nullptr;
