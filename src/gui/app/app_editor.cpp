@@ -28,6 +28,7 @@
 
 #include <functional>
 #include <sstream>
+#include <unordered_map>
 
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
@@ -50,84 +51,83 @@ namespace fire
             const std::string LUA_KEYWORDS = "\\b(app|and|break|do|else|elseif|end|false|for|function|if|in|local|nil|not|or|repeat|return|then|true|until|while|pairs)\\b";
             const std::string LUA_QUOTE = "\".*[^\\\\]\"";
 
-            const u::string_vect API_KEYWORDS{
-                "add",
-                "alert",
-                "append",
-                "button",
-                "callback",
-                "circle",
-                "clear",
-                "clear",
-                "contact",
-                "data",
-                "disable",
-                "draw",
-                "edit",
-                "edited_callback",
-                "enable",
-                "enabled",
-                "finished_callback",
-                "from",
-                "get",
-                "get_bin",
-                "get_pen",
-                "good",
-                "grid",
-                "grow",
-                "height",
-                "i_started",
-                "id",
-                "image",
-                "interval",
-                "is_local",
-                "label",
-                "last_contact",
-                "line",
-                "list",
-                "message",
-                "name",
-                "online",
-                "open_bin_file",
-                "open_file",
-                "pen",
-                "place",
-                "place_across",
-                "print",
-                "remove",
-                "running",
-                "save_bin_file",
-                "save_file",
-                "self",
-                "send",
-                "send_local",
-                "send_to",
-                "set",
-                "set_bin",
-                "set_image",
-                "set_text",
-                "size",
-                "start",
-                "stop",
-                "store",
-                "str",
-                "sub",
-                "text",
-                "text_edit",
-                "timer",
-                "total_contacts",
-                "when_clicked",
-                "when_edited",
-                "when_finished",
-                "when_local_message_received",
-                "when_message_received",
-                "when_mouse_dragged",
-                "when_mouse_moved",
-                "when_mouse_pressed",
-                "when_mouse_released",
-                "when_triggered",
-                "who_started",
-                "width",
+            using api_doc = std::unordered_map<std::string, std::string>;
+            const api_doc API_KEYWORDS{
+                {"add", "list:add(widget) -- adds widget to end of list"},
+                {"alert", "app:alert() -- alerts user that there was something of interest occurred"},
+                {"append", "data:append(data) -- appends binary data at the end"},
+                {"button", "app:button(text) -- creates a button"},
+                {"callback","widget:callback() -- returns the primary callback set for the widget"},
+                {"circle", "draw:circle(x,y,radius) -- draws a circle"},
+                {"clear","widget:clear() -- clears the widget of data"},
+                {"contact","app:contact(index) -- returns the contact at the index"},
+                {"data","file:data() -- returns binary or ascii data of the file"},
+                {"disable", "widget:disable() -- disables the widget"},
+                {"draw", "app:draw(width, height) -- creates a drawing canvas"},
+                {"edit","app:edit(text) -- creates an edit box"},
+                {"edited_callback", "edit:edited_callback() -- returns the callback used when text is changed"},
+                {"enable", "widget:enable() -- enables the widget"},
+                {"enabled", "widget:enabled() -- returns true if the widget is enabled"},
+                {"finished_callback","edit:finished_callback() -- returns the callback used when enter is pressed"},
+                {"from", "message:from() -- returns the contact who sent the message"},
+                {"get", "dict:get(key) -- returns a Lua table with the key from the dictionary"},
+                {"get_bin", "dict:get_bin -- returns binary data with the key from the dictionary"},
+                {"get_pen", "draw:get_pen() -- return the current pen being used."},
+                {"good", "file:good() -- returns true if the file was read successfully"},
+                {"grid", "app:grid() -- creates a grid layout which you can use to place widgets in a grid"},
+                {"grow", "app:grow() -- grows the App vertically to fit all content"},
+                {"height", "app:height(pixels) -- sets the height of the app"},
+                {"i_started", "app:i_started -- returns true if the user started the app, and false if it started remotely"},
+                {"id", "contact:id() -- returns the id of the contact"},
+                {"image", "app:image(data) -- creates an image from the data"},
+                {"interval", "timer:interval(milliseconds) -- sets the timers interval"},
+                {"is_local", "message:is_local() -- returns true if the message originated locally"},
+                {"label","app:label(text) -- creates a label with the text specified"},
+                {"last_contact", "app:last_contact() -- returns the index of the last contact"},
+                {"line", "draw:line(x1, y1, x2, y2) -- draws a line"},
+                {"list", "app:list() -- creates a list widget"},
+                {"message", "app:message() -- creates an new message"},
+                {"name", "contact:name() -- returns the name of the contact"},
+                {"online", "contact:online() -- returns true if the contact is online"},
+                {"open_bin_file", "app:open_bin_file() -- allows user to select a file to open and opens it in binary mode"},
+                {"open_file", "app:open_file() -- allows user to select a file to open and opens it in text mode"},
+                {"pen", "app:pen(color, width) -- creates a pen of the color and width specified"},
+                {"place","app:place(widget, row, column) -- places the widget in the spot specified"},
+                {"place_across", "app:place_across(widget, row, column, rows, columns) -- place the widget in the spot specified, across several rows and columns"},
+                {"print", "app:print(text) -- prints the text to the App Editor output or log"},
+                {"remove", "dict:remove(key) -- removes data with the key"},
+                {"running", "timer:running() -- returns true if the timer is running"},
+                {"save_bin_file", "app:save_bin_file(name, data) -- allows the user to select a binary file to save to"},
+                {"save_file", "app:save_file(name, text) -- allows the user to select a file to save to"},
+                {"self", "app:self() -- returns the user information"},
+                {"send", "app:send(message) -- sends the message to everyone connected to the App"},
+                {"send_local", "app:send_local(message) -- sends the message locally to all Apps in the conversation"},
+                {"send_to", "app:send_to(contact, message) -- sends the message to the contact specified"},
+                {"set", "dict:set(key, value) -- stores the value with the key. The value can be any lua type"},
+                {"set_bin", "dict:set_bin(key, data) -- stores binary data with the key"},
+                {"set_image", "button:set_image(image) -- sets an image for the button"},
+                {"set_text", "widget:set_text(text) -- sets the widget's text"},
+                {"size", "file:size() -- returns the size of the file"},
+                {"start", "timer:start() -- starts the timer"},
+                {"stop", "timer:stop() -- stops the timer"},
+                {"str", "data:str() -- converts the binary data to a string"},
+                {"sub", "data:sub(index, size) -- returns subset of the data"},
+                {"text", "widget:text() -- returns the text of the widget"},
+                {"text_edit", "app:text_edit(text) -- creates a multi-line text edit"},
+                {"timer", "app:timer(milliseconds, callback) -- creates a timer that will execute the callback specified"},
+                {"total_contacts", "app:total_contacts() -- returns the count of contacts connected to the app"},
+                {"when_clicked", "button:when_clicked(code) -- will execute the code when the button is clicked"},
+                {"when_edited", "edit:when_edited(callback) -- will call the callback when text is edited"},
+                {"when_finished", "edit:when_finished(callback) -- will call the callback when return is pressed"},
+                {"when_local_message_received", "app:when_local_message_received(callback) -- will call the callback when a local message is received"},
+                {"when_message_received", "app:when_message_received(callback) -- will call the callback when a message is received"},
+                {"when_mouse_dragged", "draw:when_mouse_dragged(callback) -- will call the callback when the mouse is dragged"},
+                {"when_mouse_moved", "draw:when_mouse_moved(callback) -- will call the callback when the mouse is moved"},
+                {"when_mouse_pressed", "draw:when_mouse_pressed(callback) -- will call the callback when a mouse button is pressed"},
+                {"when_mouse_released", "draw:when_mouse_released(callback) -- will call the callback when a mouse button is released"},
+                {"when_triggered", "timer:when_triggered(callback) -- will call the callback when the timer fires"},
+                {"who_started", "app:who_started() -- returns the contact who started the app"},
+                {"width", "image:height() -- returns the height of the image"},
             };
 
             const std::string LUA_NUMBERS = "[0-9\\.]+";
@@ -506,7 +506,8 @@ namespace fire
                 REQUIRE(api);
 
                 _c = new QCompleter;
-                _c->setModel(new QStringListModel{this});
+                _c->setCompletionColumn(1);
+                _c->setModel(new QStandardItemModel{this});
                 _c->setWidget(this);
                 _c->setCompletionMode(QCompleter::PopupCompletion);
                 _c->setModelSorting(QCompleter::CaseInsensitivelySortedModel);
@@ -532,9 +533,28 @@ namespace fire
                 //if it is empty, then auto complete list is all api keywords
                 if(r.isEmpty())
                     for(const auto& kw : API_KEYWORDS)
-                        r << kw.c_str();
+                        r << kw.first.c_str();
 
                 return r;
+            }
+
+            void app_text_editor::set_auto_complete_model(const QStringList& l)
+            {
+                INVARIANT(_c);
+
+                auto model = dynamic_cast<QStandardItemModel*>(_c->model());
+                CHECK(model);
+                model->setColumnCount(2);
+                model->setRowCount(l.count());
+                int r = 0;
+                for(const auto& i : l)
+                {
+                    auto v = API_KEYWORDS.find(gui::convert(i));
+                    if(v == API_KEYWORDS.end()) continue;
+                    model->setItem(r, 0, new QStandardItem{v->second.c_str()});
+                    model->setItem(r, 1, new QStandardItem{v->first.c_str()});
+                    r++;
+                }
             }
 
             QString app_text_editor::object_left_of_cursor() const
@@ -631,12 +651,7 @@ namespace fire
                 auto prefix = word_under_cursor();
                 bool colon = left_char == ":";
 
-                auto model = dynamic_cast<QStringListModel*>(_c->model());
-                CHECK(model);
-
-                //set auto complete list to list based on all global object, 
-                //or all api keywords
-                model->setStringList(auto_complete_list(gui::convert(object)));
+                set_auto_complete_model(auto_complete_list(gui::convert(object)));
 
                 //hide popup if
                 // 1. is not shortcut and
@@ -941,10 +956,12 @@ namespace fire
             {
                 //create api keyword regex
                 std::string api_keywords = "\\b(";
-                for(int i = 0; i < API_KEYWORDS.size();i++)
+                int i = 0;
+                for(const auto& p : API_KEYWORDS)
                 {
                     if(i != 0) api_keywords.append("|");
-                    api_keywords.append(API_KEYWORDS[i]);
+                    api_keywords.append(p.first);
+                    i++;
                 }
                 api_keywords.append(")\\b");
 
