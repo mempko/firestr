@@ -82,6 +82,7 @@ fn::port_type get_port(const std::string& home, fn::port_type cmd_port)
     return cached_port != 0 ? cached_port : cmd_port;
 }
 
+
 int main(int argc, char *argv[])
 try
 {
@@ -125,3 +126,11 @@ catch(...)
 {
     LOG << "program quit prematurely: unknown reason" << std::endl;
 }
+
+#ifdef _WIN64
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
+    LPSTR lpCmdLine, int nCmdShow)
+{
+    return main(__argc, __argv);
+}
+#endif
