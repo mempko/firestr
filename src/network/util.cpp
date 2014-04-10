@@ -17,7 +17,8 @@
 #include "network/util.hpp"
 
 #ifdef _WIN64
-
+#include <WinSock.h>  
+#pragma comment (lib, "wsock32.lib")  
 #else
 #include <ifaddrs.h>
 #include <netinet/in.h>
@@ -35,7 +36,24 @@ namespace fire
 #ifdef _WIN64
 		std::string get_lan_ip()
 		{
-			return "";
+            WSADATA d;
+            if (WSAStartup(MAKEWORD(2, 2), &d)) return "";
+
+            char host[256];
+            if (gethostname(host, sizeof host)) return "";
+
+            PHOSTENT h;
+            if (!(h = gethostbyname(host))) return "";
+           
+            int i = 0;
+            std::string ip;
+
+            while(h->h_addr_list[i])  
+            {  
+                ip = inet_ntoa(*(struct in_addr *)h->h_addr_list[i]);  
+                i++;
+            }  
+            return ip;
 		}
 #else
         std::string get_lan_ip()
