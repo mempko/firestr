@@ -325,6 +325,7 @@ namespace fire
             }
 
             bin_data store_ref::get_bin(const std::string& k) const
+
             {
                 if(!_d.has(k)) return bin_data{};
 

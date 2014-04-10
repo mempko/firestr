@@ -153,7 +153,6 @@ namespace fire
         void disk_store::get_value(const std::string& key, value& v) const
         {
             INVARIANT(_index);
-
             auto id = (*_index)[key].as_string();
             load_from_file(get_value_file(_path, id), v);
         }
