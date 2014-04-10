@@ -47,7 +47,7 @@ namespace fire
         };
 
 #ifdef _WIN64
-        bool load_contact_file(const unsigned short* file, contact_file& cf)
+        bool load_contact_file(const unsigned short* file, contact_file& cf);
 #else
         bool load_contact_file(const std::string& file, contact_file& cf);
 #endif
