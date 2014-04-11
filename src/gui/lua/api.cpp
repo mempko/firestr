@@ -339,18 +339,6 @@ namespace fire
                 return {-1, "unknown"};
             }
 
-            template <class L>
-                void delete_loose_widgets(L& l)
-                {
-                    for(auto& w : l)
-                    {
-                        if(w.second == nullptr || w.second->parentWidget() != nullptr)
-                            continue;
-                        delete w.second;
-                        w.second = nullptr;
-                    }
-                }
-
             void delete_timers(timer_map& timers)
             {
                 for(auto& t : timers)
@@ -368,7 +356,6 @@ namespace fire
                 INVARIANT(layout);
 
                 //delete widgets without parent
-                delete_loose_widgets(widgets);
                 delete_timers(timers);
 
                 //clear widgets
@@ -677,7 +664,7 @@ namespace fire
                 ref.api = this;
 
                 //create button widget
-                auto b = new QPushButton(text.c_str());
+                auto b = new QPushButton(text.c_str(), canvas);
 
                 //map button to C++ callback
                 auto mapper = new QSignalMapper{canvas};
@@ -721,7 +708,7 @@ namespace fire
                 ref.api = this;
 
                 //create edit widget
-                auto w = new QLabel(text.c_str());
+                auto w = new QLabel{text.c_str(), canvas};
 
                 //add ref and widget to maps
                 label_refs[ref.id] = ref;
@@ -742,7 +729,7 @@ namespace fire
                 ref.api = this;
 
                 //create edit widget
-                auto e = new QLineEdit(text.c_str());
+                auto e = new QLineEdit{text.c_str(), canvas};
 
                 //map edit to C++ callback
                 auto edit_mapper = new QSignalMapper{canvas};
@@ -808,7 +795,7 @@ namespace fire
                 ref.api = this;
 
                 //create edit widget
-                auto e = new QTextEdit(text.c_str());
+                auto e = new QTextEdit{text.c_str(), canvas};
 
                 //map edit to C++ callback
                 auto edit_mapper = new QSignalMapper{canvas};
@@ -852,7 +839,7 @@ namespace fire
                 ref.api = this;
 
                 //create edit widget
-                auto w = new gui::list;
+                auto w = new gui::list{canvas};
                 w->auto_scroll(true);
 
                 //add ref and widget to maps
@@ -892,7 +879,7 @@ namespace fire
                 ref.api = this;
 
                 //create edit widget
-                auto w = new draw_view{ref, width, height};
+                auto w = new draw_view{ref, width, height, canvas};
 
                 //add ref and widget to maps
                 draw_refs[ref.id] = ref;
@@ -965,7 +952,7 @@ namespace fire
                 auto i = std::make_shared<QImage>();
                 bool loaded = i->loadFromData(reinterpret_cast<const u::ubyte*>(d.data.data()),d.data.size());
 
-                auto l = new QLabel;
+                auto l = new QLabel{canvas};
                 if(loaded) 
                 {
                     ref.w = i->width();

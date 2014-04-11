@@ -29,7 +29,7 @@ namespace fire
         {
             Q_OBJECT
             public:
-                list();
+                list(QWidget* p = nullptr);
 
             public:
                 void auto_scroll(bool);

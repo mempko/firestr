@@ -9,7 +9,7 @@ namespace fire
 {
     namespace gui
     {
-        list::list() : _auto_scroll{false}
+        list::list(QWidget* p) : QScrollArea{p}, _auto_scroll{false}
         {
             //setup root
             _root = new QWidget;

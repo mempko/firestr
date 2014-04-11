@@ -141,7 +141,7 @@ namespace fire
             {
                 Q_OBJECT
                 public:
-                    draw_view(draw_ref, int width, int height);
+                    draw_view(draw_ref, int width, int height, QWidget* parent = nullptr);
 
                 protected:
                     void mousePressEvent(QMouseEvent*);

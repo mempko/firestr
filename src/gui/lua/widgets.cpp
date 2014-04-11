@@ -579,8 +579,8 @@ namespace fire
                 w->scene()->clear();
             }
 
-            draw_view::draw_view(draw_ref ref, int width, int height) : 
-                QGraphicsView(), _ref{ref}, _button{0}
+            draw_view::draw_view(draw_ref ref, int width, int height, QWidget* p) : 
+                QGraphicsView{p}, _ref{ref}, _button{0}
             {
                 setScene(new QGraphicsScene{0.0,0.0,static_cast<qreal>(width),static_cast<qreal>(height)});
                 setMinimumSize(width,height);
