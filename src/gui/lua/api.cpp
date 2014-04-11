@@ -349,6 +349,19 @@ namespace fire
                     delete t.second;
                     t.second = nullptr;
                 }
+                timers.clear();
+            }
+
+            void delete_widgets(widget_map& ws)
+            {
+                for(auto& t : ws)
+                {
+                    if(t.second == nullptr || t.second->parent()) continue;
+
+                    delete t.second;
+                    t.second = nullptr;
+                }
+                ws.clear();
             }
 
             void lua_api::reset_widgets()
@@ -357,16 +370,13 @@ namespace fire
 
                 //delete widgets without parent
                 delete_timers(timers);
+                delete_widgets(widgets);
 
                 //clear widgets
                 QLayoutItem *c = nullptr;
 
                 while((c = layout->takeAt(0)) != nullptr)
-                {
-                    if(!c) continue;
-                    if(c->widget()) delete c->widget();
                     delete c;
-                } 
 
                 if(output) output->clear();
                 button_refs.clear();
@@ -376,10 +386,17 @@ namespace fire
                 timer_refs.clear();
                 grid_refs.clear();
                 image_refs.clear();
-                widgets.clear();
-                timers.clear();
                 images.clear();
 
+                ENSURE(widgets.empty());
+                ENSURE(timers.empty());
+                ENSURE(edit_refs.empty());
+                ENSURE(text_edit_refs.empty());
+                ENSURE(list_refs.empty());
+                ENSURE(timer_refs.empty());
+                ENSURE(grid_refs.empty());
+                ENSURE(image_refs.empty());
+                ENSURE(images.empty());
                 ENSURE_EQUAL(layout->count(), 0);
             }
 
@@ -952,7 +969,7 @@ namespace fire
                 auto i = std::make_shared<QImage>();
                 bool loaded = i->loadFromData(reinterpret_cast<const u::ubyte*>(d.data.data()),d.data.size());
 
-                auto l = new QLabel{canvas};
+                auto l = new QLabel;
                 if(loaded) 
                 {
                     ref.w = i->width();

@@ -36,11 +36,11 @@ namespace fire
 
             public slots:
                 virtual void add(QWidget*);
-                virtual void remove(QWidget*);
-                virtual void remove(size_t);
+                virtual void remove(QWidget*, bool delete_widget = true);
+                virtual void remove(size_t, bool delete_widget = true);
                 virtual QWidget* get(size_t) const;
                 virtual size_t size() const;
-                virtual void clear();
+                virtual void clear(bool delete_widgets = true);
                 virtual void scroll_to_bottom(int min, int max);
 
             protected:
