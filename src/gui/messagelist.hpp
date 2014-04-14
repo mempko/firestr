@@ -49,7 +49,7 @@ namespace fire
                 void remove_from_contact_lists(user::user_info_ptr);
 
             public slots:
-                std::string add_new_app(const messages::new_app&); 
+                conversation::app_metadatum add_new_app(const messages::new_app&); 
                 void add(message*);
                 void add(QWidget*);
 

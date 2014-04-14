@@ -116,6 +116,7 @@ namespace fire
 
                 _mail_service->done();
                 LOG << "closed app " << _app->name() << "(" << _app->id() << ")" << std::endl;
+                
             }
 
             void script_app::init()

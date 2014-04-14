@@ -579,16 +579,18 @@ namespace fire
             {
                 INVARIANT(conversation);
 
-                return conversation->app_ids().size();
+                return conversation->apps().size();
             }
 
             app_ref lua_api::get_app(size_t i)
             {
                 INVARIANT(conversation);
-                const auto& ids = conversation->app_ids();
-                if(i >= ids.size()) return empty_app_ref(*this);
+                const auto& apps = conversation->apps();
+                if(i >= apps.size()) return empty_app_ref(*this);
 
-                auto id = ids[i];
+                CHECK_FALSE(apps[i].address.empty());
+
+                auto id = apps[i].address;
 
                 app_ref r;
                 r.id = 0;
@@ -609,8 +611,11 @@ namespace fire
             void lua_api::send_local(const script_message& m)
             {
                 INVARIANT(conversation);
-                for(const auto& id : conversation->app_ids())
-                    sender->send_to_local_app(id, m);
+                for(const auto& app : conversation->apps())
+                {
+                    CHECK_FALSE(app.address.empty());
+                    sender->send_to_local_app(app.address, m);
+                }
             }
 
             grid_ref lua_api::make_grid()
