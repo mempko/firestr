@@ -539,7 +539,7 @@ namespace fire
             //create chat sample
             auto t = new a::chat_app{_conversation_service, s->conversation()};
             s->add(t);
-            s->conversation()->add_app_id(t->mail()->address());
+            s->conversation()->add_app({t->type(), "", t->mail()->address()});
 
             //add to master post so it can receive messages
             //from outside world
@@ -595,7 +595,7 @@ namespace fire
             auto t = new a::app_editor{_app_service, _conversation_service, s->conversation(), app};
 
             s->add(t);
-            s->conversation()->add_app_id(t->mail()->address());
+            s->conversation()->add_app({t->type(), "", t->mail()->address()});
 
             //add to master post so it can receive messages
             //from outside world
@@ -627,7 +627,7 @@ namespace fire
 
             //add to conversation
             s->add(t);
-            s->conversation()->add_app_id(t->mail()->address());
+            s->conversation()->add_app({t->type(), id, t->mail()->address()});
 
             //add widget mailbox to master
             _master->add(t->mail());

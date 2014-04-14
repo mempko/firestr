@@ -38,7 +38,7 @@ namespace fire
                  * @param to Id of user
                  */
                 bool send(const std::string& to, message::message);
-                bool send_to_local_app(const std::string& id, message::message);
+                bool send_to_local_app(const std::string& address, message::message);
 
             public:
                 user::user_service_ptr user_service();

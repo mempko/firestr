@@ -29,6 +29,11 @@ namespace fire
 {
     namespace conversation
     {
+        namespace
+        {
+            const std::string SCRIPT_APP = "SCRIPT_APP";
+        }
+
         conversation::conversation(
                 us::user_service_ptr s,
                 m::post_office_wptr pp) :
@@ -113,15 +118,17 @@ namespace fire
             return _user_service;
         }
 
-        const app_mailbox_ids& conversation::app_ids() const
+        const app_metadata& conversation::apps() const
         {
-            return _app_mailbox_ids;
+            return _app_metadata;
         }
 
-        void conversation::add_app_id(const std::string& id)
+        void conversation::add_app(const app_metadatum& d)
         {
-            REQUIRE_FALSE(id.empty());
-            _app_mailbox_ids.push_back(id);
+            REQUIRE(d.type != SCRIPT_APP || !d.id.empty());
+            REQUIRE_FALSE(d.type.empty());
+            REQUIRE_FALSE(d.address.empty());
+            _app_metadata.push_back(d);
         }
 
         bool conversation::send(const std::string& to, const message::message& m)

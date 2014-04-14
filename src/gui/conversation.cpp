@@ -37,6 +37,7 @@ namespace fire
         namespace 
         {
             const size_t ADD_CONTACT_WIDTH = 10;
+            const std::string SCRIPT_APP = "SCRIPT_APP";
         }
 
         conversation_widget::conversation_widget(
@@ -190,8 +191,12 @@ namespace fire
                 m::expect_remote(m);
                 m::expect_symmetric(m);
 
-                auto id = _messages->add_new_app(m);
-                _conversation->add_app_id(id);
+                //add new app and get metadata
+                auto meta = _messages->add_new_app(m);
+                if(meta.type.empty() || meta.address.empty()) return;
+                if(meta.type == SCRIPT_APP && meta.id.empty()) return;
+
+                _conversation->add_app(meta);
                 _conversation_service->fire_conversation_alert(_conversation->id());
             }
             else if(m.meta.type == s::event::CONVERSATION_SYNCED)
