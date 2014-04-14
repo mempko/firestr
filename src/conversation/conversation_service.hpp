@@ -32,6 +32,7 @@ namespace fire
     namespace conversation
     {
         using conversation_map = std::map<std::string, conversation_ptr>;
+        using app_addresses = std::set<std::string>;
         class conversation_service : public service::service 
         {
             public:
@@ -42,7 +43,11 @@ namespace fire
                 ~conversation_service();
 
             public:
-                conversation_ptr sync_conversation(const std::string& id, const user::contact_list&);
+                conversation_ptr sync_conversation(
+                        const std::string& id, 
+                        const user::contact_list&, 
+                        const app_addresses&);
+
                 conversation_ptr create_conversation(const std::string& id);
                 conversation_ptr create_conversation(user::contact_list&);
                 conversation_ptr create_conversation();
