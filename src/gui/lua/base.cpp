@@ -105,7 +105,7 @@ namespace fire
                     return api->conversation->user_service()->user().info().name();
 
                 //otherwise find user
-                auto c = api->contacts.by_id(user_id);
+                auto c = api->conversation->contacts().by_id(user_id);
                 if(!c) return "";
 
                 return c->name();
@@ -266,9 +266,10 @@ namespace fire
             contact_ref script_message::from() const
             {
                 INVARIANT(_api);
+                INVARIANT(_api->conversation);
                 std::lock_guard<std::mutex> lock(_api->mutex);
 
-                auto c = _api->contacts.by_id(_from_id);
+                auto c = _api->conversation->contacts().by_id(_from_id);
                 if(!c || is_local()) return empty_contact_ref(*_api);
 
                 contact_ref r;

@@ -88,6 +88,8 @@ namespace fire
                         const std::string& conversation_id,
                         const std::string& contact_id);
 
+                void request_apps(conversation_ptr s, const app_addresses&);
+
             private:
                 message::post_office_ptr _post;
                 user::user_service_ptr _user_service;

@@ -55,48 +55,7 @@ namespace fire
             INVARIANT(_layout);
             INVARIANT(_conversation);
 
-            auto contacts = _conversation->contacts();
-
-            //add contact list along right side of message
-            auto cw = new contact_list{_conversation->user_service(), contacts};
-            cw->resize(CW_WIDTH, cw->height());
-
-            auto s = new QSplitter{Qt::Horizontal};
-            s->addWidget(m);
-            s->addWidget(cw);
-            s->setStretchFactor(0, 1);
-            s->setStretchFactor(1, 0);
-
-            //we might want to do something 
-            //different with a message here
-            list::add(s);
-            _contact_lists.push_back(cw);
-            _message_contacts.push_back(contacts);
-        }
-
-        void message_list::update_contact_lists()
-        {
-            INVARIANT_EQUAL(_contact_lists.size(), _message_contacts.size());
-
-            for(size_t i = 0; i < _contact_lists.size(); i++)
-            {
-                auto cl = _contact_lists[i];
-                const auto& mc = _message_contacts[i];
-
-                auto is_in_conversation = [&](us::user_info& u) -> bool 
-                {
-                    return _conversation->contacts().has(u.id()) && mc.has(u.id());
-                };
-
-                CHECK(cl);
-                cl->update_status(is_in_conversation);
-            }
-        }
-
-        void message_list::remove_from_contact_lists(us::user_info_ptr c)
-        {
-            REQUIRE(c);
-            for(auto& mc : _message_contacts) mc.remove(c);
+            list::add(m);
         }
 
         void message_list::add(QWidget* w)

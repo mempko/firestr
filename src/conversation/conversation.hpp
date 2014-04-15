@@ -23,7 +23,6 @@
 
 #include "message/postoffice.hpp"
 #include "message/mailbox.hpp"
-#include "messages/new_app.hpp"
 #include "messages/sender.hpp"
 
 #include <memory>
@@ -56,7 +55,6 @@ namespace fire
             public:
                 bool send(const std::string& to, const message::message& m);
                 bool send(const message::message&);
-                void request_apps(const app_address_set& apps);
 
             public:
                 const std::string& id() const;

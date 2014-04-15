@@ -38,7 +38,7 @@ namespace fire
             REQUIRE(s);
 
             update_contacts();
-            setMinimumWidth(300);
+            setMinimumWidth(50);
 
             INVARIANT(_user_service);
         }

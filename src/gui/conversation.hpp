@@ -76,6 +76,7 @@ namespace fire
                 QSplitter* _splitter;
                 QString _name;
                 message_list* _messages;
+                contact_list* _contact_list;
                 conversation::conversation_ptr _conversation;
                 conversation::conversation_service_ptr _conversation_service;
                 app::app_service_ptr _app_service;
