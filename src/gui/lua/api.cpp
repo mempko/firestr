@@ -55,7 +55,6 @@ namespace fire
 
             lua_api::lua_api(
                     a::app_ptr a,
-                    const us::contact_list& con,
                     ms::sender_ptr sndr,
                     s::conversation_ptr s,
                     s::conversation_service_ptr ss,
@@ -63,7 +62,6 @@ namespace fire
                     QGridLayout* cl,
                     list* o ) :
                 app{a},
-                contacts{con},
                 sender{sndr},
                 conversation{s},
                 conversation_service{ss},
@@ -482,6 +480,7 @@ namespace fire
             void lua_api::send_to_helper(us::user_info_ptr c, const script_message& m)
             {
                 REQUIRE(c);
+                INVARIANT(conversation);
                 if( !conversation->user_service()->contact_available(c->id()) || 
                     !conversation->contacts().has(c->id()))
                     return;
@@ -492,7 +491,8 @@ namespace fire
             void lua_api::send_all(const script_message& m)
             {
                 INVARIANT(sender);
-                for(auto c : contacts.list())
+                INVARIANT(conversation);
+                for(auto c : conversation->contacts().list())
                 {
                     CHECK(c);
                     send_to_helper(c, m);
@@ -504,24 +504,28 @@ namespace fire
                 INVARIANT(sender);
                 INVARIANT(conversation);
 
-                auto c = contacts.by_id(cr.user_id);
+                auto c = conversation->contacts().by_id(cr.user_id);
                 if(!c) return;
                 send_to_helper(c, m);
             }
 
             size_t lua_api::total_contacts() const
             {
-                return contacts.size();
+                INVARIANT(conversation);
+                return conversation->contacts().size();
             }
 
             int lua_api::last_contact() const
             {
-                return contacts.size() - 1;
+                INVARIANT(conversation);
+                return conversation->contacts().size() - 1;
             }
 
             contact_ref lua_api::get_contact(size_t i)
             {
-                auto c = contacts.get(i);
+                INVARIANT(conversation);
+
+                auto c = conversation->contacts().get(i);
                 if(!c) return empty_contact_ref(*this);
 
                 contact_ref r;
@@ -564,7 +568,7 @@ namespace fire
                 } 
                 else
                 {
-                    auto c = contacts.by_id(who_started_id);
+                    auto c = conversation->contacts().by_id(who_started_id);
                     CHECK(c);
                     r.id = 0;
                     r.user_id = c->id();

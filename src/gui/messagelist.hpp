@@ -23,7 +23,6 @@
 #include "gui/list.hpp"
 #include "gui/message.hpp"
 #include "gui/app/app_service.hpp"
-#include "gui/contactlist.hpp"
 #include "conversation/conversation_service.hpp"
 #include "messages/new_app.hpp"
 
@@ -49,10 +48,6 @@ namespace fire
                 void add_app_editor(const std::string& id);
                 void add_script_app(const std::string& id);
 
-            public:
-                void update_contact_lists();
-                void remove_from_contact_lists(user::user_info_ptr);
-
             public slots:
                 conversation::app_metadatum add_new_app(const messages::new_app&); 
                 void add(message*);
@@ -65,11 +60,6 @@ namespace fire
                 conversation::conversation_service_ptr _conversation_service;
                 conversation::conversation_ptr _conversation;
                 app::app_service_ptr _app_service;
-
-                using contact_list_ptrs = std::vector<contact_list*>;
-                using message_contacts = std::vector<user::contact_list>;
-                contact_list_ptrs _contact_lists;
-                message_contacts _message_contacts;
         };
     }
 }

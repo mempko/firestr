@@ -59,8 +59,7 @@ namespace fire
                 _conversation_service{conversation_s},
                 _conversation{conversation},
                 _app{app},
-                _app_service{as},
-                _contacts{conversation->contacts()}
+                _app_service{as}
             {
                 REQUIRE(conversation_s);
                 REQUIRE(conversation);
@@ -89,8 +88,7 @@ namespace fire
                 _conversation_service{conversation_s},
                 _conversation{conversation},
                 _app{app},
-                _app_service{as},
-                _contacts{conversation->contacts()}
+                _app_service{as}
             {
                 REQUIRE(conversation_s);
                 REQUIRE(conversation);
@@ -128,7 +126,9 @@ namespace fire
 
                 _clone = new QPushButton("+");
                 _clone->setMaximumSize(15,15);
-                _clone->setStyleSheet("border: 0px; color: 'blue';");
+                _clone->setMinimumSize(15,15);
+                _clone->setStyleSheet("border: 0px; background-color: 'light green'; color: 'white';");
+                _clone->setToolTip(tr("add app to your collection"));
 
                 connect(_clone, SIGNAL(clicked()), this, SLOT(clone_app()));
                 layout()->addWidget(_clone, 0,1);
@@ -139,7 +139,7 @@ namespace fire
 
                 _mail = std::make_shared<m::mailbox>(_id);
                 _sender = std::make_shared<ms::sender>(_conversation->user_service(), _mail);
-                _api = std::make_shared<l::lua_api>(_app, _contacts, _sender, _conversation, _conversation_service, _canvas, _canvas_layout);
+                _api = std::make_shared<l::lua_api>(_app, _sender, _conversation, _conversation_service, _canvas, _canvas_layout);
                 _api->who_started_id = _from_id;
 
                 //run script

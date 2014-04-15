@@ -63,8 +63,12 @@ namespace fire
                 }
             };
 
+            _contact_list = new contact_list{conversation_service->user_service(), _conversation->contacts()};
+
             _add_contact = new QPushButton{"+"};
             _add_contact->setMaximumSize(20,20);
+            _add_contact->setMinimumSize(20,20);
+            _add_contact->setToolTip(tr("add person to this conversation"));
             connect(_add_contact, SIGNAL(clicked()), this, SLOT(add_contact()));
 
             update_contact_select();
@@ -73,11 +77,17 @@ namespace fire
             auto* cl = new QGridLayout;
 
             cw->setLayout(cl);
-            cl->addWidget(_contact_select, 0,0);
-            cl->addWidget(_add_contact, 0, 1);
-            cl->addWidget(_messages, 1, 0, 1, 3);
+            cl->addWidget(_contact_select, 3,0);
+            cl->addWidget(_add_contact, 3, 1);
+            cl->addWidget(_contact_list, 0, 0, 2, 2);
 
-            _layout->addWidget(cw);
+            auto s = new QSplitter{Qt::Horizontal};
+            s->addWidget(_messages);
+            s->addWidget(cw);
+            s->setStretchFactor(0, 1);
+            s->setStretchFactor(1, 0);
+
+            _layout->addWidget(s);
 
             setLayout(_layout);
             _layout->setContentsMargins(0,0,0,0);
@@ -86,6 +96,7 @@ namespace fire
             _mail_service = new mail_service{_conversation->mail(), this};
             _mail_service->start();
 
+            INVARIANT(_contact_list);
             INVARIANT(_conversation_service);
             INVARIANT(_conversation);
             INVARIANT(_messages);
@@ -107,6 +118,10 @@ namespace fire
 
             bool enabled = _contact_select->count() > 0;
             _add_contact->setEnabled(enabled);
+            if(enabled) 
+                _add_contact->setStyleSheet("border: 0px; background-color: 'green'; color: 'white';");
+            else 
+                _add_contact->setStyleSheet("border: 0px; background-color: 'grey'; color: 'white';");
         }
 
         void conversation_widget::add(message* m)
@@ -129,24 +144,6 @@ namespace fire
             return _conversation;
         }
 
-        QWidget* contact_alert(us::user_info_ptr c, const std::string message)
-        {
-            REQUIRE(c);
-
-            auto w = new QWidget;
-            auto l = new QHBoxLayout;
-            w->setLayout(l);
-
-            std::stringstream s;
-            s << "<b>" << c->name() << "</b> " << message;
-
-            auto t = new QLabel{s.str().c_str()};
-            l->addWidget(t);
-
-            ENSURE(w);
-            return w;
-        }
-
         void conversation_widget::add_contact()
         {
             INVARIANT(_contact_select);
@@ -157,14 +154,15 @@ namespace fire
             if(!contact) return;
 
             _conversation_service->add_contact_to_conversation(contact, _conversation);
-
-            add(contact_alert(contact, convert(tr("added to conversation"))));
             update_contacts();
         }
 
         void conversation_widget::update_contacts()
         {
-            _messages->update_contact_lists();
+            INVARIANT(_contact_list);
+            INVARIANT(_conversation);
+
+            _contact_list->update(_conversation->contacts());
             update_contact_select();
         }
 
@@ -226,9 +224,6 @@ namespace fire
                 auto c = _conversation_service->user_service()->by_id(r.contact_id);
                 if(!c) return;
 
-                add(contact_alert(c, convert(tr("quit conversation"))));
-
-                _messages->remove_from_contact_lists(c);
                 update_contacts();
                 _conversation_service->fire_conversation_alert(_conversation->id());
             }
@@ -244,7 +239,6 @@ namespace fire
                 auto c = _conversation_service->user_service()->by_id(r.contact_id);
                 if(!c) return;
 
-                add(contact_alert(c, convert(tr("added to conversation"))));
                 update_contacts();
                 _conversation_service->fire_conversation_alert(_conversation->id());
             }

@@ -137,15 +137,6 @@ namespace fire
             _app_addresses.insert(d.address);
         }
 
-        void conversation::request_apps(const app_address_set& apps) 
-        {
-            for(const auto& app_address : apps)
-            {
-                ms::request_app n{app_address, _id}; 
-                send(n);
-            }
-        }
-
         bool conversation::send(const std::string& to, const message::message& m)
         {
             INVARIANT(_sender);

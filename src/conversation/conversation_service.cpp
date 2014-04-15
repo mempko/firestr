@@ -16,6 +16,7 @@
  */
 
 #include "conversation/conversation_service.hpp"
+#include "messages/new_app.hpp"
 #include "util/dbc.hpp"
 #include "util/log.hpp"
 #include "util/thread.hpp"
@@ -279,10 +280,19 @@ namespace fire
             }
 
             //request apps that are needed
-            if(!need_apps.empty())
-                s->request_apps(need_apps);
+            request_apps(s, need_apps);
 
             return s;
+        }
+
+        void conversation_service::request_apps(conversation_ptr c, const app_addresses& apps)
+        {
+            REQUIRE(c);
+            for(const auto& app_address : apps)
+            {
+                ms::request_app n{app_address, c->id()}; 
+                c->send(n);
+            }
         }
 
         conversation_ptr conversation_service::create_conversation(const std::string& id)
