@@ -25,6 +25,7 @@ namespace fire
     namespace messages
     {
         const std::string NEW_APP = "new_app";
+        const std::string REQ_APP = "req_app";
 
         new_app::new_app(
                 const std::string& id,
@@ -86,5 +87,28 @@ namespace fire
         {
             return _from_id;
         }
+
+        request_app::request_app(std::string a, std::string cid) 
+            : app_address{a}, conversation_id{cid}
+        { }
+
+        request_app::request_app(const message::message& m)
+        {
+            REQUIRE_EQUAL(m.meta.type, REQ_APP);
+
+            app_address = m.meta.extra["app_addr"].as_string();
+            conversation_id = m.meta.extra["conv_id"].as_string();
+            from_id = m.meta.extra["from_id"].as_string();
+        }
+
+        request_app::operator message::message() const
+        {
+            m::message m;
+            m.meta.type = REQ_APP;
+            m.meta.extra["app_addr"] = app_address;
+            m.meta.extra["conv_id"] = conversation_id;
+            return m;
+        }
+
     }
 }

@@ -27,6 +27,7 @@ namespace fire
     namespace messages
     {
         extern const std::string NEW_APP;
+        extern const std::string REQ_APP;
 
         class new_app
         {
@@ -50,6 +51,21 @@ namespace fire
                 std::string _type;
                 std::string _from_id;
                 util::bytes _data;
+        };
+
+        class request_app
+        {
+            public:
+                request_app(std::string address, std::string conversation_id);
+
+            public:
+                request_app(const message::message&);
+                operator message::message() const;
+
+            public:
+                std::string app_address;
+                std::string conversation_id;
+                std::string from_id;
         };
     }
 }

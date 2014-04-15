@@ -20,15 +20,13 @@
 
 #include <string>
 
+#include <QWidget>
 #include <QLabel>
-
-#include "gui/message.hpp"
-
 namespace fire
 {
     namespace gui
     {
-        class unknown_message : public message
+        class unknown_message : public QWidget
         {
             Q_OBJECT
 

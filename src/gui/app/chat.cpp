@@ -154,13 +154,13 @@ namespace fire
                 INVARIANT(_sender);
             }
 
-            const std::string& chat_app::id()
+            const std::string& chat_app::id() const
             {
                 ENSURE_FALSE(_id.empty());
                 return _id;
             }
 
-            const std::string& chat_app::type()
+            const std::string& chat_app::type() const
             {
                 ENSURE_FALSE(CHAT.empty());
                 return CHAT;

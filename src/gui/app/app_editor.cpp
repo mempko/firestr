@@ -481,13 +481,13 @@ namespace fire
                 }
             }
 
-            const std::string& app_editor::id()
+            const std::string& app_editor::id() const
             {
                 ENSURE_FALSE(_id.empty());
                 return _id;
             }
 
-            const std::string& app_editor::type()
+            const std::string& app_editor::type() const
             {
                 ENSURE_FALSE(APP_EDITOR.empty());
                 return APP_EDITOR;

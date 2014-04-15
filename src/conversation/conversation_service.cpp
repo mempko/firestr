@@ -257,8 +257,13 @@ namespace fire
 
             //TODO: add apps to conversation by looping all app ids
             //not in conversation and requesting the app
+            id_set need_apps;
             for(const auto& app : apps)
-                LOG << "conversation: " << s->id() << " has app id: " << app << std::endl;
+            {
+                if(s->has_app(app)) continue;
+                LOG << "conversation: " << s->id() << " needs app with address: " << app << std::endl;
+                need_apps.insert(app);
+            }
 
             //done creating conversation, fire event
             if(is_new) fire_new_conversation_event(id);
@@ -272,6 +277,10 @@ namespace fire
                 for(const auto& cid : added)
                     fire_contact_added(id, cid);
             }
+
+            //request apps that are needed
+            if(!need_apps.empty())
+                s->request_apps(need_apps);
 
             return s;
         }

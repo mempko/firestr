@@ -23,6 +23,7 @@
 
 #include "message/postoffice.hpp"
 #include "message/mailbox.hpp"
+#include "messages/new_app.hpp"
 #include "messages/sender.hpp"
 
 #include <memory>
@@ -40,6 +41,7 @@ namespace fire
             std::string address;
         };
         using app_metadata = std::vector<app_metadatum>;
+        using app_address_set = std::set<std::string>;
 
         class conversation 
         {
@@ -54,6 +56,7 @@ namespace fire
             public:
                 bool send(const std::string& to, const message::message& m);
                 bool send(const message::message&);
+                void request_apps(const app_address_set& apps);
 
             public:
                 const std::string& id() const;
@@ -68,6 +71,7 @@ namespace fire
 
             public:
                 const app_metadata& apps() const;
+                bool has_app(const std::string& address) const;
                 void add_app(const app_metadatum&);
 
             private:
@@ -81,6 +85,7 @@ namespace fire
                 messages::sender_ptr _sender;
                 user::contact_list _contacts;
                 app_metadata _app_metadata;
+                app_address_set _app_addresses;
                 bool _initiated_by_user;
         };
 
