@@ -15,6 +15,7 @@ namespace us = fire::user;
 namespace s = fire::conversation;
 namespace a = fire::gui::app;
 namespace u = fire::util;
+namespace fg = fire::gui;
 
 
 namespace fire
@@ -126,6 +127,9 @@ namespace fire
 
             s::app_metadatum m;
             m.type = n.type();
+            m.address = n.id();
+            if(_conversation->has_app(m.address))
+                return m;
 
             if(n.type() == a::CHAT)
             {
@@ -133,8 +137,6 @@ namespace fire
                 {
                     auto c = new a::chat_app{n.id(), _conversation_service, _conversation};
                     CHECK(c->mail());
-
-                    m.address = c->mail()->address();
 
                     post->add(c->mail());
                     add(c);
@@ -149,8 +151,6 @@ namespace fire
                     auto c = new a::app_editor{n.from_id(), n.id(), _app_service, _conversation_service, _conversation, app};
                     CHECK(c->mail());
 
-                    m.address = c->mail()->address();
-
                     post->add(c->mail());
                     add(c);
                 }
@@ -164,8 +164,6 @@ namespace fire
                     CHECK(c->mail());
 
                     m.id = app->id();
-                    m.address = c->mail()->address();
-
                     post->add(c->mail());
                     add(c);
                 }
@@ -176,6 +174,74 @@ namespace fire
             }
 
             return m;
+        }
+
+        void message_list::add_chat_app()
+        {
+            INVARIANT(_conversation);
+            INVARIANT(_conversation_service);
+
+            //create chat app
+            auto t = new a::chat_app{_conversation_service, _conversation};
+            add(t, nullptr, ""); 
+        }
+
+        void message_list::add_app_editor(const std::string& id)
+        {
+            INVARIANT(_app_service)
+            INVARIANT(_conversation);
+            INVARIANT(_conversation_service);
+
+            a::app_ptr app = id.empty() ? 
+                _app_service->create_new_app() : 
+                _app_service->load_app(id);
+
+            CHECK(app);
+
+            //create app editor
+            auto t = new a::app_editor{_app_service, _conversation_service, _conversation, app};
+            add(t, nullptr, ""); 
+        }
+
+        void message_list::add_script_app(const std::string& id)
+        {
+            INVARIANT(_app_service)
+            INVARIANT(_conversation);
+            INVARIANT(_conversation_service);
+
+            //load app
+            auto a = _app_service->load_app(id);
+            if(!a) return;
+
+            //create script app
+            auto t = new a::script_app{a, _app_service, _conversation_service, _conversation};
+            add(t, a, id);
+        }
+
+        void message_list::add(fg::message* t, a::app_ptr app, const std::string& id)
+        {
+            CHECK(t);
+            CHECK(_conversation);
+            if(auto post = _conversation->parent_post().lock())
+            {
+                //add to conversation
+                add(t);
+                _conversation->add_app({t->type(), id, t->mail()->address()});
+
+                //add widget mailbox to master
+                post->add(t->mail());
+
+                //send new app message to contacts in conversation
+                u::bytes encoded_app;
+                if(app)
+                {
+                    m::message app_message = *app;
+                    encoded_app = u::encode(app_message);
+                }
+
+                ms::new_app n{t->id(), t->type(), encoded_app}; 
+                _conversation->send(n);
+            }
         }
     }
 }

@@ -156,13 +156,13 @@ namespace fire
                 INVARIANT(_sender);
             }
 
-            const std::string& script_app::id()
+            const std::string& script_app::id() const
             {
                 ENSURE_FALSE(_id.empty());
                 return _id;
             }
 
-            const std::string& script_app::type()
+            const std::string& script_app::type() const
             {
                 ENSURE_FALSE(SCRIPT_APP.empty());
                 return SCRIPT_APP;

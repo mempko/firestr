@@ -24,13 +24,12 @@ namespace fire
 {
     namespace gui
     {
-        unknown_message::unknown_message(const std::string& t)
+        unknown_message::unknown_message(const std::string& t) : QWidget{}
         {
-            INVARIANT(root());
-            INVARIANT(layout());
-
             _text = new QLabel{t.c_str()};
-            layout()->addWidget(_text);
+            auto l = new QVBoxLayout{this};
+            l->addWidget(_text);
+            setLayout(l);
 
             INVARIANT(_text);
         }

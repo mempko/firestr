@@ -51,6 +51,11 @@ namespace fire
                 void name(const QString&);
                 QString name() const;
 
+            public:
+                void add_chat_app();
+                void add_app_editor(const std::string& id);
+                void add_script_app(const std::string& id);
+
             public slots:
                 void check_mail(fire::message::message); 
                 void add(message*);
@@ -58,6 +63,10 @@ namespace fire
                 void add_contact();
                 void update_contacts();
                 void update_contact_select();
+
+            private:
+                void sync_apps();
+                void got_req_app_message(const messages::request_app&);
 
             private:
                 mail_service* _mail_service;

@@ -45,6 +45,11 @@ namespace fire
                 app::app_service_ptr app_service();
 
             public:
+                void add_chat_app();
+                void add_app_editor(const std::string& id);
+                void add_script_app(const std::string& id);
+
+            public:
                 void update_contact_lists();
                 void remove_from_contact_lists(user::user_info_ptr);
 
@@ -52,6 +57,9 @@ namespace fire
                 conversation::app_metadatum add_new_app(const messages::new_app&); 
                 void add(message*);
                 void add(QWidget*);
+
+            private:
+                void add(fire::gui::message*, app::app_ptr, const std::string& id);
 
             private:
                 conversation::conversation_service_ptr _conversation_service;

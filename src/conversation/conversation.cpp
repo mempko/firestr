@@ -123,12 +123,27 @@ namespace fire
             return _app_metadata;
         }
 
+        bool conversation::has_app(const std::string& address) const
+        {
+            return _app_addresses.count(address) > 0;
+        }
+
         void conversation::add_app(const app_metadatum& d)
         {
             REQUIRE(d.type != SCRIPT_APP || !d.id.empty());
             REQUIRE_FALSE(d.type.empty());
             REQUIRE_FALSE(d.address.empty());
             _app_metadata.push_back(d);
+            _app_addresses.insert(d.address);
+        }
+
+        void conversation::request_apps(const app_address_set& apps) 
+        {
+            for(const auto& app_address : apps)
+            {
+                ms::request_app n{app_address, _id}; 
+                send(n);
+            }
         }
 
         bool conversation::send(const std::string& to, const message::message& m)
