@@ -58,6 +58,17 @@ namespace fire
             return ss.str();
         }
 
+        QPushButton* make_x_button()
+        {
+            auto b = new QPushButton("x");
+            b->setMaximumSize(20,20);
+            b->setMinimumSize(20,20);
+            b->setStyleSheet("border: 0px; background-color: 'light grey'; color: 'red';");
+
+            ENSURE(b);
+            return b;
+        }
+
         user_info::user_info(
                 us::user_info_ptr p, 
                 us::user_service_ptr s,
@@ -80,8 +91,7 @@ namespace fire
                 layout->addWidget(_user_text, 0,0);
                 if(remove)
                 {
-                    _rm = new QPushButton("x");
-                    _rm->setMaximumSize(20,20);
+                    _rm = make_x_button();
                     layout->addWidget(_rm, 0,1);
                     connect(_rm, SIGNAL(clicked()), this, SLOT(remove()));
                 }
@@ -432,8 +442,7 @@ namespace fire
             _address = _server.host() + ":" + n::port_to_string(_server.port());
             _label = new QLabel{_address.c_str()};
             layout->addWidget( _label, 0,0);
-            _rm = new QPushButton{"x"};
-            _rm->setMaximumSize(20,20);
+            _rm = make_x_button();
             layout->addWidget(_rm, 0,1);
             connect(_rm, SIGNAL(clicked()), this, SLOT(remove()));
 
@@ -525,8 +534,7 @@ namespace fire
             _accept = new QPushButton{a.str().c_str()};
             layout->addWidget(_accept, 0,1);
 
-            _rm = new QPushButton{"x"};
-            _rm->setMaximumSize(20,20);
+            _rm = make_x_button();
             layout->addWidget(_rm, 0,2);
 
             std::stringstream m;
