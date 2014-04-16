@@ -820,8 +820,8 @@ namespace fire
             w->setLayout(l);
 
             auto t = new QLabel{formatted_timestamp().c_str()};
-            auto x = new QPushButton{"x"};
-            x->setMaximumSize(20,20);
+            auto x = make_x_button();
+
             l->addWidget(t);
             l->addWidget(a);
             l->addWidget(x);
