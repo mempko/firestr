@@ -22,11 +22,6 @@ namespace fire
 {
     namespace gui
     {
-        namespace
-        {
-            const size_t TIMER_SLEEP = 100;//in milliseconds
-        }
-
         message_list::message_list(
                 a::app_service_ptr app_service,
                 s::conversation_service_ptr conversation_s,
