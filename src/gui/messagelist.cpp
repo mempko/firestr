@@ -173,13 +173,17 @@ namespace fire
 
         void message_list::add(fg::message* t, a::app_ptr app, const std::string& id)
         {
-            CHECK(t);
-            CHECK(_conversation);
+            REQUIRE(t);
+            REQUIRE(_conversation);
+            REQUIRE(t->mail());
+            REQUIRE_FALSE(t->mail()->address().empty());
+            
             if(auto post = _conversation->parent_post().lock())
             {
                 //add to conversation
                 add(t);
-                _conversation->add_app({t->type(), id, t->mail()->address()});
+                s::app_metadatum meta{ t->type(), id, t->mail()->address() };
+                _conversation->add_app(meta);
 
                 //add widget mailbox to master
                 post->add(t->mail());
