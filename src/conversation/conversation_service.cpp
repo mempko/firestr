@@ -352,7 +352,6 @@ namespace fire
 
             //remove conversation from map
             _conversations.erase(s);
-            _post->remove_mailbox(s->second->mail()->address());
             fire_quit_conversation_event(id);
         }
 

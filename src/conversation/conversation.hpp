@@ -47,6 +47,7 @@ namespace fire
             public:
                 conversation(user::user_service_ptr, message::post_office_wptr);
                 conversation(const std::string id, user::user_service_ptr, message::post_office_wptr);
+                ~conversation();
 
             public:
                 const user::contact_list& contacts() const;

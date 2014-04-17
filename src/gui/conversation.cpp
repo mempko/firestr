@@ -59,7 +59,7 @@ namespace fire
             _contact_select = new contact_select_widget{conversation_service->user_service(), 
                 [conversation](const us::user_info& u) -> bool
                 {
-                    return !conversation->contacts().by_id(u.id());
+                    return !conversation->contacts().has(u.id());
                 }
             };
 
@@ -258,6 +258,7 @@ namespace fire
                 auto c = _conversation->contacts().by_id(r.id);
                 if(!c) return;
 
+                _conversation->contacts().remove(c);
                 update_contacts();
             }
             else
