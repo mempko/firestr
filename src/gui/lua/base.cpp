@@ -209,6 +209,8 @@ namespace fire
                 REQUIRE_EQUAL(m.meta.type, SCRIPT_MESSAGE);
 
                 _from_id = m.meta.extra["from_id"].as_string();
+                if(m.meta.extra.has("t"))
+                    _type = m.meta.extra["t"].as_string();
                 if(m.meta.extra.has("local_app_id")) 
                     _local_app_id = m.meta.extra["local_app_id"].as_string();
 
@@ -221,6 +223,7 @@ namespace fire
             {
                 m::message m; 
                 m.meta.type = SCRIPT_MESSAGE;
+                if(!_type.empty()) m.meta.extra["t"] = _type;
                 m.data = u::encode(_v);
                 return m;
             }
@@ -311,6 +314,17 @@ namespace fire
                 ENSURE_FALSE(r.app_id.empty());
                 return r;
             }
+
+            void script_message::set_type(const std::string& t)
+            {
+                _type = t;
+            }
+
+            const std::string& script_message::get_type() const
+            {
+                return _type;
+            }
+
 
             store_ref::store_ref(u::disk_store& d) : _d(d){}
 

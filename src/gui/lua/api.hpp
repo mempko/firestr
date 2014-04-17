@@ -34,6 +34,7 @@ namespace fire
             using image_map = std::unordered_map<int, QImage_ptr>;
             using layout_map = std::unordered_map<int, QGridLayout*>;
             using timer_map = std::unordered_map<int, QTimer*>;
+            using callback_map = std::unordered_map<std::string, std::string>;
 
             struct error_info
             {
@@ -76,8 +77,11 @@ namespace fire
                     conversation::conversation_ptr conversation;
                     conversation::conversation_service_ptr conversation_service;
                     messages::sender_ptr sender;
+
                     std::string message_callback;
                     std::string local_message_callback;
+                    callback_map message_callbacks;
+                    callback_map local_message_callbacks;
 
                     //util
                     void bind();
@@ -137,6 +141,12 @@ namespace fire
                     //messages
                     void set_message_callback(const std::string& a);
                     void set_local_message_callback(const std::string& a);
+                    void set_message_callback_by_type(
+                            const std::string& t, 
+                            const std::string& a);
+                    void set_local_message_callback_by_type(
+                            const std::string& t, 
+                            const std::string& a);
 
                     script_message make_message();
                     void send_all(const script_message&);

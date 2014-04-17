@@ -130,8 +130,11 @@ namespace fire
                     contact_ref from() const;
                     bool is_local() const;
                     app_ref app() const;
+                    void set_type(const std::string&);
+                    const std::string& get_type() const;
 
                 private:
+                    std::string _type;
                     std::string _from_id;
                     std::string _local_app_id;
                     util::dict _v;
