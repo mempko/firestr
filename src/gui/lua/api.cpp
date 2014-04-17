@@ -166,6 +166,8 @@ namespace fire
                     .set("message", &lua_api::make_message)
                     .set("when_message_received", &lua_api::set_message_callback)
                     .set("when_local_message_received", &lua_api::set_local_message_callback)
+                    .set("when_message", &lua_api::set_message_callback_by_type)
+                    .set("when_local_message", &lua_api::set_local_message_callback_by_type)
                     .set("send", &lua_api::send_all)
                     .set("send_to", &lua_api::send_to)
                     .set("send_local", &lua_api::send_local)
@@ -200,6 +202,8 @@ namespace fire
                     .set("get_bin", &script_message::get_bin)
                     .set("set_bin", &script_message::set_bin)
                     .set("is_local", &script_message::is_local)
+                    .set("set_type", &script_message::set_type)
+                    .set("type", &script_message::get_type)
                     .set("app", &script_message::app)
                     .set("set", script_message_set)
                     .set("get", script_message_get);
@@ -439,17 +443,33 @@ namespace fire
             try
             {
                 INVARIANT(state);
+                std::string callback;
+                //if a message type is set, try to find a callback in the callback map
+                //for that type
+                if(!m.get_type().empty())
+                {
+                    if(m.is_local())
+                    {
+                        auto ci = local_message_callbacks.find(m.get_type());
+                        if(ci != local_message_callbacks.end()) callback = ci->second;
+                    }
+                    else
+                    {
+                        auto ci = message_callbacks.find(m.get_type());
+                        if(ci != message_callbacks.end()) callback = ci->second;
+                    }
+                }
 
-                if(m.is_local())
+                //if no callback matched the type, use the generic callback
+                if(callback.empty())
                 {
-                    if(local_message_callback.empty()) return;
-                    state->call(local_message_callback, m);
+                    if(m.is_local()) callback = local_message_callback;
+                    else callback = message_callback;
                 }
-                else
-                {
-                    if(message_callback.empty()) return;
-                    state->call(message_callback, m);
-                }
+
+                //if there is no callback set, message is ignored.
+                if(callback.empty()) return;
+                state->call(callback, m);
             }
             catch(SLB::CallException& e)
             {
@@ -467,9 +487,19 @@ namespace fire
                 message_callback = a;
             }
 
+            void lua_api::set_message_callback_by_type(const std::string& t,  const std::string& a)
+            {
+                message_callbacks[t] = a;
+            }
+
             void lua_api::set_local_message_callback(const std::string& a)
             {
                 local_message_callback = a;
+            }
+
+            void lua_api::set_local_message_callback_by_type(const std::string& t,  const std::string& a)
+            {
+                local_message_callbacks[t] = a;
             }
 
             script_message lua_api::make_message()
