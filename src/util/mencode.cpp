@@ -61,15 +61,95 @@ namespace fire
             return *this;
         }
 
-        int value::as_int() const { return boost::any_cast<int>(_v); }
-        size_t value::as_size() const { return boost::any_cast<size_t>(_v); }
-        double value::as_double() const { return boost::any_cast<double>(_v); }
-        std::string value::as_string() const { return to_str(boost::any_cast<const bytes&>(_v)); }
-        const bytes& value::as_bytes() const { return boost::any_cast<const bytes&>(_v); }
-        const dict& value::as_dict() const { return boost::any_cast<const dict&>(_v); }
-        const array& value::as_array() const { return boost::any_cast<const array&>(_v); }
-        dict& value::as_dict() { return boost::any_cast<dict&>(_v); }
-        array& value::as_array() { return boost::any_cast<array&>(_v); }
+        int value::as_int() const 
+        try
+        { 
+            return boost::any_cast<int>(_v); 
+        }
+        catch (...)
+        {
+            throw std::runtime_error("value is not an integer");
+        }
+
+        size_t value::as_size() const 
+        try
+        { 
+            return boost::any_cast<size_t>(_v); 
+        }
+        catch (...)
+        {
+            throw std::runtime_error("value is not an size type");
+        }
+
+        double value::as_double() const 
+        try
+        { 
+            return boost::any_cast<double>(_v); 
+        }
+        catch (...)
+        {
+            throw std::runtime_error("value is not an real");
+        }
+
+        std::string value::as_string() const
+        try
+        { 
+            return to_str(boost::any_cast<const bytes&>(_v)); 
+        }
+        catch (...)
+        {
+            throw std::runtime_error("value is not a string");
+        }
+
+        const bytes& value::as_bytes() const 
+        try
+        { 
+            return boost::any_cast<const bytes&>(_v); 
+        }
+        catch (...)
+        {
+            throw std::runtime_error("value is not a byte array");
+        }
+
+        const dict& value::as_dict() const 
+        try
+        { 
+            return boost::any_cast<const dict&>(_v); 
+        }
+        catch (...)
+        {
+            throw std::runtime_error("value is not an dictionary");
+        }
+
+        const array& value::as_array() const 
+        try
+        { 
+            return boost::any_cast<const array&>(_v); 
+        }
+        catch (...)
+        {
+            throw std::runtime_error("value is not an array");
+        }
+
+        dict& value::as_dict() 
+        try
+        { 
+            return boost::any_cast<dict&>(_v); 
+        }
+        catch (...)
+        {
+            throw std::runtime_error("value is not an dictionary");
+        }
+        
+        array& value::as_array() 
+        try
+        { 
+            return boost::any_cast<array&>(_v); 
+        }
+        catch (...)
+        {
+            throw std::runtime_error("value is not an array");
+        }
                 
         bool value::is_int() const { return _v.type() == typeid(int);}
         bool value::is_size() const { return _v.type() == typeid(size_t);}
