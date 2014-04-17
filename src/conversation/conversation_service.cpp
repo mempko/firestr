@@ -72,7 +72,7 @@ namespace fire
             m.meta.extra["conversation_id"] = s.conversation_id;
             
             u::dict d;
-            d["contact"] = convert(s.contacts);
+            d["contacts"] = convert(s.contacts);
             d["apps"] = convert(s.apps); 
             m.data = u::encode(d);
 
