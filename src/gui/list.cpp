@@ -29,22 +29,20 @@ namespace fire
             INVARIANT(_layout);
         }
 
-        void delete_layout_item(QLayoutItem* l)
+        void delete_layout_item(QLayoutItem* l, bool del_widget)
         {
             REQUIRE(l);
-            REQUIRE(l->widget());
-            if(l == nullptr) return;
-            if(l->widget()) delete l->widget();
+            if(del_widget && l->widget()) delete l->widget();
             delete l;
         }
 
-        void list::clear() 
+        void list::clear(bool del_widgets) 
         {
             INVARIANT(_layout);
 
-            QLayoutItem *c = 0;
-            while((c = _layout->takeAt(0)) != 0)
-                delete_layout_item(c);
+            QLayoutItem *c = nullptr;
+            while((c = _layout->takeAt(0)) != nullptr)
+                delete_layout_item(c, del_widgets);
 
             ENSURE_EQUAL(_layout->count(), 0);
         }
@@ -57,17 +55,17 @@ namespace fire
             _layout->addWidget(w);
         }
 
-        void list::remove(QWidget* w)
+        void list::remove(QWidget* w, bool del_widget)
         {
             REQUIRE(w);
             INVARIANT(_layout);
             auto i = _layout->indexOf(w);
             if(i == -1) return;
 
-            remove(i);
+            remove(i, del_widget);
         }
 
-        void list::remove(size_t i)
+        void list::remove(size_t i, bool del_widget)
         {
             REQUIRE_RANGE(i , 0, size());
             INVARIANT(_layout);
@@ -75,7 +73,7 @@ namespace fire
             auto l = _layout->takeAt(i);
             CHECK(l);
 
-            delete_layout_item(l);
+            delete_layout_item(l, del_widget);
         }
 
         QWidget* list::get(size_t i) const

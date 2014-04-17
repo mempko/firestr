@@ -24,6 +24,7 @@
 
 #include <QtWidgets>
 
+namespace u = fire::util;
 namespace s = fire::conversation;
 namespace m = fire::message;
 namespace ms = fire::messages;
@@ -37,6 +38,7 @@ namespace fire
         namespace 
         {
             const size_t ADD_CONTACT_WIDTH = 10;
+            const std::string SCRIPT_APP = "SCRIPT_APP";
         }
 
         conversation_widget::conversation_widget(
@@ -57,12 +59,16 @@ namespace fire
             _contact_select = new contact_select_widget{conversation_service->user_service(), 
                 [conversation](const us::user_info& u) -> bool
                 {
-                    return !conversation->contacts().by_id(u.id());
+                    return !conversation->contacts().has(u.id());
                 }
             };
 
+            _contact_list = new contact_list{conversation_service->user_service(), _conversation->contacts()};
+
             _add_contact = new QPushButton{"+"};
             _add_contact->setMaximumSize(20,20);
+            _add_contact->setMinimumSize(20,20);
+            _add_contact->setToolTip(tr("add person to this conversation"));
             connect(_add_contact, SIGNAL(clicked()), this, SLOT(add_contact()));
 
             update_contact_select();
@@ -71,11 +77,17 @@ namespace fire
             auto* cl = new QGridLayout;
 
             cw->setLayout(cl);
-            cl->addWidget(_contact_select, 0,0);
-            cl->addWidget(_add_contact, 0, 1);
-            cl->addWidget(_messages, 1, 0, 1, 3);
+            cl->addWidget(_contact_select, 3,0);
+            cl->addWidget(_add_contact, 3, 1);
+            cl->addWidget(_contact_list, 0, 0, 2, 2);
 
-            _layout->addWidget(cw);
+            auto s = new QSplitter{Qt::Horizontal};
+            s->addWidget(_messages);
+            s->addWidget(cw);
+            s->setStretchFactor(0, 1);
+            s->setStretchFactor(1, 0);
+
+            _layout->addWidget(s);
 
             setLayout(_layout);
             _layout->setContentsMargins(0,0,0,0);
@@ -84,6 +96,7 @@ namespace fire
             _mail_service = new mail_service{_conversation->mail(), this};
             _mail_service->start();
 
+            INVARIANT(_contact_list);
             INVARIANT(_conversation_service);
             INVARIANT(_conversation);
             INVARIANT(_messages);
@@ -105,6 +118,10 @@ namespace fire
 
             bool enabled = _contact_select->count() > 0;
             _add_contact->setEnabled(enabled);
+            if(enabled) 
+                _add_contact->setStyleSheet("border: 0px; background-color: 'green'; color: 'white';");
+            else 
+                _add_contact->setStyleSheet("border: 0px; background-color: 'grey'; color: 'white';");
         }
 
         void conversation_widget::add(message* m)
@@ -127,24 +144,6 @@ namespace fire
             return _conversation;
         }
 
-        QWidget* contact_alert(us::user_info_ptr c, const std::string message)
-        {
-            REQUIRE(c);
-
-            auto w = new QWidget;
-            auto l = new QHBoxLayout;
-            w->setLayout(l);
-
-            std::stringstream s;
-            s << "<b>" << c->name() << "</b> " << message;
-
-            auto t = new QLabel{s.str().c_str()};
-            l->addWidget(t);
-
-            ENSURE(w);
-            return w;
-        }
-
         void conversation_widget::add_contact()
         {
             INVARIANT(_contact_select);
@@ -155,14 +154,15 @@ namespace fire
             if(!contact) return;
 
             _conversation_service->add_contact_to_conversation(contact, _conversation);
-
-            add(contact_alert(contact, convert(tr("added to conversation"))));
             update_contacts();
         }
 
         void conversation_widget::update_contacts()
         {
-            _messages->update_contact_lists();
+            INVARIANT(_contact_list);
+            INVARIANT(_conversation);
+
+            _contact_list->update(_conversation->contacts());
             update_contact_select();
         }
 
@@ -190,9 +190,15 @@ namespace fire
                 m::expect_remote(m);
                 m::expect_symmetric(m);
 
-                auto id = _messages->add_new_app(m);
-                _conversation->add_app_id(id);
+                //add new app and get metadata
+                if(!_messages->add_new_app(m)) return;
                 _conversation_service->fire_conversation_alert(_conversation->id());
+            }
+            else if(m.meta.type == ms::REQ_APP)
+            {
+                m::expect_remote(m);
+                m::expect_symmetric(m);
+                got_req_app_message(m);
             }
             else if(m.meta.type == s::event::CONVERSATION_SYNCED)
             {
@@ -213,9 +219,6 @@ namespace fire
                 auto c = _conversation_service->user_service()->by_id(r.contact_id);
                 if(!c) return;
 
-                add(contact_alert(c, convert(tr("quit conversation"))));
-
-                _messages->remove_from_contact_lists(c);
                 update_contacts();
                 _conversation_service->fire_conversation_alert(_conversation->id());
             }
@@ -231,7 +234,6 @@ namespace fire
                 auto c = _conversation_service->user_service()->by_id(r.contact_id);
                 if(!c) return;
 
-                add(contact_alert(c, convert(tr("added to conversation"))));
                 update_contacts();
                 _conversation_service->fire_conversation_alert(_conversation->id());
             }
@@ -251,6 +253,7 @@ namespace fire
                 auto c = _conversation->contacts().by_id(r.id);
                 if(!c) return;
 
+                _conversation->contacts().remove(c);
                 update_contacts();
             }
             else
@@ -268,6 +271,50 @@ namespace fire
         catch(...)
         {
             LOG << "conversation: unexpected error in check_mail." << std::endl;
+        }
+
+        void conversation_widget::got_req_app_message(const messages::request_app& m)
+        {
+            INVARIANT(_conversation);
+            INVARIANT(_messages);
+
+            //find the app in the current conversation with the address specified
+            auto ad = std::find_if(_conversation->apps().begin(), _conversation->apps().end(), 
+                    [&](const s::app_metadatum& app) -> bool { return app.address == m.app_address;});
+
+            if(ad == _conversation->apps().end()) return;
+
+            //encode app from app catalog if it is a script app
+            u::bytes encoded_app;
+            if(ad->type == SCRIPT_APP)
+            {
+                auto ap = _messages->apps().find(ad->address);
+                if(ap == _messages->apps().end()) return;
+                m::message app_message = *ap->second;
+                encoded_app = u::encode(app_message);
+            }
+
+            //send the app back to the person who requested it.
+            ms::new_app n{ad->address, ad->type, encoded_app}; 
+            _conversation->send(m.from_id, n);
+        }
+
+        void conversation_widget::add_chat_app()
+        {
+            INVARIANT(_messages);
+            _messages->add_chat_app();
+        }
+
+        void conversation_widget::add_app_editor(const std::string& id)
+        {
+            INVARIANT(_messages);
+            _messages->add_app_editor(id);
+        }
+
+        void conversation_widget::add_script_app(const std::string& id)
+        {
+            INVARIANT(_messages);
+            _messages->add_script_app(id);
         }
     }
 }

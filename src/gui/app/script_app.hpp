@@ -67,8 +67,8 @@ namespace fire
                     ~script_app();
 
                 public:
-                    const std::string& id();
-                    const std::string& type();
+                    const std::string& id() const;
+                    const std::string& type() const;
                     fire::message::mailbox_ptr mail();
 
                 public slots:
@@ -85,7 +85,6 @@ namespace fire
                     conversation::conversation_ptr _conversation;
                     fire::message::mailbox_ptr _mail;
                     messages::sender_ptr _sender;
-                    user::contact_list _contacts;
 
                     app_ptr _app;
                     app_service_ptr _app_service;

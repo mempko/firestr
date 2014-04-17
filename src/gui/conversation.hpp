@@ -53,6 +53,11 @@ namespace fire
                 void name(const QString&);
                 QString name() const;
 
+            public:
+                void add_chat_app();
+                void add_app_editor(const std::string& id);
+                void add_script_app(const std::string& id);
+
             public slots:
                 void check_mail(fire::message::message); 
                 void add(message*);
@@ -62,6 +67,10 @@ namespace fire
                 void update_contact_select();
 
             private:
+                void sync_apps();
+                void got_req_app_message(const messages::request_app&);
+
+            private:
                 mail_service* _mail_service;
                 QGridLayout* _layout;
                 contact_select_widget* _contact_select;
@@ -69,6 +78,7 @@ namespace fire
                 QSplitter* _splitter;
                 QString _name;
                 message_list* _messages;
+                contact_list* _contact_list;
                 conversation::conversation_ptr _conversation;
                 conversation::conversation_service_ptr _conversation_service;
                 app::app_service_ptr _app_service;

@@ -17,8 +17,9 @@
 
 #include "conversation/conversation.hpp"
 
-#include "util/uuid.hpp"
 #include "util/dbc.hpp"
+#include "util/log.hpp"
+#include "util/uuid.hpp"
 
 namespace u = fire::util;
 namespace us = fire::user;
@@ -29,6 +30,11 @@ namespace fire
 {
     namespace conversation
     {
+        namespace
+        {
+            const std::string SCRIPT_APP = "SCRIPT_APP";
+        }
+
         conversation::conversation(
                 us::user_service_ptr s,
                 m::post_office_wptr pp) :
@@ -50,6 +56,16 @@ namespace fire
             _initiated_by_user{false}
         {
             init();
+        }
+
+        conversation::~conversation()
+        {
+            INVARIANT(_mail);
+            if(auto p = _parent_post.lock())
+            {
+                LOG << "removing mailbox " << _mail->address() << std::endl;
+                p->remove_mailbox(_mail->address());
+            }
         }
 
         void conversation::init()
@@ -113,15 +129,23 @@ namespace fire
             return _user_service;
         }
 
-        const app_mailbox_ids& conversation::app_ids() const
+        const app_metadata& conversation::apps() const
         {
-            return _app_mailbox_ids;
+            return _app_metadata;
         }
 
-        void conversation::add_app_id(const std::string& id)
+        bool conversation::has_app(const std::string& address) const
         {
-            REQUIRE_FALSE(id.empty());
-            _app_mailbox_ids.push_back(id);
+            return _app_addresses.count(address) > 0;
+        }
+
+        void conversation::add_app(const app_metadatum& d)
+        {
+            REQUIRE(d.type != SCRIPT_APP || !d.id.empty());
+            REQUIRE_FALSE(d.type.empty());
+            REQUIRE_FALSE(d.address.empty());
+            _app_metadata.push_back(d);
+            _app_addresses.insert(d.address);
         }
 
         bool conversation::send(const std::string& to, const message::message& m)

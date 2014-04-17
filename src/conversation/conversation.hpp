@@ -33,12 +33,22 @@ namespace fire
 {
     namespace conversation
     {
-        using app_mailbox_ids = std::vector<std::string>;
+        struct app_metadatum
+        {
+            std::string type;
+            std::string id;
+            std::string address;
+        };
+
+        using app_metadata = std::vector<app_metadatum>;
+        using app_address_set = std::set<std::string>;
+
         class conversation 
         {
             public:
                 conversation(user::user_service_ptr, message::post_office_wptr);
                 conversation(const std::string id, user::user_service_ptr, message::post_office_wptr);
+                ~conversation();
 
             public:
                 const user::contact_list& contacts() const;
@@ -60,8 +70,9 @@ namespace fire
                 user::user_service_ptr user_service();
 
             public:
-                const app_mailbox_ids& app_ids() const;
-                void add_app_id(const std::string& id);
+                const app_metadata& apps() const;
+                bool has_app(const std::string& address) const;
+                void add_app(const app_metadatum&);
 
             private:
                 void init();
@@ -73,7 +84,8 @@ namespace fire
                 user::user_service_ptr _user_service;
                 messages::sender_ptr _sender;
                 user::contact_list _contacts;
-                app_mailbox_ids _app_mailbox_ids;
+                app_metadata _app_metadata;
+                app_address_set _app_addresses;
                 bool _initiated_by_user;
         };
 

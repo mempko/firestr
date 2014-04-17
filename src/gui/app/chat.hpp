@@ -56,8 +56,8 @@ namespace fire
                     ~chat_app();
 
                 public:
-                    const std::string& id();
-                    const std::string& type();
+                    const std::string& id() const;
+                    const std::string& type() const;
                     fire::message::mailbox_ptr mail();
 
                 public slots:

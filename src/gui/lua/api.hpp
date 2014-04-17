@@ -48,7 +48,6 @@ namespace fire
                 public:
                     lua_api(
                             app::app_ptr a,
-                            const user::contact_list& con,
                             messages::sender_ptr sender,
                             conversation::conversation_ptr conversation,
                             conversation::conversation_service_ptr conversation_service,
@@ -74,7 +73,6 @@ namespace fire
 
 
                     //message
-                    user::contact_list contacts;
                     conversation::conversation_ptr conversation;
                     conversation::conversation_service_ptr conversation_service;
                     messages::sender_ptr sender;

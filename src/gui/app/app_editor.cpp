@@ -178,7 +178,6 @@ namespace fire
                 _app_service{app_service},
                 _conversation_service{conversation_s},
                 _conversation{conversation},
-                _contacts{conversation->contacts()},
                 _app{app},
                 _prev_pos{0},
                 _run_state{READY}
@@ -210,7 +209,6 @@ namespace fire
                 _app_service{app_service},
                 _conversation_service{conversation_s},
                 _conversation{conversation},
-                _contacts{conversation->contacts()},
                 _app{app}
             {
                 REQUIRE(app_service);
@@ -296,7 +294,6 @@ namespace fire
 
                 _api = std::make_shared<l::lua_api>(
                         _app, 
-                        _contacts, 
                         _sender, 
                         _conversation, 
                         _conversation_service, 
@@ -481,13 +478,13 @@ namespace fire
                 }
             }
 
-            const std::string& app_editor::id()
+            const std::string& app_editor::id() const
             {
                 ENSURE_FALSE(_id.empty());
                 return _id;
             }
 
-            const std::string& app_editor::type()
+            const std::string& app_editor::type() const
             {
                 ENSURE_FALSE(APP_EDITOR.empty());
                 return APP_EDITOR;
@@ -712,7 +709,7 @@ namespace fire
                 }
 
                 //send it all
-                for(auto c : _contacts.list())
+                for(auto c : _conversation->contacts().list())
                 {
                     CHECK(c);
                     _sender->send(c->id(), convert(tm)); 
@@ -902,7 +899,7 @@ namespace fire
                     text_script t;
                     convert(m, t);
 
-                    auto c = _contacts.by_id(t.from_id);
+                    auto c = _conversation->contacts().by_id(t.from_id);
                     if(!c) return;
 
                     auto code = gui::convert(_script->toPlainText());

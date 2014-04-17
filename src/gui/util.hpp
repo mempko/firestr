@@ -20,6 +20,7 @@
 
 #include <QString>
 #include <QWidget>
+#include <QPushButton>
 #include "user/user.hpp"
 
 namespace fire
@@ -31,6 +32,7 @@ namespace fire
         std::string app_id(const user::local_user& l);
         std::string get_file_name(QWidget* root);
         bool load_from_file(const std::string& f, fire::util::bytes& data);
+        QPushButton* make_x_button();
     }
 }
 

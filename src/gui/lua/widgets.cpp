@@ -285,7 +285,7 @@ namespace fire
 
                 CHECK(l);
                 CHECK(w);
-                l->remove(w);
+                l->remove(w, false);
             }
 
             size_t list_ref::size() const
@@ -309,7 +309,7 @@ namespace fire
                 if(!l) return;
 
                 CHECK(l);
-                l->clear();
+                l->clear(false); //clear but don't delete widgets
             }
 
             QGridLayout* get_layout(int id, layout_map& map)
@@ -346,6 +346,7 @@ namespace fire
             {
                 INVARIANT(api);
                 INVARIANT_FALSE(id == 0);
+
                 QGridLayout* l = nullptr;
                 QWidget* w = nullptr;
 
@@ -416,6 +417,7 @@ namespace fire
             void draw_ref::set_pen(QPen* p)
             {
                 INVARIANT(api);
+
                 if(!p) return;
                 std::lock_guard<std::mutex> lock(api->mutex);
 

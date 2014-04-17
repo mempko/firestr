@@ -80,8 +80,7 @@ namespace fire
                 layout->addWidget(_user_text, 0,0);
                 if(remove)
                 {
-                    _rm = new QPushButton("x");
-                    _rm->setMaximumSize(20,20);
+                    _rm = make_x_button();
                     layout->addWidget(_rm, 0,1);
                     connect(_rm, SIGNAL(clicked()), this, SLOT(remove()));
                 }
@@ -432,8 +431,7 @@ namespace fire
             _address = _server.host() + ":" + n::port_to_string(_server.port());
             _label = new QLabel{_address.c_str()};
             layout->addWidget( _label, 0,0);
-            _rm = new QPushButton{"x"};
-            _rm->setMaximumSize(20,20);
+            _rm = make_x_button();
             layout->addWidget(_rm, 0,1);
             connect(_rm, SIGNAL(clicked()), this, SLOT(remove()));
 
@@ -525,8 +523,7 @@ namespace fire
             _accept = new QPushButton{a.str().c_str()};
             layout->addWidget(_accept, 0,1);
 
-            _rm = new QPushButton{"x"};
-            _rm->setMaximumSize(20,20);
+            _rm = make_x_button();
             layout->addWidget(_rm, 0,2);
 
             std::stringstream m;

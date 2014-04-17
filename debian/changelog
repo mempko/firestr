@@ -1,3 +1,10 @@
+firestr (0.3) UNRELEASED; urgency=low
+
+  * Release with one contact per conversation which apps share. 
+  * Support for syncing apps in a conversation.  
+
+ -- mempko <mempko@mempko-g780>  Tue, 15 Apr 2014 23:14:07 -0500
+
 firestr (0.2-1) saucy; urgency=low
 
   * Initial release 

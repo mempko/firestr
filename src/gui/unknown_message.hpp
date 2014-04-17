@@ -20,17 +20,14 @@
 
 #include <string>
 
+#include <QWidget>
 #include <QLabel>
-
-#ifndef Q_MOC_RUN
-#include "gui/message.hpp"
-#endif
 
 namespace fire
 {
     namespace gui
     {
-        class unknown_message : public message
+        class unknown_message : public QWidget
         {
             Q_OBJECT
 

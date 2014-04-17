@@ -55,7 +55,6 @@ namespace fire
 
             lua_api::lua_api(
                     a::app_ptr a,
-                    const us::contact_list& con,
                     ms::sender_ptr sndr,
                     s::conversation_ptr s,
                     s::conversation_service_ptr ss,
@@ -63,7 +62,6 @@ namespace fire
                     QGridLayout* cl,
                     list* o ) :
                 app{a},
-                contacts{con},
                 sender{sndr},
                 conversation{s},
                 conversation_service{ss},
@@ -349,6 +347,19 @@ namespace fire
                     delete t.second;
                     t.second = nullptr;
                 }
+                timers.clear();
+            }
+
+            void delete_widgets(widget_map& ws)
+            {
+                for(auto& t : ws)
+                {
+                    if(t.second == nullptr || t.second->parent()) continue;
+
+                    delete t.second;
+                    t.second = nullptr;
+                }
+                ws.clear();
             }
 
             void lua_api::reset_widgets()
@@ -357,16 +368,13 @@ namespace fire
 
                 //delete widgets without parent
                 delete_timers(timers);
+                delete_widgets(widgets);
 
                 //clear widgets
                 QLayoutItem *c = nullptr;
 
                 while((c = layout->takeAt(0)) != nullptr)
-                {
-                    if(!c) continue;
-                    if(c->widget()) delete c->widget();
                     delete c;
-                } 
 
                 if(output) output->clear();
                 button_refs.clear();
@@ -376,10 +384,17 @@ namespace fire
                 timer_refs.clear();
                 grid_refs.clear();
                 image_refs.clear();
-                widgets.clear();
-                timers.clear();
                 images.clear();
 
+                ENSURE(widgets.empty());
+                ENSURE(timers.empty());
+                ENSURE(edit_refs.empty());
+                ENSURE(text_edit_refs.empty());
+                ENSURE(list_refs.empty());
+                ENSURE(timer_refs.empty());
+                ENSURE(grid_refs.empty());
+                ENSURE(image_refs.empty());
+                ENSURE(images.empty());
                 ENSURE_EQUAL(layout->count(), 0);
             }
 
@@ -465,6 +480,7 @@ namespace fire
             void lua_api::send_to_helper(us::user_info_ptr c, const script_message& m)
             {
                 REQUIRE(c);
+                INVARIANT(conversation);
                 if( !conversation->user_service()->contact_available(c->id()) || 
                     !conversation->contacts().has(c->id()))
                     return;
@@ -475,7 +491,8 @@ namespace fire
             void lua_api::send_all(const script_message& m)
             {
                 INVARIANT(sender);
-                for(auto c : contacts.list())
+                INVARIANT(conversation);
+                for(auto c : conversation->contacts().list())
                 {
                     CHECK(c);
                     send_to_helper(c, m);
@@ -487,24 +504,28 @@ namespace fire
                 INVARIANT(sender);
                 INVARIANT(conversation);
 
-                auto c = contacts.by_id(cr.user_id);
+                auto c = conversation->contacts().by_id(cr.user_id);
                 if(!c) return;
                 send_to_helper(c, m);
             }
 
             size_t lua_api::total_contacts() const
             {
-                return contacts.size();
+                INVARIANT(conversation);
+                return conversation->contacts().size();
             }
 
             int lua_api::last_contact() const
             {
-                return contacts.size() - 1;
+                INVARIANT(conversation);
+                return conversation->contacts().size() - 1;
             }
 
             contact_ref lua_api::get_contact(size_t i)
             {
-                auto c = contacts.get(i);
+                INVARIANT(conversation);
+
+                auto c = conversation->contacts().get(i);
                 if(!c) return empty_contact_ref(*this);
 
                 contact_ref r;
@@ -547,7 +568,7 @@ namespace fire
                 } 
                 else
                 {
-                    auto c = contacts.by_id(who_started_id);
+                    auto c = conversation->contacts().by_id(who_started_id);
                     CHECK(c);
                     r.id = 0;
                     r.user_id = c->id();
@@ -562,16 +583,18 @@ namespace fire
             {
                 INVARIANT(conversation);
 
-                return conversation->app_ids().size();
+                return conversation->apps().size();
             }
 
             app_ref lua_api::get_app(size_t i)
             {
                 INVARIANT(conversation);
-                const auto& ids = conversation->app_ids();
-                if(i >= ids.size()) return empty_app_ref(*this);
+                const auto& apps = conversation->apps();
+                if(i >= apps.size()) return empty_app_ref(*this);
 
-                auto id = ids[i];
+                CHECK_FALSE(apps[i].address.empty());
+
+                auto id = apps[i].address;
 
                 app_ref r;
                 r.id = 0;
@@ -592,8 +615,11 @@ namespace fire
             void lua_api::send_local(const script_message& m)
             {
                 INVARIANT(conversation);
-                for(const auto& id : conversation->app_ids())
-                    sender->send_to_local_app(id, m);
+                for(const auto& app : conversation->apps())
+                {
+                    CHECK_FALSE(app.address.empty());
+                    sender->send_to_local_app(app.address, m);
+                }
             }
 
             grid_ref lua_api::make_grid()
@@ -952,7 +978,7 @@ namespace fire
                 auto i = std::make_shared<QImage>();
                 bool loaded = i->loadFromData(reinterpret_cast<const u::ubyte*>(d.data.data()),d.data.size());
 
-                auto l = new QLabel{canvas};
+                auto l = new QLabel;
                 if(loaded) 
                 {
                     ref.w = i->width();

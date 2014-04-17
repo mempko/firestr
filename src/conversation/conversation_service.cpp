@@ -16,9 +16,11 @@
  */
 
 #include "conversation/conversation_service.hpp"
+#include "messages/new_app.hpp"
+#include "util/dbc.hpp"
+#include "util/log.hpp"
 #include "util/thread.hpp"
 #include "util/uuid.hpp"
-#include "util/dbc.hpp"
 
 #include <stdexcept>
 
@@ -39,16 +41,16 @@ namespace fire
             const std::string QUIT_CONVERSATION = "quit_conversation_msg";
         }
 
-        using contact_ids = std::set<std::string>;
+        using id_set = std::set<std::string>;
 
-        u::array convert(const contact_ids& ids)
+        u::array convert(const id_set& ids)
         {
             u::array a;
             for(auto id : ids) a.add(id);
             return a;
         }
 
-        void convert(const u::array& a, contact_ids& ids)
+        void convert(const u::array& a, id_set& ids)
         {
             for(auto v : a) ids.insert(v.as_string());
         }
@@ -57,7 +59,8 @@ namespace fire
         {
             std::string from_id;
             std::string conversation_id;
-            contact_ids ids;
+            id_set contacts;
+            id_set apps;
         };
 
         m::message convert(const sync_conversation_msg& s)
@@ -67,7 +70,11 @@ namespace fire
             m::message m;
             m.meta.type = SYNC_CONVERSATION;
             m.meta.extra["conversation_id"] = s.conversation_id;
-            m.data = u::encode(convert(s.ids));
+            
+            u::dict d;
+            d["contacts"] = convert(s.contacts);
+            d["apps"] = convert(s.apps); 
+            m.data = u::encode(d);
 
             return m;
         }
@@ -78,9 +85,12 @@ namespace fire
 
             s.from_id = m.meta.extra["from_id"].as_string();
             s.conversation_id = m.meta.extra["conversation_id"].as_string();
-            u::array a;
-            u::decode(m.data, a);
-            convert(a, s.ids);
+
+            u::dict d;
+            u::decode(m.data, d);
+
+            convert(d["contacts"].as_array(), s.contacts);
+            convert(d["apps"].as_array(), s.apps);
         }
 
         struct quit_conversation_msg
@@ -164,7 +174,7 @@ namespace fire
 
                 //also get other contacts in the conversation and add them
                 //only if the user knows them
-                for(auto id : s.ids)
+                for(auto id : s.contacts)
                 {
                     //skip self
                     if(id == self) continue;
@@ -175,7 +185,7 @@ namespace fire
                     contacts.push_back(oc);
                 }
 
-                sync_conversation(s.conversation_id, contacts);
+                sync_conversation(s.from_id, s.conversation_id, contacts, s.apps);
             }
             else if(m.meta.type == QUIT_CONVERSATION)
             {
@@ -202,7 +212,11 @@ namespace fire
 
         using added_contacts = std::vector<std::string>;
 
-        conversation_ptr conversation_service::sync_conversation(const std::string& id, const user::contact_list& contacts)
+        conversation_ptr conversation_service::sync_conversation(
+                const std::string& from_id,
+                const std::string& id, 
+                const user::contact_list& contacts,
+                const app_addresses& apps)
         {
             INVARIANT(_post);
             INVARIANT(_user_service);
@@ -228,6 +242,7 @@ namespace fire
             }
             else s = sp->second;
 
+            //add contacts to conversation
             CHECK(s);
             added_contacts added;
             for(auto c : contacts.list())
@@ -238,6 +253,16 @@ namespace fire
 
                 s->contacts().add(c);
                 added.push_back(c->id());
+            }
+
+            //TODO: add apps to conversation by looping all app ids
+            //not in conversation and requesting the app
+            id_set need_apps;
+            for(const auto& app : apps)
+            {
+                if(s->has_app(app)) continue;
+                LOG << "conversation: " << s->id() << " needs app with address: " << app << std::endl;
+                need_apps.insert(app);
             }
 
             //done creating conversation, fire event
@@ -253,13 +278,32 @@ namespace fire
                     fire_contact_added(id, cid);
             }
 
+            //request apps that are needed
+            request_apps(from_id, s, need_apps);
+
             return s;
+        }
+
+        void conversation_service::request_apps(
+                const std::string& from_id, 
+                conversation_ptr c, 
+                const app_addresses& apps)
+        {
+            REQUIRE(c);
+            for(const auto& app_address : apps)
+            {
+                ms::request_app n{app_address, c->id()}; 
+                if(from_id.empty()) c->send(n);
+                else c->send(from_id, n);
+            }
         }
 
         conversation_ptr conversation_service::create_conversation(const std::string& id)
         {
             us::users nobody;
-            auto sp = sync_conversation(id, nobody);
+            std::string from_nobody = "";
+            app_addresses no_apps;
+            auto sp = sync_conversation(from_nobody, id, nobody, no_apps);
             CHECK(sp);
 
             sp->initiated_by_user(true);
@@ -271,7 +315,9 @@ namespace fire
         conversation_ptr conversation_service::create_conversation(user::contact_list& contacts)
         {
             std::string id = u::uuid();
-            auto sp = sync_conversation(id, contacts);
+            std::string from_nobody = "";
+            app_addresses no_apps;
+            auto sp = sync_conversation(from_nobody, id, contacts, no_apps);
             CHECK(sp);
 
             sp->initiated_by_user(true);
@@ -313,7 +359,6 @@ namespace fire
 
             //remove conversation from map
             _conversations.erase(s);
-            _post->remove_mailbox(s->second->mail()->address());
             fire_quit_conversation_event(id);
         }
 
@@ -330,17 +375,23 @@ namespace fire
 
             //get current contacts in the conversation.
             //these will be sent to the contact 
-            contact_ids ids;
+            id_set contacts;
             for(auto c : s->contacts().list()) 
             {
                 CHECK(c);
-                ids.insert(c->id());
+                contacts.insert(c->id());
             }
+
+            //get apps in conversation
+            id_set apps;
+            for(const auto& app : s->apps())
+                apps.insert(app.address);
 
             //send request to all contacts in conversation
             sync_conversation_msg ns;
             ns.conversation_id = s->id(); 
-            ns.ids = ids;
+            ns.contacts = contacts;
+            ns.apps = apps;
 
             for(auto c : s->contacts().list())
             {

@@ -66,5 +66,16 @@ namespace fire
 
             return true;
         }
+
+        QPushButton* make_x_button()
+        {
+            auto b = new QPushButton("x");
+            b->setMaximumSize(20,20);
+            b->setMinimumSize(20,20);
+            b->setStyleSheet("border: 0px; background-color: 'light grey'; color: 'red';");
+
+            ENSURE(b);
+            return b;
+        }
     }
 }

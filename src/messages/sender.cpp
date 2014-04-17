@@ -41,7 +41,7 @@ namespace fire
             auto contact = _service->user().contacts().by_id(to);
             if(!contact) return false;
 
-            const auto& my_id = _service->user().info().id();
+            const auto my_id = _service->user().info().id();
             m.meta.to = {contact->address(), _mail->address()};
             m.meta.extra["from_id"] = my_id;
 
@@ -49,14 +49,14 @@ namespace fire
             return true;
         }
 
-        bool sender::send_to_local_app(const std::string& id, message::message m)
+        bool sender::send_to_local_app(const std::string& address, message::message m)
         {
             INVARIANT(_service);
             INVARIANT(_mail);
 
             const auto& my_id = _service->user().info().id();
 
-            m.meta.to = {id};
+            m.meta.to = {address};
             m.meta.extra["from_id"] = my_id;
             m.meta.extra["local_app_id"] = _mail->address();
 

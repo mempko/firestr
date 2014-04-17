@@ -536,19 +536,7 @@ namespace fire
             auto s = dynamic_cast<conversation_widget*>(_conversations->currentWidget());
             if(!s) return;
 
-            //create chat sample
-            auto t = new a::chat_app{_conversation_service, s->conversation()};
-            s->add(t);
-            s->conversation()->add_app_id(t->mail()->address());
-
-            //add to master post so it can receive messages
-            //from outside world
-            _master->add(t->mail());
-
-            //send new app message to contacts in conversation
-            ms::new_app n{t->id(), t->type()}; 
-
-            s->conversation()->send(n);
+            s->add_chat_app();
         }
 
         bool ask_user_to_select_app(QWidget* w, const a::app_service& apps, std::string& id)
@@ -585,26 +573,7 @@ namespace fire
             std::string id; 
             if(!ask_user_to_select_app(this, *_app_service, id)) return;
 
-            a::app_ptr app = id.empty() ? 
-                _app_service->create_new_app() : 
-                _app_service->load_app(id);
-
-            CHECK(app);
-
-            //create app editor
-            auto t = new a::app_editor{_app_service, _conversation_service, s->conversation(), app};
-
-            s->add(t);
-            s->conversation()->add_app_id(t->mail()->address());
-
-            //add to master post so it can receive messages
-            //from outside world
-            _master->add(t->mail());
-
-            //send new app message to contacts in conversation
-            ms::new_app n{t->id(), t->type()}; 
-
-            s->conversation()->send(n);
+            s->add_app_editor(id);
         }
 
         void main_window::load_app_into_conversation(QString qid)
@@ -619,29 +588,12 @@ namespace fire
 
             //load app
             auto id = convert(qid);
-            auto a = _app_service->load_app(id);
-            if(!a) return;
-
-            //create app widget
-            auto t = new a::script_app{a, _app_service, _conversation_service, s->conversation()};
-
-            //add to conversation
-            s->add(t);
-            s->conversation()->add_app_id(t->mail()->address());
-
-            //add widget mailbox to master
-            _master->add(t->mail());
-
-            //send new app message to contacts in conversation
-            m::message app_message = *a;
-            ms::new_app n{t->id(), t->type(), u::encode(app_message)}; 
-
-            s->conversation()->send(n);
+            s->add_script_app(id);
         }
 
         void main_window::about()
         {
-            QMessageBox::about(this, tr("Firestr 0.2"),
+            QMessageBox::about(this, tr("Firestr 0.3"),
                     tr("<p><b>Fire★</b> is a simple distributed communication and computation "
                         "platform. Write, clone, modify, and send people programs which "
                         "communicate with each other automatically, in a distributed way.</p>"
@@ -868,8 +820,8 @@ namespace fire
             w->setLayout(l);
 
             auto t = new QLabel{formatted_timestamp().c_str()};
-            auto x = new QPushButton{"x"};
-            x->setMaximumSize(20,20);
+            auto x = make_x_button();
+
             l->addWidget(t);
             l->addWidget(a);
             l->addWidget(x);
