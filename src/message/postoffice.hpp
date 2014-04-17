@@ -54,7 +54,7 @@ namespace fire
                 bool add(mailbox_wptr);
                 bool has(mailbox_wptr) const;
                 void remove_mailbox(const std::string&);
-                const mailboxes& boxes() const;
+                mailboxes boxes() const;
 
 
             public:
@@ -72,6 +72,9 @@ namespace fire
                 const mailbox_stats& outside_stats() const;
                 mailbox_stats& outside_stats();
                 void outside_stats(bool);
+
+            protected:
+                void clean_mailboxes();
 
             protected:
                 virtual bool send_outside(const message&);

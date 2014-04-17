@@ -17,8 +17,9 @@
 
 #include "conversation/conversation.hpp"
 
-#include "util/uuid.hpp"
 #include "util/dbc.hpp"
+#include "util/log.hpp"
+#include "util/uuid.hpp"
 
 namespace u = fire::util;
 namespace us = fire::user;
@@ -55,6 +56,16 @@ namespace fire
             _initiated_by_user{false}
         {
             init();
+        }
+
+        conversation::~conversation()
+        {
+            INVARIANT(_mail);
+            if(auto p = _parent_post.lock())
+            {
+                LOG << "removing mailbox " << _mail->address() << std::endl;
+                p->remove_mailbox(_mail->address());
+            }
         }
 
         void conversation::init()

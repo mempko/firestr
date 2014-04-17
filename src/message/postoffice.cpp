@@ -18,6 +18,9 @@
 #include "message/postoffice.hpp"
 #include "util/dbc.hpp"
 #include "util/log.hpp"
+#include "util/string.hpp"
+
+namespace u = fire::util;
 
 namespace fire
 {
@@ -37,7 +40,8 @@ namespace fire
             {
                 bool sent = false;
 
-                for(auto p : o->_boxes)
+                auto boxes = o->boxes();
+                for(auto p : boxes)
                 {
                     auto wp = p.second;
                     auto sp = wp.lock();
@@ -173,6 +177,22 @@ namespace fire
             return false;
         }
 
+        void post_office::clean_mailboxes()
+        {
+            u::string_set to_be_deleted;
+            for(auto p : _boxes)
+            {
+                if(p.second.lock()) continue;
+                to_be_deleted.insert(p.first);
+            }
+
+            for(const auto& address : to_be_deleted)
+            {
+                LOG << "removing mailbox: " << address << std::endl;
+                _boxes.erase(address);
+            }
+        }
+
         bool post_office::add(mailbox_wptr p)
         {
             std::lock_guard<std::mutex> lock(_box_m);
@@ -181,8 +201,8 @@ namespace fire
             if(!sp) return false;
 
             REQUIRE_FALSE(sp->address().empty());
-            REQUIRE_FALSE(_boxes.count(sp->address()));
 
+            clean_mailboxes();
             _boxes[sp->address()] = p;
 
             return true;
@@ -204,7 +224,7 @@ namespace fire
             _boxes.erase(n);
         }
 
-        const mailboxes& post_office::boxes() const
+        mailboxes post_office::boxes() const
         {
             std::lock_guard<std::mutex> lock(_box_m);
             return _boxes;
