@@ -41,7 +41,7 @@ namespace fire
             auto contact = _service->user().contacts().by_id(to);
             if(!contact) return false;
 
-            const auto& my_id = _service->user().info().id();
+            const auto my_id = _service->user().info().id();
             m.meta.to = {contact->address(), _mail->address()};
             m.meta.extra["from_id"] = my_id;
 
