@@ -70,12 +70,10 @@ namespace fire
             m::message m;
             m.meta.type = SYNC_CONVERSATION;
             m.meta.extra["conversation_id"] = s.conversation_id;
-
-            u::dict d
-            {
-                {"contacts",convert(s.contacts)},
-                {"apps",convert(s.apps)}
-            };
+            
+            u::dict d;
+            d["contact"] = convert(s.contacts);
+            d["apps"] = convert(s.apps); 
             m.data = u::encode(d);
 
             return m;
