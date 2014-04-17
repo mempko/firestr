@@ -185,7 +185,7 @@ namespace fire
                     contacts.push_back(oc);
                 }
 
-                sync_conversation(s.conversation_id, contacts, s.apps);
+                sync_conversation(s.from_id, s.conversation_id, contacts, s.apps);
             }
             else if(m.meta.type == QUIT_CONVERSATION)
             {
@@ -213,6 +213,7 @@ namespace fire
         using added_contacts = std::vector<std::string>;
 
         conversation_ptr conversation_service::sync_conversation(
+                const std::string& from_id,
                 const std::string& id, 
                 const user::contact_list& contacts,
                 const app_addresses& apps)
@@ -278,26 +279,31 @@ namespace fire
             }
 
             //request apps that are needed
-            request_apps(s, need_apps);
+            request_apps(from_id, s, need_apps);
 
             return s;
         }
 
-        void conversation_service::request_apps(conversation_ptr c, const app_addresses& apps)
+        void conversation_service::request_apps(
+                const std::string& from_id, 
+                conversation_ptr c, 
+                const app_addresses& apps)
         {
             REQUIRE(c);
             for(const auto& app_address : apps)
             {
                 ms::request_app n{app_address, c->id()}; 
-                c->send(n);
+                if(from_id.empty()) c->send(n);
+                else c->send(from_id, n);
             }
         }
 
         conversation_ptr conversation_service::create_conversation(const std::string& id)
         {
             us::users nobody;
+            std::string from_nobody = "";
             app_addresses no_apps;
-            auto sp = sync_conversation(id, nobody, no_apps);
+            auto sp = sync_conversation(from_nobody, id, nobody, no_apps);
             CHECK(sp);
 
             sp->initiated_by_user(true);
@@ -309,8 +315,9 @@ namespace fire
         conversation_ptr conversation_service::create_conversation(user::contact_list& contacts)
         {
             std::string id = u::uuid();
+            std::string from_nobody = "";
             app_addresses no_apps;
-            auto sp = sync_conversation(id, contacts, no_apps);
+            auto sp = sync_conversation(from_nobody, id, contacts, no_apps);
             CHECK(sp);
 
             sp->initiated_by_user(true);

@@ -191,12 +191,7 @@ namespace fire
                 m::expect_symmetric(m);
 
                 //add new app and get metadata
-                auto meta = _messages->add_new_app(m);
-                if(_conversation->has_app(meta.address)) return;
-                if(meta.type.empty() || meta.address.empty()) return;
-                if(meta.type == SCRIPT_APP && meta.id.empty()) return;
-
-                _conversation->add_app(meta);
+                if(!_messages->add_new_app(m)) return;
                 _conversation_service->fire_conversation_alert(_conversation->id());
             }
             else if(m.meta.type == ms::REQ_APP)
@@ -281,7 +276,7 @@ namespace fire
         void conversation_widget::got_req_app_message(const messages::request_app& m)
         {
             INVARIANT(_conversation);
-            INVARIANT(_app_service);
+            INVARIANT(_messages);
 
             //find the app in the current conversation with the address specified
             auto ad = std::find_if(_conversation->apps().begin(), _conversation->apps().end(), 
@@ -293,9 +288,9 @@ namespace fire
             u::bytes encoded_app;
             if(ad->type == SCRIPT_APP)
             {
-                auto a = _app_service->load_app(ad->id);
-                if(!a) return;
-                m::message app_message = *a;
+                auto ap = _messages->apps().find(ad->address);
+                if(ap == _messages->apps().end()) return;
+                m::message app_message = *ap->second;
                 encoded_app = u::encode(app_message);
             }
 

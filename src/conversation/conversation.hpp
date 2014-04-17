@@ -39,6 +39,7 @@ namespace fire
             std::string id;
             std::string address;
         };
+
         using app_metadata = std::vector<app_metadatum>;
         using app_address_set = std::set<std::string>;
 
