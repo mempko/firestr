@@ -420,10 +420,20 @@ namespace fire
             auto i = _map.find(c->id());
             if(i == _map.end()) return false;
             
+            //erase from list and map
             _list.erase(_list.begin() + i->second);
             _map.erase(i);
 
+            //reassign ids in the map
+            for(size_t i = 0; i < _list.size(); i++)
+            {
+                auto cc = _list[i]; 
+                CHECK(cc);
+                _map[cc->id()] = i;
+            }
+
             ENSURE_EQUAL(_map.count(c->id()), 0);
+            ENSURE_EQUAL(_map.size(), _list.size());
             return true;
         }
 
