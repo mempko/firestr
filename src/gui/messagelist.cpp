@@ -72,17 +72,19 @@ namespace fire
             return _app_service;
         }
 
-        s::app_metadatum message_list::add_new_app(const ms::new_app& n) 
+        bool message_list::add_new_app(const ms::new_app& n) 
         {
             INVARIANT(_conversation_service);
             INVARIANT(_conversation);
             INVARIANT(_app_service);
 
+            a::app_ptr app;
             s::app_metadatum m;
             m.type = n.type();
             m.address = n.id();
-            if(_conversation->has_app(m.address))
-                return m;
+
+            if(_conversation->has_app(m.address)) return false;
+            if(m.type.empty() || m.address.empty()) return false;
 
             if(n.type() == a::CHAT)
             {
@@ -99,7 +101,7 @@ namespace fire
             {
                 if(auto post = _conversation->parent_post().lock())
                 {
-                    auto app = _app_service->create_new_app();
+                    app = _app_service->create_new_app();
                     app->launched_local(false);
                     auto c = new a::app_editor{n.from_id(), n.id(), _app_service, _conversation_service, _conversation, app};
                     CHECK(c->mail());
@@ -112,7 +114,9 @@ namespace fire
             {
                 if(auto post = _conversation->parent_post().lock())
                 {
-                    auto app = _app_service->create_app(u::decode<m::message>(n.data()));
+                    app = _app_service->create_app(u::decode<m::message>(n.data()));
+                    if(app->id().empty()) return false;
+
                     auto c = new a::script_app{n.from_id(), n.id(), app, _app_service, _conversation_service, _conversation};
                     CHECK(c->mail());
 
@@ -124,9 +128,12 @@ namespace fire
             else
             {
                 add(new unknown_message{"unknown app type `" + n.type() + "'"});
+                return false;
             }
 
-            return m;
+            _conversation->add_app(m);
+            if(app) _apps[m.address] = app;
+            return true;
         }
 
         void message_list::add_chat_app()
@@ -192,6 +199,7 @@ namespace fire
                 u::bytes encoded_app;
                 if(app)
                 {
+                    _apps[t->mail()->address()] = app;
                     m::message app_message = *app;
                     encoded_app = u::encode(app_message);
                 }
@@ -199,6 +207,11 @@ namespace fire
                 ms::new_app n{t->id(), t->type(), encoded_app}; 
                 _conversation->send(n);
             }
+        }
+
+        const app_map& message_list::apps() const
+        {
+            return _apps;
         }
     }
 }

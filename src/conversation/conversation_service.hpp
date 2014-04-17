@@ -44,6 +44,7 @@ namespace fire
 
             public:
                 conversation_ptr sync_conversation(
+                        const std::string& from_id, //may be empty 
                         const std::string& id, 
                         const user::contact_list&, 
                         const app_addresses&);
@@ -88,7 +89,10 @@ namespace fire
                         const std::string& conversation_id,
                         const std::string& contact_id);
 
-                void request_apps(conversation_ptr s, const app_addresses&);
+                void request_apps(
+                        const std::string& from_id,
+                        conversation_ptr s, 
+                        const app_addresses&);
 
             private:
                 message::post_office_ptr _post;

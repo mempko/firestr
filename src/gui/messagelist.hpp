@@ -30,6 +30,7 @@ namespace fire
 {
     namespace gui
     {
+        using app_map = std::unordered_map<std::string, app::app_ptr>; 
         class message_list : public list
         {
             Q_OBJECT
@@ -42,6 +43,7 @@ namespace fire
             public:
                 conversation::conversation_ptr conversation();
                 app::app_service_ptr app_service();
+                const app_map& apps() const;
 
             public:
                 void add_chat_app();
@@ -49,7 +51,7 @@ namespace fire
                 void add_script_app(const std::string& id);
 
             public slots:
-                conversation::app_metadatum add_new_app(const messages::new_app&); 
+                bool add_new_app(const messages::new_app&); 
                 void add(message*);
                 void add(QWidget*);
 
@@ -60,6 +62,7 @@ namespace fire
                 conversation::conversation_service_ptr _conversation_service;
                 conversation::conversation_ptr _conversation;
                 app::app_service_ptr _app_service;
+                app_map _apps;
         };
     }
 }
