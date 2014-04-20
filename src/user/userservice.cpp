@@ -424,7 +424,7 @@ namespace fire
             else if(m.meta.type == ms::GREET_KEY_RESPONSE)
             {
                 m::expect_remote(m);
-                m::expect_plaintext(m);
+                if(!m::is_plaintext(m) && !m::is_asymmetric(m)) return;
 
                 ms::greet_key_response rs{m};
                 add_greeter(rs.host(), rs.port(), rs.key());
