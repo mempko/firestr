@@ -3,12 +3,15 @@ app:place(s, 0,0)
 app:height(100)
 row=1
 send_id = 1
-CHUNK=1024 * 40
+CHUNK=1024 * 64
 
 sfiles = {}
 gfiles = {}
 
 s:when_clicked("send()")
+app:when_message("sf", "got_start_file")
+app:when_message("gc","got_get_chunk")
+app:when_message("sc", "got_chunk")
 
 function send()
 	local file = app:open_bin_file()
@@ -134,7 +137,7 @@ end
 
 function send_start_file(f)
 	local m = app:message()
-	m:set("t","sf")
+	m:set_type("sf")
 	m:set("d", {name=f.name, id=f.id, size=f.size, chunks=f.chunks})
 	app:send(m)
 end
@@ -160,7 +163,7 @@ end
 function send_get_chunk(f)
 	local m = app:message()
 	local chunk = f.chunk + 1
-	m:set("t","gc")
+	m:set_type("gc")
 	m:set("d", {id=f.orig_id, chunk=chunk})
 	app:send_to(f.from, m)
 end
@@ -195,7 +198,7 @@ function send_chunk(to, f, c)
 	end
 
 	local m = app:message()
-	m:set("t", "sc")
+	m:set_type("sc")
 	m:set("m", {id=f.id, chunk=c})
 	m:set_bin("data", ch)
 	app:send_to(to, m)
@@ -233,20 +236,6 @@ function got_chunk(m)
 	update_g_status(fd)
 	send_get_chunk(file)
 	
-end
-
-app:when_message_received("got")
-function got(m)
-	
-	local t = m:get("t")
-
-	if t == "sf" then
-		got_start_file(m)
-	elseif t == "gc" then
-		got_get_chunk(m)
-	elseif t == "sc" then
-		got_chunk(m)
-	end
 end
 
 function save_file_by_id(gid)
