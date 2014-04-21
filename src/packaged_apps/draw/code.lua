@@ -59,32 +59,33 @@ function clear()
 	send_clear()
 end
 
-app:when_message_received("got")
+app:when_message("l", "got_line")
+app:when_message("cl", "got_clear")
 
-function got(m)
-	local type = m:get("t")
-	if type == "l" then
-		local l = m:get("ln")
-		local prev_pen = d:get_pen()
-		local cp = pens[l.p]
-		d:pen(cp)
-		d:line(l.xs, l.ys, l.xe, l.ye)
-		d:pen(prev_pen)
-	elseif type == "cl" then
-		d:clear()
-	end	
+function got_line(m)
+	local l = m:get("ln")
+	local prev_pen = d:get_pen()
+	local cp = pens[l.p]
+	d:pen(cp)
+	d:line(l.xs, l.ys, l.xe, l.ye)
+	d:pen(prev_pen)
+end
+
+function got_clear(m)
+	d:clear()		
 end
 
 function send_line(x1,y1,x2,y2, pen)
 	local m = app:message()
-	m:set("t","l")
+	m:set_type("l")
 	m:set("ln", {xs=x1,ys=y1,xe=x2,ye=y2,p=pen})
 	app:send(m)
 end
 
 function send_clear()
 	local m = app:message()
-	m:set("t", "cl")
+	m:set_type("cl")
 	app:send(m)
 end
+
 
