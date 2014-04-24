@@ -363,6 +363,7 @@ namespace fire
             menuBar()->addMenu(_conversation_menu);
             menuBar()->addMenu(_app_menu);
             if(_debug_menu) menuBar()->addMenu(_debug_menu);
+            menuBar()->setHidden(false);
 
             tab_changed(-1);
 
