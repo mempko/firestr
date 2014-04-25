@@ -1,4 +1,4 @@
-firestr (0.3) UNRELEASED; urgency=low
+firestr (0.3) trusty; urgency=low
 
   * Release with one contact per conversation which apps share. 
   * Support for syncing apps in a conversation.  
