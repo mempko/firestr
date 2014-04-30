@@ -186,7 +186,7 @@ namespace fire
                 tcp::endpoint endpoint)
         {
             INVARIANT(_socket);
-            ENSURE(_state == connecting);
+            if(_state != connecting) return;
             if(!_socket->is_open()) { close(); return; }
 
             //if no error then we are connected
