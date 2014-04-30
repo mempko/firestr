@@ -105,7 +105,7 @@ namespace fire
                 void bind(port_type port);
                 void do_send();
                 void handle_write(util::bytes_ptr, const boost::system::error_code& error);
-                void handle_read(util::bytes_ptr, const boost::system::error_code& error, size_t transferred);
+                void handle_read(const boost::system::error_code& error, size_t transferred);
                 void close();
                 void start_read();
                 void do_close();
