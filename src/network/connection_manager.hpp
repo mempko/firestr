@@ -50,6 +50,7 @@ namespace fire
                 bool receive(endpoint& ep, util::bytes& b);
                 bool send(const std::string& to, const util::bytes& b);
                 bool is_disconnected(const std::string& addr);
+                const udp_stats& get_udp_stats() const;
 
             private:
                 tcp_queue_ptr get_connected_queue(const std::string& address);

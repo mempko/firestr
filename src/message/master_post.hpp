@@ -42,6 +42,9 @@ namespace fire
                         security::encrypted_channels_ptr);
                 virtual ~master_post_office();
 
+            public:
+                const network::udp_stats& get_udp_stats() const;
+
             protected:
                 virtual bool send_outside(const message&);
 
