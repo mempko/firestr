@@ -84,6 +84,13 @@ namespace fire
         using chunk_queue_ring = std::list<queue_ring_item>;
         using chunk_queue_map = std::unordered_map<sequence_type, chunk_queue_ring::iterator>;
 
+        struct udp_stats
+        {
+            size_t dropped = 0;
+            size_t bytes_sent = 0;
+            size_t bytes_recv = 0;
+        };
+
         class udp_queue;
         class udp_connection
         {
@@ -98,10 +105,11 @@ namespace fire
                 void bind(port_type port);
                 void do_send();
                 void handle_write(util::bytes_ptr, const boost::system::error_code& error);
-                void handle_read(const boost::system::error_code& error, size_t transferred);
+                void handle_read(util::bytes_ptr, const boost::system::error_code& error, size_t transferred);
                 void close();
                 void start_read();
                 void do_close();
+                const udp_stats& stats() const; 
 
             private:
                 size_t chunkify(const std::string& host, port_type port, const fire::util::bytes& b);
@@ -135,6 +143,7 @@ namespace fire
                 bool _writing;
                 mutable std::mutex _mutex;
                 boost::system::error_code _error;
+                udp_stats _stats;
             private:
                 friend void udp_run_thread(udp_queue*);
                 friend void resend_thread(udp_queue*);
@@ -152,6 +161,9 @@ namespace fire
             public:
                 virtual bool send(const endpoint_message& m);
                 virtual bool receive(endpoint_message& b);
+
+            public:
+                const udp_stats& stats() const; 
 
             private:
                 void bind();
