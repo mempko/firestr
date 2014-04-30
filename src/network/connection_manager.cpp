@@ -30,10 +30,10 @@ namespace fire
     {
         void tcp_send_thread(connection_manager*);
 
-        connection_manager::connection_manager(size_t size, port_type local_port) :
+        connection_manager::connection_manager(size_t size, port_type local_port, bool tcp_listen) :
+            _tcp_listen{tcp_listen},
             _pool(size),
             _local_port{local_port},
-            _next_available{0},
             _rstate{receive_state::IN_UDP1},
             _done{false}
         {
@@ -43,10 +43,9 @@ namespace fire
             _tcp_send_thread.reset(new std::thread{tcp_send_thread, this});
 
             ENSURE_FALSE(_pool.empty());
-            ENSURE(_in);
+            ENSURE(!_tcp_listen || _in);
             ENSURE(_udp_con);
             ENSURE(_tcp_send_thread);
-            ENSURE_EQUAL(_next_available, 0);
         }
 
         connection_manager::~connection_manager()
@@ -88,10 +87,8 @@ namespace fire
             ENSURE(_in);
         }
 
-        void connection_manager::create_tcp_pool()
+        asio_params connection_manager::create_tcp_params()
         {
-            REQUIRE(!_pool.empty());
-
             //create outgoing params
             asio_params p = {
                 asio_params::tcp, 
@@ -104,29 +101,51 @@ namespace fire
                 0, // wait;
                 false, //track_incoming;
             };
+            return p;
+        }
 
-            //create socket pool
-            for(size_t i = 0; i < _pool.size(); ++i)
-                _pool[i] = std::make_shared<tcp_queue>(p);
+        void connection_manager::create_tcp_pool()
+        {
+            auto par = create_tcp_params(); 
+            for(auto& p : _pool) p = std::make_shared<tcp_queue>(par);
+        }
+
+        void connection_manager::cleanup_pool()
+        {
+            //clean up disconnected connections
+            for(auto& p : _pool)
+                if(p && p->is_disconnected()) 
+                    p.reset();
+
+            auto i = _out.begin();
+            while(i != _out.end())
+            {
+                CHECK_RANGE(i->second, 0, _pool.size());
+                auto& p = _pool[i->second];
+                if(!p) i = _out.erase(i);
+                else i++;
+            }
         }
 
         void connection_manager::teardown_and_repool_tcp_connections()
         {
             LOG << "creating listening tcp connection and outgoing pool..." << std::endl;
-            _next_available = 0;
             _in.reset();
             _in_connections.clear();
-            _out.clear();
-            for(auto& pv : _pool) pv.reset();
 
+            cleanup_pool();
+
+            if(_tcp_listen)
+            {
 #ifdef __APPLE__
-            create_tcp_endpoint();
+                create_tcp_endpoint();
 #endif
-            create_tcp_pool();
+                create_tcp_pool();
 
 #ifndef __APPLE__
-            create_tcp_endpoint();
+                create_tcp_endpoint();
 #endif
+            }
         }
 
         tcp_queue_ptr connection_manager::get_connected_queue(const std::string& address)
@@ -136,51 +155,75 @@ namespace fire
             {
                 auto& c = _pool[p->second];
                 CHECK(c);
-                if(c->is_connecting() || c->is_connected()) 
+                if(!c->is_disconnected()) 
                     return c;
             }
 
-            return {};
+            return tcp_queue_ptr{};
+        }
+
+        size_t connection_manager::find_next_available()
+        {
+            size_t next_available = 0;
+            for(;next_available < _pool.size(); next_available++)
+            {
+                auto &p = _pool[next_available];
+                //skip connected connections
+                if(p) continue;
+
+                auto par = create_tcp_params(); 
+                p = std::make_shared<tcp_queue>(par);
+                break;
+            }
+
+            ENSURE(next_available == _pool.size() || _pool[next_available]);
+            return next_available;
         }
 
         tcp_queue_ptr connection_manager::connect(const std::string& address)
         try
         {
+            auto next_available = _pool.size();
             {
                 u::mutex_scoped_lock l(_mutex);
                 auto q = get_connected_queue(address);
                 if(q) return q;
+                next_available = find_next_available();
             }
 
 
             //If we ran out of connections in the out pool then we tear down our tcp connections
             //and repool. Obviously this algorithm won't work well if we have as many greeters
             //as the pool size. Still figuring this out.
-            if(_next_available >= _pool.size()) 
+            if(next_available >= _pool.size()) 
             {
                 u::mutex_scoped_lock l(_mutex);
                 LOG << "ran out of outgoing tcp connections..." << std::endl;
                 teardown_and_repool_tcp_connections();
+                next_available = find_next_available();
+                if(next_available >= _pool.size()) 
+                {
+                    LOG << "unable to get tcp connection from the pool..." << std::endl;
+                    return tcp_queue_ptr{};
+                }
             }
 
-            CHECK_RANGE(_next_available, 0, _pool.size());
+            CHECK_RANGE(next_available, 0, _pool.size());
+            CHECK(_pool[next_available]);
+            CHECK(_pool[next_available]->is_disconnected());
 
             //parse address to host, port
             auto a = parse_address(address);
 
-            //increment index in pool
-            auto i = _next_available;
-            _next_available++;
-
             //assign address to socket and connect
             {
                 u::mutex_scoped_lock l(_mutex);
-                _out[address] = i;
+                _out[address] = next_available;
             }
-            _pool[i]->connect(a.host, a.port);
+            _pool[next_available]->connect(a.host, a.port);
 
-            ENSURE_BETWEEN(_next_available, 0, _pool.size());
-            return _pool[i];
+            ENSURE_BETWEEN(next_available, 0, _pool.size());
+            return _pool[next_available];
         }
         catch(std::exception& e)
         {
@@ -238,11 +281,13 @@ namespace fire
                 case receive_state::IN_UDP5: _rstate = receive_state::IN_UDP6; break;
                 case receive_state::IN_UDP6: _rstate = receive_state::IN_UDP7; break;
                 case receive_state::IN_UDP7: _rstate = receive_state::IN_UDP8; break;
-                case receive_state::IN_UDP8: _rstate = receive_state::IN_TCP; break;
+                case receive_state::IN_UDP8: 
+                                             _rstate = _tcp_listen ? receive_state::IN_TCP : receive_state::OUT_TCP;
+                                             break;
                 default: CHECK(false && "missed case");
             }
 
-            ENSURE(ps != receive_state::IN_UDP8 || _rstate == receive_state::IN_TCP) 
+            ENSURE(ps != receive_state::IN_UDP8 || _rstate == receive_state::IN_TCP || _rstate == receive_state::OUT_TCP) 
             ENSURE(_rstate != ps);
         }
 
@@ -268,15 +313,14 @@ namespace fire
                     case receive_state::IN_UDP8:
                         {
                             endpoint_message um;
+                            transition_udp_state();
                             if(_udp_con->receive(um))
                             {
-                                transition_udp_state();
 
                                 ep = um.ep;
                                 b = std::move(um.data);
                                 return true;
                             }
-                            _rstate = receive_state::IN_TCP;
                         }
                         break;
 
