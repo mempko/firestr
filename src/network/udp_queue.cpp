@@ -629,6 +629,7 @@ namespace fire
                     validate_chunk(make_address_str(ep), chunk, _out_working);
                 }
             }
+            start_read();
         }
 
         using exhausted_messages = std::set<sequence_type>;
