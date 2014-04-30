@@ -211,7 +211,7 @@ namespace fire
                 sc::encrypted_channels_ptr sl) : 
             _in_host{in_host},
             _in_port{in_port},
-            _connections{POOL_SIZE, in_port},
+            _connections{POOL_SIZE, in_port, false},
             _encrypted_channels{sl}
         {
             _address = n::make_udp_address(_in_host,_in_port);

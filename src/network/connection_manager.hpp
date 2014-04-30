@@ -43,7 +43,7 @@ namespace fire
         class connection_manager
         {
             public:
-                connection_manager(size_t size, port_type listen_port);
+                connection_manager(size_t size, port_type listen_port, bool tcp_listen = true);
                 ~connection_manager();
 
             public:
@@ -58,6 +58,9 @@ namespace fire
                 void create_udp_endpoint();
                 void create_tcp_endpoint();
                 void create_tcp_pool();
+                void cleanup_pool();
+                size_t find_next_available();
+                asio_params create_tcp_params();
 
             private:
                 enum receive_state { 
@@ -82,9 +85,9 @@ namespace fire
                 assignment_map _out;
                 tcp_connection_pool _pool;
                 port_type _local_port;
-                size_t _next_available;
                 tcp_queue_ptr _in;
                 udp_queue_ptr _udp_con;
+                bool _tcp_listen;
 
                 connection_map _in_connections;
 
