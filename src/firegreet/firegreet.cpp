@@ -355,11 +355,9 @@ int main(int argc, char *argv[])
     catch(std::exception& e)
     {
         LOG << "error parsing message: " << e.what() << std::endl;
-        LOG << "message: " << u::to_str(data) << std::endl;
     }
     catch(...)
     {
         LOG << "unknown error parsing message: " << std::endl;
-        LOG << "message: " << u::to_str(data) << std::endl;
     }
 }
