@@ -44,7 +44,7 @@ namespace fire
             const size_t RESEND_TICK_THRESHOLD = 3; //resend after 3 seconds
             const size_t RESEND_THRESHOLD = 2; //resend one time
             const size_t UDP_PACKET_SIZE = 1024; //in bytes
-            const size_t MAX_UDP_BUFF_SIZE = UDP_PACKET_SIZE*1024; //500k in bytes
+            const size_t MAX_UDP_BUFF_SIZE = UDP_PACKET_SIZE*2; //500k in bytes
             const size_t SEQUENCE_BASE = 1;
             const size_t CHUNK_TOTAL_BASE = SEQUENCE_BASE + sizeof(sequence_type);
             const size_t CHUNK_BASE = CHUNK_TOTAL_BASE + sizeof(chunk_total_type);
@@ -67,6 +67,7 @@ namespace fire
             _in_queue(in),
             _socket{new udp::socket{io}},
             _io(io),
+            _in_buffer(MAX_UDP_BUFF_SIZE),
             _writing{false}
         {
             boost::system::error_code error;
@@ -436,7 +437,7 @@ namespace fire
 
             if(data_size > 0)
             {
-                if(data_size > UDP_PACKET_SIZE) return ch;
+                if(data_size > MAX_UDP_BUFF_SIZE) return ch;
                 ch.data.resize(data_size);
                 std::copy(b.begin() + MESSAGE_BASE, b.end(), ch.data.begin());
             }
@@ -509,10 +510,9 @@ namespace fire
 
         void udp_connection::start_read()
         {
-            u::bytes_ptr buf{new u::bytes(UDP_PACKET_SIZE)};
             _socket->async_receive_from(
-                   ba::buffer(buf->data(), UDP_PACKET_SIZE), _in_endpoint,
-                    boost::bind(&udp_connection::handle_read, this, buf,
+                   ba::buffer(_in_buffer, MAX_UDP_BUFF_SIZE), _in_endpoint,
+                    boost::bind(&udp_connection::handle_read, this,
                         boost::asio::placeholders::error,
                         boost::asio::placeholders::bytes_transferred));
         }
@@ -566,11 +566,8 @@ namespace fire
             return true;
         }
 
-        void udp_connection::handle_read(u::bytes_ptr buf, const boost::system::error_code& error, size_t transferred)
+        void udp_connection::handle_read(const boost::system::error_code& error, size_t transferred)
         {
-            REQUIRE(buf);
-
-            start_read();
             if(error)
             {
                 {
@@ -578,13 +575,14 @@ namespace fire
                     _error = error;
                 }
                 LOG << "error getting message of size " << transferred  << ". " << error.message() << std::endl;
+                start_read();
                 return;
             }
 
             //get bytes
-            CHECK_LESS_EQUAL(transferred, buf->size());
+            CHECK_LESS_EQUAL(transferred, _in_buffer.size());
             u::bytes data(transferred);
-            std::copy(buf->begin(), buf->begin() + transferred, data.begin());
+            std::copy(_in_buffer.begin(), _in_buffer.begin() + transferred, data.begin());
 
             _stats.bytes_recv += transferred;
 
