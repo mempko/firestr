@@ -22,6 +22,7 @@
 #include "util/log.hpp"
 
 #include <fstream>
+#include <sstream>
 
 #include <QVBoxLayout>
 #include <QTabWidget>
@@ -33,6 +34,7 @@
 namespace us = fire::user;
 namespace s = fire::conversation;
 namespace m = fire::message;
+namespace n = fire::network;
 
 namespace fire
 {
@@ -171,10 +173,12 @@ namespace fire
                 m::post_office_ptr p,
                 us::user_service_ptr us, 
                 s::conversation_service_ptr ss, 
+                const n::udp_stats& udps,
                 QWidget* parent) :
             _post{p},
             _user_service{us},
             _conversation_service{ss},
+            _udp_stats(udps),
             _log_last_file_pos{0},
             _total_mailboxes{0},
             QDialog{parent}
@@ -196,11 +200,16 @@ namespace fire
             _log = new QTextEdit;
             log_layout->addWidget(_log, 0,0);
 
+            //udp stats
+            _udp_stat_text = new QLabel; 
+
             //create mailbox tab
             auto* mailbox_tab = new QWidget;
             auto* mailbox_layout = new QGridLayout{mailbox_tab};
             _mailboxes = new list;
-            mailbox_layout->addWidget(_mailboxes, 0,0);
+            mailbox_layout->addWidget(_udp_stat_text, 0,0);
+            mailbox_layout->addWidget(_mailboxes, 1,0);
+
 
             //add tabs
             tabs->addTab(log_tab, tr("log"));
@@ -222,6 +231,10 @@ namespace fire
             auto *t2 = new QTimer(this);
             connect(t2, SIGNAL(timeout()), this, SLOT(update_mailboxes()));
             t2->start(UPDATE_MAILBOXES);
+
+            auto *t3 = new QTimer(this);
+            connect(t3, SIGNAL(timeout()), this, SLOT(update_udp_stats()));
+            t3->start(UPDATE_GRAPH);
 
             restore_state();
 
@@ -261,6 +274,17 @@ namespace fire
             add_mailboxes(*_post, *_mailboxes, _added_mailboxes);
 
             _total_mailboxes = _post->boxes().size();
+        }
+
+        void debug_win::update_udp_stats()
+        {
+            INVARIANT(_udp_stat_text);
+            std::stringstream s;
+
+            s << " sent: " << _udp_stats.bytes_sent / 1024
+              << "kb recv: " << _udp_stats.bytes_recv / 1024
+              << "kb dropped: " << _udp_stats.dropped;
+            _udp_stat_text->setText(s.str().c_str());
         }
 
         void debug_win::update_log()

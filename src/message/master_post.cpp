@@ -241,5 +241,10 @@ namespace fire
             _out.push(m);
             return true;
         }
+
+        const network::udp_stats& master_post_office::get_udp_stats() const
+        {
+            return _connections.get_udp_stats();
+        }
     }
 }

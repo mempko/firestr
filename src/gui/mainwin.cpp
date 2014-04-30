@@ -522,7 +522,11 @@ namespace fire
             REQUIRE(_user_service);
             REQUIRE(_conversation_service);
 
-            auto db = new debug_win{_master,_user_service, _conversation_service};
+            auto db = new debug_win{
+                _master,
+                _user_service, 
+                _conversation_service, 
+                dynamic_cast<m::master_post_office*>(_master.get())->get_udp_stats()};
             db->setAttribute(Qt::WA_DeleteOnClose);
             db->show();
             db->raise();

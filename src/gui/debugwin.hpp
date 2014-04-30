@@ -21,6 +21,7 @@
 #include "user/userservice.hpp"
 #include "conversation/conversation_service.hpp"
 #include "message/postoffice.hpp"
+#include "network/udp_queue.hpp"
 
 #include "gui/list.hpp"
 
@@ -79,11 +80,13 @@ namespace fire
                         fire::message::post_office_ptr,
                         user::user_service_ptr, 
                         conversation::conversation_service_ptr, 
+                        const network::udp_stats&,
                         QWidget* parent = nullptr);
 
             public slots:
                 void update_log();
                 void update_mailboxes();
+                void update_udp_stats();
 
             private slots:
                 void closeEvent(QCloseEvent*);
@@ -95,6 +98,8 @@ namespace fire
             private:
                 QTextEdit* _log;
                 list* _mailboxes;
+                QLabel* _udp_stat_text;
+
                 added_mailboxes _added_mailboxes;
 
                 size_t _total_mailboxes;
@@ -102,6 +107,7 @@ namespace fire
                 std::streampos _log_last_file_pos;
                 fire::message::post_office_ptr _post;
                 user::user_service_ptr _user_service;
+                const network::udp_stats& _udp_stats;
                 conversation::conversation_service_ptr _conversation_service;
         };
     }

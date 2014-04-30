@@ -378,6 +378,12 @@ namespace fire
             return si->second->is_disconnected();
         }
 
+        const udp_stats& connection_manager::get_udp_stats() const
+        {
+            INVARIANT(_udp_con);
+            return _udp_con->stats();
+        }
+
         void tcp_send_thread(connection_manager* m)
         {
             REQUIRE(m);
