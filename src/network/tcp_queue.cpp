@@ -46,6 +46,10 @@ namespace fire
         {
             const size_t BLOCK_SLEEP = 10;
             const size_t THREAD_SLEEP = 40;
+            const size_t KEEP_ALIVE_SLEEP = 2000;
+            const size_t KEEP_ALIVE_THRESH = 15;
+            const u::bytes KEEP_ALIVE_MSG {'%', 'k'};
+            const u::bytes KEEP_ALIVE_ACK_MSG {'%', 'a'};
             const int RETRIES = 0;
         }
 
@@ -252,6 +256,26 @@ namespace fire
             return is_connected();
         }
 
+        void tcp_connection::send_keep_alive()
+        {
+            send(KEEP_ALIVE_MSG);
+        }
+
+        void tcp_connection::send_keep_alive_ack()
+        {
+            send(KEEP_ALIVE_ACK_MSG);
+        }
+
+        bool tcp_connection::is_alive() 
+        {
+            return _alive;
+        }
+
+        void tcp_connection::reset_alive() 
+        {
+            _alive = false;
+        }
+
         void tcp_connection::do_send(bool force)
         {
             ENSURE(_socket);
@@ -313,6 +337,7 @@ namespace fire
             int c = in.get();
             size_t garbage = 1;
 
+            //find start of message
             while(c != '!' && in.good()) 
             { 
                 c = in.get(); 
@@ -320,6 +345,7 @@ namespace fire
             }
             if(!in.good()) { start_read(); return;}
 
+            //read size
             c = in.get();
             size_t rc = 1;
             while(c != ':' && in.good())
@@ -332,6 +358,7 @@ namespace fire
 
             CHECK_EQUAL(_in_buffer.size(), o_size - rc - garbage);
 
+            //otherwise we got a generic message and need to read the body.
             size_t size = 0; 
             try { size = lexical_cast<size_t>(size_buf); } catch (...){}
 
@@ -381,7 +408,11 @@ namespace fire
             std::istream in(&_in_buffer);
             in.read(&data[0], size);
 
-            //add message to in queue
+            //got keepalive or ack
+            if(data == KEEP_ALIVE_MSG) send_keep_alive_ack();
+            else if (data == KEEP_ALIVE_ACK_MSG) _alive = true;
+            //otherwise add message to in queue
+            else
             {
                 u::mutex_scoped_lock l(_in_mutex);
                 _in_queue.emplace_push(data);
@@ -430,6 +461,7 @@ namespace fire
         }
 
         void tcp_run_thread(tcp_queue*);
+        void keep_alive_thread(tcp_queue*);
         tcp_queue::tcp_queue(const asio_params& p) : 
             _p(p), _done{false},
             _io{new ba::io_service}
@@ -443,10 +475,13 @@ namespace fire
             }
 
             if(_p.mode != asio_params::delayed_connect)
+            {
                 _run_thread.reset(new std::thread{tcp_run_thread, this});
+                _keep_alive_thread.reset(new std::thread{keep_alive_thread, this});
+            }
 
             INVARIANT(_io);
-            INVARIANT(_p.mode == asio_params::delayed_connect || _run_thread);
+            INVARIANT(_p.mode == asio_params::delayed_connect || (_run_thread && _keep_alive_thread));
         }
 
         tcp_queue::~tcp_queue() 
@@ -459,6 +494,7 @@ namespace fire
             if(_p.block) _in_queue.done();
             if(_p.wait > 0) u::sleep_thread(_p.wait);
             if(_run_thread) _run_thread->join();
+            if(_keep_alive_thread) _keep_alive_thread->join();
         }
 
         bool tcp_queue::send(const u::bytes& b)
@@ -495,7 +531,9 @@ namespace fire
 
             //start up engine
             _run_thread.reset(new std::thread{tcp_run_thread, this});
+            _keep_alive_thread.reset(new std::thread{keep_alive_thread, this});
             ENSURE(_run_thread);
+            ENSURE(_keep_alive_thread);
         }
 
         bool tcp_queue::is_connected()
@@ -506,6 +544,11 @@ namespace fire
         bool tcp_queue::is_connecting()
         {
             return _out && _out->is_connecting();
+        }
+
+        bool tcp_queue::is_disconnected()
+        {
+            return _out && _out->is_disconnected();
         }
 
         void tcp_queue::delayed_connect()
@@ -620,6 +663,7 @@ namespace fire
             switch(_p.mode)
             {
                 case asio_params::bind: if(_p.track_incoming) _last_in_socket.pop(p); break;
+                case asio_params::delayed_connect:
                 case asio_params::connect: p = _out.get(); break;
                 default:
                     CHECK(false && "missed case");
@@ -631,11 +675,54 @@ namespace fire
         {
             CHECK(q);
             CHECK(q->_io);
+            size_t ticks = 0;
+            if(q->_out) q->_out->send_keep_alive();
+
             while(!q->_done) 
             try
             {
                 q->_io->run();
                 u::sleep_thread(THREAD_SLEEP);
+                if(q->_out && q->_out->is_disconnected())
+                    break;
+            }
+            catch(std::exception& e)
+            {
+                LOG << "error in tcp thread. " << e.what() << std::endl;
+                if(q->_out) q->_out->close();
+            }
+            catch(...)
+            {
+                LOG << "unknown error in tcp thread." << std::endl;
+                if(q->_out) q->_out->close();
+            }
+        }
+
+        void keep_alive_thread(tcp_queue* q)
+        {
+            CHECK(q);
+            size_t ticks = 0;
+            if(q->_out) q->_out->send_keep_alive();
+
+            while(!q->_done) 
+            try
+            {
+                //do keepalive
+                if(q->_out && !q->_out->is_disconnected() && ticks > KEEP_ALIVE_THRESH)
+                {
+                    if(q->_out->is_alive()) 
+                    {
+                        q->_out->send_keep_alive();
+                        q->_out->reset_alive();
+                    }
+                    else q->_out->close();
+                    ticks = 0;
+                }
+                ticks++;
+                u::sleep_thread(KEEP_ALIVE_SLEEP);
+
+                if(q->_out && q->_out->is_disconnected())
+                    break;
             }
             catch(std::exception& e)
             {

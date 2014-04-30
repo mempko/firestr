@@ -53,7 +53,12 @@ namespace fire
                 virtual endpoint get_endpoint() const;
                 virtual bool is_disconnected() const;
 
+
             public:
+                void send_keep_alive();
+                void send_keep_alive_ack();
+                bool is_alive(); 
+                void reset_alive(); 
                 void bind(port_type port);
                 void connect(boost::asio::ip::tcp::endpoint);
                 void start_read();
@@ -94,6 +99,7 @@ namespace fire
                 boost::system::error_code _error;
                 bool _writing;
                 int _retries;
+                bool _alive = false;
             private:
                 friend class tcp_queue;
                 friend void tcp_run_thread(tcp_queue*);
@@ -117,6 +123,7 @@ namespace fire
                 void connect(const std::string& host, port_type port);
                 bool is_connected();
                 bool is_connecting();
+                bool is_disconnected();
 
             private:
                 void connect();
@@ -132,6 +139,7 @@ namespace fire
                 tcp_resolver_ptr _resolver;
                 tcp_acceptor_ptr _acceptor;
                 util::thread_uptr _run_thread;
+                util::thread_uptr _keep_alive_thread;
 
                 tcp_connection_ptr _out;
                 mutable tcp_connection_ptr_queue _last_in_socket;
@@ -143,6 +151,7 @@ namespace fire
 
             private:
                 friend void tcp_run_thread(tcp_queue*);
+                friend void keep_alive_thread(tcp_queue*);
         };
 
         using tcp_queue_ptr = std::shared_ptr<tcp_queue>;
