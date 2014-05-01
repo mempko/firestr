@@ -66,6 +66,9 @@ namespace fire
             boost::dynamic_bitset<> sent;
             size_t ticks = 0;
             size_t resent = 0;
+            size_t in_flight = 0;
+            size_t queued = 0;
+            size_t next_send = 0;
         };
 
         //working set for both incoming and outgoing messages
@@ -77,6 +80,7 @@ namespace fire
         //the chunk_queue_map links to the chunk queue for that address
         struct queue_ring_item
         {
+            std::string addr;
             chunk_queue queue;
             sequence_type sequence;
             size_t erase_count;
@@ -113,7 +117,9 @@ namespace fire
 
             private:
                 size_t chunkify(const std::string& host, port_type port, const fire::util::bytes& b);
-                void send(udp_chunk& c);
+                void send_right_away(udp_chunk& c);
+                void queue_chunks(working_udp_messages&);
+                void queue_chunks(working_udp_chunks&);
                 void queue_chunk(udp_chunk& c);
                 void queue_next_chunk();
                 bool next_chunk_incr();
@@ -128,7 +134,6 @@ namespace fire
                 endpoint_queue& _in_queue;
 
                 //writing
-                mutable std::mutex _ring_mutex;
                 chunk_queue_ring::iterator _next_out_queue;
                 chunk_queue_ring _out_queues; //messages get chunked to here
                 chunk_queue_map _out_queue_map; //address are mapped to queue
@@ -141,7 +146,6 @@ namespace fire
                 udp_socket_ptr _socket;
                 sequence_type _sequence = 0;
                 bool _writing;
-                mutable std::mutex _mutex;
                 boost::system::error_code _error;
                 udp_stats _stats;
             private:
