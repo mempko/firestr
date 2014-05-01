@@ -65,7 +65,6 @@ namespace fire
             boost::dynamic_bitset<> set;
             boost::dynamic_bitset<> sent;
             size_t ticks = 0;
-            size_t resent = 0;
             size_t in_flight = 0;
             size_t queued = 0;
             size_t next_send = 0;

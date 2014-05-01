@@ -43,7 +43,7 @@ namespace fire
             const size_t THREAD_SLEEP = 40;
             const size_t RESEND_THREAD_SLEEP = 1000;
             const size_t RESEND_TICK_THRESHOLD = 2; //resend after 2 seconds
-            const size_t RESEND_THRESHOLD = 2; //resend one time
+            const size_t RESEND_THRESHOLD = 10; //purge message after 10 seconds
             const size_t UDP_PACKET_SIZE = 1024; //in bytes
             const size_t MAX_UDP_BUFF_SIZE = UDP_PACKET_SIZE*2; //500k in bytes
             const size_t SEQUENCE_BASE = 1;
@@ -746,15 +746,13 @@ namespace fire
                         if(resent_m) 
                         {
                             resent = true;
-                            wm.resent++;
                             CHECK_FALSE(wm.chunks.empty());
                         } 
                     }
 
-                    if(wm.resent >= RESEND_THRESHOLD) 
+                    if(wm.ticks >= RESEND_THRESHOLD) 
                         em.insert(sequence);
 
-                    if(!skip) wm.ticks = 0;
                 }
 
                 //erase all exhaused messages
