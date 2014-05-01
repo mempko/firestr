@@ -124,7 +124,7 @@ namespace fire
                 void set_mouse_pressed_callback(const std::string&);  
                 void set_mouse_moved_callback(const std::string&);  
                 void set_mouse_dragged_callback(const std::string&);  
-                void set_pen(QPen*);
+                void set_pen(QPen);
                 QPen get_pen() { return pen;}
 
                 void mouse_pressed(int button, int x, int y);
