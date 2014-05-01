@@ -122,6 +122,7 @@ namespace fire
                 void queue_chunk(udp_chunk& c);
                 void queue_next_chunk();
                 bool next_chunk_incr();
+                size_t resend(working_udp_chunks& wm);
                 void resend();
 
             private:
