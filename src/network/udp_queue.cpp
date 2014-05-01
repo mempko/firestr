@@ -37,13 +37,13 @@ namespace fire
     {
         namespace
         {
-            const size_t MAX_FLIGHT = 5;
+            const size_t MAX_FLIGHT = 10;
             const size_t ERASE_COUNT = 5;
             const size_t BLOCK_SLEEP = 10;
             const size_t THREAD_SLEEP = 40;
             const size_t RESEND_THREAD_SLEEP = 1000;
             const size_t RESEND_TICK_THRESHOLD = 1; //resend after 1 seconds
-            const size_t RESEND_THRESHOLD = 10; //purge message after 10 seconds
+            const size_t RESEND_THRESHOLD = 5; //purge message after 5 seconds
             const size_t UDP_PACKET_SIZE = 512; //in bytes
             const size_t MAX_UDP_BUFF_SIZE = UDP_PACKET_SIZE*2; 
             const size_t SEQUENCE_BASE = 1;
@@ -701,6 +701,29 @@ namespace fire
 
         using exhausted_messages = std::set<sequence_type>;
 
+        size_t udp_connection::resend(working_udp_chunks& wm)
+        {
+            if(wm.set.count() == wm.chunks.size()) return 0;
+
+            size_t resent_m = 0;
+            size_t cnt = 0;
+            for(const auto& c : wm.chunks)
+            {
+                if(cnt >= wm.next_send) break;
+                cnt++;
+                //skip validated or not sent
+                if(wm.set[c.chunk] || !wm.sent[c.chunk]) continue;
+                resent_m++;
+                if(resent_m > MAX_FLIGHT) break;
+
+                udp_chunk mc = c;//copy
+                mc.resent = true;
+                _stats.dropped++;
+                queue_chunk(mc);
+            }
+            return resent_m;
+        }
+
         void udp_connection::resend()
         {
             bool resent = false;
@@ -716,31 +739,14 @@ namespace fire
 
                     sequence_type sequence = wmp.first;
 
-                    //are there any messages in flight?
-                    bool in_flight = wm.in_flight > 0; 
-
                     //check if we should try to resend
                     bool skip = wm.ticks <= RESEND_TICK_THRESHOLD;
 
                     //walk working message and resend all chunks that never got
                     //acked
-                    if(!skip && in_flight)
+                    if(!skip)
                     {
-                        size_t resent_m = 0;
-                        for(const auto& c : wm.chunks)
-                        {
-                            //skip validated or not sent
-                            if(wm.set[c.chunk] || !wm.sent[c.chunk]) continue;
-                            resent_m++;
-                            if(resent_m > MAX_FLIGHT) break;
-
-                            udp_chunk mc = c;//copy
-                            mc.resent = true;
-                            _stats.dropped++;
-                            queue_chunk(mc);
-                        }
-
-                        if(resent_m > 0) 
+                        if(resend(wm) > 0) 
                         {
                             resent = true;
                             CHECK_FALSE(wm.chunks.empty());
@@ -749,7 +755,6 @@ namespace fire
 
                     if(wm.ticks >= RESEND_THRESHOLD) 
                         em.insert(sequence);
-
                 }
 
                 //erase all exhaused messages
