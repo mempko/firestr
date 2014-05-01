@@ -88,6 +88,15 @@ namespace fire
                     ENSURE_GREATER(_q.size(), 0);
                 }
 
+                virtual void emplace_front(t& v) 
+                {
+                    std::lock_guard<std::mutex> lock(_m);
+                    _q.emplace_front(std::move(v));
+                    _c.notify_one();
+
+                    ENSURE_GREATER(_q.size(), 0);
+                }
+
                 virtual bool pop(t& v, bool wait = false)
                 {
                     if(wait)
