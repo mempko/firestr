@@ -42,10 +42,10 @@ namespace fire
             const size_t BLOCK_SLEEP = 10;
             const size_t THREAD_SLEEP = 40;
             const size_t RESEND_THREAD_SLEEP = 1000;
-            const size_t RESEND_TICK_THRESHOLD = 2; //resend after 2 seconds
+            const size_t RESEND_TICK_THRESHOLD = 1; //resend after 1 seconds
             const size_t RESEND_THRESHOLD = 10; //purge message after 10 seconds
-            const size_t UDP_PACKET_SIZE = 1024; //in bytes
-            const size_t MAX_UDP_BUFF_SIZE = UDP_PACKET_SIZE*2; //500k in bytes
+            const size_t UDP_PACKET_SIZE = 512; //in bytes
+            const size_t MAX_UDP_BUFF_SIZE = UDP_PACKET_SIZE*2; 
             const size_t SEQUENCE_BASE = 1;
             const size_t CHUNK_TOTAL_BASE = SEQUENCE_BASE + sizeof(sequence_type);
             const size_t CHUNK_BASE = CHUNK_TOTAL_BASE + sizeof(chunk_total_type);
@@ -678,27 +678,23 @@ namespace fire
                     ack.chunk = chunk.chunk;
                     CHECK(ack.data.empty());
 
+                    //send ack
+                    send_right_away(ack);
+
                     //insert chunk to message buffer
                     bool inserted = insert_chunk(make_address_str(ep), chunk, _in_working, data);
                     //chunk is no longer valid after insert_chunk call because a move is done.
-
-                    //send ack
-                    send_right_away(ack);
-                    _io.post(boost::bind(&udp_connection::do_send, this));
 
                     if(inserted)
                     {
                         endpoint_message em = {ep, data};
                         _in_queue.emplace_push(em);
                     }
-                }
-                else
-                {
-                    validate_chunk(make_address_str(ep), chunk, _out_working);
 
-                    //got ack, try sending
-                    _io.post(boost::bind(&udp_connection::do_send, this));
                 }
+                else validate_chunk(make_address_str(ep), chunk, _out_working);
+
+                _io.post(boost::bind(&udp_connection::do_send, this));
             }
             start_read();
         }
@@ -730,20 +726,21 @@ namespace fire
                     //acked
                     if(!skip && in_flight)
                     {
-                        bool resent_m = false;
+                        size_t resent_m = 0;
                         for(const auto& c : wm.chunks)
                         {
                             //skip validated or not sent
                             if(wm.set[c.chunk] || !wm.sent[c.chunk]) continue;
+                            resent_m++;
+                            if(resent_m > MAX_FLIGHT) break;
 
                             udp_chunk mc = c;//copy
-                            resent_m = true;
                             mc.resent = true;
                             _stats.dropped++;
                             queue_chunk(mc);
                         }
 
-                        if(resent_m) 
+                        if(resent_m > 0) 
                         {
                             resent = true;
                             CHECK_FALSE(wm.chunks.empty());
