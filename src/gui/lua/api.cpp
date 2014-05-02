@@ -354,29 +354,6 @@ namespace fire
                 timers.clear();
             }
 
-            void delete_widgets(widget_map& ws)
-            {
-                for(auto& t : ws)
-                {
-                    if(t.second == nullptr || t.second->parent()) continue;
-
-                    delete t.second;
-                    t.second = nullptr;
-                }
-                ws.clear();
-            }
-
-            void remove_widget(widget_map& ws, QWidget* w)
-            {
-                REQUIRE(w);
-                auto i = std::find_if(ws.begin(), ws.end(), 
-                        [w](const widget_map::value_type& p) -> bool 
-                        {
-                            return p.second == w;
-                        });
-                if(i != ws.end()) ws.erase(i);
-            }
-
             void lua_api::reset_widgets()
             {
                 INVARIANT(layout);
@@ -389,14 +366,9 @@ namespace fire
 
                 while((c = layout->takeAt(0)) != nullptr)
                 {
-                    if(c->widget()) 
-                    {
-                        remove_widget(widgets, c->widget());
-                        delete c->widget();
-                    }
+                    if(c->widget()) delete c->widget();
                     delete c;
                 }
-                delete_widgets(widgets);
 
                 if(output) output->clear();
                 button_refs.clear();
@@ -407,6 +379,8 @@ namespace fire
                 grid_refs.clear();
                 image_refs.clear();
                 images.clear();
+                widgets.clear();
+                
 
                 ENSURE(widgets.empty());
                 ENSURE(timers.empty());
