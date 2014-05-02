@@ -366,19 +366,37 @@ namespace fire
                 ws.clear();
             }
 
+            void remove_widget(widget_map& ws, QWidget* w)
+            {
+                REQUIRE(w);
+                auto i = std::find_if(ws.begin(), ws.end(), 
+                        [w](const widget_map::value_type& p) -> bool 
+                        {
+                            return p.second == w;
+                        });
+                if(i != ws.end()) ws.erase(i);
+            }
+
             void lua_api::reset_widgets()
             {
                 INVARIANT(layout);
 
                 //delete widgets without parent
                 delete_timers(timers);
-                delete_widgets(widgets);
 
                 //clear widgets
                 QLayoutItem *c = nullptr;
 
                 while((c = layout->takeAt(0)) != nullptr)
+                {
+                    if(c->widget()) 
+                    {
+                        remove_widget(widgets, c->widget());
+                        delete c->widget();
+                    }
                     delete c;
+                }
+                delete_widgets(widgets);
 
                 if(output) output->clear();
                 button_refs.clear();
