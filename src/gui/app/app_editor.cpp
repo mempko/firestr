@@ -48,7 +48,7 @@ namespace fire
         namespace app
         {
             const std::string APP_EDITOR = "APP_EDITOR";
-            const std::string LUA_KEYWORDS = "\\b(app|and|break|do|else|elseif|end|false|for|function|if|in|local|nil|not|or|repeat|return|then|true|until|while|pairs)\\b";
+            const std::string LUA_KEYWORDS = "\\b(store|app|and|break|do|else|elseif|end|false|for|function|if|in|local|nil|not|or|repeat|return|then|true|until|while|pairs)\\b";
             const std::string LUA_QUOTE = "\".*[^\\\\]\"";
 
             using api_doc = std::unordered_map<std::string, std::string>;
