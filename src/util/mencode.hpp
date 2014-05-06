@@ -89,6 +89,7 @@ namespace fire
                 bool is_bytes() const;
                 bool is_dict() const;
                 bool is_array() const;
+                bool empty() const;
 
             private:
                 boost::any _v;

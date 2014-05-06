@@ -52,6 +52,25 @@ namespace fire
                 w->setEnabled(enabled);
             }
 
+            void observable_ref::set_name(const std::string& n)
+            {
+                std::lock_guard<std::mutex> lock(api->mutex);
+                INVARIANT(api);
+
+                auto obs = api->get_observable(id);
+                if(!obs) return;
+
+                _name = n;
+                obs->_name = n;
+                api->observable_names[n] = id;
+            }
+
+            std::string observable_ref::get_name() const
+            {
+                std::lock_guard<std::mutex> lock(api->mutex);
+                return _name;
+            }
+
             bool widget_ref::enabled()
             {
                 INVARIANT(api);
@@ -194,7 +213,42 @@ namespace fire
                 return good;
             }
 
-            const std::string SCRIPT_MESSAGE = "script_msg";
+            const std::string EVENT_MESSAGE = "evt";
+            event_message::event_message(
+                    const std::string& obj,
+                    const std::string& type,
+                    const u::value& v,
+                    lua_api* api) : 
+                _obj{obj}, _type{type}, _v{v}, _api{api} 
+                { 
+                    REQUIRE(_api);
+                    INVARIANT(_api);
+                }
+
+            event_message::event_message(const m::message& m, lua_api* api) :
+                _api{api}
+            {
+                REQUIRE(api);
+                REQUIRE_EQUAL(m.meta.type, EVENT_MESSAGE);
+
+                _obj = m.meta.extra["o"].as_string();
+                _type = m.meta.extra["t"].as_string();
+                u::decode(m.data, _v);
+
+                INVARIANT(_api);
+            }
+            
+            event_message::operator m::message() const
+            {
+                m::message m; 
+                m.meta.type = EVENT_MESSAGE;
+                m.meta.extra["o"] = _obj;
+                m.meta.extra["t"] = _type;
+                m.data = u::encode(_v);
+                return m;
+            }
+
+            const std::string SCRIPT_MESSAGE = "event_msg";
             script_message::script_message(lua_api* api) : 
                 _from_id{}, _v{}, _api{api} 
                 { 

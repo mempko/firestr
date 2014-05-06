@@ -229,6 +229,7 @@ namespace fire
                     .set("set_image", &button_ref::set_image)
                     .set("callback", &button_ref::get_callback)
                     .set("when_clicked", &button_ref::set_callback)
+                    .set("set_name", &observable_ref::set_name)
                     .set("enabled", &widget_ref::enabled)
                     .set("enable", &widget_ref::enable)
                     .set("disable", &widget_ref::disable);
@@ -247,6 +248,7 @@ namespace fire
                     .set("when_edited", &edit_ref::set_edited_callback)
                     .set("finished_callback", &edit_ref::get_finished_callback)
                     .set("when_finished", &edit_ref::set_finished_callback)
+                    .set("set_name", &observable_ref::set_name)
                     .set("enabled", &widget_ref::enabled)
                     .set("enable", &widget_ref::enable)
                     .set("disable", &widget_ref::disable);
@@ -256,6 +258,7 @@ namespace fire
                     .set("set_text", &text_edit_ref::set_text)
                     .set("edited_callback", &text_edit_ref::get_edited_callback)
                     .set("when_edited", &text_edit_ref::set_edited_callback)
+                    .set("set_name", &observable_ref::set_name)
                     .set("enabled", &widget_ref::enabled)
                     .set("enable", &widget_ref::enable)
                     .set("disable", &widget_ref::disable);
@@ -278,6 +281,7 @@ namespace fire
                     .set("when_mouse_pressed", &draw_ref::set_mouse_pressed_callback)
                     .set("when_mouse_released", &draw_ref::set_mouse_released_callback)
                     .set("when_mouse_dragged", &draw_ref::set_mouse_dragged_callback)
+                    .set("set_name", &observable_ref::set_name)
                     .set("enabled", &widget_ref::enabled)
                     .set("enable", &widget_ref::enable)
                     .set("disable", &widget_ref::disable)
@@ -474,6 +478,28 @@ namespace fire
                 report_error("error in message_received: unknown", state->getLastErrorLine());
             }
 
+            void lua_api::event_received(const event_message& e)
+            try
+            {
+                auto i = observable_names.find(e.obj());
+                if(i == observable_names.end()) return;
+
+                auto obs = get_observable(i->second);
+                if(!obs) return;
+
+                obs->handle(e.type(), e.value());
+            }
+            catch(SLB::CallException& e)
+            {
+                std::stringstream s;
+                s << "error in event_received: " << e.what();
+                report_error(s.str(), e.errorLine);
+            }
+            catch(...)
+            {
+                report_error("error in event recieved: unknown", state->getLastErrorLine());
+            }
+
             void lua_api::set_message_callback(const std::string& a)
             {
                 message_callback = a;
@@ -519,6 +545,28 @@ namespace fire
                     CHECK(c);
                     send_to_helper(c, m);
                 }
+            }
+
+            void lua_api::send(const event_message& m)
+            {
+                INVARIANT(sender);
+                INVARIANT(conversation);
+                for(auto c : conversation->contacts().list())
+                {
+                    CHECK(c);
+                    if(!conversation->user_service()->contact_available(c->id()) || 
+                       !conversation->contacts().has(c->id()))
+                        continue;
+                    sender->send(c->id(), m);
+                }
+            }
+
+            void lua_api::send_simple_event(const std::string& name, const std::string& type)
+            {
+                if(name.empty()) return;
+                u::value v;
+                event_message em{name, type, v, this};
+                send(em);
             }
 
             void lua_api::send_to(const contact_ref& cr, const script_message& m)
@@ -730,20 +778,46 @@ namespace fire
                 return ref;
             }
 
+            template <class mp>
+                observable_ref* get_obs(mp& m, int id)
+                {
+                    auto b = m.find(id);
+                    if(b != m.end()) return &b->second;
+                    return nullptr;
+                }
+
+            observable_ref* lua_api::get_observable(int id)
+            {
+                //linear search though sets
+                if(auto o = get_obs(button_refs, id)) return o;
+                else if(auto o = get_obs(label_refs, id)) return o;
+                else if(auto o = get_obs(edit_refs, id)) return o;
+                else if(auto o = get_obs(text_edit_refs, id)) return o;
+                else if(auto o = get_obs(list_refs, id)) return o;
+                else if(auto o = get_obs(grid_refs, id)) return o;
+                else if(auto o = get_obs(draw_refs, id)) return o;
+
+                return nullptr;
+            }
+
             void lua_api::button_clicked(int id)
             {
                 INVARIANT(state);
 
                 std::string callback;
+                std::string name;
                 {
                     auto rp = button_refs.find(id);
                     if(rp == button_refs.end()) return;
 
                     callback = rp->second.callback;
+                    name = rp->second.get_name();
                 }
                 if(callback.empty()) return;
 
+                send_simple_event(name, "b");
                 run(callback);
+
             }
 
             label_ref lua_api::make_label(const std::string& text)
@@ -805,32 +879,46 @@ namespace fire
             {
                 INVARIANT(state);
 
-                std::string callback;
-                {
-                    auto rp = edit_refs.find(id);
-                    if(rp == edit_refs.end()) return;
+                auto rp = edit_refs.find(id);
+                if(rp == edit_refs.end()) return;
+                if(!rp->second.can_callback) return;
 
-                    callback = rp->second.edited_callback;
-                }
+                auto callback = rp->second.edited_callback;
                 if(callback.empty()) return;
 
-                run(callback);
+                auto text = rp->second.get_text();
+                auto name = rp->second.get_name();
+                if(!name.empty())
+                {
+                    u::value v = text;
+                    event_message em{name, "e", v, this};
+                    send(em);
+                }
+
+                state->call(callback, text);
             }
 
             void lua_api::edit_finished(int id)
             {
                 INVARIANT(state);
 
-                std::string callback;
-                {
-                    auto rp = edit_refs.find(id);
-                    if(rp == edit_refs.end()) return;
+                auto rp = edit_refs.find(id);
+                if(rp == edit_refs.end()) return;
+                if(!rp->second.can_callback) return;
 
-                    callback = rp->second.finished_callback;
-                }
+                auto callback = rp->second.finished_callback;
                 if(callback.empty()) return;
 
-                run(callback);
+                auto text = rp->second.get_text();
+                auto name = rp->second.get_name();
+                if(!name.empty())
+                {
+                    u::value v = text;
+                    event_message em{name, "f", v, this};
+                    send(em);
+                }
+
+                state->call(callback, text);
             }
 
             text_edit_ref lua_api::make_text_edit(const std::string& text)
@@ -865,16 +953,23 @@ namespace fire
             {
                 INVARIANT(state);
 
-                std::string callback;
-                {
-                    auto rp = text_edit_refs.find(id);
-                    if(rp == text_edit_refs.end()) return;
+                auto rp = text_edit_refs.find(id);
+                if(rp == text_edit_refs.end()) return;
+                if(!rp->second.can_callback) return;
 
-                    callback = rp->second.edited_callback;
-                }
+                auto callback = rp->second.edited_callback;
                 if(callback.empty()) return;
 
-                run(callback);
+                auto text = rp->second.get_text();
+                auto name = rp->second.get_name();
+                if(!name.empty())
+                {
+                    u::value v = text;
+                    event_message em{name, "e", v, this};
+                    send(em);
+                }
+
+                state->call(callback, text);
             }
 
             list_ref lua_api::make_list()

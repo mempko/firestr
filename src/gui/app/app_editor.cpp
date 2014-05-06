@@ -72,7 +72,7 @@ namespace fire
                 {"from", "message:from() -- returns the contact who sent the message"},
                 {"get", "dict:get(key) -- returns a Lua table with the key from the dictionary"},
                 {"get_bin", "dict:get_bin -- returns binary data with the key from the dictionary"},
-                {"get_pen", "draw:get_pen() -- return the current pen being used."},
+                {"get_pen", "draw:get_pen() -- return the current pen being used"},
                 {"good", "file:good() -- returns true if the file was read successfully"},
                 {"grid", "app:grid() -- creates a grid layout which you can use to place widgets in a grid"},
                 {"grow", "app:grow() -- grows the App vertically to fit all content"},
@@ -108,6 +108,7 @@ namespace fire
                 {"set_bin", "dict:set_bin(key, data) -- stores binary data with the key"},
                 {"set_image", "button:set_image(image) -- sets an image for the button"},
                 {"set_text", "widget:set_text(text) -- sets the widget's text"},
+                {"set_name", "widget:set_name(text) -- sets the widget's name turning on remote events"},
                 {"size", "file:size() -- returns the size of the file"},
                 {"start", "timer:start() -- starts the timer"},
                 {"stop", "timer:stop() -- stops the timer"},
@@ -937,6 +938,11 @@ namespace fire
                 {
                     l::script_message sm{m, _api.get()};
                     _api->message_received(sm);
+                }
+                else if(m.meta.type == l::EVENT_MESSAGE)
+                {
+                    l::event_message sm{m, _api.get()};
+                    _api->event_received(sm);
                 }
                 else
                 {

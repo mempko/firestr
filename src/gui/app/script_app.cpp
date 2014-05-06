@@ -194,6 +194,16 @@ namespace fire
                     l::script_message sm{m, _api.get()};
                     _api->message_received(sm);
                 }
+                else if(m.meta.type == l::EVENT_MESSAGE)
+                {
+                    auto id = m.meta.extra["from_id"].as_string();
+
+                    if(!_conversation->user_service()->by_id(id)) 
+                        return;
+
+                    l::event_message em{m, _api.get()};
+                    _api->event_received(em);
+                }
             }
             catch(std::exception& e)
             {

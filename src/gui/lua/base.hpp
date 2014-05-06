@@ -54,7 +54,22 @@ namespace fire
                 lua_api* api;
             };
 
-            struct widget_ref : public basic_ref
+            class observable_ref : public basic_ref
+            {
+                public:
+                    void set_name(const std::string&);
+                    std::string get_name() const;
+
+                public:
+                    virtual void handle(const std::string& t,  const fire::util::value& event){};
+
+                private:
+                    std::string _name;
+            };
+
+            using observable_ref_name_map = std::unordered_map<std::string, int>;
+
+            struct widget_ref : public observable_ref
             {
                 bool enabled(); 
                 void enable();
@@ -111,6 +126,29 @@ namespace fire
                 size_t get_size() const;
                 std::string get_data() const;
                 bool is_good() const;
+            };
+
+            extern const std::string EVENT_MESSAGE;
+            class event_message
+            {
+                public:
+                    event_message(
+                            const std::string& obj, 
+                            const std::string& type, 
+                            const fire::util::value&, lua_api*);
+                    event_message(const fire::message::message&, lua_api*);
+                    operator fire::message::message() const;
+
+                public:
+                    const std::string& obj() const { return _obj;}
+                    const std::string& type() const { return _type;}
+                    const util::value& value() const { return _v;}
+
+                private:
+                    std::string _obj;
+                    std::string _type;
+                    util::value _v;
+                    lua_api* _api;
             };
 
             extern const std::string SCRIPT_MESSAGE;
