@@ -7,13 +7,12 @@ app:place(e, 1, 0)
 s = app:button("send")
 app:place(s, 1, 1)
 
-s:when_clicked("send_message()")
-e:when_finished("send_message()")
+s:when_clicked("send_message")
+e:when_finished("send_message")
 
 app:when_message_received("got")
 
-function send_message()
-    local text = e:text()
+function send_message(text)
     if #text== 0 then
         return
     end
