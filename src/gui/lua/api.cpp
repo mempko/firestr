@@ -384,6 +384,7 @@ namespace fire
                 image_refs.clear();
                 images.clear();
                 widgets.clear();
+                observable_names.clear();
                 
 
                 ENSURE(widgets.empty());
