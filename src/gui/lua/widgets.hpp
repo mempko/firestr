@@ -40,6 +40,7 @@ namespace fire
 
                 const std::string& get_callback() const { return callback;}
                 void set_callback(const std::string&);  
+                void handle(const std::string& t,  const util::value& event);
             };
             using button_ref_map = std::unordered_map<int, button_ref>;
 
@@ -52,6 +53,7 @@ namespace fire
 
             struct edit_ref : public widget_ref
             {
+                bool can_callback = true;
                 std::string edited_callback;
                 std::string finished_callback;
 
@@ -63,11 +65,14 @@ namespace fire
 
                 const std::string& get_finished_callback() const { return finished_callback;}
                 void set_finished_callback(const std::string&);  
+
+                void handle(const std::string& t,  const util::value& event);
             };
             using edit_ref_map = std::unordered_map<int, edit_ref>;
 
             struct text_edit_ref : public widget_ref
             {
+                bool can_callback = true;
                 std::string edited_callback;
 
                 std::string get_text() const; 
@@ -75,6 +80,8 @@ namespace fire
 
                 const std::string& get_edited_callback() const { return edited_callback;}
                 void set_edited_callback(const std::string&);  
+
+                void handle(const std::string& t,  const util::value& event);
             };
             using text_edit_ref_map = std::unordered_map<int, text_edit_ref>;
 
@@ -131,6 +138,8 @@ namespace fire
                 void mouse_released(int button, int x, int y);
                 void mouse_moved(int x, int y);
                 void mouse_dragged(int button, int x, int y);
+
+                void handle(const std::string& t,  const util::value& event);
 
                 draw_view* get_view();
                 QPen pen;

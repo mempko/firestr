@@ -103,6 +103,15 @@ namespace fire
                 callback = c;
             }  
 
+            void button_ref::handle(const std::string& t, const u::value& v)
+            {
+                INVARIANT(api);
+                auto rp = api->button_refs.find(id);
+                if(rp == api->button_refs.end()) return;
+                if(rp->second.callback.empty()) return;
+                api->run(rp->second.callback);
+            }
+
             std::string label_ref::get_text() const
             {
                 INVARIANT(api);
@@ -164,7 +173,8 @@ namespace fire
                 }
 
                 CHECK(edit);
-                edit->setText(t.c_str());
+                auto pt = gui::convert(edit->text());
+                if(t != pt) edit->setText(t.c_str());
             }
 
             void edit_ref::set_edited_callback(const std::string& c)
@@ -189,6 +199,33 @@ namespace fire
 
                 rp->second.finished_callback = c;
                 finished_callback = c;
+            }
+
+            void edit_ref::handle(const std::string& t, const u::value& v)
+            try
+            {
+                INVARIANT(api);
+                INVARIANT(api->state);
+
+                auto rp = api->edit_refs.find(id);
+                if(rp == api->edit_refs.end()) return;
+
+                std::string callback;
+                if(t == "e") callback = rp->second.edited_callback;
+                else if( t == "f") callback = rp->second.finished_callback;
+
+                if(callback.empty()) return;
+
+                rp->second.can_callback = false;
+                api->state->call(callback, v.as_string());
+                rp->second.can_callback = true;
+            }
+            catch(...)
+            {
+                auto rp = api->edit_refs.find(id);
+                if(rp == api->edit_refs.end()) return;
+                rp->second.can_callback = true;
+                throw;
             }
 
             std::string text_edit_ref::get_text() const
@@ -219,7 +256,8 @@ namespace fire
                 }
 
                 CHECK(edit);
-                edit->setText(t.c_str());
+                auto pt = gui::convert(edit->toPlainText());
+                if(t != pt) edit->setText(t.c_str());
             }
 
             void text_edit_ref::set_edited_callback(const std::string& c)
@@ -231,6 +269,27 @@ namespace fire
 
                 rp->second.edited_callback = c;
                 edited_callback = c;
+            }
+
+            void text_edit_ref::handle(const std::string& t, const u::value& v)
+            try
+            {
+                INVARIANT(api);
+                INVARIANT(api->state);
+                auto rp = api->text_edit_refs.find(id);
+                if(rp == api->text_edit_refs.end()) return;
+
+                if(rp->second.edited_callback.empty()) return;
+                rp->second.can_callback = false;
+                api->state->call(rp->second.edited_callback, v.as_string());
+                rp->second.can_callback = true;
+            }
+            catch(...)
+            {
+                auto rp = api->text_edit_refs.find(id);
+                if(rp == api->text_edit_refs.end()) return;
+                rp->second.can_callback = true;
+                throw;
             }
 
             list* list_ref::get_list() const
@@ -503,6 +562,21 @@ namespace fire
                 api->report_error("error in mouse_dragged: unknown");
             }
 
+
+            void draw_ref::handle(const std::string& t, const u::value& v)
+            {
+                INVARIANT(api);
+                u::dict d = v.as_dict();
+                if(t == "p") 
+                    mouse_pressed(d["b"].as_int(), d["x"].as_int(), d["y"].as_int());
+                else if(t == "r") 
+                    mouse_released(d["b"].as_int(), d["x"].as_int(), d["y"].as_int());
+                else if(t == "d") 
+                    mouse_dragged(d["b"].as_int(), d["x"].as_int(), d["y"].as_int());
+                else if( t == "m") 
+                    mouse_moved(d["x"].as_int(), d["y"].as_int());
+            }
+
             draw_view* draw_ref::get_view()
             {
                 INVARIANT(api);
@@ -599,6 +673,16 @@ namespace fire
                 if(ref == _ref.api->draw_refs.end()) return;
 
                 _button = e->button();
+                auto name = ref->second.get_name();
+                if(!name.empty())
+                {
+                    u::dict d;
+                    d["b"] = _button;
+                    d["x"] = e->pos().x();
+                    d["y"] = e->pos().y();
+                    event_message em{name, "p", d, _ref.api};
+                    _ref.api->send(em);
+                }
                 ref->second.mouse_pressed(e->button(), e->pos().x(), e->pos().y());
             }
 
@@ -612,6 +696,16 @@ namespace fire
                 if(ref == _ref.api->draw_refs.end()) return;
 
                 _button = 0;
+                auto name = ref->second.get_name();
+                if(!name.empty())
+                {
+                    u::dict d;
+                    d["b"] = _button;
+                    d["x"] = e->pos().x();
+                    d["y"] = e->pos().y();
+                    event_message em{name, "r", d, _ref.api};
+                    _ref.api->send(em);
+                }
                 ref->second.mouse_released(e->button(), e->pos().x(), e->pos().y());
             }
 
@@ -624,8 +718,33 @@ namespace fire
                 auto ref = _ref.api->draw_refs.find(_ref.id);
                 if(ref == _ref.api->draw_refs.end()) return;
 
-                if(_button != 0) ref->second.mouse_dragged(_button, e->pos().x(), e->pos().y());
-                ref->second.mouse_moved(e->pos().x(), e->pos().y());
+                auto name = ref->second.get_name();
+                if(_button != 0) 
+                {
+                    if(!name.empty())
+                    {
+                        u::dict d;
+                        d["b"] = _button;
+                        d["x"] = e->pos().x();
+                        d["y"] = e->pos().y();
+                        event_message em{name, "d", d, _ref.api};
+                        _ref.api->send(em);
+                    }
+                    ref->second.mouse_dragged(_button, e->pos().x(), e->pos().y());
+                }
+                else
+                {
+                    if(!name.empty())
+                    {
+                        u::dict d;
+                        d["x"] = e->pos().x();
+                        d["y"] = e->pos().y();
+                        event_message em{name, "m", d, _ref.api};
+                        _ref.api->send(em);
+                    }
+
+                    ref->second.mouse_moved(e->pos().x(), e->pos().y());
+                }
             }
 
             QTimer* get_timer(int id, timer_map& m)

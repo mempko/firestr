@@ -72,7 +72,6 @@ namespace fire
                     std::string who_started_id;
                     std::mutex mutex;
 
-
                     //message
                     conversation::conversation_ptr conversation;
                     conversation::conversation_service_ptr conversation_service;
@@ -89,6 +88,7 @@ namespace fire
                     void run(const std::string&);
                     void reset_widgets();
                     void message_received(const script_message&);
+                    void event_received(const event_message&);
                     void send_to_helper(user::user_info_ptr, const script_message&); 
 
                     button_ref_map button_refs;
@@ -110,6 +110,10 @@ namespace fire
                     //id functions
                     int ids;
                     int new_id();
+
+                    //observable functions
+                    observable_ref_name_map observable_names;
+                    observable_ref* get_observable(int id);
 
                     //error func
                     void report_error(const std::string& e, int line = -1);
@@ -149,6 +153,8 @@ namespace fire
                             const std::string& a);
 
                     script_message make_message();
+                    void send(const event_message&);
+                    void send_simple_event(const std::string& name, const std::string& type);
                     void send_all(const script_message&);
                     void send_to(const contact_ref&, const script_message&); 
                     void send_local(const script_message& m);

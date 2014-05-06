@@ -157,6 +157,7 @@ namespace fire
         bool value::is_bytes() const { return _v.type() == typeid(bytes);}
         bool value::is_dict() const { return _v.type() == typeid(dict);}
         bool value::is_array() const { return _v.type() == typeid(array);}
+        bool value::empty() const { return _v.empty();}
 
         dict::dict() : _m{} {}
         dict::dict(std::initializer_list<kv> s)
@@ -270,9 +271,15 @@ namespace fire
             o << ';';
         }
 
+        void encode_empty(std::ostream& o)
+        {
+            o << 'n';
+        }
+
         void encode(std::ostream& o, const value& v)
         {
-            if(v.is_int()) encode(o, v.as_int());
+            if(v.empty()) encode_empty(o);
+            else if(v.is_int()) encode(o, v.as_int());
             else if(v.is_size()) encode(o, v.as_size());
             else if(v.is_double()) encode(o, v.as_double());
             else if(v.is_bytes()) encode(o, v.as_bytes());
@@ -357,6 +364,21 @@ namespace fire
             return dec<double>(i, "real", 'r', ';');
         }
 
+        void decode_empty(std::istream& i)
+        {
+            int c = i.get();
+            if(!i.good()) return;
+
+            if(c != 'n')
+            {
+                std::stringstream e;
+                e << "expected empty at byte " << i.tellg();
+                throw std::runtime_error{e.str()}; 
+            }
+
+            return;
+        }
+
         bytes decode_bytes(std::istream& i)
         {
             bytes b;
@@ -396,6 +418,7 @@ namespace fire
             else if(c == 'r') v = decode_double(i);
             else if(c == 'd') v = decode_dict(i);
             else if(c == 'a') v = decode_array(i);
+            else if(c == 'n') decode_empty(i);
             else if(c >= '0' && c <= '9') v = decode_bytes(i);
             else 
             {
