@@ -1042,12 +1042,12 @@ namespace SLB {
 }
 #include <sstream>
 namespace SLB {
-  LuaCallBase::LuaCallBase(lua_State *L, int index) : _lua_state(L) { SLB_DEBUG_CALL; getFunc(index); }
+  LuaCallBase::LuaCallBase(lua_State *L, int index) : _lua_state(L) { SLB_DEBUG_CALL; getFunc(index, "unknown"); }
   LuaCallBase::LuaCallBase(lua_State *L, const char *func) : _lua_state(L)
   {
     SLB_DEBUG_CALL;
     lua_getglobal(L,func);
-    getFunc(-1);
+    getFunc(-1, func);
     lua_pop(L,1);
   }
   LuaCallBase::~LuaCallBase()
@@ -1055,13 +1055,15 @@ namespace SLB {
     SLB_DEBUG_CALL;
     luaL_unref(_lua_state, LUA_REGISTRYINDEX, _ref);
   }
-  void LuaCallBase::getFunc(int index)
+  void LuaCallBase::getFunc(int index, const char* func)
   {
     SLB_DEBUG_CALL;
     lua_pushvalue(_lua_state,index);
     if (lua_type(_lua_state, -1) != LUA_TFUNCTION)
     {
-      SLB_THROW(std::runtime_error( "No Lua function was found at the index you provided." ));
+      std::stringstream ss;
+      ss << "The Lua function `" << func << "' was not found";
+      SLB_THROW(CallException(ss.str(), -1 ));
       SLB_CRITICAL_ERROR("No Lua function was found at the index you provided.");
     }
     _ref = luaL_ref(_lua_state, LUA_REGISTRYINDEX);

@@ -877,6 +877,7 @@ namespace fire
             }
 
             void lua_api::edit_edited(int id)
+            try
             {
                 INVARIANT(state);
 
@@ -898,8 +899,19 @@ namespace fire
 
                 state->call(callback, text);
             }
+            catch(SLB::CallException& e)
+            {
+                std::stringstream s;
+                s << "error in edit_edited: " << e.what();
+                report_error(e.what(), e.errorLine);
+            }
+            catch(...)
+            {
+                report_error("error in edit_edited: unknown");
+            }
 
             void lua_api::edit_finished(int id)
+            try
             {
                 INVARIANT(state);
 
@@ -920,6 +932,16 @@ namespace fire
                 }
 
                 state->call(callback, text);
+            }
+            catch(SLB::CallException& e)
+            {
+                std::stringstream s;
+                s << "error in edit_finished: " << e.what();
+                report_error(s.str(), e.errorLine);
+            }
+            catch(...)
+            {
+                report_error("error in edit_finished: unknown");
             }
 
             text_edit_ref lua_api::make_text_edit(const std::string& text)
@@ -951,6 +973,7 @@ namespace fire
             }
 
             void lua_api::text_edit_edited(int id)
+            try
             {
                 INVARIANT(state);
 
@@ -971,6 +994,16 @@ namespace fire
                 }
 
                 state->call(callback, text);
+            }
+            catch(SLB::CallException& e)
+            {
+                std::stringstream s;
+                s << "error in text_edit_edited: " << e.what();
+                report_error(s.str(), e.errorLine);
+            }
+            catch(...)
+            {
+                report_error("error in text_edit_edited: unknown");
             }
 
             list_ref lua_api::make_list()
@@ -1174,6 +1207,7 @@ namespace fire
 
                 o.write(data.c_str(), data.size());
                 LOG << "saved: " << fs << " size " << data.size() <<  std::endl;
+
                 return true;
             }
 
