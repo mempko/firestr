@@ -1635,7 +1635,7 @@ namespace SLB
             lua_State *_lua_state;
             int _ref; 
         private:
-            void getFunc(int index);
+            void getFunc(int index, const char* func);
             static int errorHandler(lua_State *L);
     }; 
 
