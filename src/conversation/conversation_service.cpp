@@ -255,8 +255,7 @@ namespace fire
                 added.push_back(c->id());
             }
 
-            //TODO: add apps to conversation by looping all app ids
-            //not in conversation and requesting the app
+            //add apps in conversation
             id_set need_apps;
             for(const auto& app : apps)
             {
@@ -271,7 +270,9 @@ namespace fire
             //sync conversation
             if(!added.empty()) 
             {
-                sync_existing_conversation(s);
+                //do not send sync to everyone else if the sync came from 
+                //someone. We assume that contact sent to the rest.
+                if(from_id.empty()) sync_existing_conversation(s);
                 fire_conversation_synced_event(id);
 
                 for(const auto& cid : added)
