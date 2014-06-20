@@ -33,6 +33,7 @@ namespace fire
     {
         using conversation_map = std::map<std::string, conversation_ptr>;
         using app_addresses = std::set<std::string>;
+
         class conversation_service : public service::service 
         {
             public:
@@ -57,10 +58,6 @@ namespace fire
             public:
                 conversation_ptr conversation_by_id(const std::string&);
 
-                bool add_contact_to_conversation( 
-                        const user::user_info_ptr contact, 
-                        const std::string& conversation_id);
-
                 void add_contact_to_conversation( 
                         const user::user_info_ptr contact, 
                         conversation_ptr conversation);
@@ -77,6 +74,13 @@ namespace fire
 
             protected:
                 virtual void message_received(const message::message&);
+                void ask_about(
+                        const std::string& id,
+                        conversation_ptr conversation);
+
+                void add_contact_to_conversation_p( 
+                        const user::user_info_ptr contact, 
+                        conversation_ptr conversation);
 
             private:
                 void fire_new_conversation_event(const std::string& id);
