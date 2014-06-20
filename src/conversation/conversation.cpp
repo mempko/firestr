@@ -90,6 +90,59 @@ namespace fire
             return _contacts;
         }
 
+        const pending_contact_adds& conversation::pending() const
+        {
+            return _pending_adds;
+        }
+
+        pending_contact_adds& conversation::pending()
+        {
+            return _pending_adds;
+        }
+
+        void conversation::asked_about(const std::string& id) 
+        {
+            auto& a = _pending_adds[id];
+            a.requests.clear();
+            a.contact.id = id;
+            
+            for(auto c : _contacts.list())
+            {
+                CHECK(c);
+                a.requests[c->id()].state = know_request::SENT;
+            }
+        }
+
+        void conversation::know_contact(
+                const std::string& id, 
+                const std::string& from, 
+                know_request::req_state s)
+        {
+            auto pi = _pending_adds.find(id);
+            if(pi == _pending_adds.end()) return;
+
+            auto ri = pi->second.requests.find(from);
+            if(ri == pi->second.requests.end()) return;
+
+            ri->second.state = s;
+        }
+
+        bool conversation::part_of_clique(std::string& id)
+        {
+            auto pi = _pending_adds.find(id);
+            if(pi == _pending_adds.end()) return false;
+
+            const auto& requests = pi->second.requests;
+            size_t how_many_know = 
+                std::count_if(
+                    requests.begin(), requests.end(),
+                    [](const know_requests::value_type& p)
+                    { 
+                        return p.second.state == know_request::KNOW;
+                    });
+            return how_many_know == requests.size();
+        }
+
         const std::string& conversation::id() const
         {
             ENSURE_FALSE(_id.empty());

@@ -39,6 +39,8 @@ namespace fire
             const std::string SERVICE_ADDRESS = "conversation_service";
             const std::string SYNC_CONVERSATION = "sync_conversation_msg";
             const std::string QUIT_CONVERSATION = "quit_conversation_msg";
+            const std::string ASK_CONTACT_REQ = "ask_contact_req_msg";
+            const std::string ASK_CONTACT_RES = "ask_contact_res_msg";
         }
 
         using id_set = std::set<std::string>;
@@ -116,6 +118,69 @@ namespace fire
 
             s.from_id = m.meta.extra["from_id"].as_string();
             s.conversation_id = u::to_str(m.data);
+        }
+
+        struct ask_contact_req_msg
+        {
+            std::string from_id;
+            std::string conversation_id;
+            std::string id;
+        };
+
+        m::message convert(const ask_contact_req_msg& s)
+        {
+            REQUIRE_FALSE(s.conversation_id.empty());
+            REQUIRE_FALSE(s.id.empty());
+
+            m::message m;
+            m.meta.type = ASK_CONTACT_REQ;
+            m.meta.extra["convo_id"] = s.conversation_id;
+            m.data = u::to_bytes(s.id);
+
+            return m;
+        }
+
+        void convert(const m::message& m, ask_contact_req_msg& s)
+        {
+            REQUIRE_EQUAL(m.meta.type, ASK_CONTACT_REQ);
+
+            s.from_id = m.meta.extra["from_id"].as_string();
+            s.conversation_id = m.meta.extra["convo_id"].as_string();
+            s.id = u::to_str(m.data);
+        }
+
+        struct ask_contact_res_msg
+        {
+            std::string from_id;
+            std::string id;
+            std::string conversation_id;
+            enum stat { KNOW, DONT_KNOW} status;
+        };
+
+        m::message convert(const ask_contact_res_msg& s)
+        {
+            REQUIRE_FALSE(s.conversation_id.empty());
+            REQUIRE_FALSE(s.id.empty());
+
+            m::message m;
+            m.meta.type = ASK_CONTACT_RES;
+            m.meta.extra["convo_id"] = s.conversation_id;
+            m.data = u::to_bytes(s.id);
+            int r = s.status == ask_contact_res_msg::KNOW ? 1 : 0;
+            m.meta.extra["stat"] = r; 
+
+            return m;
+        }
+
+        void convert(const m::message& m, ask_contact_res_msg& s)
+        {
+            REQUIRE_EQUAL(m.meta.type, ASK_CONTACT_RES);
+
+            s.from_id = m.meta.extra["from_id"].as_string();
+            s.conversation_id = m.meta.extra["convo_id"].as_string();
+            s.id = u::to_str(m.data);
+            int r = m.meta.extra["stat"].as_int();
+            s.status = r == 1 ? ask_contact_res_msg::KNOW : ask_contact_res_msg::DONT_KNOW;
         }
 
         conversation_service::conversation_service(
@@ -204,13 +269,50 @@ namespace fire
                 s->contacts().remove(c);
                 fire_contact_removed(q.conversation_id, q.from_id);
             }
+            else if(m.meta.type == ASK_CONTACT_REQ)
+            {
+                ask_contact_req_msg a;
+                convert(m, a);
+
+                bool hc = _user_service->user().contacts().has(a.from_id);
+                if(!hc) return;
+
+                auto s = conversation_by_id(a.conversation_id);
+                if(!s) return;
+
+                bool know = _user_service->user().contacts().has(a.id);
+                ask_contact_res_msg r;
+                r.conversation_id = a.conversation_id;
+                r.id = a.id;
+                r.status = know ? ask_contact_res_msg::KNOW : ask_contact_res_msg::DONT_KNOW;
+                _sender->send(a.from_id, convert(r));
+            }
+            else if(m.meta.type == ASK_CONTACT_RES)
+            {
+                ask_contact_res_msg r;
+                convert(m, r);
+
+                auto fc = _user_service->user().contacts().by_id(r.from_id);
+                if(!fc) return;
+
+                auto c = _user_service->user().contacts().by_id(r.id);
+                if(!c) return;
+
+                auto s = conversation_by_id(r.conversation_id);
+                if(!s) return;
+
+                s->know_contact(r.id, r.from_id, 
+                        r.status == ask_contact_res_msg::KNOW ? 
+                        know_request::KNOW : know_request::DONT_KNOW);
+
+                if(s->part_of_clique(r.id))
+                    add_contact_to_conversation_p(c, s);
+            }
             else
             {
                 throw std::runtime_error(SERVICE_ADDRESS + " received unknown message type `" + m.meta.type + "'");
             }
         }
-
-        using added_contacts = std::vector<std::string>;
 
         conversation_ptr conversation_service::sync_conversation(
                 const std::string& from_id,
@@ -244,15 +346,10 @@ namespace fire
 
             //add contacts to conversation
             CHECK(s);
-            added_contacts added;
             for(auto c : contacts.list())
             {
                 CHECK(c);
-                //skip contact who is in our conversation
-                if(s->contacts().by_id(c->id())) continue;
-
-                s->contacts().add(c);
-                added.push_back(c->id());
+                add_contact_to_conversation(c, s);
             }
 
             //add apps in conversation
@@ -266,18 +363,6 @@ namespace fire
 
             //done creating conversation, fire event
             if(is_new) fire_new_conversation_event(id);
-
-            //sync conversation
-            if(!added.empty()) 
-            {
-                //do not send sync to everyone else if the sync came from 
-                //someone. We assume that contact sent to the rest.
-                if(from_id.empty()) sync_existing_conversation(s);
-                fire_conversation_synced_event(id);
-
-                for(const auto& cid : added)
-                    fire_contact_added(id, cid);
-            }
 
             //request apps that are needed
             request_apps(from_id, s, need_apps);
@@ -410,35 +495,60 @@ namespace fire
         }
 
         void conversation_service::add_contact_to_conversation( 
-                const user::user_info_ptr contact, 
+                const user::user_info_ptr c, 
                 conversation_ptr s)
         {
-            REQUIRE(contact);
+            REQUIRE(c);
+            REQUIRE(s);
+
+            if(s->contacts().by_id(c->id())) return;
+
+            if(s->contacts().empty() && s->pending().empty())
+            {
+                add_contact_to_conversation_p(c, s);
+                return;
+            }
+
+            ask_about(c->id(), s);
+        }
+
+        void conversation_service::ask_about(
+                        const std::string& id,
+                        conversation_ptr s)
+        {
+            REQUIRE_FALSE(id.empty());
+            REQUIRE(s);
+            INVARIANT(_sender);
+
+            s->asked_about(id);
+
+            for(auto c : s->contacts().list())
+            {
+                CHECK(c);
+                ask_contact_req_msg m;
+                m.id = id;
+                m.conversation_id = s->id();
+                _sender->send(c->id(), convert(m));
+            }
+        }
+
+        void conversation_service::add_contact_to_conversation_p( 
+                const user::user_info_ptr c, 
+                conversation_ptr s)
+        {
+            REQUIRE(c);
             REQUIRE(s);
             INVARIANT(_sender);
 
             //if contact exists, we return
-            if(s->contacts().by_id(contact->id())) return;
+            if(s->contacts().by_id(c->id())) return;
 
             //add contact to conversation
-            s->contacts().add(contact);
+            s->contacts().add(c);
 
             sync_existing_conversation(s);
-        }
-
-        bool conversation_service::add_contact_to_conversation(
-                const us::user_info_ptr contact, 
-                const std::string& conversation_id)
-        {
-            REQUIRE(contact);
-            REQUIRE_FALSE(conversation_id.empty());
-            INVARIANT(_sender);
-
-            auto s = conversation_by_id(conversation_id);
-            if(!s) return false;
-
-            add_contact_to_conversation(contact, s);
-            return true;
+            fire_conversation_synced_event(s->id());
+            fire_contact_added(s->id(), c->id());
         }
 
         void conversation_service::broadcast_message(const message::message& m)

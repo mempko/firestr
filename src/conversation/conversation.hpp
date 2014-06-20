@@ -43,6 +43,29 @@ namespace fire
         using app_metadata = std::vector<app_metadatum>;
         using app_address_set = std::set<std::string>;
 
+        struct know_request
+        {
+            std::string to;
+            enum req_state { SENT, DONT_KNOW, KNOW} state; 
+        };
+
+        using know_requests = std::unordered_map<std::string, know_request>;
+
+        struct pending_contact
+        {
+            std::string id;
+            std::string from;
+            std::string name; //this information will eventually be used for guests
+        };
+
+        struct pending_contact_add
+        {
+            pending_contact contact;
+            know_requests requests; 
+        };
+
+        using pending_contact_adds = std::unordered_map<std::string, pending_contact_add>;
+
         class conversation 
         {
             public:
@@ -57,6 +80,19 @@ namespace fire
             public:
                 bool send(const std::string& to, const message::message& m);
                 bool send(const message::message&);
+
+            public:
+                const pending_contact_adds& pending() const;
+                pending_contact_adds& pending();
+
+                void asked_about(const std::string& id);
+
+                void know_contact(
+                        const std::string& id, 
+                        const std::string& from, 
+                        know_request::req_state);
+
+                bool part_of_clique(std::string& id);
 
             public:
                 const std::string& id() const;
@@ -86,6 +122,7 @@ namespace fire
                 user::contact_list _contacts;
                 app_metadata _app_metadata;
                 app_address_set _app_addresses;
+                pending_contact_adds _pending_adds;
                 bool _initiated_by_user;
         };
 
