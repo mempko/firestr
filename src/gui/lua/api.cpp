@@ -1161,7 +1161,7 @@ namespace fire
                 return ref;
             }
 
-            microphone_ref lua_api::make_mic(const std::string& callback)
+            microphone_ref lua_api::make_mic(const std::string& callback, const std::string& codec)
             {
                 INVARIANT(canvas);
 
@@ -1169,7 +1169,7 @@ namespace fire
                 ref.id = new_id();
                 ref.api = this;
                 ref.callback = callback;
-                ref.mic.reset(new microphone{this, ref.id});
+                ref.mic.reset(new microphone{this, ref.id, codec});
                 mic_refs[ref.id] = ref;
 
                 ENSURE_FALSE(ref.id == 0);
@@ -1191,14 +1191,14 @@ namespace fire
                 connect(mapper, SIGNAL(mapped(int)), this, SLOT(got_sound(int)));
             } 
 
-            speaker_ref lua_api::make_speaker()
+            speaker_ref lua_api::make_speaker(const std::string& codec)
             {
                 INVARIANT(canvas);
 
                 speaker_ref ref;
                 ref.id = new_id();
                 ref.api = this;
-                ref.spkr.reset(new speaker{this});
+                ref.spkr.reset(new speaker{this, codec});
                 speaker_refs[ref.id] = ref;
 
                 return ref;
