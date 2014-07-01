@@ -33,7 +33,7 @@ add_executable(
     ${src}
     ${moc_headers})
 
-qt5_use_modules(firegreet Widgets Network)
+qt5_use_modules(firegreet Widgets Network Multimedia)
 
 target_link_libraries(
     firegreet

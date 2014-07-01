@@ -33,6 +33,9 @@
 #include <QComboBox>
 #include <QSignalMapper>
 #include <QGraphicsView>
+#include <QAudioFormat>
+#include <QAudioInput>
+#include <QAudioOutput>
 
 #include "slb/SLB.hpp"
 
@@ -190,7 +193,6 @@ namespace fire
 
                     void set_bin(const std::string&, const bin_data&);
                     bin_data get_bin(const std::string&) const;
-
                     bool has(const std::string&) const;
                     bool remove(const std::string&);
                     size_t size() const;
@@ -208,6 +210,62 @@ namespace fire
             int script_message_set(lua_State* L);
             int script_message_get(lua_State* L);
             using store_ref_ptr = std::unique_ptr<store_ref>;
+
+            class microphone
+            {
+                public:
+                    microphone(lua_api*, int id);
+                    void stop();
+                    void start();
+                    QAudioInput* input();
+                    QIODevice* io();
+                    bool recording() const;
+                private:
+                    QAudioFormat _f;
+                    QAudioDeviceInfo _inf;
+                    QAudioInput* _i;
+                    int _id;
+                    QIODevice* _d = nullptr;
+                    bool _recording = false;
+                    lua_api* _api;
+            };
+            using microphone_ptr = std::shared_ptr<microphone>;
+
+            struct microphone_ref : public basic_ref
+            {
+                std::string callback;
+                void set_callback(const std::string&);
+                void stop();
+                void start();
+                microphone_ptr mic;
+            };
+            using microphone_ref_map = std::unordered_map<int, microphone_ref>;
+
+
+            struct speaker 
+            {
+                public:
+                    speaker(lua_api*);
+                    void mute();
+                    void unmute();
+                    void play(const bin_data&);
+                private:
+                    bool _mute = false;
+                    QAudioFormat _f;
+                    QAudioOutput* _o;
+                    QIODevice* _d = nullptr;
+                    lua_api* _api;
+            };
+            using speaker_ptr = std::shared_ptr<speaker>;
+
+            struct speaker_ref : public basic_ref
+            {
+                void mute();
+                void unmute();
+                void play(const bin_data&);
+                speaker_ptr spkr;
+            };
+            using speaker_ref_map = std::unordered_map<int, speaker_ref>;
         }
     }
 }

@@ -100,6 +100,8 @@ namespace fire
                     draw_ref_map draw_refs;
                     timer_ref_map timer_refs;
                     image_ref_map image_refs;
+                    microphone_ref_map mic_refs;
+                    speaker_ref_map speaker_refs;
 
                     //all widgets referenced are stored here
                     layout_map layouts;
@@ -136,9 +138,16 @@ namespace fire
                     timer_ref make_timer(int msec, const std::string& callback);
                     image_ref make_image(const bin_data& data);
 
+                    //multimedia
+                    microphone_ref make_mic(const std::string& callback);
+                    speaker_ref make_speaker();
+
+                    //grid
                     grid_ref make_grid();
                     void place(const widget_ref& w, int r, int c);
                     void place_across(const widget_ref& w, int r, int c, int row_span, int col_span);
+
+                    //size
                     void height(int h);
                     void grow();
 
@@ -176,13 +185,16 @@ namespace fire
                     bin_file_data open_bin_file();
                     bool save_file(const std::string& suggested_name, const std::string& data);
                     bool save_bin_file(const std::string& suggested_name, const bin_data& data);
+                    bool connect_sound(int id, QAudioInput*, QIODevice*); 
 
-                    public slots:
-                        void button_clicked(int id);
-                        void edit_edited(int id);
-                        void edit_finished(int id);
-                        void text_edit_edited(int id);
-                        void timer_triggered(int id);
+                public slots:
+                    void button_clicked(int id);
+                    void edit_edited(int id);
+                    void edit_finished(int id);
+                    void text_edit_edited(int id);
+                    void timer_triggered(int id);
+                    void got_sound(int id);
+
                 private:
                         error_info _error;
             };
@@ -207,4 +219,5 @@ namespace fire
 }
 
 #endif
+
 

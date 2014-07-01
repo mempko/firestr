@@ -24,6 +24,8 @@
 #include "util/log.hpp"
 
 #include <QTimer>
+#include <QAudioDeviceInfo>
+#include <QSignalMapper>
 
 #include <functional>
 
@@ -643,7 +645,184 @@ namespace fire
                 return 1;
             }
 
+            microphone::microphone(lua_api* api, int id) : _api{api}, _id{id}
+            {
+                REQUIRE(api);
+                INVARIANT(_api);
+                _f.setSampleRate(8000); 
+                _f.setChannelCount(1); 
+                _f.setSampleSize(16); 
+                _f.setSampleType(QAudioFormat::SignedInt); 
+                _f.setByteOrder(QAudioFormat::LittleEndian); 
+                _f.setCodec("audio/pcm"); 
 
+                _inf = QAudioDeviceInfo::defaultInputDevice();
+                if (!_inf.isFormatSupported(_f)) 
+                {
+                    LOG << "format not supported, using nearest." << std::endl;
+                    _f = _inf.nearestFormat(_f);
+                }
+                LOG << "using mic device: " << convert(_inf.deviceName()) << std::endl;
+                _i = new QAudioInput{_inf, _f, _api->canvas};
+            }
+
+            QAudioInput* microphone::input()
+            {
+                ENSURE(_i);
+                return _i;
+            }
+
+            QIODevice* microphone::io()
+            {
+                REQUIRE(_d);
+                return _d;
+            }
+
+            bool microphone::recording() const
+            {
+                return _recording;
+            }
+
+            void microphone::stop()
+            {
+                INVARIANT(_i);
+                _recording = false;
+            }
+
+            void microphone::start()
+            {
+                INVARIANT(_i);
+                INVARIANT(_api);
+                if(!_d)
+                {
+                    _d = _i->start();
+                    _api->connect_sound(_id, _i, _d);
+                }
+                _recording = true;
+            }
+
+            void microphone_ref::set_callback(const std::string& c)
+            {
+                INVARIANT(api);
+                std::lock_guard<std::mutex> lock(api->mutex);
+
+                auto mp = api->mic_refs.find(id);
+                if(mp == api->mic_refs.end()) return;
+
+                mp->second.callback = c;
+                callback = c;
+            }
+
+            void microphone_ref::stop()
+            {
+                INVARIANT(api);
+                std::lock_guard<std::mutex> lock(api->mutex);
+
+                auto mp = api->mic_refs.find(id);
+                if(mp == api->mic_refs.end()) return;
+
+                CHECK(mp->second.mic);
+                mp->second.mic->stop();
+            }
+
+            void microphone_ref::start()
+            {
+                INVARIANT(api);
+                std::lock_guard<std::mutex> lock(api->mutex);
+
+                auto mp = api->mic_refs.find(id);
+                if(mp == api->mic_refs.end()) return;
+
+                CHECK(mp->second.mic);
+                mp->second.mic->start();
+            }
+
+            speaker::speaker(lua_api* api) : _api{api}
+            {
+                REQUIRE(api);
+                INVARIANT(_api);
+                _f.setSampleRate(8000); 
+                _f.setChannelCount(1); 
+                _f.setSampleSize(16); 
+                _f.setSampleType(QAudioFormat::UnSignedInt); 
+                _f.setByteOrder(QAudioFormat::LittleEndian); 
+                _f.setCodec("audio/pcm"); 
+
+                QAudioDeviceInfo i{QAudioDeviceInfo::defaultOutputDevice()};
+                if (!i.isFormatSupported(_f)) _f = i.nearestFormat(_f);
+                LOG << "using speaker device: " << convert(i.deviceName()) << std::endl;
+                _o = new QAudioOutput{i, _f, _api};
+            }
+
+
+            void speaker::mute()
+            {
+                INVARIANT(_o);
+                _mute = true;
+            }
+
+            void speaker::unmute()
+            {
+                INVARIANT(_o);
+                _mute = false;
+            }
+
+            void speaker::play(const bin_data& d)
+            {
+                INVARIANT(_o);
+                if(_mute) return;
+
+                if(_d) 
+                {
+                    _d->write(d.data.data(), d.data.size());
+                    if(_o->state() == QAudio::SuspendedState)
+                    {
+                        _o->reset();
+                        _o->resume();
+                    }
+                }
+                else
+                {
+                    _d = _o->start();
+                    _d->write(d.data.data(), d.data.size());
+                }
+            }
+
+            void speaker_ref::mute()
+            {
+                INVARIANT(api);
+                std::lock_guard<std::mutex> lock(api->mutex);
+
+                auto sp = api->speaker_refs.find(id);
+                if(sp == api->speaker_refs.end()) return;
+
+                CHECK(sp->second.spkr);
+                sp->second.spkr->mute();
+            }
+
+            void speaker_ref::unmute()
+            {
+                INVARIANT(api);
+                std::lock_guard<std::mutex> lock(api->mutex);
+
+                auto sp = api->speaker_refs.find(id);
+                if(sp == api->speaker_refs.end()) return;
+
+                CHECK(sp->second.spkr);
+                sp->second.spkr->unmute();
+            }
+
+            void speaker_ref::play(const bin_data& d)
+            {
+                INVARIANT(api);
+                std::lock_guard<std::mutex> lock(api->mutex);
+
+                auto sp = api->speaker_refs.find(id);
+                if(sp == api->speaker_refs.end()) return;
+
+                CHECK(sp->second.spkr);
+                sp->second.spkr->play(d);
+            }
         }
     }
 }

@@ -51,6 +51,7 @@ namespace fire
             {
                 const std::string SANATIZE_REPLACE = "_";
                 const size_t PADDING = 40;
+                const size_t SAMPLE_SIZE = 4096;
             }
 
             lua_api::lua_api(
@@ -152,6 +153,8 @@ namespace fire
                     .set("pen", &lua_api::make_pen)
                     .set("timer", &lua_api::make_timer)
                     .set("image", &lua_api::make_image)
+                    .set("mic", &lua_api::make_mic)
+                    .set("speaker", &lua_api::make_speaker)
                     .set("place", &lua_api::place)
                     .set("place_across", &lua_api::place_across)
                     .set("height", &lua_api::height)
@@ -318,6 +321,16 @@ namespace fire
                     .set("name", &file_data::get_name)
                     .set("size", &file_data::get_size)
                     .set("data", &file_data::get_data);
+
+                SLB::Class<microphone_ref>{"microphone_ref", &manager}
+                    .set("when_sound", &microphone_ref::set_callback)
+                    .set("start", &microphone_ref::start)
+                    .set("stop", &microphone_ref::stop);
+
+                SLB::Class<speaker_ref>{"speaker_ref", &manager}
+                    .set("play", &speaker_ref::play)
+                    .set("mute", &speaker_ref::mute)
+                    .set("unmute", &speaker_ref::unmute);
 
                 state = std::make_shared<SLB::Script>(&manager);
                 state->set("app", this);
@@ -1146,6 +1159,88 @@ namespace fire
                 ENSURE_FALSE(ref.id == 0);
                 ENSURE(ref.api);
                 return ref;
+            }
+
+            microphone_ref lua_api::make_mic(const std::string& callback)
+            {
+                INVARIANT(canvas);
+
+                microphone_ref ref;
+                ref.id = new_id();
+                ref.api = this;
+                ref.callback = callback;
+                ref.mic.reset(new microphone{this, ref.id});
+                mic_refs[ref.id] = ref;
+
+                ENSURE_FALSE(ref.id == 0);
+                ENSURE(ref.api);
+                ENSURE(ref.mic);
+                return ref;
+            }
+
+            bool lua_api::connect_sound(int id, QAudioInput* i, QIODevice* d)
+            {
+                REQUIRE_GREATER_EQUAL(id, 0);
+                REQUIRE(i);
+                REQUIRE(d);
+                INVARIANT(canvas);
+
+                auto mapper = new QSignalMapper{canvas};
+                mapper->setMapping(d, id);
+                connect(d, SIGNAL(readyRead()), mapper, SLOT(map()));
+                connect(mapper, SIGNAL(mapped(int)), this, SLOT(got_sound(int)));
+            } 
+
+            speaker_ref lua_api::make_speaker()
+            {
+                INVARIANT(canvas);
+
+                speaker_ref ref;
+                ref.id = new_id();
+                ref.api = this;
+                ref.spkr.reset(new speaker{this});
+                speaker_refs[ref.id] = ref;
+
+                return ref;
+            }
+
+            void lua_api::got_sound(int id)
+            try
+            {
+                auto mp = mic_refs.find(id);
+                if(mp == mic_refs.end()) return;
+
+                auto& ref = mp->second;
+                auto mic = ref.mic;
+                CHECK(mic);
+
+                auto i = mic->input();
+                CHECK(i);
+
+
+                auto len = i->bytesReady();
+                if(len == 0) return;
+                if(len > SAMPLE_SIZE) len = SAMPLE_SIZE;
+
+                bin_data bd;
+                bd.data.resize(len);
+
+                auto l = mic->io()->read(bd.data.data(), len);
+                bd.data.resize(l);
+
+                if(!mic->recording()) return;
+                if(ref.callback.empty()) return;
+                state->call(ref.callback, bd);
+            }
+            catch(SLB::CallException& e)
+            {
+                std::stringstream s;
+                s << "error in got_sound: " << e.what();
+                report_error(s.str(), e.errorLine);
+            }
+            catch(...)
+            {
+                report_error("error in got_sound: unknown", state->getLastErrorLine());
             }
 
             file_data lua_api::open_file()
