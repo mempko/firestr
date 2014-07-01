@@ -78,7 +78,7 @@ else(APPLE)
         ${moc_resources})
 endif(APPLE)
 
-qt5_use_modules(firestr Widgets Network)
+qt5_use_modules(firestr Widgets Network Multimedia MultimediaWidgets)
 
 target_link_libraries(
     firestr
