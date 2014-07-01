@@ -1178,7 +1178,7 @@ namespace fire
                 return ref;
             }
 
-            bool lua_api::connect_sound(int id, QAudioInput* i, QIODevice* d)
+            void lua_api::connect_sound(int id, QAudioInput* i, QIODevice* d)
             {
                 REQUIRE_GREATER_EQUAL(id, 0);
                 REQUIRE(i);
