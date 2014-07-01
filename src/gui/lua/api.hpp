@@ -139,8 +139,8 @@ namespace fire
                     image_ref make_image(const bin_data& data);
 
                     //multimedia
-                    microphone_ref make_mic(const std::string& callback);
-                    speaker_ref make_speaker();
+                    microphone_ref make_mic(const std::string& callback, const std::string& codec);
+                    speaker_ref make_speaker(const std::string& codec);
 
                     //grid
                     grid_ref make_grid();

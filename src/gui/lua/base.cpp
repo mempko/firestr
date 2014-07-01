@@ -645,7 +645,14 @@ namespace fire
                 return 1;
             }
 
-            microphone::microphone(lua_api* api, int id) : _api{api}, _id{id}
+            std::string parse_codec(const std::string& codec)
+            {
+                if(codec == "pcm") return "audio/pcm";
+                if(codec == "mp3") return "audio/mpeg";
+                return "audio/pcm";
+            }
+
+            microphone::microphone(lua_api* api, int id, const std::string& codec) : _api{api}, _id{id}
             {
                 REQUIRE(api);
                 INVARIANT(_api);
@@ -654,7 +661,7 @@ namespace fire
                 _f.setSampleSize(16); 
                 _f.setSampleType(QAudioFormat::SignedInt); 
                 _f.setByteOrder(QAudioFormat::LittleEndian); 
-                _f.setCodec("audio/pcm"); 
+                _f.setCodec(parse_codec(codec).c_str()); 
 
                 _inf = QAudioDeviceInfo::defaultInputDevice();
                 if (!_inf.isFormatSupported(_f)) 
@@ -737,7 +744,7 @@ namespace fire
                 mp->second.mic->start();
             }
 
-            speaker::speaker(lua_api* api) : _api{api}
+            speaker::speaker(lua_api* api, const std::string& codec) : _api{api}
             {
                 REQUIRE(api);
                 INVARIANT(_api);
@@ -746,7 +753,7 @@ namespace fire
                 _f.setSampleSize(16); 
                 _f.setSampleType(QAudioFormat::UnSignedInt); 
                 _f.setByteOrder(QAudioFormat::LittleEndian); 
-                _f.setCodec("audio/pcm"); 
+                _f.setCodec(parse_codec(codec).c_str()); 
 
                 QAudioDeviceInfo i{QAudioDeviceInfo::defaultOutputDevice()};
                 if (!i.isFormatSupported(_f)) _f = i.nearestFormat(_f);

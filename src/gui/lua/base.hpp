@@ -214,7 +214,7 @@ namespace fire
             class microphone
             {
                 public:
-                    microphone(lua_api*, int id);
+                    microphone(lua_api*, int id, const std::string& codec = "pcm");
                     void stop();
                     void start();
                     QAudioInput* input();
@@ -245,7 +245,7 @@ namespace fire
             struct speaker 
             {
                 public:
-                    speaker(lua_api*);
+                    speaker(lua_api*, const std::string& code = "pcm");
                     void mute();
                     void unmute();
                     void play(const bin_data&);
