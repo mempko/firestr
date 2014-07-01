@@ -185,7 +185,7 @@ namespace fire
                     bin_file_data open_bin_file();
                     bool save_file(const std::string& suggested_name, const std::string& data);
                     bool save_bin_file(const std::string& suggested_name, const bin_data& data);
-                    bool connect_sound(int id, QAudioInput*, QIODevice*); 
+                    void connect_sound(int id, QAudioInput*, QIODevice*); 
 
                 public slots:
                     void button_clicked(int id);
