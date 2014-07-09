@@ -119,7 +119,7 @@ namespace fire
                 size_t chunkify(endpoint_message m);
                 void send_right_away(udp_chunk& c);
                 void queue_chunks(working_udp_messages&);
-                void queue_chunks(working_udp_chunks&);
+                bool queue_chunks(working_udp_chunks&);
                 void queue_chunk(udp_chunk& c);
                 void queue_next_chunk();
                 bool next_chunk_incr();
