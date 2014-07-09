@@ -54,7 +54,9 @@ namespace fire
             //<mark> <sequence num> <chunk total> <chunk>
             const size_t HEADER_SIZE = MESSAGE_BASE;
             const size_t UDP_CHuNK_SIZE = UDP_PACKET_SIZE - HEADER_SIZE; //in bytes
-            const size_t MAX_MESSAGE_SIZE = std::pow(2,sizeof(chunk_total_type)*8) * UDP_CHuNK_SIZE;
+
+            const size_t MAX_CHUNKS = std::pow(2,sizeof(chunk_total_type)*8);
+            const size_t MAX_MESSAGE_SIZE = MAX_CHUNKS * UDP_CHuNK_SIZE;
         }
 
         udp_queue_ptr create_udp_queue(const asio_params& p)
@@ -181,21 +183,38 @@ namespace fire
             _out_queue.emplace_push(c);
         }
 
+        using exhausted_messages = std::set<sequence_type>;
+
         void udp_connection::queue_chunks(working_udp_messages& w)
         {
             for(auto& wms : w)
+            {
+                exhausted_messages em;
                 for(auto& wm : wms.second)
-                    queue_chunks(wm.second);
+                {
+                    CHECK_FALSE(wm.second.chunks.empty());
+                    bool remove_non_robust = queue_chunks(wm.second);
+                    if(remove_non_robust) em.insert(wm.second.chunks[0].sequence);
+                }
+
+                //cleanup exhausted messages that are not robust
+                for(auto sequence : em) wms.second.erase(sequence);
+            }
         }
 
-        void udp_connection::queue_chunks(working_udp_chunks& wm)
+        bool all_sent(working_udp_chunks& wm)
+        {
+            return wm.sent.count() == wm.chunks.size();
+        }
+
+        bool udp_connection::queue_chunks(working_udp_chunks& wm)
         {
             REQUIRE_FALSE(wm.chunks.empty());
             bool robust = wm.chunks[0].type == udp_chunk::msg;
 
             auto in_flight = robust ? wm.in_flight : 0;
 
-            if(in_flight + wm.queued > MAX_FLIGHT) return;
+            if(in_flight + wm.queued > MAX_FLIGHT) return false;
             auto t = MAX_FLIGHT - (in_flight + wm.queued);
             while(t > 0 && wm.next_send < wm.chunks.size())
             {
@@ -205,6 +224,8 @@ namespace fire
                 wm.queued++;
                 t--;
             }
+
+            return !robust && all_sent(wm);
         }
 
         void udp_connection::queue_chunk(udp_chunk& c)
@@ -509,6 +530,10 @@ namespace fire
             if(b.size() < CHUNK_TOTAL_BASE + sizeof(chunk_total_type)) return ch;
             read_be_u16(b, CHUNK_TOTAL_BASE, ch.total_chunks);
 
+            //cannot be more than max chunks, this should be impossible because
+            //total_chunks should be a unsigned short
+            CHECK_LESS_EQUAL(ch.total_chunks, MAX_CHUNKS);
+
             //read chunk number
             if(b.size() < CHUNK_BASE + sizeof(chunk_id_type)) return ch;
             read_be_u16(b, CHUNK_BASE, ch.chunk);
@@ -711,8 +736,6 @@ namespace fire
             start_read();
         }
 
-        using exhausted_messages = std::set<sequence_type>;
-
         size_t udp_connection::resend(working_udp_chunks& wm)
         {
             if(wm.set.count() == wm.chunks.size()) return 0;
@@ -763,16 +786,12 @@ namespace fire
                         CHECK_FALSE(wm.chunks.empty());
                     } 
 
-                    bool erase = robust ? 
-                        wm.ticks >= RESEND_THRESHOLD : 
-                        wm.sent.count() == wm.chunks.size();
-
+                    bool erase = robust ?  wm.ticks >= RESEND_THRESHOLD : all_sent(wm);
                     if(erase) em.insert(sequence);
                 }
 
                 //erase all exhaused messages
-                for(auto sequence : em) 
-                    wms.second.erase(sequence);
+                for(auto sequence : em) wms.second.erase(sequence);
             }
 
             if(resent) _io.post(boost::bind(&udp_connection::do_send, this));
