@@ -121,23 +121,16 @@ namespace fire
             wm.sent[c.chunk] = 0;
         }
 
-        void remember_chunk(const std::string& addr, const udp_chunk& c, working_udp_messages& w)
-        {
-            REQUIRE(c.type != udp_chunk::ack);
-            REQUIRE_FALSE(c.resent);
-
-            auto wmp = init_working(addr, w, c);
-            if(!wmp) return;
-            remember_chunk(*wmp, c);
-        }
-
-        void sent_chunk(working_udp_chunks& wm ,const udp_chunk& c)
+        void sent_chunk(working_udp_chunks& wm , const udp_chunk& c)
         {
             REQUIRE_RANGE(c.chunk, 0, c.total_chunks);
+
             wm.chunks[c.chunk] = c;
             wm.sent[c.chunk] = 1;
             if(wm.queued > 0) wm.queued--;
-            wm.in_flight++;
+
+            bool robust = c.type == udp_chunk::msg;
+            if(robust) wm.in_flight++;
         }
 
         void sent_chunk(const std::string& addr, const udp_chunk& c, working_udp_messages& w)
@@ -197,8 +190,13 @@ namespace fire
 
         void udp_connection::queue_chunks(working_udp_chunks& wm)
         {
-            if(wm.in_flight + wm.queued > MAX_FLIGHT) return;
-            auto t = MAX_FLIGHT - (wm.in_flight + wm.queued);
+            REQUIRE_FALSE(wm.chunks.empty());
+            bool robust = wm.chunks[0].type == udp_chunk::msg;
+
+            auto in_flight = robust ? wm.in_flight : 0;
+
+            if(in_flight + wm.queued > MAX_FLIGHT) return;
+            auto t = MAX_FLIGHT - (in_flight + wm.queued);
             while(t > 0 && wm.next_send < wm.chunks.size())
             {
                 queue_chunk(wm.chunks[wm.next_send]);
