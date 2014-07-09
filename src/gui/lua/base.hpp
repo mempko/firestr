@@ -163,6 +163,7 @@ namespace fire
                     operator fire::message::message() const;
 
                 public:
+                    void not_robust();
                     const fire::util::value& get(const std::string&) const;
                     void set(const std::string&, const fire::util::value&);
                     bool has(const std::string&) const;
@@ -179,6 +180,7 @@ namespace fire
                     std::string _from_id;
                     std::string _local_app_id;
                     util::dict _v;
+                    bool _robust = true;
                     lua_api* _api;
             };
 
