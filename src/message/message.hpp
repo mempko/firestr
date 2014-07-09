@@ -39,6 +39,7 @@ namespace fire
             enum source_type {local, remote};
             source_type source = source_type::local;
             encryption_type encryption = encryption_type::conversation;
+            bool robust = true;
         };
 
         struct message

@@ -48,7 +48,7 @@ namespace fire
 
             public:
                 bool receive(endpoint& ep, util::bytes& b);
-                bool send(const std::string& to, const util::bytes& b);
+                bool send(const std::string& to, const util::bytes& b, bool robust = true);
                 bool is_disconnected(const std::string& addr);
                 const udp_stats& get_udp_stats() const;
 

@@ -234,7 +234,7 @@ namespace fire
             LOG << "unknown error connecting to `" << address << "'." << std::endl; 
         }
 
-        bool connection_manager::send(const std::string& to, const u::bytes& b)
+        bool connection_manager::send(const std::string& to, const u::bytes& b, bool robust)
         try
         {
             INVARIANT(_udp_con);
@@ -254,7 +254,7 @@ namespace fire
 
             auto a = parse_address(to);
             endpoint ep { UDP, a.host, a.port};
-            endpoint_message em{ep, b}; 
+            endpoint_message em{ep, b, robust}; 
             return _udp_con->send(em);
         }
         catch(std::exception& e)

@@ -279,12 +279,13 @@ namespace fire
             }
         }
 
-        size_t udp_connection::chunkify(
-                const std::string& host, 
-                port_type port, 
-                const fire::util::bytes& b)
+        size_t udp_connection::chunkify(endpoint_message m)
         {
-            REQUIRE_FALSE(b.empty());
+            REQUIRE_FALSE(m.data.empty());
+
+            const auto& host = m.ep.address;
+            auto port = m.ep.port;
+            const auto& b = m.data;
 
             int total_chunks = b.size() < UDP_CHuNK_SIZE ? 
                 1 : (b.size() / UDP_CHuNK_SIZE) + 1;
@@ -309,7 +310,7 @@ namespace fire
 
                 //create chunk
                 udp_chunk c;
-                c.type = udp_chunk::msg;
+                c.type = m.robust ? udp_chunk::msg : udp_chunk::qmsg;
                 c.host = host;
                 c.port = port;
                 c.sequence = _sequence;
@@ -321,7 +322,6 @@ namespace fire
                 //add to working
                 if(!wmp) wmp = init_working(addr, _out_working, c);
                 if(!wmp) break;
-
                 remember_chunk(*wmp, c);
 
                 //step
@@ -345,7 +345,7 @@ namespace fire
                 return false;
             }
 
-            _io.post(boost::bind(&udp_connection::chunkify, this, m.ep.address, m.ep.port, m.data));
+            _io.post(boost::bind(&udp_connection::chunkify, this, m));
 
             //post to do send
             _io.post(boost::bind(&udp_connection::do_send, this));
@@ -464,7 +464,13 @@ namespace fire
             r.resize(HEADER_SIZE + ch.data.size());
 
             //set mark
-            r[0] = ch.type == udp_chunk::msg ? '!' : '@';
+            switch(ch.type)
+            {
+                case udp_chunk::msg: r[0] = '!'; break;
+                case udp_chunk::qmsg: r[0] = '='; break;
+                case udp_chunk::ack: r[0] = '@'; break;
+                default: CHECK(false && "missed case");
+            }
 
             //write sequence number
             write_be_u64(r, SEQUENCE_BASE, ch.sequence);
@@ -489,9 +495,13 @@ namespace fire
 
             //read mark
             const char mark = b[0];
-            if(mark != '!' && mark != '@' ) return ch;
-
-            ch.type = mark == '!' ? udp_chunk::msg : udp_chunk::ack;
+            switch(mark)
+            {
+                case '!': ch.type = udp_chunk::msg; break;
+                case '=': ch.type = udp_chunk::qmsg; break;
+                case '@': ch.type = udp_chunk::ack; break;
+                default: return ch;
+            }
 
             //read sequence number
             if(b.size() < SEQUENCE_BASE + sizeof(sequence_type)) return ch;
@@ -534,7 +544,7 @@ namespace fire
             bool got = _out_queue.pop(chunk);
             CHECK(got);
 
-            u::bytes_ptr out_buffer{new u::bytes(UDP_PACKET_SIZE)};
+            u::bytes_ptr out_buffer{new u::bytes};
             encode_udp_wire(*out_buffer, chunk);
             _stats.bytes_sent += out_buffer->size();
 
@@ -545,7 +555,7 @@ namespace fire
                         ba::placeholders::error));
 
             //ignore acks or resends
-            if(!chunk.resent && chunk.type == udp_chunk::msg)
+            if(!chunk.resent && chunk.type != udp_chunk::ack)
             {
                 auto addr = make_address_str({ UDP, chunk.host, chunk.port});
                 sent_chunk(addr, chunk, _out_working);
@@ -591,7 +601,7 @@ namespace fire
 
         bool insert_chunk(const std::string& addr, const udp_chunk& c, working_udp_messages& w, u::bytes& complete_message)
         {
-            REQUIRE(c.type == udp_chunk::msg);
+            REQUIRE(c.type == udp_chunk::msg || c.type == udp_chunk::qmsg);
 
             auto& wms = w[addr];
             auto& wm = wms[c.sequence];
@@ -667,19 +677,23 @@ namespace fire
                 //add message to in queue if we got complete message
                 endpoint ep = { UDP, _in_endpoint.address().to_string(), _in_endpoint.port()};
 
-                if(chunk.type == udp_chunk::msg)
+                if(chunk.type != udp_chunk::ack)
                 { 
-                    udp_chunk ack;
-                    ack.type = udp_chunk::ack;
-                    ack.host = ep.address;
-                    ack.port = ep.port;
-                    ack.sequence = chunk.sequence;
-                    ack.total_chunks = chunk.total_chunks;
-                    ack.chunk = chunk.chunk;
-                    CHECK(ack.data.empty());
+                    bool robust = chunk.type == udp_chunk::msg;
+                    if(robust)
+                    {
+                        udp_chunk ack;
+                        ack.type = udp_chunk::ack;
+                        ack.host = ep.address;
+                        ack.port = ep.port;
+                        ack.sequence = chunk.sequence;
+                        ack.total_chunks = chunk.total_chunks;
+                        ack.chunk = chunk.chunk;
+                        CHECK(ack.data.empty());
 
-                    //send ack
-                    send_right_away(ack);
+                        //send ack
+                        send_right_away(ack);
+                    }
 
                     //insert chunk to message buffer
                     bool inserted = insert_chunk(make_address_str(ep), chunk, _in_working, data);
@@ -687,7 +701,7 @@ namespace fire
 
                     if(inserted)
                     {
-                        endpoint_message em = {ep, data};
+                        endpoint_message em{ep, data, robust};
                         _in_queue.emplace_push(em);
                     }
 
@@ -741,20 +755,21 @@ namespace fire
 
                     //check if we should try to resend
                     bool skip = wm.ticks <= RESEND_TICK_THRESHOLD;
+                    bool robust = wm.chunks[0].type == udp_chunk::msg;
 
                     //walk working message and resend all chunks that never got
                     //acked
-                    if(!skip)
+                    if(robust && !skip && resend(wm) > 0) 
                     {
-                        if(resend(wm) > 0) 
-                        {
-                            resent = true;
-                            CHECK_FALSE(wm.chunks.empty());
-                        } 
-                    }
+                        resent = true;
+                        CHECK_FALSE(wm.chunks.empty());
+                    } 
 
-                    if(wm.ticks >= RESEND_THRESHOLD) 
-                        em.insert(sequence);
+                    bool erase = robust ? 
+                        wm.ticks >= RESEND_THRESHOLD : 
+                        wm.sent.count() == wm.chunks.size();
+
+                    if(erase) em.insert(sequence);
                 }
 
                 //erase all exhaused messages
