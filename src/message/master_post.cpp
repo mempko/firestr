@@ -186,7 +186,7 @@ namespace fire
                         *o->_encrypted_channels);
 
                 //send message over wire
-                o->_connections.send(outside_queue_address, data);
+                o->_connections.send(outside_queue_address, data, m.meta.robust);
 
                 if(o->_outside_stats.on) o->_outside_stats.out_pop_count++;
                 if(o->_done) u::sleep_thread(QUIT_SLEEP);

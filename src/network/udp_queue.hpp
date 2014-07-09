@@ -33,6 +33,7 @@ namespace fire
         {
             endpoint ep;
             util::bytes data;
+            bool robust;
         };
 
         using endpoint_queue = util::queue<endpoint_message>;
@@ -53,7 +54,7 @@ namespace fire
             chunk_id_type chunk;
             util::bytes data;
             bool resent = false;
-            enum msg_type { msg, ack} type;
+            enum msg_type { qmsg, msg, ack} type;
         };
 
         using chunk_queue = util::queue<udp_chunk>;
@@ -71,8 +72,8 @@ namespace fire
         };
 
         //working set for both incoming and outgoing messages
-        using working_udp_endpoints = std::unordered_map<sequence_type, working_udp_chunks>;
-        using working_udp_messages = std::unordered_map<std::string, working_udp_endpoints>;
+        using working_udp_sequences = std::unordered_map<sequence_type, working_udp_chunks>;
+        using working_udp_messages = std::unordered_map<std::string, working_udp_sequences>;
         using resolve_map = std::unordered_map<std::string, std::string>;
 
         //outgoing chunks are send round robin in the chunk_queue_ring
@@ -115,7 +116,7 @@ namespace fire
                 const udp_stats& stats() const; 
 
             private:
-                size_t chunkify(const std::string& host, port_type port, const fire::util::bytes& b);
+                size_t chunkify(endpoint_message m);
                 void send_right_away(udp_chunk& c);
                 void queue_chunks(working_udp_messages&);
                 void queue_chunks(working_udp_chunks&);
