@@ -202,6 +202,7 @@ namespace fire
 
                 SLB::Class<script_message>{"script_message", &manager}
                     .set("from", &script_message::from)
+                    .set("not_robust", &script_message::not_robust)
                     .set("get_bin", &script_message::get_bin)
                     .set("set_bin", &script_message::set_bin)
                     .set("is_local", &script_message::is_local)

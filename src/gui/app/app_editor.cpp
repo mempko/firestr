@@ -92,6 +92,7 @@ namespace fire
                 {"mute", "speaker:mute() -- mutes the speaker"},
                 {"unmute", "speaker:unmute() -- unmutes the speaker"},
                 {"name", "contact:name() -- returns the name of the contact"},
+                {"not_robust", "message:not_robust() -- this turns the message into one that won't resend if it fails. Use for data that is fine for losing"},
                 {"online", "contact:online() -- returns true if the contact is online"},
                 {"open_bin_file", "app:open_bin_file() -- allows user to select a file to open and opens it in binary mode"},
                 {"open_file", "app:open_file() -- allows user to select a file to open and opens it in text mode"},

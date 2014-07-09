@@ -281,7 +281,13 @@ namespace fire
                 m.meta.type = SCRIPT_MESSAGE;
                 if(!_type.empty()) m.meta.extra["t"] = _type;
                 m.data = u::encode(_v);
+                m.meta.robust = _robust;
                 return m;
+            }
+
+            void script_message::not_robust() 
+            {
+                _robust = false;
             }
 
             const u::value& script_message::get(const std::string& k) const
