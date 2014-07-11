@@ -54,6 +54,7 @@ namespace fire
                 const size_t SAMPLE_SIZE = 16;
                 const size_t CHANNELS = 1;
                 const std::string Q_CODEC = "audio/pcm";
+                const size_t MIN_BUF_SIZE = FRAMES_FOR_60MS * sizeof(opus_int16);
             }
 
             const size_t MAX_SAMPLE_BYTES = SAMPLE_SIZE * FRAMES_FOR_60MS;
@@ -727,10 +728,7 @@ namespace fire
                     opus_encoder_ctl(_opus, OPUS_SET_BITRATE(OPUS_AUTO));
                     opus_encoder_ctl(_opus, OPUS_SET_VBR(1));
 
-                    _min_buf_size = _f.bytesPerFrame() * FRAMES_FOR_60MS;
-
-                    CHECK_EQUAL(_f.durationForBytes(_min_buf_size), MS_60_IN_MICRO);
-                    CHECK_EQUAL(_min_buf_size, FRAMES_FOR_60MS * sizeof(opus_int16));
+                    _skip = _f.sampleRate() / SAMPLE_RATE;
                 }
             }
 
@@ -739,18 +737,71 @@ namespace fire
                 if(_opus) opus_encoder_destroy(_opus);
             }
 
+            //decimate sound to SAMPLE_RATE, using averaging
+            void decimate(const u::bytes& s, u::bytes& d, size_t skip) 
+            {
+                REQUIRE_FALSE(s.empty());
+                REQUIRE_EQUAL(s.size() % 2, 0);
+                auto di = d.size();
+                auto dz = (s.size() / skip);
+                auto nz = d.size() + dz;
+                if(nz % 2 == 1) nz += 1;
+                REQUIRE_EQUAL(nz % 2, 0);
+                d.resize(nz);
+
+                int accum = 0;
+                int c = 1;
+                size_t si = 0;
+                for(;(si+1) < s.size(); si+=2)
+                {
+                    CHECK_RANGE(si, 0, s.size());
+                    accum += static_cast<int>(*reinterpret_cast<const short*>(&s[si]));
+                    if(c == skip)
+                    {
+                        CHECK_RANGE(di, 0, d.size());
+                        CHECK_RANGE(di+1, 1, d.size());
+                        accum /= c;
+                        short saccum = accum;
+                        auto av = reinterpret_cast<const char*>(&saccum);
+                        d[di] = av[0];
+                        d[di+1] = av[1];
+                        di+=2;
+
+                        accum = 0;
+                        c = 1;
+                        continue;
+                    }
+                    c++;
+                }
+
+                //repeat last value if we have padding
+                si = s.size()-2;
+                while((di+1) < d.size())
+                {
+                    CHECK_RANGE(di+1, 1, d.size());
+                    CHECK_RANGE(si+1, 1, s.size());
+                    d[di] = s[si];
+                    d[di+1] = s[si+1];
+                    di+=2;
+                }
+
+                CHECK_EQUAL(di, d.size());
+            }
+
             u::bytes microphone::encode(const u::bytes& b)
             {
                 REQUIRE(_opus);
+                REQUIRE_FALSE(b.empty());
 
                 //add to buffer
-                _buffer.insert(_buffer.end(), b.begin(), b.end());
+                //decimate mic to match SAMPLE_RATE of opus encoder
+                decimate(b, _buffer, _skip);
 
-                u::bytes r;
                 //only encode if size of buffer is greater or equal to 60ms of audio 
-                if(_buffer.size() >= _min_buf_size)
+                u::bytes r;
+                if(_buffer.size() >= MIN_BUF_SIZE)
                 {
-                    r.resize(_min_buf_size);
+                    r.resize(MIN_BUF_SIZE);
                     auto size = opus_encode(_opus, 
                             reinterpret_cast<const opus_int16*>(_buffer.data()),
                             FRAMES_FOR_60MS,
@@ -765,10 +816,10 @@ namespace fire
                     r.resize(size);
                 }
 
-                if(_buffer.size() > _min_buf_size)
+                if(_buffer.size() > MIN_BUF_SIZE)
                 {
-                    auto final_buf_size = _buffer.size() - _min_buf_size;
-                    std::copy(_buffer.begin() + _min_buf_size, _buffer.end(), _buffer.begin());
+                    auto final_buf_size = _buffer.size() - MIN_BUF_SIZE;
+                    std::copy(_buffer.begin() + MIN_BUF_SIZE, _buffer.end(), _buffer.begin());
                     _buffer.resize(final_buf_size);
                 }
 
@@ -851,6 +902,22 @@ namespace fire
                 mp->second.mic->start();
             }
 
+            void inflate(const u::bytes& s, u::bytes& d, size_t rep)
+            {
+                REQUIRE_EQUAL(s.size() % 2, 0);
+                d.resize(s.size() * rep);
+
+                size_t di = 0;
+                for(size_t si = 0; (si+1) < s.size(); si+=2)
+                    for(size_t p = 0; p < rep; p++, di+=2)
+                    {
+                        CHECK_RANGE(di, 0, d.size());
+                        CHECK_RANGE(di+1, 0, d.size());
+                        d[di] = s[si];
+                        d[di+1] = s[si+1];
+                    }
+            }
+
             speaker::speaker(lua_api* api, const std::string& codec) : _api{api}
             {
                 REQUIRE(api);
@@ -859,7 +926,7 @@ namespace fire
                 _f.setSampleRate(SAMPLE_RATE); 
                 _f.setChannelCount(CHANNELS); 
                 _f.setSampleSize(SAMPLE_SIZE); 
-                _f.setSampleType(QAudioFormat::UnSignedInt); 
+                _f.setSampleType(QAudioFormat::SignedInt); 
                 _f.setByteOrder(QAudioFormat::LittleEndian); 
                 _f.setCodec(Q_CODEC.c_str()); 
                 _t = parse_codec(codec);
@@ -881,6 +948,8 @@ namespace fire
 
                     opus_decoder_ctl(_opus, OPUS_SET_BITRATE(OPUS_AUTO));
                     opus_decoder_ctl(_opus, OPUS_SET_VBR(1));
+
+                    _rep = _f.sampleRate() / SAMPLE_RATE;
                 }
             }
             
@@ -893,13 +962,13 @@ namespace fire
             {
                 REQUIRE(_opus);
 
-                u::bytes r;
-                r.resize(MAX_OPUS_DECODE_SIZE);
+                u::bytes t;
+                t.resize(MAX_OPUS_DECODE_SIZE);
                 auto frames = opus_decode(
                         _opus,
                         reinterpret_cast<const unsigned char*>(b.data()),
                         b.size(),
-                        reinterpret_cast<opus_int16*>(r.data()),
+                        reinterpret_cast<opus_int16*>(t.data()),
                         MAX_FRAMES,
                         0);
 
@@ -910,7 +979,12 @@ namespace fire
                 }
 
                 auto size = frames * sizeof(opus_int16);
-                r.resize(size);
+                t.resize(size);
+
+                //repeat to match speaker sample rate
+                u::bytes r;
+                inflate(t, r, _rep);
+
                 return r;
             }
 
