@@ -754,12 +754,9 @@ namespace fire
                 size_t si = 0;
                 for(;(si+1) < s.size(); si+=2)
                 {
-                    CHECK_RANGE(si, 0, s.size());
                     accum += static_cast<int>(*reinterpret_cast<const short*>(&s[si]));
                     if(c == skip)
                     {
-                        CHECK_RANGE(di, 0, d.size());
-                        CHECK_RANGE(di+1, 1, d.size());
                         accum /= c;
                         short saccum = accum;
                         auto av = reinterpret_cast<const char*>(&saccum);
@@ -778,8 +775,6 @@ namespace fire
                 si = s.size()-2;
                 while((di+1) < d.size())
                 {
-                    CHECK_RANGE(di+1, 1, d.size());
-                    CHECK_RANGE(si+1, 1, s.size());
                     d[di] = s[si];
                     d[di+1] = s[si+1];
                     di+=2;
@@ -911,8 +906,6 @@ namespace fire
                 for(size_t si = 0; (si+1) < s.size(); si+=2)
                     for(size_t p = 0; p < rep; p++, di+=2)
                     {
-                        CHECK_RANGE(di, 0, d.size());
-                        CHECK_RANGE(di+1, 0, d.size());
                         d[di] = s[si];
                         d[di+1] = s[si+1];
                     }
