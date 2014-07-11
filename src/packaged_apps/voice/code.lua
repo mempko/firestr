@@ -1,5 +1,5 @@
-m = app:mic("got_sound", "mp3")
-s = app:speaker("mp3")
+m = app:mic("got_sound", "opus")
+s = app:speaker("opus")
 m:start()
 
 muteb = app:button("mute mic")
