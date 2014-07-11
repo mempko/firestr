@@ -23,10 +23,12 @@
 #include "util/dbc.hpp"
 #include "util/log.hpp"
 
+
 #include <QTimer>
 #include <QAudioDeviceInfo>
 #include <QSignalMapper>
 
+#include <opus/opus.h>
 #include <functional>
 
 namespace m = fire::message;
@@ -44,7 +46,17 @@ namespace fire
             namespace 
             {
                 const std::string ARRAY_K = "__a";
+                const size_t MAX_FRAMES = 1000;
+                const size_t MAX_OPUS_DECODE_SIZE = MAX_FRAMES * sizeof(opus_int16);
+                const size_t FRAMES_FOR_60MS = 480; //60ms of PCM frames. Opus can handles 2.5, 5, 10, 20, 40 or 60ms of audio per frame. 60ms sounds smoothest.
+                const size_t MS_60_IN_MICRO = 60000;
+                const size_t SAMPLE_RATE = 8000;
+                const size_t SAMPLE_SIZE = 16;
+                const size_t CHANNELS = 1;
+                const std::string Q_CODEC = "audio/pcm";
             }
+
+            const size_t MAX_SAMPLE_BYTES = SAMPLE_SIZE * FRAMES_FOR_60MS;
 
             void set_enabled(int id, widget_map& map, bool enabled)
             {
@@ -651,23 +663,40 @@ namespace fire
                 return 1;
             }
 
-            std::string parse_codec(const std::string& codec)
+            codec_type parse_codec(const std::string& codec)
             {
-                if(codec == "pcm") return "audio/pcm";
-                if(codec == "mp3") return "audio/mpeg";
-                return "audio/pcm";
+                if(codec == "pcm") return codec_type::pcm;
+                else if(codec == "opus") return codec_type::opus;
+                return codec_type::pcm;
+            }
+
+            void log_opus_error(int e)
+            {
+                switch(e)
+                {
+                    case OPUS_ALLOC_FAIL: LOG << "BAD ALLOC" << std::endl; break;
+                    case OPUS_BAD_ARG: LOG << "BAD ARG" << std::endl; break;
+                    case OPUS_BUFFER_TOO_SMALL: LOG << "TOO SMALL" << std::endl; break;
+                    case OPUS_INTERNAL_ERROR: LOG << "INTERNAL ERR" << std::endl; break;
+                    case OPUS_INVALID_PACKET: LOG << "INVALID PACKET" << std::endl; break;
+                    case OPUS_INVALID_STATE: LOG << "INVALID STATE" << std::endl; break;
+                    case OPUS_OK: LOG << "OK" << std::endl; break;
+                    default: LOG << e << std::endl;
+                }
             }
 
             microphone::microphone(lua_api* api, int id, const std::string& codec) : _api{api}, _id{id}
             {
                 REQUIRE(api);
                 INVARIANT(_api);
-                _f.setSampleRate(8000); 
-                _f.setChannelCount(1); 
-                _f.setSampleSize(16); 
+
+                _f.setSampleRate(SAMPLE_RATE); 
+                _f.setChannelCount(CHANNELS); 
+                _f.setSampleSize(SAMPLE_SIZE); 
                 _f.setSampleType(QAudioFormat::SignedInt); 
                 _f.setByteOrder(QAudioFormat::LittleEndian); 
-                _f.setCodec(parse_codec(codec).c_str()); 
+                _f.setCodec(Q_CODEC.c_str()); 
+                _t = parse_codec(codec);
 
                 _inf = QAudioDeviceInfo::defaultInputDevice();
                 if (!_inf.isFormatSupported(_f)) 
@@ -675,8 +704,76 @@ namespace fire
                     LOG << "format not supported, using nearest." << std::endl;
                     _f = _inf.nearestFormat(_f);
                 }
+
                 LOG << "using mic device: " << convert(_inf.deviceName()) << std::endl;
                 _i = new QAudioInput{_inf, _f, _api->canvas};
+
+                if(_t == codec_type::opus)
+                {
+                    int err;
+
+                    _opus = opus_encoder_create(SAMPLE_RATE,CHANNELS, OPUS_APPLICATION_VOIP, &err); 
+
+                    if(err != OPUS_OK) 
+                    { 
+                        LOG << "opus encoder create error: "; 
+                        log_opus_error(err);
+                    }
+
+                    opus_encoder_ctl(_opus, OPUS_SET_BITRATE(OPUS_AUTO));
+                    opus_encoder_ctl(_opus, OPUS_SET_VBR(1));
+
+                    _min_buf_size = _f.bytesPerFrame() * FRAMES_FOR_60MS;
+
+                    CHECK_EQUAL(_f.durationForBytes(_min_buf_size), MS_60_IN_MICRO);
+                    CHECK_EQUAL(_min_buf_size, FRAMES_FOR_60MS * sizeof(opus_int16));
+                }
+            }
+
+            microphone::~microphone()
+            {
+                if(_opus) opus_encoder_destroy(_opus);
+            }
+
+            u::bytes microphone::encode(const u::bytes& b)
+            {
+                REQUIRE(_opus);
+
+                //add to buffer
+                _buffer.insert(_buffer.end(), b.begin(), b.end());
+
+                u::bytes r;
+                //only encode if size of buffer is greater or equal to 60ms of audio 
+                if(_buffer.size() >= _min_buf_size)
+                {
+                    r.resize(_min_buf_size);
+                    auto size = opus_encode(_opus, 
+                            reinterpret_cast<const opus_int16*>(_buffer.data()),
+                            FRAMES_FOR_60MS,
+                            reinterpret_cast<unsigned char*>(r.data()),
+                            r.size());
+
+                    if(size < 0) 
+                    {
+                        LOG << "opus encode error: "; log_opus_error(size);
+                        return {};
+                    }
+                    r.resize(size);
+                }
+
+                if(_buffer.size() > _min_buf_size)
+                {
+                    auto final_buf_size = _buffer.size() - _min_buf_size;
+                    std::copy(_buffer.begin() + _min_buf_size, _buffer.end(), _buffer.begin());
+                    _buffer.resize(final_buf_size);
+                }
+
+                return r;
+            }
+
+            codec_type microphone::codec() const
+            {
+                return _t;
             }
 
             QAudioInput* microphone::input()
@@ -754,19 +851,69 @@ namespace fire
             {
                 REQUIRE(api);
                 INVARIANT(_api);
-                _f.setSampleRate(8000); 
-                _f.setChannelCount(1); 
-                _f.setSampleSize(16); 
+
+                _f.setSampleRate(SAMPLE_RATE); 
+                _f.setChannelCount(CHANNELS); 
+                _f.setSampleSize(SAMPLE_SIZE); 
                 _f.setSampleType(QAudioFormat::UnSignedInt); 
                 _f.setByteOrder(QAudioFormat::LittleEndian); 
-                _f.setCodec(parse_codec(codec).c_str()); 
+                _f.setCodec(Q_CODEC.c_str()); 
+                _t = parse_codec(codec);
 
                 QAudioDeviceInfo i{QAudioDeviceInfo::defaultOutputDevice()};
                 if (!i.isFormatSupported(_f)) _f = i.nearestFormat(_f);
                 LOG << "using speaker device: " << convert(i.deviceName()) << std::endl;
                 _o = new QAudioOutput{i, _f, _api};
+
+                if(_t == codec_type::opus)
+                {
+                    int err;
+                    _opus = opus_decoder_create(SAMPLE_RATE, CHANNELS, &err);
+
+                    if(err != OPUS_OK) 
+                    {
+                        LOG << "opus decoder create error: "; log_opus_error(err);
+                    }
+
+                    opus_decoder_ctl(_opus, OPUS_SET_BITRATE(OPUS_AUTO));
+                    opus_decoder_ctl(_opus, OPUS_SET_VBR(1));
+                }
+            }
+            
+            speaker::~speaker()
+            {
+                if(_opus) opus_decoder_destroy(_opus);
             }
 
+            u::bytes speaker::decode(const u::bytes& b)
+            {
+                REQUIRE(_opus);
+
+                u::bytes r;
+                r.resize(MAX_OPUS_DECODE_SIZE);
+                auto frames = opus_decode(
+                        _opus,
+                        reinterpret_cast<const unsigned char*>(b.data()),
+                        b.size(),
+                        reinterpret_cast<opus_int16*>(r.data()),
+                        MAX_FRAMES,
+                        0);
+
+                if(frames < 0) 
+                {
+                    LOG << "opus error decoding: "; log_opus_error(frames);
+                    return {};
+                }
+
+                auto size = frames * sizeof(opus_int16);
+                r.resize(size);
+                return r;
+            }
+
+            codec_type speaker::codec() const
+            {
+                return _t;
+            }
 
             void speaker::mute()
             {
@@ -784,10 +931,21 @@ namespace fire
             {
                 INVARIANT(_o);
                 if(_mute) return;
+                if(d.data.empty()) return;
+
+                const u::bytes* data = &d.data;
+                u::bytes dec;
+                if(_t == codec_type::opus) 
+                {
+                    dec = decode(d.data);
+                    data = &dec;
+                }
+
+                CHECK(data);
 
                 if(_d) 
                 {
-                    _d->write(d.data.data(), d.data.size());
+                    _d->write(data->data(), data->size());
                     if(_o->state() == QAudio::SuspendedState)
                     {
                         _o->reset();
@@ -797,7 +955,7 @@ namespace fire
                 else
                 {
                     _d = _o->start();
-                    _d->write(d.data.data(), d.data.size());
+                    _d->write(data->data(), data->size());
                 }
             }
 

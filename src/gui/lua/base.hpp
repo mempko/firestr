@@ -42,6 +42,7 @@
 #include <string>
 #include <unordered_map>
 #include <thread>
+#include <opus/opus.h>
 
 namespace fire
 {
@@ -213,23 +214,34 @@ namespace fire
             int script_message_get(lua_State* L);
             using store_ref_ptr = std::unique_ptr<store_ref>;
 
+            enum codec_type { pcm, opus};
             class microphone
             {
                 public:
                     microphone(lua_api*, int id, const std::string& codec = "pcm");
+                    ~microphone();
                     void stop();
                     void start();
                     QAudioInput* input();
                     QIODevice* io();
                     bool recording() const;
+                    codec_type codec() const;
+                    util::bytes encode(const util::bytes&);
+
                 private:
                     QAudioFormat _f;
                     QAudioDeviceInfo _inf;
                     QAudioInput* _i;
+                    codec_type _t;
                     int _id;
                     QIODevice* _d = nullptr;
                     bool _recording = false;
                     lua_api* _api;
+
+                    //opus specific members
+                    OpusEncoder* _opus = nullptr;
+                    util::bytes _buffer;
+                    size_t _min_buf_size = 0;
             };
             using microphone_ptr = std::shared_ptr<microphone>;
 
@@ -248,15 +260,20 @@ namespace fire
             {
                 public:
                     speaker(lua_api*, const std::string& code = "pcm");
+                    ~speaker();
                     void mute();
                     void unmute();
                     void play(const bin_data&);
+                    codec_type codec() const;
+                    util::bytes decode(const util::bytes&);
                 private:
                     bool _mute = false;
                     QAudioFormat _f;
+                    codec_type _t;
                     QAudioOutput* _o;
                     QIODevice* _d = nullptr;
                     lua_api* _api;
+                    OpusDecoder* _opus = nullptr;
             };
             using speaker_ptr = std::shared_ptr<speaker>;
 
@@ -268,6 +285,7 @@ namespace fire
                 speaker_ptr spkr;
             };
             using speaker_ref_map = std::unordered_map<int, speaker_ref>;
+            extern const size_t MAX_SAMPLE_BYTES;
         }
     }
 }

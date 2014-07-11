@@ -51,7 +51,6 @@ namespace fire
             {
                 const std::string SANATIZE_REPLACE = "_";
                 const size_t PADDING = 40;
-                const size_t SAMPLE_SIZE = 4096;
             }
 
             lua_api::lua_api(
@@ -1214,23 +1213,27 @@ namespace fire
                 auto& ref = mp->second;
                 auto mic = ref.mic;
                 CHECK(mic);
+                CHECK(mic->io());
 
                 auto i = mic->input();
                 CHECK(i);
 
-
                 auto len = i->bytesReady();
                 if(len == 0) return;
-                if(len > SAMPLE_SIZE) len = SAMPLE_SIZE;
+                if(len > MAX_SAMPLE_BYTES) len = MAX_SAMPLE_BYTES;
 
                 bin_data bd;
                 bd.data.resize(len);
 
                 auto l = mic->io()->read(bd.data.data(), len);
+                if(l <= 0) return;
                 bd.data.resize(l);
 
                 if(!mic->recording()) return;
                 if(ref.callback.empty()) return;
+
+                if(mic->codec() == codec_type::opus) bd.data = mic->encode(bd.data);
+                if(bd.data.empty()) return;
                 state->call(ref.callback, bd);
             }
             catch(SLB::CallException& e)
