@@ -701,8 +701,12 @@ namespace fire
                 _inf = QAudioDeviceInfo::defaultInputDevice();
                 if (!_inf.isFormatSupported(_f)) 
                 {
-                    LOG << "format not supported, using nearest." << std::endl;
                     _f = _inf.nearestFormat(_f);
+                    LOG << "format not supported, using nearest." << std::endl;
+                    LOG << "sample rate: " << _f.sampleRate() << std::endl;
+                    LOG << "sample size: " << _f.sampleSize() << std::endl;
+                    LOG << "channels: " << _f.channelCount() << std::endl;
+                    LOG << "codec: " << convert(_f.codec()) << std::endl;
                 }
 
                 LOG << "using mic device: " << convert(_inf.deviceName()) << std::endl;
