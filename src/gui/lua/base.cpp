@@ -856,7 +856,6 @@ namespace fire
 
             QIODevice* microphone::io()
             {
-                REQUIRE(_d);
                 return _d;
             }
 
@@ -878,7 +877,7 @@ namespace fire
                 if(!_d)
                 {
                     _d = _i->start();
-                    _api->connect_sound(_id, _i, _d);
+                    if(_d) _api->connect_sound(_id, _i, _d);
                 }
                 _recording = true;
             }
