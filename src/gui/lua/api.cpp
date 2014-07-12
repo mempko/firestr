@@ -1213,7 +1213,7 @@ namespace fire
                 auto& ref = mp->second;
                 auto mic = ref.mic;
                 CHECK(mic);
-                CHECK(mic->io());
+                if(!mic->io()) return;
 
                 auto i = mic->input();
                 CHECK(i);
