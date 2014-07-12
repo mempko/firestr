@@ -64,7 +64,7 @@ add_definitions(${Qt5MultimediaWidgets_DEFINITIONS})
 set(CMAKE_CXX_FLAGS "${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
 
 if(APPLE)
-    set(MISC_LIBRARIES libuuid.dylib libpthread.dylib libbotan-1.10.a)
+    set(MISC_LIBRARIES libopus.a libuuid.dylib libpthread.dylib libbotan-1.10.a)
 elseif(CMAKE_HOST_WIN32)
     set(MISC_LIBRARIES botan.lib)
 else()
