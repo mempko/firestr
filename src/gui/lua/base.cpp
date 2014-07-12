@@ -46,11 +46,11 @@ namespace fire
             namespace 
             {
                 const std::string ARRAY_K = "__a";
-                const size_t MAX_FRAMES = 1000;
+                const size_t MAX_FRAMES = 3000;
                 const size_t MAX_OPUS_DECODE_SIZE = MAX_FRAMES * sizeof(opus_int16);
-                const size_t FRAMES_FOR_60MS = 480; //60ms of PCM frames. Opus can handles 2.5, 5, 10, 20, 40 or 60ms of audio per frame. 60ms sounds smoothest.
+                const size_t FRAMES_FOR_60MS = 720; //60ms of PCM frames. Opus can handles 2.5, 5, 10, 20, 40 or 60ms of audio per frame. 60ms sounds smoothest.
                 const size_t MS_60_IN_MICRO = 60000;
-                const size_t SAMPLE_RATE = 8000;
+                const size_t SAMPLE_RATE = 12000;
                 const size_t SAMPLE_SIZE = 16;
                 const size_t CHANNELS = 1;
                 const std::string Q_CODEC = "audio/pcm";
