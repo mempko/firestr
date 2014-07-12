@@ -729,6 +729,7 @@ namespace fire
                     opus_encoder_ctl(_opus, OPUS_SET_VBR(1));
 
                     _skip = _f.sampleRate() / SAMPLE_RATE;
+                    _channels = _f.channelCount();
                 }
             }
 
@@ -737,32 +738,53 @@ namespace fire
                 if(_opus) opus_encoder_destroy(_opus);
             }
 
+            //simple low pass filter 
+            void reduce_noise(u::bytes& s, size_t len)
+            {
+                REQUIRE_EQUAL(s.size() % 2, 0);
+                auto ss = reinterpret_cast<short*>(s.data());
+                len /= 2;
+                for(size_t i = 1; i < len; i++)
+                    ss[i] = (0.333 * ss[i]) + ((1 - 0.333) * ss[i-1]) + 0.5;
+            }
+
             //decimate sound to SAMPLE_RATE, using averaging
-            void decimate(const u::bytes& s, u::bytes& d, size_t skip) 
+            void decimate(const u::bytes& s, u::bytes& d, size_t channels, size_t skip) 
             {
                 REQUIRE_FALSE(s.empty());
                 REQUIRE_EQUAL(s.size() % 2, 0);
-                auto di = d.size();
+
+                //get sizes
                 auto dz = (s.size() / skip);
                 auto nz = d.size() + dz;
+
+                //add padding
                 if(nz % 2 == 1) nz += 1;
-                REQUIRE_EQUAL(nz % 2, 0);
+                CHECK_EQUAL(nz % 2, 0);
+
+                //resize dest
+                const auto odz = d.size();
                 d.resize(nz);
+
+                //cast to short arrays
+                auto ss = reinterpret_cast<const short*>(s.data());
+                const auto sz = s.size() / 2;
+                auto sd = reinterpret_cast<short*>(d.data());
+                const auto sdz = nz / 2;
 
                 int accum = 0;
                 int c = 1;
                 size_t si = 0;
-                for(;(si+1) < s.size(); si+=2)
+                auto di = odz / 2;
+
+                for(;si < sz; si+=channels)
                 {
-                    accum += static_cast<int>(*reinterpret_cast<const short*>(&s[si]));
+                    accum += static_cast<int>(ss[si]);
                     if(c == skip)
                     {
                         accum /= c;
-                        short saccum = accum;
-                        auto av = reinterpret_cast<const char*>(&saccum);
-                        d[di] = av[0];
-                        d[di+1] = av[1];
-                        di+=2;
+                        sd[di] = accum;
+                        di++;
 
                         accum = 0;
                         c = 1;
@@ -772,15 +794,14 @@ namespace fire
                 }
 
                 //repeat last value if we have padding
-                si = s.size()-2;
-                while((di+1) < d.size())
+                si = sz-1;
+                while(di < sdz)
                 {
-                    d[di] = s[si];
-                    d[di+1] = s[si+1];
-                    di+=2;
+                    sd[di] = ss[si];
+                    di++;
                 }
 
-                CHECK_EQUAL(di, d.size());
+                CHECK_EQUAL(di, sdz);
             }
 
             u::bytes microphone::encode(const u::bytes& b)
@@ -790,12 +811,13 @@ namespace fire
 
                 //add to buffer
                 //decimate mic to match SAMPLE_RATE of opus encoder
-                decimate(b, _buffer, _skip);
+                decimate(b, _buffer, _channels, _skip);
 
                 //only encode if size of buffer is greater or equal to 60ms of audio 
                 u::bytes r;
                 if(_buffer.size() >= MIN_BUF_SIZE)
                 {
+                    reduce_noise(_buffer, MIN_BUF_SIZE);
                     r.resize(MIN_BUF_SIZE);
                     auto size = opus_encode(_opus, 
                             reinterpret_cast<const opus_int16*>(_buffer.data()),
@@ -897,18 +919,21 @@ namespace fire
                 mp->second.mic->start();
             }
 
-            void inflate(const u::bytes& s, u::bytes& d, size_t rep)
+            void inflate(const u::bytes& s, u::bytes& d, size_t channels, size_t rep)
             {
                 REQUIRE_EQUAL(s.size() % 2, 0);
+
+                rep*=channels;
                 d.resize(s.size() * rep);
 
+                auto ss = reinterpret_cast<const short*>(s.data());
+                auto sz = s.size() / 2;
+                auto sd = reinterpret_cast<short*>(d.data());
+
                 size_t di = 0;
-                for(size_t si = 0; (si+1) < s.size(); si+=2)
-                    for(size_t p = 0; p < rep; p++, di+=2)
-                    {
-                        d[di] = s[si];
-                        d[di+1] = s[si+1];
-                    }
+                for(size_t si = 0; si < sz; si++)
+                    for(size_t p = 0; p < rep; p++, di++)
+                        sd[di] = ss[si];
             }
 
             speaker::speaker(lua_api* api, const std::string& codec) : _api{api}
@@ -943,6 +968,7 @@ namespace fire
                     opus_decoder_ctl(_opus, OPUS_SET_VBR(1));
 
                     _rep = _f.sampleRate() / SAMPLE_RATE;
+                    _channels = _f.channelCount();
                 }
             }
             
@@ -976,7 +1002,7 @@ namespace fire
 
                 //repeat to match speaker sample rate
                 u::bytes r;
-                inflate(t, r, _rep);
+                inflate(t, r, _channels, _rep);
 
                 return r;
             }

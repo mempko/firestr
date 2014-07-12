@@ -242,6 +242,7 @@ namespace fire
                     OpusEncoder* _opus = nullptr;
                     util::bytes _buffer;
                     size_t _skip = 0;
+                    size_t _channels = 0;
             };
             using microphone_ptr = std::shared_ptr<microphone>;
 
@@ -277,6 +278,7 @@ namespace fire
                     //opus specific members
                     OpusDecoder* _opus = nullptr;
                     size_t _rep = 0;
+                    size_t _channels = 0;
             };
             using speaker_ptr = std::shared_ptr<speaker>;
 
