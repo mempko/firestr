@@ -154,6 +154,8 @@ namespace fire
                     .set("image", &lua_api::make_image)
                     .set("mic", &lua_api::make_mic)
                     .set("speaker", &lua_api::make_speaker)
+                    .set("audio_encoder", &lua_api::make_audio_encoder)
+                    .set("audio_decoder", &lua_api::make_audio_decoder)
                     .set("place", &lua_api::place)
                     .set("place_across", &lua_api::place_across)
                     .set("height", &lua_api::height)
@@ -331,6 +333,12 @@ namespace fire
                     .set("play", &speaker_ref::play)
                     .set("mute", &speaker_ref::mute)
                     .set("unmute", &speaker_ref::unmute);
+
+                SLB::Class<opus_encoder>{"audio_encoder", &manager}
+                    .set("encode", &opus_encoder::encode);
+
+                SLB::Class<opus_decoder>{"audio_decoder", &manager}
+                    .set("decode", &opus_decoder::decode);
 
                 state = std::make_shared<SLB::Script>(&manager);
                 state->set("app", this);
@@ -1178,6 +1186,16 @@ namespace fire
                 return ref;
             }
 
+            opus_encoder lua_api::make_audio_encoder()
+            {
+                return {};
+            }
+
+            opus_decoder lua_api::make_audio_decoder()
+            {
+                return {};
+            }
+
             void lua_api::connect_sound(int id, QAudioInput* i, QIODevice* d)
             {
                 REQUIRE_GREATER_EQUAL(id, 0);
@@ -1213,21 +1231,9 @@ namespace fire
                 auto& ref = mp->second;
                 auto mic = ref.mic;
                 CHECK(mic);
-                if(!mic->io()) return;
 
-                auto i = mic->input();
-                CHECK(i);
-
-                auto len = i->bytesReady();
-                if(len == 0) return;
-                if(len > MAX_SAMPLE_BYTES) len = MAX_SAMPLE_BYTES;
-
-                bin_data bd;
-                bd.data.resize(len);
-
-                auto l = mic->io()->read(bd.data.data(), len);
-                if(l <= 0) return;
-                bd.data.resize(l);
+                bin_data bd{mic->read_data()};
+                if(bd.data.empty()) return;
 
                 if(!mic->recording()) return;
                 if(ref.callback.empty()) return;

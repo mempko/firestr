@@ -142,6 +142,8 @@ namespace fire
                     //multimedia
                     microphone_ref make_mic(const std::string& callback, const std::string& codec);
                     speaker_ref make_speaker(const std::string& codec);
+                    opus_encoder make_audio_encoder();
+                    opus_decoder make_audio_decoder();
 
                     //grid
                     grid_ref make_grid();

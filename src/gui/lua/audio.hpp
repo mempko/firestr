@@ -34,19 +34,45 @@ namespace fire
     {
         namespace lua
         {
+            class opus_encoder
+            {
+                public:
+                    opus_encoder();
+                    ~opus_encoder();
+
+                public:
+                    bin_data encode(const bin_data&);
+
+                private:
+                    OpusEncoder* _opus = nullptr;
+            };
+            using opus_encoder_ptr = std::shared_ptr<opus_encoder>;
+
+            class opus_decoder
+            {
+                public:
+                    opus_decoder();
+                    ~opus_decoder();
+
+                public:
+                    bin_data decode(const bin_data&);
+
+                private:
+                    OpusDecoder* _opus = nullptr;
+            };
+            using opus_decoder_ptr = std::shared_ptr<opus_decoder>;
+
             enum codec_type { pcm, opus};
             class microphone
             {
                 public:
                     microphone(lua_api*, int id, const std::string& codec = "pcm");
-                    ~microphone();
                     void stop();
                     void start();
-                    QAudioInput* input();
-                    QIODevice* io();
                     bool recording() const;
                     codec_type codec() const;
                     util::bytes encode(const util::bytes&);
+                    util::bytes read_data();
 
                 private:
                     QAudioFormat _f;
@@ -59,7 +85,7 @@ namespace fire
                     lua_api* _api;
 
                     //opus specific members
-                    OpusEncoder* _opus = nullptr;
+                    opus_encoder_ptr _opus;
                     util::bytes _buffer;
                     size_t _skip = 0;
                     size_t _channels = 0;
@@ -81,7 +107,6 @@ namespace fire
             {
                 public:
                     speaker(lua_api*, const std::string& code = "pcm");
-                    ~speaker();
                     void mute();
                     void unmute();
                     void play(const bin_data&);
@@ -96,7 +121,7 @@ namespace fire
                     lua_api* _api;
 
                     //opus specific members
-                    OpusDecoder* _opus = nullptr;
+                    opus_decoder_ptr _opus;
                     size_t _rep = 0;
                     size_t _channels = 0;
             };

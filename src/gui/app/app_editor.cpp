@@ -88,6 +88,8 @@ namespace fire
                 {"list", "app:list() -- creates a list widget"},
                 {"mic", "app:mic(callback, codec) -- creates an new microphone to get sound. Codecs (pcm, mp3)"},
                 {"speaker", "app:speaker(codec) -- creates an new speaker for playing sound. Codecs (pcm,mp3)"},
+                {"audio_encoder", "app:audio_encoder() -- creates an audio encoder that can encode pcm"},
+                {"audio_decoder", "app:audio_decoder() -- creates an audio decoder that can decode to pcm"},
                 {"message", "app:message() -- creates an new message"},
                 {"mute", "speaker:mute() -- mutes the speaker"},
                 {"unmute", "speaker:unmute() -- unmutes the speaker"},
@@ -139,6 +141,8 @@ namespace fire
                 {"when_triggered", "timer:when_triggered(callback) -- will call the callback when the timer fires"},
                 {"who_started", "app:who_started() -- returns the contact who started the app"},
                 {"width", "image:height() -- returns the height of the image"},
+                {"encode", "audio_encoder:encode(pcm data) -- recieves mono 12khz pcm and encodes it using opus"},
+                {"decode", "audio_decoder:decode(opus data) -- recieves mono 12khz opus and decodes it to pcm"},
             };
 
             const std::string LUA_NUMBERS = "[0-9\\.]+";
