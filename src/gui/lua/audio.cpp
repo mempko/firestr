@@ -67,6 +67,99 @@ namespace fire
                 }
             }
 
+            
+            opus_encoder::opus_encoder()
+            {
+                int err;
+
+                _opus = opus_encoder_create(SAMPLE_RATE,CHANNELS, OPUS_APPLICATION_VOIP, &err); 
+
+                if(err != OPUS_OK) 
+                { 
+                    LOG << "opus encoder create error: "; 
+                    log_opus_error(err);
+                }
+
+                opus_encoder_ctl(_opus, OPUS_SET_BITRATE(OPUS_AUTO));
+                opus_encoder_ctl(_opus, OPUS_SET_VBR(1));
+                opus_encoder_ctl(_opus, OPUS_SET_FORCE_CHANNELS(1)); //force mono
+                opus_encoder_ctl(_opus, OPUS_SET_PACKET_LOSS_PERC(2));
+
+                ENSURE(_opus);
+            }
+
+            opus_encoder::~opus_encoder()
+            {
+                REQUIRE(_opus);
+                opus_encoder_destroy(_opus);
+            }
+
+            bin_data opus_encoder::encode(const bin_data& b)
+            {
+                REQUIRE(_opus);
+                REQUIRE_FALSE(b.data.empty());
+                if(b.data.size() != MIN_BUF_SIZE) return {};
+
+                u::bytes r;
+                r.resize(MIN_BUF_SIZE);
+                auto size = opus_encode(_opus, 
+                        reinterpret_cast<const opus_int16*>(b.data.data()),
+                        FRAMES,
+                        reinterpret_cast<unsigned char*>(r.data()),
+                        r.size());
+
+                if(size < 0) 
+                {
+                    LOG << "opus encode error: "; log_opus_error(size);
+                    return {};
+                }
+                r.resize(size);
+                return {r};
+            }
+
+            opus_decoder::opus_decoder()
+            {
+                int err;
+                _opus = opus_decoder_create(SAMPLE_RATE, CHANNELS, &err);
+
+                if(err != OPUS_OK) 
+                {
+                    LOG << "opus decoder create error: "; log_opus_error(err);
+                }
+
+                ENSURE(_opus);
+            }
+            opus_decoder::~opus_decoder()
+            {
+                REQUIRE(_opus);
+                opus_decoder_destroy(_opus);
+            }
+
+            bin_data opus_decoder::decode(const bin_data& b)
+            {
+                REQUIRE(_opus);
+
+                u::bytes t;
+                t.resize(MAX_OPUS_DECODE_SIZE);
+                auto frames = opus_decode(
+                        _opus,
+                        reinterpret_cast<const unsigned char*>(b.data.data()),
+                        b.data.size(),
+                        reinterpret_cast<opus_int16*>(t.data()),
+                        MAX_FRAMES,
+                        0);
+
+                if(frames < 0) 
+                {
+                    LOG << "opus error decoding: "; log_opus_error(frames);
+                    return {};
+                }
+
+                auto size = frames * sizeof(opus_int16);
+                t.resize(size);
+                return {t};
+            }
+
             microphone::microphone(lua_api* api, int id, const std::string& codec) : _api{api}, _id{id}
             {
                 REQUIRE(api);
@@ -94,31 +187,11 @@ namespace fire
                 LOG << "using mic device: " << convert(_inf.deviceName()) << std::endl;
                 _i = new QAudioInput{_inf, _f, _api->canvas};
 
-                if(_t == codec_type::opus)
-                {
-                    int err;
+                CHECK_GREATER_EQUAL(_f.sampleRate(), SAMPLE_RATE);
+                _skip = _f.sampleRate() / SAMPLE_RATE;
+                _channels = _f.channelCount();
 
-                    _opus = opus_encoder_create(SAMPLE_RATE,CHANNELS, OPUS_APPLICATION_VOIP, &err); 
-
-                    if(err != OPUS_OK) 
-                    { 
-                        LOG << "opus encoder create error: "; 
-                        log_opus_error(err);
-                    }
-
-                    opus_encoder_ctl(_opus, OPUS_SET_BITRATE(OPUS_AUTO));
-                    opus_encoder_ctl(_opus, OPUS_SET_VBR(1));
-                    opus_encoder_ctl(_opus, OPUS_SET_FORCE_CHANNELS(1)); //force mono
-                    opus_encoder_ctl(_opus, OPUS_SET_PACKET_LOSS_PERC(2));
-
-                    _skip = _f.sampleRate() / SAMPLE_RATE;
-                    _channels = _f.channelCount();
-                }
-            }
-
-            microphone::~microphone()
-            {
-                if(_opus) opus_encoder_destroy(_opus);
+                if(_t == codec_type::opus) _opus = std::make_shared<opus_encoder>();
             }
 
             //simple low pass filter 
@@ -192,36 +265,42 @@ namespace fire
                 REQUIRE(_opus);
                 REQUIRE_FALSE(b.empty());
 
-                //add to buffer
-                //decimate mic to match SAMPLE_RATE of opus encoder
-                decimate(b, _buffer, _channels, _skip);
+                return _opus->encode({b}).data;
+            }
 
-                //only encode if size of buffer is greater or equal to 60ms of audio 
-                u::bytes r;
-                if(_buffer.size() >= MIN_BUF_SIZE)
-                {
-                    reduce_noise(_buffer, MIN_BUF_SIZE);
-                    r.resize(MIN_BUF_SIZE);
-                    auto size = opus_encode(_opus, 
-                            reinterpret_cast<const opus_int16*>(_buffer.data()),
-                            FRAMES,
-                            reinterpret_cast<unsigned char*>(r.data()),
-                            r.size());
+            u::bytes microphone::read_data()
+            {
+                REQUIRE(_d);
+                if(!_d) return {};
 
-                    if(size < 0) 
-                    {
-                        LOG << "opus encode error: "; log_opus_error(size);
-                        return {};
-                    }
-                    r.resize(size);
-                }
+                INVARIANT(_i);
 
-                if(_buffer.size() > MIN_BUF_SIZE)
-                {
-                    auto final_buf_size = _buffer.size() - MIN_BUF_SIZE;
-                    std::copy(_buffer.begin() + MIN_BUF_SIZE, _buffer.end(), _buffer.begin());
-                    _buffer.resize(final_buf_size);
-                }
+                auto len = _i->bytesReady();
+                if(len == 0) return {};
+                if(len > MAX_SAMPLE_BYTES) len = MAX_SAMPLE_BYTES;
+
+                u::bytes data;
+                data.resize(len);
+
+                auto l = _d->read(data.data(), len);
+                if(l <= 0) return {};
+                data.resize(l);
+
+                //decimate and add to buffer
+                decimate(data, _buffer, _channels, _skip);
+
+                if(_buffer.size() < MIN_BUF_SIZE) return {};
+
+                //once we have enough data, do noise reduction
+                reduce_noise(_buffer, MIN_BUF_SIZE);
+
+                //copy buffer to result
+                u::bytes r(_buffer.begin(), _buffer.begin() + MIN_BUF_SIZE);
+
+                //copy extra to front and resize. Probably a better idea to use a circular buf here.
+                auto final_buf_size = _buffer.size() - MIN_BUF_SIZE;
+                std::copy(_buffer.begin() + MIN_BUF_SIZE, _buffer.end(), _buffer.begin());
+                _buffer.resize(final_buf_size);
 
                 return r;
             }
@@ -229,17 +308,6 @@ namespace fire
             codec_type microphone::codec() const
             {
                 return _t;
-            }
-
-            QAudioInput* microphone::input()
-            {
-                ENSURE(_i);
-                return _i;
-            }
-
-            QIODevice* microphone::io()
-            {
-                return _d;
             }
 
             bool microphone::recording() const
@@ -334,56 +402,20 @@ namespace fire
                 QAudioDeviceInfo i{QAudioDeviceInfo::defaultOutputDevice()};
                 if (!i.isFormatSupported(_f)) _f = i.nearestFormat(_f);
                 LOG << "using speaker device: " << convert(i.deviceName()) << std::endl;
+
                 _o = new QAudioOutput{i, _f, _api};
 
-                if(_t == codec_type::opus)
-                {
-                    int err;
-                    _opus = opus_decoder_create(SAMPLE_RATE, CHANNELS, &err);
+                CHECK_GREATER_EQUAL(_f.sampleRate(), SAMPLE_RATE);
+                _rep = _f.sampleRate() / SAMPLE_RATE;
+                _channels = _f.channelCount();
 
-                    if(err != OPUS_OK) 
-                    {
-                        LOG << "opus decoder create error: "; log_opus_error(err);
-                    }
-
-                    _rep = _f.sampleRate() / SAMPLE_RATE;
-                    _channels = _f.channelCount();
-                }
+                if(_t == codec_type::opus) _opus = std::make_shared<opus_decoder>();
             }
             
-            speaker::~speaker()
-            {
-                if(_opus) opus_decoder_destroy(_opus);
-            }
-
             u::bytes speaker::decode(const u::bytes& b)
             {
                 REQUIRE(_opus);
-
-                u::bytes t;
-                t.resize(MAX_OPUS_DECODE_SIZE);
-                auto frames = opus_decode(
-                        _opus,
-                        reinterpret_cast<const unsigned char*>(b.data()),
-                        b.size(),
-                        reinterpret_cast<opus_int16*>(t.data()),
-                        MAX_FRAMES,
-                        0);
-
-                if(frames < 0) 
-                {
-                    LOG << "opus error decoding: "; log_opus_error(frames);
-                    return {};
-                }
-
-                auto size = frames * sizeof(opus_int16);
-                t.resize(size);
-
-                //repeat to match speaker sample rate
-                u::bytes r;
-                inflate(t, r, _channels, _rep);
-
-                return r;
+                return _opus->decode({b}).data;
             }
 
             codec_type speaker::codec() const
@@ -419,9 +451,13 @@ namespace fire
 
                 CHECK(data);
 
+                //repeat to match speaker sample rate
+                u::bytes r;
+                inflate(*data, r, _channels, _rep);
+
                 if(_d) 
                 {
-                    _d->write(data->data(), data->size());
+                    _d->write(r.data(), r.size());
                     if(_o->state() == QAudio::SuspendedState)
                     {
                         _o->reset();
@@ -431,7 +467,7 @@ namespace fire
                 else
                 {
                     _d = _o->start();
-                    _d->write(data->data(), data->size());
+                    _d->write(r.data(), r.size());
                 }
             }
 
