@@ -46,18 +46,17 @@ namespace fire
             namespace 
             {
                 const std::string ARRAY_K = "__a";
-                const size_t MAX_FRAMES = 3000;
+                const size_t FRAMES = 480; //40ms of PCM frames. Opus can handles 2.5, 5, 10, 20, 40 or 60ms of audio per frame.
+                const size_t MAX_FRAMES = 2*FRAMES;
                 const size_t MAX_OPUS_DECODE_SIZE = MAX_FRAMES * sizeof(opus_int16);
-                const size_t FRAMES_FOR_60MS = 720; //60ms of PCM frames. Opus can handles 2.5, 5, 10, 20, 40 or 60ms of audio per frame. 60ms sounds smoothest.
-                const size_t MS_60_IN_MICRO = 60000;
                 const size_t SAMPLE_RATE = 12000;
                 const size_t SAMPLE_SIZE = 16;
                 const size_t CHANNELS = 1;
                 const std::string Q_CODEC = "audio/pcm";
-                const size_t MIN_BUF_SIZE = FRAMES_FOR_60MS * sizeof(opus_int16);
+                const size_t MIN_BUF_SIZE = FRAMES * sizeof(opus_int16);
             }
 
-            const size_t MAX_SAMPLE_BYTES = SAMPLE_SIZE * FRAMES_FOR_60MS;
+            const size_t MAX_SAMPLE_BYTES = SAMPLE_SIZE * FRAMES;
 
             void set_enabled(int id, widget_map& map, bool enabled)
             {
@@ -727,6 +726,8 @@ namespace fire
 
                     opus_encoder_ctl(_opus, OPUS_SET_BITRATE(OPUS_AUTO));
                     opus_encoder_ctl(_opus, OPUS_SET_VBR(1));
+                    opus_encoder_ctl(_opus, OPUS_SET_FORCE_CHANNELS(1)); //force mono
+                    opus_encoder_ctl(_opus, OPUS_SET_PACKET_LOSS_PERC(2));
 
                     _skip = _f.sampleRate() / SAMPLE_RATE;
                     _channels = _f.channelCount();
@@ -821,7 +822,7 @@ namespace fire
                     r.resize(MIN_BUF_SIZE);
                     auto size = opus_encode(_opus, 
                             reinterpret_cast<const opus_int16*>(_buffer.data()),
-                            FRAMES_FOR_60MS,
+                            FRAMES,
                             reinterpret_cast<unsigned char*>(r.data()),
                             r.size());
 
@@ -962,9 +963,6 @@ namespace fire
                     {
                         LOG << "opus decoder create error: "; log_opus_error(err);
                     }
-
-                    opus_decoder_ctl(_opus, OPUS_SET_BITRATE(OPUS_AUTO));
-                    opus_decoder_ctl(_opus, OPUS_SET_VBR(1));
 
                     _rep = _f.sampleRate() / SAMPLE_RATE;
                     _channels = _f.channelCount();
