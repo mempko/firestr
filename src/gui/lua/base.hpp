@@ -33,16 +33,12 @@
 #include <QComboBox>
 #include <QSignalMapper>
 #include <QGraphicsView>
-#include <QAudioFormat>
-#include <QAudioInput>
-#include <QAudioOutput>
 
 #include "slb/SLB.hpp"
 
 #include <string>
 #include <unordered_map>
 #include <thread>
-#include <opus/opus.h>
 
 namespace fire
 {
@@ -213,84 +209,6 @@ namespace fire
             int script_message_set(lua_State* L);
             int script_message_get(lua_State* L);
             using store_ref_ptr = std::unique_ptr<store_ref>;
-
-            enum codec_type { pcm, opus};
-            class microphone
-            {
-                public:
-                    microphone(lua_api*, int id, const std::string& codec = "pcm");
-                    ~microphone();
-                    void stop();
-                    void start();
-                    QAudioInput* input();
-                    QIODevice* io();
-                    bool recording() const;
-                    codec_type codec() const;
-                    util::bytes encode(const util::bytes&);
-
-                private:
-                    QAudioFormat _f;
-                    QAudioDeviceInfo _inf;
-                    QAudioInput* _i;
-                    codec_type _t;
-                    int _id;
-                    QIODevice* _d = nullptr;
-                    bool _recording = false;
-                    lua_api* _api;
-
-                    //opus specific members
-                    OpusEncoder* _opus = nullptr;
-                    util::bytes _buffer;
-                    size_t _skip = 0;
-                    size_t _channels = 0;
-            };
-            using microphone_ptr = std::shared_ptr<microphone>;
-
-            struct microphone_ref : public basic_ref
-            {
-                std::string callback;
-                void set_callback(const std::string&);
-                void stop();
-                void start();
-                microphone_ptr mic;
-            };
-            using microphone_ref_map = std::unordered_map<int, microphone_ref>;
-
-
-            struct speaker 
-            {
-                public:
-                    speaker(lua_api*, const std::string& code = "pcm");
-                    ~speaker();
-                    void mute();
-                    void unmute();
-                    void play(const bin_data&);
-                    codec_type codec() const;
-                    util::bytes decode(const util::bytes&);
-                private:
-                    bool _mute = false;
-                    QAudioFormat _f;
-                    codec_type _t;
-                    QAudioOutput* _o;
-                    QIODevice* _d = nullptr;
-                    lua_api* _api;
-
-                    //opus specific members
-                    OpusDecoder* _opus = nullptr;
-                    size_t _rep = 0;
-                    size_t _channels = 0;
-            };
-            using speaker_ptr = std::shared_ptr<speaker>;
-
-            struct speaker_ref : public basic_ref
-            {
-                void mute();
-                void unmute();
-                void play(const bin_data&);
-                speaker_ptr spkr;
-            };
-            using speaker_ref_map = std::unordered_map<int, speaker_ref>;
-            extern const size_t MAX_SAMPLE_BYTES;
         }
     }
 }

@@ -20,6 +20,7 @@
 
 #include "gui/lua/base.hpp"
 #include "gui/lua/widgets.hpp"
+#include "gui/lua/audio.hpp"
 #include "gui/app/app.hpp"
 #include "conversation/conversation_service.hpp"
 
