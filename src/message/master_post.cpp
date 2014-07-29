@@ -36,7 +36,6 @@ namespace fire
             const double THREAD_SLEEP = 20; //in milliseconds 
             const double QUIT_SLEEP = 500; //in milliseconds 
             const size_t POOL_SIZE = 30; //small pool size for now
-            const size_t NONCE_SIZE = 16; //size of nonce added to every message.
         }
 
         metadata::encryption_type to_message_encryption_type(sc::encryption_type s)
