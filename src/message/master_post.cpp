@@ -16,6 +16,7 @@
  */
 #include "message/master_post.hpp"
 #include "util/bytes.hpp"
+#include "util/compress.hpp"
 #include "util/dbc.hpp"
 #include "util/log.hpp"
 
@@ -79,6 +80,12 @@ namespace fire
                 //could not decrypt, skip
                 if(data.empty()) continue;
 
+                //uncompress decrypted data
+                data = u::uncompress(data);
+
+                //unable to decompress, skip
+                if(data.empty()) continue;
+
                 //parse message
                 message m;
                 u::decode(data, m);
@@ -86,7 +93,7 @@ namespace fire
                 //skip bad message
                 if(m.meta.to.empty()) continue;
 
-                //insert the from_ip, from_port
+                //insert the from_ip, from_port and other metadata
                 m.meta.extra["from_protocol"] = ep.protocol;
                 m.meta.extra["from_ip"] = ep.address;
                 m.meta.extra["from_port"] = ep.port;
@@ -156,6 +163,7 @@ namespace fire
             std::string last_address;
 
             bool sent = false;
+
             while(!o->_done || sent)
             try
             {
@@ -174,10 +182,9 @@ namespace fire
                 const std::string outside_queue_address = m.meta.to.front();
                 last_address = outside_queue_address;
 
-                //encode message
-                std::stringstream s;
-                s << m;
-                u::bytes data = u::to_bytes(s.str());
+                //encode, compress, and encrypt message
+                auto data = u::encode(m);
+                data = u::compress(data);
 
                 encrypt_message(
                         data, 
