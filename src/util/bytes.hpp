@@ -14,8 +14,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef FIRESTR_QUEUE_H
-#define FIRESTR_QUEUE_H
+#ifndef FIRESTR_BYTES_H
+#define FIRESTR_BYTES_H
 
 #include <vector>
 #include <string>
