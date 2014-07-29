@@ -19,6 +19,8 @@ dbc        - Implements some Design By Contract constructs.
 
 bytes      - Deals with bytes and converting from bytes to strings, etc
 
+compress   - Simple functions to compress and uncompress bytes using snappy
+
 queue      - Implements a thread safe queue.
 
 string     - Utilities dealing with string handling.
