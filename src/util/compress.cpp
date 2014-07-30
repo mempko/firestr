@@ -47,7 +47,7 @@ namespace fire
         bytes uncompress(const bytes& i)
         {
             std::string o;
-            if(!sn::Uncompress(i.data(), i.size(), &o)) return {};
+            if(!sn::Uncompress(i.data(), i.size(), &o)) return bytes{};
             return to_bytes(o);
         }
     }
