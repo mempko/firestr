@@ -323,6 +323,7 @@ namespace fire
                 _script->setTabStopWidth(40);
                 _highlighter = new lua_highlighter(_script->document());
 
+                _started = !_app->code().empty();
                 _script->setPlainText(_app->code().c_str());
                 connect(_script, SIGNAL(keyPressed(QKeyEvent*)), this, SLOT(text_typed(QKeyEvent*)));
                 l->addWidget(_script, 2, 0, 1, 2);
@@ -676,6 +677,7 @@ namespace fire
                             || (!prefix.isEmpty() && EOW.contains(e->text().right(1))))) 
                 {
                     _c->popup()->hide();
+                    if(emit_e) emit keyPressed(e);
                     return;
                 }
 
@@ -698,7 +700,7 @@ namespace fire
             {
                 INVARIANT(_script);
                 //TODO make more interactive by sending events instead of whole script
-                //send_script(false);
+                send_script(false);
             }
 
             void app_editor::send_script(bool send_data)
@@ -842,6 +844,14 @@ namespace fire
             {
                 INVARIANT(_script);
                 INVARIANT(_api);
+
+                //send script first time
+                if(_started)
+                {
+                    send_script();
+                    _started = false;
+                }
+
                 update_error(_api->get_error());
 
                 auto code = gui::convert(_script->toPlainText());
@@ -875,7 +885,6 @@ namespace fire
 
                                 //update status bar
                                 run_script();
-                                send_script();
                                 _run_state = READY;
                             } 
                             else
@@ -917,6 +926,7 @@ namespace fire
                     auto c = _conversation->contacts().by_id(t.from_id);
                     if(!c) return;
 
+                    //if text is same, no change
                     auto code = gui::convert(_script->toPlainText());
                     if(t.code == code && t.data.empty()) return;
 
