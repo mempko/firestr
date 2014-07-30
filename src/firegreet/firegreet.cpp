@@ -30,6 +30,7 @@
 #include "security/security_library.hpp"
 #include "util/thread.hpp"
 #include "util/bytes.hpp"
+#include "util/compress.hpp"
 #include "util/dbc.hpp"
 #include "util/log.hpp"
 
@@ -173,6 +174,7 @@ void send_response(
 
     //encrypt using public key
     auto data = u::encode(m);
+    data = u::compress(data);
     data = sec.encrypt(address, data);
     con.send(address, data);
 }
@@ -327,6 +329,7 @@ int main(int argc, char *argv[])
         auto sid = n::make_address_str(ep);
         sc::encryption_type et;
         data = sec.decrypt(sid, data, et);
+        data = u::uncompress(data);
 
         //parse message
         m::message m;
