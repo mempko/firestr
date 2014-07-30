@@ -175,6 +175,7 @@ namespace fire
                     int _prev_pos;
                     enum run_state { CODE_CHANGED, DONE_TYPING, READY};
                     run_state  _run_state;
+                    bool _started = false;
             };
             extern const std::string APP_EDITOR;
 
