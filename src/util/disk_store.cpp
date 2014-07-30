@@ -112,6 +112,7 @@ namespace fire
 
             ENSURE(_mutex);
             ENSURE(_index);
+            return *this;
         }
 
         void disk_store::load(const std::string& path) 
@@ -206,6 +207,7 @@ namespace fire
             _index->remove(key);
 
             save_index();
+            return true;
         }
 
         disk_store::const_iterator disk_store::begin() const
