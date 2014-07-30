@@ -257,7 +257,18 @@ namespace fire
 
                 CHECK(edit);
                 auto pt = gui::convert(edit->toPlainText());
-                if(t != pt) edit->setText(t.c_str());
+                if(t != pt)
+                {
+                    //save cursor
+                    auto pos = edit->textCursor().position();
+
+                    edit->setText(t.c_str());
+
+                    //put cursor back
+                    auto cursor = edit->textCursor();
+                    cursor.setPosition(pos);
+                    edit->setTextCursor(cursor);
+                }
             }
 
             void text_edit_ref::set_edited_callback(const std::string& c)
