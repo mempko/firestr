@@ -231,6 +231,7 @@ void send_pub_key(
 
     //send plaintext
     auto data = u::encode(m);
+    data = u::compress(data);
     data = sec.encrypt(address, data);
     con.send(address, data);
 }
