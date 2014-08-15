@@ -66,6 +66,8 @@ namespace fire
             for (iface = iflist; iface; iface = iface->ifa_next) 
             {
                 const void *addr;
+                if(!iface->ifa_addr) continue;
+
                 int af = iface->ifa_addr->sa_family;
                 switch (af) 
                 {
