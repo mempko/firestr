@@ -54,5 +54,11 @@ namespace fire
             INVARIANT(_layout);
             return _layout;
         }
+
+        bool message::visible() const
+        {
+            INVARIANT(_root);
+            return !_root->visibleRegion().isEmpty();
+        }
     }
 }

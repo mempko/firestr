@@ -70,7 +70,7 @@ namespace fire
                 user::user_service_ptr user_service();
 
             public:
-                void fire_conversation_alert(const std::string& id);
+                void fire_conversation_alert(const std::string& id, bool visible);
 
             protected:
                 virtual void message_received(const message::message&);
@@ -159,6 +159,7 @@ namespace fire
             struct conversation_alert
             {
                 std::string conversation_id;
+                bool visible;
             };
             message::message convert(const conversation_alert&);
             void convert(const message::message&, conversation_alert&);

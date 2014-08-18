@@ -454,7 +454,14 @@ namespace fire
             {
                 INVARIANT(conversation);
                 INVARIANT(conversation_service);
-                conversation_service->fire_conversation_alert(conversation->id());
+
+                conversation_service->fire_conversation_alert(conversation->id(), visible());
+            }
+
+            bool lua_api::visible() const
+            {
+                INVARIANT(canvas);
+                return !canvas->visibleRegion().isEmpty();
             }
 
             void lua_api::message_received(const script_message& m)

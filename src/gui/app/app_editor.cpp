@@ -737,8 +737,12 @@ namespace fire
             {
                 INVARIANT(_script);
                 INVARIANT(_conversation);
+                INVARIANT(_conversation_service);
                 INVARIANT(_api);
                 INVARIANT(_output);
+
+                //alert of change
+                _conversation_service->fire_conversation_alert(_conversation->id(), visible());
 
                 //get the code
                 auto code = gui::convert(_script->toPlainText());
@@ -914,6 +918,7 @@ namespace fire
             {
                 INVARIANT(_mail);
                 INVARIANT(_conversation);
+                INVARIANT(_conversation_service);
 
                 if(m::is_remote(m)) m::expect_symmetric(m);
                 else m::expect_plaintext(m);

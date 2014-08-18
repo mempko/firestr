@@ -199,6 +199,9 @@ namespace fire
                     void got_sound(int id);
 
                 private:
+                    bool visible() const;
+
+                private:
                         error_info _error;
             };
 

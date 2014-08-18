@@ -218,7 +218,8 @@ namespace fire
 
                     _messages->add(make_message_widget(c->name(), t.text));
                     _messages->verticalScrollBar()->scroll(0, _messages->verticalScrollBar()->maximum());
-                    _conversation_service->fire_conversation_alert(_conversation->id());
+
+                    _conversation_service->fire_conversation_alert(_conversation->id(), visible());
                 }
                 else
                 {
