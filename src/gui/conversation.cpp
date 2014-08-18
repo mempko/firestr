@@ -192,7 +192,7 @@ namespace fire
 
                 //add new app and get metadata
                 if(!_messages->add_new_app(m)) return;
-                _conversation_service->fire_conversation_alert(_conversation->id());
+                _conversation_service->fire_conversation_alert(_conversation->id(), false);
             }
             else if(m.meta.type == ms::REQ_APP)
             {
@@ -205,7 +205,7 @@ namespace fire
                 m::expect_local(m);
 
                 update_contacts();
-                _conversation_service->fire_conversation_alert(_conversation->id());
+                _conversation_service->fire_conversation_alert(_conversation->id(), false);
             }
             else if(m.meta.type == s::event::CONTACT_REMOVED)
             {
@@ -220,7 +220,7 @@ namespace fire
                 if(!c) return;
 
                 update_contacts();
-                _conversation_service->fire_conversation_alert(_conversation->id());
+                _conversation_service->fire_conversation_alert(_conversation->id(), false);
             }
             else if(m.meta.type == s::event::CONTACT_ADDED)
             {
@@ -235,7 +235,7 @@ namespace fire
                 if(!c) return;
 
                 update_contacts();
-                _conversation_service->fire_conversation_alert(_conversation->id());
+                _conversation_service->fire_conversation_alert(_conversation->id(), false);
             }
             else if(m.meta.type == us::event::CONTACT_CONNECTED)
             {

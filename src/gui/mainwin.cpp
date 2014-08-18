@@ -956,8 +956,7 @@ namespace fire
             INVARIANT(_conversations);
 
             auto t = find_conversation(_conversations, e.conversation_id);
-            if(should_alert(t)) 
-                alert_tab(t);
+            if(!_focus || !e.visible) alert_tab(t);
         }
 
         void main_window::contact_removed_or_added_from_conversation_event(const m::message& e)

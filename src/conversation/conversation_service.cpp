@@ -659,6 +659,7 @@ namespace fire
             {
                 m::message m;
                 m.meta.type = CONVERSATION_ALERT;
+                m.meta.extra["v"] = s.visible ? 1 : 0;
                 m.data = u::to_bytes(s.conversation_id);
                 return m;
             }
@@ -666,6 +667,7 @@ namespace fire
             void convert(const m::message& m, conversation_alert& s)
             {
                 REQUIRE_EQUAL(m.meta.type, CONVERSATION_ALERT);
+                s.visible = m.meta.extra["v"].as_int() == 1;
                 s.conversation_id = u::to_str(m.data);
             }
         }
@@ -704,9 +706,9 @@ namespace fire
             send_event(event::convert(e));
         }
 
-        void conversation_service::fire_conversation_alert(const std::string& id)
+        void conversation_service::fire_conversation_alert(const std::string& id, bool visible)
         {
-            event::conversation_alert e{id};
+            event::conversation_alert e{id, visible};
             send_event(event::convert(e));
         }
 
