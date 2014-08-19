@@ -154,6 +154,7 @@ namespace fire
                 const size_t PADDING = 20;
                 const size_t MIN_EDIT_HEIGHT = 500;
                 const std::string SCRIPT_CODE_MESSAGE = "script";
+                const std::string SCRIPT_INIT_MESSAGE = "init";
             }
 
             struct text_script
@@ -161,6 +162,11 @@ namespace fire
                 std::string from_id;
                 std::string code;
                 u::bytes data;
+            };
+
+            struct script_init
+            {
+                std::string from_id;
             };
 
             m::message convert(const text_script& t)
@@ -181,6 +187,18 @@ namespace fire
                 t.data = m.data;
             }
 
+            m::message create_script_init_message()
+            {
+                m::message m;
+                m.meta.type = SCRIPT_INIT_MESSAGE;
+                return m;
+            }
+
+            void convert(const m::message& m, script_init& t)
+            {
+                REQUIRE_EQUAL(m.meta.type, SCRIPT_INIT_MESSAGE);
+                t.from_id = m.meta.extra["from_id"].as_string();
+            }
 
             app_editor::app_editor(
                     app_service_ptr app_service, 
@@ -324,7 +342,7 @@ namespace fire
                 _script->setTabStopWidth(40);
                 _highlighter = new lua_highlighter(_script->document());
 
-                _started = !_app->code().empty();
+                _started = _app->code().empty() ? start_state::GET_CODE : start_state::DONE_START;
                 _script->setPlainText(_app->code().c_str());
                 connect(_script, SIGNAL(keyPressed(QKeyEvent*)), this, SLOT(text_typed(QKeyEvent*)));
                 l->addWidget(_script, 2, 0, 1, 2);
@@ -705,18 +723,15 @@ namespace fire
                 send_script(false);
             }
 
-            void app_editor::send_script(bool send_data)
+            bool app_editor::prepare_script_message(text_script& tm, bool send_data)
             {
                 INVARIANT(_script);
-                INVARIANT(_conversation);
                 INVARIANT(_api);
 
                 //get the code
                 auto code = gui::convert(_script->toPlainText());
-                if(code.empty()) return;
+                if(code.empty()) return false;
 
-                //set the code
-                text_script tm;
                 tm.code = code;
 
                 //export the data
@@ -726,6 +741,19 @@ namespace fire
                     _app->data().export_to(data);
                     tm.data = u::encode(data);
                 }
+                return true;
+            }
+
+            void app_editor::send_script(bool send_data)
+            {
+                INVARIANT(_script);
+                INVARIANT(_conversation);
+                INVARIANT(_api);
+
+
+                //set the code
+                text_script tm;
+                if(!prepare_script_message(tm, send_data)) return;
 
                 //send it all
                 for(auto c : _conversation->contacts().list())
@@ -733,6 +761,26 @@ namespace fire
                     CHECK(c);
                     _sender->send(c->id(), convert(tm)); 
                 }
+            }
+
+            void app_editor::send_script_to(const std::string& id)
+            {
+                //set the code
+                text_script tm;
+                if(!prepare_script_message(tm, true)) return;
+
+                _sender->send(id, convert(tm)); 
+            }
+
+            void app_editor::ask_for_script()
+            {
+                INVARIANT(_sender);
+                INVARIANT(_conversation);
+                INVARIANT_FALSE(_from_id.empty());
+
+                //if from self, return
+                if(_from_id == _conversation->user_service()->user().info().id()) return;
+                _sender->send(_from_id, create_script_init_message());
             }
 
             bool app_editor::run_script()
@@ -846,17 +894,26 @@ namespace fire
                 _status->setText(tr("<font color='red'>running...</font>"));
             }
 
+            void app_editor::init_update()
+            {
+                //ask for script first time on startup
+                switch(_started)
+                {
+                    case start_state::GET_CODE: 
+                        {
+                            ask_for_script();
+                            _started = start_state::DONE_START;
+                        }
+                        break;
+                }
+            }
+
             void app_editor::update()
             {
                 INVARIANT(_script);
                 INVARIANT(_api);
 
-                //send script first time
-                if(_started)
-                {
-                    send_script();
-                    _started = false;
-                }
+                init_update();
 
                 update_error(_api->get_error());
 
@@ -965,6 +1022,16 @@ namespace fire
                 {
                     l::script_message sm{m, _api.get()};
                     _api->message_received(sm);
+                }
+                if(m.meta.type == SCRIPT_INIT_MESSAGE)
+                {
+                    script_init i;
+                    convert(m, i);
+
+                    auto c = _conversation->contacts().by_id(i.from_id);
+                    if(!c) return;
+
+                    send_script_to(c->id());
                 }
                 else if(m.meta.type == l::EVENT_MESSAGE)
                 {
