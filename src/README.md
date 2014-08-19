@@ -1,5 +1,4 @@
 
-===================================================================
 Project Overview 
 ===================================================================
 
@@ -8,7 +7,6 @@ executables start with `fire', where `firestr' is the main one.
 
 Each subdirectory has it's own CMakeLists file and README.
 
-===================================================================
 Dependency Graph 
 ===================================================================
         
@@ -56,34 +54,72 @@ Dependency Graph
             \---------------/   
 
 
-===================================================================
 Component Summary 
 ===================================================================
 
-util          - Place to put things that everything else depends on
+util          
+-------------------------------------------------------------------
 
-security      - Library dealing with keeping the communication secure
+Place to put things that everything else depends on
 
-network       - Library dealing with sending bits and blips over the network
+security      
+-------------------------------------------------------------------
 
-message       - Library for sending messages between components and over network
+Library dealing with keeping the communication secure
 
-messages      - Code for various message types that can go over the wire
+network       
+-------------------------------------------------------------------
 
-service       - Library that simplifies the creation of threaded services.
+Library dealing with sending bits and blips over the network
 
-user          - Library that manages user and contact state and connectivity
+message       
+-------------------------------------------------------------------
 
-conversation  - Library that manages conversation state and connectivity between users
+Library for sending messages between components and over network
 
-gui           - Various widgets which can be combined into an application
+messages      
+-------------------------------------------------------------------
 
-firestr       - Main application
+Code for various message types that can go over the wire
 
-firegreet     - Greeter application which helps firestr communicate over NAT
+service       
+-------------------------------------------------------------------
 
-packaged_apps - Example/useful apps
+Library that simplifies the creation of threaded services.
 
-slb           - Lua and the SLB Lua binding library written by Jose L. Hidalgo Valiño
+user          
+-------------------------------------------------------------------
+
+Library that manages user and contact state and connectivity
+
+conversation  
+-------------------------------------------------------------------
+
+Library that manages conversation state and connectivity between users
+
+gui           
+-------------------------------------------------------------------
+
+Various widgets which can be combined into an application
+
+firestr       
+-------------------------------------------------------------------
+
+Main application
+
+firegreet     
+-------------------------------------------------------------------
+
+Greeter application which helps firestr communicate over NAT
+
+packaged_apps 
+-------------------------------------------------------------------
+
+Example/useful apps
+
+slb           
+-------------------------------------------------------------------
+
+Lua and the SLB Lua binding library written by Jose L. Hidalgo Valiño
 
 

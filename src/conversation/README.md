@@ -1,5 +1,3 @@
-
-===================================================================
 conversation library
 ===================================================================
 
@@ -12,12 +10,17 @@ This needs to be fleshed out. I am thinking of doing a reference
 counted setup for the life of a conversation. Right now if you leave
 a conversation, you cannot come back.
 
-===================================================================
 file summary
 ===================================================================
 
-conversation         - Provides the model for the conversation state.
+conversation         
+-------------------------------------------------------------------
 
-conversation_service - Service which handles creation and synchronization
-                       of conversations between users.
+Provides the model for the conversation state.
+
+conversation_service 
+-------------------------------------------------------------------
+
+Service which handles creation and synchronization
+of conversations between users.
               

@@ -1,5 +1,3 @@
-
-===================================================================
 firegreet app
 ===================================================================
 
@@ -11,8 +9,9 @@ It does not broker any communication between firestr services,
 it simply lets each instance know about the others so that they
 can initiate p2p communication over NAT
 
-===================================================================
 file summary
 ===================================================================
 
-firegreet  - main is here.
+firegreet  
+-------------------------------------------------------------------
+main is here.
