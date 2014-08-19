@@ -46,6 +46,32 @@ Boost 1.54
 Botan 1.10
 libopus
 libsnappy
+uuid
+libssl
+libgmp
+
+===================================================================
+Build Instructions Using Vagrant
+===================================================================
+Install vagrant on your machine. Open a terminal and run:
+
+$ vagrant up
+$ vagrant ssh
+$ sudo startxfc4&
+
+Open terminal in VM and run:
+
+$ cd /vagrant
+$ mkdir build
+$ cd build
+$ cmake ..
+$ make -j2
+
+You can then run two test instances
+
+$ cd src/firestr/
+$ ./firestr --home test1 --port 6060&
+$ ./firestr --home test2 --port 7070&
 
 ===================================================================
 License GPLv3
