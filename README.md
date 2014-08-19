@@ -1,7 +1,7 @@
-Firestr (Pronounced Fire Star) 0.3
+Fire★ (Pronounced Fire Star) 0.3
 ===================================================================
 
-Firestr in short, is a simple distributed, decentralized communication 
+Fire★ in short, is a simple distributed, decentralized communication 
 and computation platform.
 
 You don't send a message to someone, you send software, which 
