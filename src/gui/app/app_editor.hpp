@@ -47,6 +47,7 @@ namespace fire
     {
         namespace app
         {
+            class text_script;
             struct highlight_rule
             {
                 QTextCharFormat format;
@@ -120,10 +121,14 @@ namespace fire
 
                 public slots:
                     bool run_script();
+                    bool prepare_script_message(text_script& tm, bool send_data);
                     void send_script(bool send_data = true);
+                    void send_script_to(const std::string& id);
+                    void ask_for_script();
                     void text_typed(QKeyEvent*);
                     void save_app();
                     void check_mail(fire::message::message);
+                    void init_update();
                     void update();
                     void add_data();
                     void load_data_from_file();
@@ -175,7 +180,8 @@ namespace fire
                     int _prev_pos;
                     enum run_state { CODE_CHANGED, DONE_TYPING, READY};
                     run_state  _run_state;
-                    bool _started = false;
+                    enum start_state { GET_CODE, DONE_START};
+                    start_state _started;
             };
             extern const std::string APP_EDITOR;
 
