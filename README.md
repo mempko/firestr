@@ -1,5 +1,3 @@
-
-===================================================================
 Firestr (Pronounced Fire Star) 0.3
 ===================================================================
 
@@ -14,7 +12,6 @@ or games.
 The source code to all applications is available immediately to 
 instantly clone and modify. 
 
-===================================================================
 WARNING
 ===================================================================
 
@@ -23,7 +20,6 @@ not been audited so use AT YOUR OWN RISK.
 
 If you are a security expert, please contribute.
 
-===================================================================
 Organization
 ===================================================================
 
@@ -36,44 +32,43 @@ the main application is in src/firestr
 
 The project uses CMake as the meta-build configuration.
 
-===================================================================
 Build Dependencies
 ===================================================================
-gcc 4.8
-CMake
-Qt 5 
-Boost 1.54
-Botan 1.10
-libopus
-libsnappy
-uuid
-libssl
-libgmp
 
+* gcc 4.8
+* CMake
+* Qt 5 
+* Boost 1.54
+* Botan 1.10
+* libopus
+* libsnappy
+* uuid
+* libssl
+* libgmp
+
+Building Using Vagrant
 ===================================================================
-Build Instructions Using Vagrant
-===================================================================
+
 Install vagrant on your machine. Open a terminal and run:
 
-$ vagrant up
-$ vagrant ssh
-$ sudo startxfc4&
+    $ vagrant up
+    $ vagrant ssh
+    $ startxfc4&
 
 Open terminal in VM and run:
 
-$ cd /vagrant
-$ mkdir build
-$ cd build
-$ cmake ..
-$ make -j2
+    $ cd /vagrant
+    $ mkdir build
+    $ cd build
+    $ cmake ..
+    $ make -j2
 
 You can then run two test instances
 
-$ cd src/firestr/
-$ ./firestr --home test1 --port 6060&
-$ ./firestr --home test2 --port 7070&
+    $ cd src/firestr/
+    $ ./firestr --home test1 --port 6060&
+    $ ./firestr --home test2 --port 7070&
 
-===================================================================
 License GPLv3
 ===================================================================
 
