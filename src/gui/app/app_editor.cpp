@@ -224,7 +224,8 @@ namespace fire
                 _app_service{app_service},
                 _conversation_service{conversation_s},
                 _conversation{conversation},
-                _app{app}
+                _app{app},
+                _run_state{READY}
             {
                 REQUIRE(app_service);
                 REQUIRE(conversation_s);
@@ -475,6 +476,7 @@ namespace fire
                 _data_key->setFocus(Qt::OtherFocusReason);
 
                 _run_state = CODE_CHANGED;
+                send_script(true);
             }
 
             void app_editor::load_data_from_file()
