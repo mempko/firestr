@@ -243,6 +243,7 @@ namespace fire
                 _conversation_service{conversation_s},
                 _conversation{conversation},
                 _app{app},
+                _prev_pos{0},
                 _run_state{READY}
             {
                 REQUIRE(app_service);
