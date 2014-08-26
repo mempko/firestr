@@ -18,10 +18,13 @@ namespace fire
             //setup layout
             _layout = new QVBoxLayout{_root};
             _layout->setAlignment(Qt::AlignTop);
+            _layout->setContentsMargins(0,0,0,0);
 
             //setup base
             setWidgetResizable(true);
             setWidget(_root);
+            setContentsMargins(0,0,0,0);
+            setFrameShape(QFrame::NoFrame);
 
             QObject::connect(verticalScrollBar(), SIGNAL(rangeChanged(int, int)), this, SLOT(scroll_to_bottom(int, int)));
 

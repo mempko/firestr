@@ -64,7 +64,6 @@ namespace fire
             };
 
             _contact_list = new contact_list{conversation_service->user_service(), _conversation->contacts()};
-
             _add_contact = new QPushButton{"+"};
             _add_contact->setMaximumSize(20,20);
             _add_contact->setMinimumSize(20,20);
@@ -77,20 +76,25 @@ namespace fire
             auto* cl = new QGridLayout;
 
             cw->setLayout(cl);
+            cw->setContentsMargins(0,0,0,0);
+
             cl->addWidget(_contact_select, 3,0);
             cl->addWidget(_add_contact, 3, 1);
             cl->addWidget(_contact_list, 0, 0, 2, 2);
+            cl->setContentsMargins(0,0,0,0);
 
             auto s = new QSplitter{Qt::Horizontal};
+            s->setFrameShape(QFrame::NoFrame);
+            s->setContentsMargins(0,0,0,0);
             s->addWidget(_messages);
             s->addWidget(cw);
             s->setStretchFactor(0, 1);
             s->setStretchFactor(1, 0);
 
             _layout->addWidget(s);
+            _layout->setContentsMargins(0,0,0,0);
 
             setLayout(_layout);
-            _layout->setContentsMargins(0,0,0,0);
 
             //setup mail timer
             _mail_service = new mail_service{_conversation->mail(), this};

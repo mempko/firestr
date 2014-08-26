@@ -20,6 +20,8 @@ namespace fire
             //setup base
             setWidgetResizable(true);
             setWidget(_root);
+            setFrameShape(QFrame::NoFrame);
+            setContentsMargins(0,0,0,0);
 
             INVARIANT(_root);
             INVARIANT(_layout);
