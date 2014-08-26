@@ -26,6 +26,7 @@
 #include "gui/debugwin.hpp"
 #include "gui/message.hpp"
 #include "gui/util.hpp"
+#include "gui/icon.hpp"
 
 #include "network/message_queue.hpp"
 
@@ -88,6 +89,7 @@ namespace fire
             _focus{true},
             _context(c)
         {
+            setWindowIcon(logo());
             setup_post();
             setup_services();
             create_actions();
