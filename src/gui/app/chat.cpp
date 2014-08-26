@@ -136,15 +136,6 @@ namespace fire
 
                 setMinimumHeight(layout()->sizeHint().height() + PADDING);
 
-                //if no contacts added, disable app
-                if(_conversation->contacts().empty())
-                {
-                    _messages->add(make_message_widget(gui::convert(tr("alert")), gui::convert(tr("no contacts in conversation"))));
-                    _message->setEnabled(false);
-                    _send->setEnabled(false);
-                    return;
-                }
-
                 //setup mail service
                 _mail_service = new mail_service{_mail, this};
                 _mail_service->start();
