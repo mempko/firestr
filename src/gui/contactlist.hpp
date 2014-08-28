@@ -151,8 +151,10 @@ namespace fire
                 contact_list_dialog(
                         const std::string& title, 
                         user::user_service_ptr, 
-                        bool add_on_start = false,
                         QWidget* parent = nullptr);
+
+            public:
+                void save_state();
 
             public slots:
                 void new_contact();
@@ -160,10 +162,11 @@ namespace fire
                 void create_contact_file();
 
             protected:
-                void init_contacts_tab(QWidget* tab, QGridLayout* layout, bool add_on_start);
+                void init_contacts_tab(QWidget* tab, QGridLayout* layout);
                 void init_intro_tab(QWidget* tab, QGridLayout* layout);
                 void init_greeters_tab(QWidget* tab, QGridLayout* layout);
                 void update_contacts();
+                void restore_state();
 
             protected:
                 list* _list;

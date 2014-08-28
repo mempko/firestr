@@ -41,6 +41,7 @@ namespace fire
         namespace
         {
             const size_t TIMER_SLEEP = 5000;//in milliseconds
+            const char* GREETER_TIP = "A greeter helps connect you with your contacts.\nTry adding 'mempko.com:8080' and ask them to do the same.";
         }
 
         std::string user_text(
@@ -137,7 +138,6 @@ namespace fire
         contact_list_dialog::contact_list_dialog(
                 const std::string& title, 
                 us::user_service_ptr service,
-                bool add_on_start,
                 QWidget* parent) :
             QDialog{parent},
             _service{service}
@@ -158,66 +158,66 @@ namespace fire
 
             auto* greeters_tab = new QWidget;
             auto* greeters_layout = new QGridLayout{greeters_tab};
-            tabs->addTab(contacts_tab, tr("contacts"));
+            if(_service->user().greeters().empty())
+            {
+                tabs->addTab(greeters_tab, tr("greeters"));
+                tabs->addTab(contacts_tab, tr("contacts"));
+            }
+            else
+            {
+                tabs->addTab(contacts_tab, tr("contacts"));
+                tabs->addTab(greeters_tab, tr("greeters"));
+            }
             tabs->addTab(intro_tab, tr("introductions"));
-            tabs->addTab(greeters_tab, tr("greeters"));
 
-            init_contacts_tab(contacts_tab, contacts_layout, add_on_start);
-            init_intro_tab(intro_tab, intro_layout);
             init_greeters_tab(greeters_tab, greeters_layout);
+            init_contacts_tab(contacts_tab, contacts_layout);
+            init_intro_tab(intro_tab, intro_layout);
 
             setWindowTitle(tr(title.c_str()));
+            restore_state();
 
             INVARIANT(_list);
         }
 
-        void contact_list_dialog::init_contacts_tab(QWidget* tab, QGridLayout* layout, bool add_on_start)
+        void contact_list_dialog::init_contacts_tab(QWidget* tab, QGridLayout* layout)
         {
             REQUIRE(tab);
             REQUIRE(layout);
             INVARIANT(_service);
 
+            //create create invite button
+            auto* invite = new QPushButton{tr("create invite")};
+            invite->setToolTip(tr("Give the invite file you create to the person you want to connect with.\nMake sure to get theirs."));
+            layout->addWidget(invite, 0,0, 1, 3); 
+            connect(invite, SIGNAL(clicked()), this, SLOT(create_contact_file()));
+
             //create contact list
             _list = new list;
-            layout->addWidget(_list, 0, 0, 2, 3);
+            layout->addWidget(_list, 1, 0, 2, 3);
+
+            //create add button
+            auto* add_new = new QPushButton{tr("add contact")};
+            add_new->setToolTip(tr("add someone using their invite file"));
+            layout->addWidget(add_new, 3, 0, 1, 3); 
+            connect(add_new, SIGNAL(clicked()), this, SLOT(new_contact()));
 
             update_contacts();
 
-            //create add button
-            auto* add_new = new QPushButton{tr("add")};
-            layout->addWidget(add_new, 2,0); 
-            connect(add_new, SIGNAL(clicked()), this, SLOT(new_contact()));
-
-            //create create invite button
-            auto* invite = new QPushButton{tr("create invite")};
-            layout->addWidget(invite, 2,1); 
-            connect(invite, SIGNAL(clicked()), this, SLOT(create_contact_file()));
-
             //create id label
             std::string id = _service->user().info().id(); 
-            auto* id_label = new QLabel{tr("your id")};
+            auto* id_label = new QLabel{tr("Your ID")};
             auto* id_txt = new QLineEdit{id.c_str()};
             id_txt->setMinimumWidth(id.size() * 8);
             id_txt->setReadOnly(true);
             id_txt->setFrame(false);
-            layout->addWidget(id_label, 3,0); 
-            layout->addWidget(id_txt, 3,1,1,2); 
-
-            std::string addr = _service->in_host() + ":" + n::port_to_string(_service->in_port());
-            auto* addr_label = new QLabel{tr("your address")};
-            auto* addr_txt = new QLineEdit(addr.c_str());
-            addr_txt->setMinimumWidth(addr.size() * 8);
-            addr_txt->setReadOnly(true);
-            addr_txt->setFrame(false);
-            layout->addWidget(addr_label, 4,0); 
-            layout->addWidget(addr_txt, 4,1,1,2); 
+            layout->addWidget(id_label, 4,0); 
+            layout->addWidget(id_txt, 4,1,1,2); 
 
             //setup updated timer
             auto *t = new QTimer(this);
             connect(t, SIGNAL(timeout()), this, SLOT(update()));
             t->start(TIMER_SLEEP);
-
-            if(add_on_start) new_contact();
         }
 
         void contact_list_dialog::init_intro_tab(QWidget* tab, QGridLayout* layout)
@@ -229,6 +229,7 @@ namespace fire
 
             layout->addWidget(il, 0,0);
             auto* introduce = new QPushButton{tr("introduce")};
+            introduce->setToolTip(tr("Introduce one of your contacts to another.\nThey won't need to exchange invite files."));
             layout->addWidget(introduce, 1,0); 
             connect(introduce, SIGNAL(clicked()), il, SLOT(introduce()));
         }
@@ -239,9 +240,11 @@ namespace fire
             REQUIRE(layout);
             INVARIANT(_service);
             auto gl = new greeter_list{_service};
+            gl->setToolTip(tr(GREETER_TIP));
 
             layout->addWidget(gl, 0,0);
             auto* add_new = new QPushButton{tr("add")};
+            add_new->setToolTip(tr(GREETER_TIP));
             layout->addWidget(add_new, 1,0); 
             connect(add_new, SIGNAL(clicked()), gl, SLOT(add_greeter()));
         }
@@ -308,6 +311,20 @@ namespace fire
 
             update_contacts();
             _prev_contacts = contacts;
+        }
+
+        void contact_list_dialog::save_state()
+        {
+            INVARIANT(_service);
+            QSettings settings("mempko", app_id(_service->user()).c_str());
+            settings.setValue("contact_list/geometry", saveGeometry());
+        }
+
+        void contact_list_dialog::restore_state()
+        {
+            INVARIANT(_service);
+            QSettings settings("mempko", app_id(_service->user()).c_str());
+            restoreGeometry(settings.value("contact_list/geometry").toByteArray());
         }
 
         contact_list::contact_list(us::user_service_ptr service, const us::contact_list& contacts, bool remove) :
@@ -387,7 +404,7 @@ namespace fire
         {
             bool ok = false;
             bool error = false;
-            std::string address = "localhost";
+            std::string address = "mempko.com:8080";
 
             do
             {

@@ -324,6 +324,7 @@ namespace fire
 
         void debug_win::restore_state()
         {
+            INVARIANT(_user_service);
             QSettings settings("mempko", app_id(_user_service->user()).c_str());
             restoreGeometry(settings.value("debug_win/geometry").toByteArray());
         }

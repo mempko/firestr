@@ -65,7 +65,6 @@ namespace fire
             private slots:
                 void about();
                 void show_contact_list();
-                void show_contact_list_start();
                 void make_chat_app();
                 void make_app_editor();
                 void closeEvent(QCloseEvent*);
