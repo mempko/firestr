@@ -47,7 +47,7 @@ namespace fire
             const size_t BLOCK_SLEEP = 10;
             const size_t THREAD_SLEEP = 40;
             const size_t KEEP_ALIVE_SLEEP = 2000;
-            const size_t KEEP_ALIVE_THRESH = 15;
+            const size_t KEEP_ALIVE_THRESH = 30;
             const u::bytes KEEP_ALIVE_MSG {'%', 'k'};
             const u::bytes KEEP_ALIVE_ACK_MSG {'%', 'a'};
             const int RETRIES = 0;
