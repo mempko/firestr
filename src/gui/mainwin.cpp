@@ -280,16 +280,16 @@ namespace fire
                         "Once you both add each other,<br>"
                         "you are connected!"
                         ));
-                auto add_contact = new QPushButton(tr("add contact"));
+                auto add_contact = new QPushButton(tr("connect with someone"));
 
-                auto intro2 = new QLabel(tr("Once connected, create a conversation"));
-                auto add_conversation = new QPushButton(tr("create conversation"));
+                auto intro2 = new QLabel(tr("Once connected, start a conversation"));
+                auto add_conversation = new QPushButton(tr("start conversation"));
                 l->addWidget(intro);
                 l->addWidget(add_contact);
                 l->addWidget(intro2);
                 l->addWidget(add_conversation);
 
-                connect(add_contact, SIGNAL(clicked()), this, SLOT(show_contact_list_start()));
+                connect(add_contact, SIGNAL(clicked()), this, SLOT(show_contact_list()));
                 connect(add_conversation, SIGNAL(clicked()), this, SLOT(create_conversation()));
             }
             else
@@ -503,16 +503,9 @@ namespace fire
         {
             ENSURE(_user_service);
 
-            contact_list_dialog cl{"contacts", _user_service, false, this};
+            contact_list_dialog cl{"contacts", _user_service, this};
             cl.exec();
-        }
-
-        void main_window::show_contact_list_start()
-        {
-            ENSURE(_user_service);
-
-            contact_list_dialog cl{"contacts", _user_service, true, this};
-            cl.exec();
+            cl.save_state();
         }
 
         void main_window::show_debug_window()
