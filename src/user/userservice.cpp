@@ -912,7 +912,7 @@ namespace fire
             return false;
         }
 
-        void user_service::confirm_contact(const contact_file& cf)
+        bool user_service::confirm_contact(const contact_file& cf)
         {
             u::mutex_scoped_lock l(_mutex);
             INVARIANT(_user);
@@ -922,7 +922,7 @@ namespace fire
             //and that user isn't self
             auto id = cf.contact.id();
             if(id == _user->info().id() || by_id(id))
-                return;
+                return false;
 
             user_info_ptr contact{new user_info{cf.contact}};
 
@@ -937,6 +937,8 @@ namespace fire
             CHECK_FALSE(is_contact_connecting(contact->id()));
             CHECK_FALSE(contact_available(contact->id()));
             send_ping_request(contact, true);
+
+            return true;
         }
 
         int user_service::add_introduction(const contact_introduction& in)

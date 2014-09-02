@@ -267,25 +267,19 @@ namespace fire
             return s.host() + ":" + n::port_to_string(s.port());
         }
 
-        void contact_list_dialog::new_contact()
+#ifdef _WIN64
+        void contact_list_dialog::new_contact(const unsigned short* file)
+#else
+        void contact_list_dialog::new_contact(const std::string& file)
+#endif
         {
+            REQUIRE_FALSE(file.empty());
             INVARIANT(_service);
-
-            //get file name to load
-            auto home = u::get_home_dir();
-            auto file = QFileDialog::getOpenFileName(this,
-                    tr("Open Invite File"), home.c_str(), tr("Invite File (*.finvite)"));
-
-            if(file.isEmpty()) { return;}
 
             //load contact file
             us::contact_file cf;
 
-#ifdef _WIN64
-            if(!us::load_contact_file(convert16(file), cf)) { return; }
-#else
-            if(!us::load_contact_file(convert(file), cf)) { return; }
-#endif
+            if(!us::load_contact_file(file, cf)) return; 
 
             //add greeter
             if(!cf.greeter.empty())
@@ -300,7 +294,32 @@ namespace fire
             }
 
             //add contact
-            _service->confirm_contact(cf);
+            if(!_service->confirm_contact(cf)) return;
+
+            //alert
+            std::stringstream ss;
+            ss << "`" << cf.contact.name() << "' has been added";
+            QMessageBox::information(this, tr("Contact Added"), ss.str().c_str());
+        }
+
+        void contact_list_dialog::new_contact()
+        {
+            INVARIANT(_service);
+
+            //get file name to load
+            auto home = u::get_home_dir();
+            auto file = QFileDialog::getOpenFileName(this,
+                    tr("Open Invite File"), home.c_str(), tr("Invite File (*.finvite)"));
+
+            if(file.isEmpty()) { return;}
+
+#ifdef _WIN64
+            auto cf = convert16(file);
+#else
+            auto cf = convert(file);
+#endif
+
+            new_contact(cf);
         }
 
         void contact_list_dialog::update()

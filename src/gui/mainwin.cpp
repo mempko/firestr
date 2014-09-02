@@ -90,6 +90,7 @@ namespace fire
             _context(c)
         {
             setWindowIcon(logo());
+            setAcceptDrops(true);
             setup_post();
             setup_services();
             create_actions();
@@ -131,6 +132,48 @@ namespace fire
         {
             save_state();
             QMainWindow::closeEvent(event);
+        }
+
+        bool has_finvite(const QList<QUrl>& urls)
+        {
+            for(const auto& url : urls)
+                if(url.toLocalFile().endsWith(".finvite"))
+                    return true;
+            return false;
+        }
+
+        void main_window::dragEnterEvent(QDragEnterEvent* e)
+        {
+            REQUIRE(e);
+            auto md = e->mimeData();
+            if(!md) return;
+            if(has_finvite(md->urls())) e->acceptProposedAction();
+        }
+
+        void main_window::dropEvent(QDropEvent* e)
+        {
+            REQUIRE(e);
+            const auto* md = e->mimeData();
+            if(!md) return;
+            if(!md->hasUrls()) return;
+
+            auto urls = md->urls();
+            contact_list_dialog cl{"contacts", _user_service, this};
+            for(const auto& url : urls)
+            {
+                auto local = url.toLocalFile();
+                if(!local.endsWith(".finvite")) continue;
+#ifdef _WIN64
+                auto cf = convert16(local);
+#else
+                auto cf = convert(local);
+#endif
+                cl.new_contact(cf);
+
+            }
+
+            cl.exec();
+            cl.save_state();
         }
 
         us::local_user_ptr load_user(const std::string& home)

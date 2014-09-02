@@ -81,7 +81,7 @@ namespace fire
                 network::port_type in_port() const;
 
             public:
-                void confirm_contact(const contact_file&);
+                bool confirm_contact(const contact_file&);
                 void remove_contact(const std::string& id);
 
                 void add_greeter(const std::string& address);

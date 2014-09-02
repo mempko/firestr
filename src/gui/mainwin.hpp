@@ -68,6 +68,8 @@ namespace fire
                 void make_chat_app();
                 void make_app_editor();
                 void closeEvent(QCloseEvent*);
+                void dragEnterEvent(QDragEnterEvent*);
+                void dropEvent(QDropEvent*);
                 void check_mail(fire::message::message);
                 void create_conversation();
                 void create_conversation(QString id);
