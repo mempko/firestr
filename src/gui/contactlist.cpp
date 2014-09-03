@@ -268,9 +268,9 @@ namespace fire
         }
 
 #ifdef _WIN64
-        void contact_list_dialog::new_contact(const unsigned short* file, bool alert)
+        bool contact_list_dialog::new_contact(const unsigned short* file, bool alert)
 #else
-        void contact_list_dialog::new_contact(const std::string& file, bool alert)
+        bool contact_list_dialog::new_contact(const std::string& file, bool alert)
 #endif
         {
             REQUIRE_FALSE(file.empty());
@@ -279,7 +279,7 @@ namespace fire
             //load contact file
             us::contact_file cf;
 
-            if(!us::load_contact_file(file, cf)) return; 
+            if(!us::load_contact_file(file, cf)) return false; 
 
             //add greeter
             if(!cf.greeter.empty())
@@ -294,7 +294,7 @@ namespace fire
             }
 
             //add contact
-            if(!_service->confirm_contact(cf)) return;
+            if(!_service->confirm_contact(cf)) return false;
 
             if(alert)
             {
@@ -302,6 +302,8 @@ namespace fire
                 ss << "`" << cf.contact.name() << "' has been added";
                 QMessageBox::information(this, tr("Contact Added"), ss.str().c_str());
             }
+            
+            return true;
         }
 
         void contact_list_dialog::new_contact()

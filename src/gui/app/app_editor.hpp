@@ -127,6 +127,7 @@ namespace fire
                     void ask_for_script();
                     void text_typed(QKeyEvent*);
                     void save_app();
+                    void export_app();
                     void check_mail(fire::message::message);
                     void init_update();
                     void update();
@@ -140,6 +141,8 @@ namespace fire
                     void init_code_tab(QGridLayout*);
                     void init_data_tab(QGridLayout*);
                     void init_data();
+                    void set_app_name();
+                    void update_app_code();
                     void update_error(lua::error_info e);
                     void update_status_to_errors();
                     void update_status_to_no_errors();
@@ -161,7 +164,6 @@ namespace fire
                     //code tab
                     app_text_editor* _script;
                     lua_highlighter* _highlighter;
-                    QPushButton* _save;
                     QWidget* _canvas;
                     QLabel* _status;
                     QGridLayout* _canvas_layout;

@@ -33,6 +33,13 @@ namespace fire
         std::string get_file_name(QWidget* root);
         bool load_from_file(const std::string& f, fire::util::bytes& data);
         QPushButton* make_x_button();
+
+        namespace app
+        {
+            class app;
+            class app_service;
+        }
+        bool install_app_gui(app::app& a, app::app_service& s, QWidget* w);
     }
 }
 

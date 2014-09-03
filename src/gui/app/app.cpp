@@ -22,6 +22,7 @@
 #include "util/log.hpp"
 #include "util/mencode.hpp"
 #include "util/uuid.hpp"
+#include "util/compress.hpp"
 
 #include <boost/filesystem.hpp>
 
@@ -118,7 +119,7 @@ namespace fire
                 u::delete_directory(_meta.path);
             }
 
-            app::operator m::message()
+            app::operator m::message() const
             {
                 INVARIANT_FALSE(_meta.id.empty());
 
@@ -334,6 +335,23 @@ namespace fire
                 if(m.id.empty()) throw std::runtime_error("error loading app `" + dir + "', id is empty");
                 if(m.name.empty()) throw std::runtime_error("error loading app `" + dir + "', name is empty");
                 return true;
+            }
+
+            void export_app_as_message(const std::string& file, const app& a)
+            {
+                m::message m = a;
+                auto b = u::compress(u::encode(m));
+                u::save_to_file(file, b);
+            }
+
+            m::message import_app_as_message(const std::string& file)
+            {
+                u::bytes b;
+                u::load_from_file(file, b);
+                b = u::uncompress(b);
+                m::message m;
+                u::decode(b, m);
+                return m;
             }
         }
     }

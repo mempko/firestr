@@ -219,37 +219,7 @@ namespace fire
                 INVARIANT(_app_service);
                 INVARIANT(_app);
 
-                bool exists = _app_service->available_apps().count(_app->id());
-                bool overwrite = false;
-                if(exists)
-                {
-                    QMessageBox q(this);
-                    q.setText("Update App?");
-                    q.setInformativeText("App already exists in your collection, update it?");
-                    auto *ub = q.addButton(tr("Update"), QMessageBox::ActionRole);
-                    auto *cb = q.addButton(tr("New Version"), QMessageBox::ActionRole);
-                    auto *canb = q.addButton(QMessageBox::Cancel);
-                    auto ret = q.exec();
-                    if(ret == QMessageBox::Cancel) return;
-
-                    overwrite = q.clickedButton() == ub;
-                } 
-
-                if(!overwrite)
-                {
-                    QString curr_name = _app->name().c_str();
-                    bool ok;
-                    auto g = QInputDialog::getText(this, tr("Clone App"),
-                            tr("App Name:"), QLineEdit::Normal, curr_name, &ok);
-
-                    if (!ok || g.isEmpty()) return;
-
-                    std::string name = convert(g);
-                    _app->name(name);
-                }
-
-                if(!overwrite && exists) _app_service->clone_app(*_app);
-                else _app_service->save_app(*_app);
+                install_app_gui(*_app, *_app_service, this);
             }
 
         }

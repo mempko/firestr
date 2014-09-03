@@ -16,13 +16,18 @@
  */
 
 #include "gui/util.hpp"
+#include "gui/app/app_service.hpp"
 #include "util/env.hpp"
 
 #include <QFileDialog>
+#include <QMessageBox>
+#include <QLineEdit>
+#include <QInputDialog>
 
 #include <fstream>
 
 namespace u = fire::util;
+namespace a = fire::gui::app;
 
 namespace fire
 {
@@ -77,5 +82,45 @@ namespace fire
             ENSURE(b);
             return b;
         }
+
+        bool install_app_gui(a::app& a, a::app_service& s, QWidget* w)
+        {
+            REQUIRE(w);
+
+            bool exists = s.available_apps().count(a.id());
+            bool overwrite = false;
+            if(exists)
+            {
+                QMessageBox q(w);
+                q.setText("Update App?");
+                q.setInformativeText("App already exists in your collection, update it?");
+                auto *ub = q.addButton(w->tr("Update"), QMessageBox::ActionRole);
+                auto *cb = q.addButton(w->tr("New Version"), QMessageBox::ActionRole);
+                auto *canb = q.addButton(QMessageBox::Cancel);
+                auto ret = q.exec();
+                if(q.clickedButton() == canb) return false;
+
+                overwrite = q.clickedButton() == ub;
+            } 
+
+            if(!overwrite)
+            {
+                QString curr_name = a.name().c_str();
+                bool ok;
+                auto g = QInputDialog::getText(w, w->tr("Install App"),
+                        w->tr("App Name:"), QLineEdit::Normal, curr_name, &ok);
+
+                if (!ok || g.isEmpty()) return false;
+
+                std::string name = gui::convert(g);
+                a.name(name);
+            }
+
+            if(!overwrite && exists) s.clone_app(a);
+            else s.save_app(a);
+
+            return true;
+        }
+
     }
 }

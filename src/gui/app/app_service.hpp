@@ -51,6 +51,8 @@ namespace fire
                     app_ptr load_app(const std::string& id) const;
                     bool save_app(const app&);
                     bool clone_app(const app&);
+                    void export_app(const app&, const std::string& file);
+                    app_ptr import_app(const std::string& file);
 
                 public:
                     user::user_service_ptr user_service();

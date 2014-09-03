@@ -33,10 +33,11 @@
 #include "message/master_post.hpp"
 #include "messages/new_app.hpp"
 
-#include "util/mencode.hpp"
 #include "util/bytes.hpp"
 #include "util/dbc.hpp"
+#include "util/env.hpp"
 #include "util/log.hpp"
+#include "util/mencode.hpp"
 #include "util/time.hpp"
 
 #include <sstream>
@@ -134,10 +135,11 @@ namespace fire
             QMainWindow::closeEvent(event);
         }
 
-        bool has_finvite(const QList<QUrl>& urls)
+        bool has_finvite_or_app(const QList<QUrl>& urls)
         {
             for(const auto& url : urls)
-                if(url.toLocalFile().endsWith(".finvite"))
+                if(url.toLocalFile().endsWith(".finvite") ||
+                   url.toLocalFile().endsWith(".fab"))
                     return true;
             return false;
         }
@@ -147,7 +149,7 @@ namespace fire
             REQUIRE(e);
             auto md = e->mimeData();
             if(!md) return;
-            if(has_finvite(md->urls())) e->acceptProposedAction();
+            if(has_finvite_or_app(md->urls())) e->acceptProposedAction();
         }
 
         void main_window::dropEvent(QDropEvent* e)
@@ -159,21 +161,32 @@ namespace fire
 
             auto urls = md->urls();
             contact_list_dialog cl{"contacts", _user_service, this};
+            bool contact_added = false;
             for(const auto& url : urls)
             {
                 auto local = url.toLocalFile();
-                if(!local.endsWith(".finvite")) continue;
+                if(local.endsWith(".finvite"))
+                {
 #ifdef _WIN64
-                auto cf = convert16(local);
+                    auto cf = convert16(local);
 #else
-                auto cf = convert(local);
+                    auto cf = convert(local);
 #endif
-                cl.new_contact(cf, true);
+                    if(cl.new_contact(cf, true))
+                        contact_added = true;
+                }
+                else if(local.endsWith(".fab"))
+                {
+                    install_app(convert(local));
+                }
 
             }
 
-            cl.exec();
-            cl.save_state();
+            if(contact_added)
+            {
+                cl.exec();
+                cl.save_state();
+            }
         }
 
         us::local_user_ptr load_user(const std::string& home)
@@ -383,6 +396,7 @@ namespace fire
 
             _main_menu = new QMenu{tr("&Main"), this};
             _main_menu->addAction(_about_action);
+            _main_menu->addAction(_install_app_action);
             _main_menu->addSeparator();
             _main_menu->addAction(_close_action);
 
@@ -484,6 +498,9 @@ namespace fire
             _app_editor_action = new QAction{tr("&App Editor"), this};
             connect(_app_editor_action, SIGNAL(triggered()), this, SLOT(make_app_editor()));
 
+            _install_app_action = new QAction{tr("&Install App"), this};
+            connect(_install_app_action, SIGNAL(triggered()), this, SLOT(install_app()));
+
             _create_conversation_action = new QAction{tr("&Create"), this};
             connect(_create_conversation_action, SIGNAL(triggered()), this, SLOT(create_conversation()));
 
@@ -505,6 +522,9 @@ namespace fire
             ENSURE(_create_conversation_action);
             ENSURE(_rename_conversation_action);
             ENSURE(_quit_conversation_action);
+            ENSURE(_chat_app_action);
+            ENSURE(_app_editor_action);
+            ENSURE(_install_app_action);
             ENSURE(!_context.debug || _debug_window_action);
         }
 
@@ -617,6 +637,35 @@ namespace fire
             if(!ask_user_to_select_app(this, *_app_service, id)) return;
 
             s->add_app_editor(id);
+        }
+
+        void main_window::install_app(const std::string& file)
+        {
+            REQUIRE_FALSE(file.empty());
+
+            auto app = _app_service->import_app(file);
+            CHECK(app);
+
+            bool installed = install_app_gui(*app, *_app_service, this);
+
+            if(installed)
+            {
+                std::stringstream ss;
+                ss << "`" << app->name() << "' has been installed";
+                QMessageBox::information(this, tr("App installed"), ss.str().c_str());
+            }
+        }
+
+        void main_window::install_app()
+        {
+            INVARIANT(_app_service);
+
+            auto home = u::get_home_dir();
+            auto file = QFileDialog::getOpenFileName(this,
+                    tr("Install App"), home.c_str(), tr("App (*.fab)"));
+
+            if(file.isEmpty()) return;
+            install_app(gui::convert(file));
         }
 
         void main_window::load_app_into_conversation(QString qid)
