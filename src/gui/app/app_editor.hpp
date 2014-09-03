@@ -62,7 +62,12 @@ namespace fire
     {
         namespace app
         {
-            class text_script;
+            struct text_script
+            {
+                std::string from_id;
+                std::string code;
+                util::bytes data;
+            };
             struct highlight_rule
             {
                 QTextCharFormat format;

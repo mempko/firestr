@@ -276,13 +276,12 @@ namespace fire
 
 
 #ifdef _WIN64
-        bool contact_list_dialog::new_contact(const unsigned short* file, bool alert)
+        bool contact_list_dialog::new_contact(const unsigned short* file)
 #else
-        bool contact_list_dialog::new_contact(const std::string& file, bool alert)
+        bool contact_list_dialog::new_contact(const std::string& file)
 #endif
         {
             REQUIRE_FALSE(file.empty());
-#endif        
             INVARIANT(_service);
 
             return add_contact_gui(_service, file, this);
