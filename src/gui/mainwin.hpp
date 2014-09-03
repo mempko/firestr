@@ -67,6 +67,7 @@ namespace fire
                 void show_contact_list();
                 void make_chat_app();
                 void make_app_editor();
+                void install_app();
                 void closeEvent(QCloseEvent*);
                 void dragEnterEvent(QDragEnterEvent*);
                 void dropEvent(QDropEvent*);
@@ -99,6 +100,7 @@ namespace fire
                 void show_alert(QWidget*);
                 bool should_alert(int tab_index);
                 void alert_tab(int tab_index);
+                void install_app(const std::string& file);
 
             private:
                 //gui service event handlers
@@ -127,6 +129,7 @@ namespace fire
                 QMenu *_app_menu;
                 QAction *_chat_app_action;
                 QAction *_app_editor_action;
+                QAction *_install_app_action;
                 QMenu *_debug_menu;
                 QAction *_debug_window_action;
 

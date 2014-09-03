@@ -304,7 +304,6 @@ namespace fire
                 INVARIANT(_conversation);
                 INVARIANT(_mail);
                 INVARIANT(_sender);
-                INVARIANT(_save);
                 INVARIANT(_canvas);
                 INVARIANT(_canvas_layout);
                 INVARIANT(_output);
@@ -324,8 +323,8 @@ namespace fire
                 _canvas_layout = new QGridLayout;
                 _canvas->setLayout(_canvas_layout);
                 _output = new list;
-                l->addWidget(_canvas, 0, 0, 1, 2);
-                l->addWidget(_output, 1, 0, 1, 2);
+                l->addWidget(_canvas, 0, 0, 1, 4);
+                l->addWidget(_output, 1, 0, 1, 4);
 
                 _api = std::make_shared<l::lua_api>(
                         _app, 
@@ -346,16 +345,21 @@ namespace fire
                 _started = _app->code().empty() ? start_state::GET_CODE : start_state::DONE_START;
                 _script->setPlainText(_app->code().c_str());
                 connect(_script, SIGNAL(keyPressed(QKeyEvent*)), this, SLOT(text_typed(QKeyEvent*)));
-                l->addWidget(_script, 2, 0, 1, 2);
+                l->addWidget(_script, 2, 0, 1, 4);
 
                 //add status bar
                 _status = new QLabel;
                 l->addWidget(_status, 3, 0);
 
                 //save button
-                _save = new QPushButton{tr("save")};
-                l->addWidget(_save, 3, 1);
-                connect(_save, SIGNAL(clicked()), this, SLOT(save_app()));
+                auto save = new QPushButton{tr("save")};
+                l->addWidget(save, 3, 1, 1, 2);
+                connect(save, SIGNAL(clicked()), this, SLOT(save_app()));
+
+                //export button
+                auto expt = new QPushButton{tr("export")};
+                l->addWidget(expt, 3, 3);
+                connect(expt, SIGNAL(clicked()), this, SLOT(export_app()));
 
                 setMinimumHeight(layout()->sizeHint().height() + PADDING);
 
@@ -372,7 +376,6 @@ namespace fire
                 INVARIANT(_conversation);
                 INVARIANT(_mail);
                 INVARIANT(_sender);
-                INVARIANT(_save);
                 INVARIANT(_canvas);
                 INVARIANT(_canvas_layout);
                 INVARIANT(_output);
@@ -836,11 +839,9 @@ namespace fire
                 _script->setExtraSelections( extras );
             }
 
-            void app_editor::save_app() 
+            void app_editor::set_app_name()
             {
-                INVARIANT(_conversation);
-                INVARIANT(_app_service);
-
+                INVARIANT(_app);
                 if(_app->name().empty())
                 {
                     bool ok = false;
@@ -857,12 +858,46 @@ namespace fire
 
                     _app->name(name);
                 }
+            }
 
-                CHECK(_app);
+            void app_editor::update_app_code()
+            {
+                INVARIANT(_app);
+                INVARIANT(_script);
 
                 auto code = gui::convert(_script->toPlainText());
                 _app->code(code);
+            }
+
+            void app_editor::save_app() 
+            {
+                INVARIANT(_conversation);
+                INVARIANT(_app_service);
+                INVARIANT(_app);
+                set_app_name();
+                update_app_code();
+
                 _app_service->save_app(*_app);
+            }
+
+            void app_editor::export_app() 
+            {
+                INVARIANT(_conversation);
+                INVARIANT(_app_service);
+
+                set_app_name();
+                update_app_code();
+
+                std::string default_file = _app->name() + ".fab";
+
+                auto file = QFileDialog::getSaveFileName(this, tr("Export App"),
+                        default_file.c_str(),
+                        tr("App (*.fab)"));
+
+                if(file.isEmpty())
+                    return;
+
+                _app_service->export_app(*_app, gui::convert(file));
             }
 
             void app_editor::update_status_to_errors()

@@ -16,6 +16,7 @@
  */
 
 #include "gui/app/app_service.hpp"
+#include "gui/util.hpp"
 
 #include "util/dbc.hpp"
 #include "util/filesystem.hpp"
@@ -227,6 +228,20 @@ namespace fire
                 return save_app(a.clone());
             }
 
+            void app_service::export_app(const app& a, const std::string& file)
+            {
+                export_app_as_message(file, a);
+            }
+
+            app_ptr app_service::import_app(const std::string& file)
+            {
+                auto m = import_app_as_message(file);
+                auto tmp_dir = setup_tmp_dir(m, _tmp_app_home);
+                auto a = std::make_shared<app>(_local_data, tmp_dir, m);
+                a->set_tmp();
+                return a;
+            }
+
             void app_service::fire_apps_updated_event()
             {
                 event::apps_updated e;
@@ -249,6 +264,7 @@ namespace fire
                     REQUIRE_EQUAL(m.meta.type, APPS_UPDATED);
                 }
             }
+
         }
     }
 }

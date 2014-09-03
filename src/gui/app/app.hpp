@@ -46,7 +46,7 @@ namespace fire
                             const std::string& app_dir, 
                             const fire::message::message&);
                     ~app();
-                    operator fire::message::message();
+                    operator fire::message::message() const;
 
                 public:
                     app(const app&);
@@ -91,6 +91,9 @@ namespace fire
             bool save_app(const std::string& dir, const app&);
             app_ptr load_app(util::disk_store& local, const std::string& dir);
             bool load_app_metadata(const std::string& dir, app_metadata&);
+
+            void export_app_as_message(const std::string& file, const app&);
+            fire::message::message import_app_as_message(const std::string& file);
         }
     }
 }
