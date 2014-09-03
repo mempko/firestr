@@ -168,7 +168,7 @@ namespace fire
 #else
                 auto cf = convert(local);
 #endif
-                cl.new_contact(cf);
+                cl.new_contact(cf, true);
 
             }
 

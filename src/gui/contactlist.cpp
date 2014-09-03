@@ -268,9 +268,9 @@ namespace fire
         }
 
 #ifdef _WIN64
-        void contact_list_dialog::new_contact(const unsigned short* file)
+        void contact_list_dialog::new_contact(const unsigned short* file, bool alert)
 #else
-        void contact_list_dialog::new_contact(const std::string& file)
+        void contact_list_dialog::new_contact(const std::string& file, bool alert)
 #endif
         {
             REQUIRE_FALSE(file.empty());
@@ -296,10 +296,12 @@ namespace fire
             //add contact
             if(!_service->confirm_contact(cf)) return;
 
-            //alert
-            std::stringstream ss;
-            ss << "`" << cf.contact.name() << "' has been added";
-            QMessageBox::information(this, tr("Contact Added"), ss.str().c_str());
+            if(alert)
+            {
+                std::stringstream ss;
+                ss << "`" << cf.contact.name() << "' has been added";
+                QMessageBox::information(this, tr("Contact Added"), ss.str().c_str());
+            }
         }
 
         void contact_list_dialog::new_contact()

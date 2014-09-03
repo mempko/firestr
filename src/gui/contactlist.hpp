@@ -156,9 +156,9 @@ namespace fire
             public:
                 void save_state();
 #ifdef _WIN64
-                void new_contact(const unsigned short*);
+                void new_contact(const unsigned short*, bool alert = false);
 #else
-                void new_contact(const std::string&);
+                void new_contact(const std::string&, bool alert = false);
 #endif
 
             public slots:
