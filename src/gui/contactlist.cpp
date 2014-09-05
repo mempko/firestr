@@ -186,20 +186,14 @@ namespace fire
             REQUIRE(layout);
             INVARIANT(_service);
 
-            //create create invite button
-            auto* invite = new QPushButton{tr("create invite")};
-            invite->setToolTip(tr("Give the invite file you create to the person you want to connect with.\nMake sure to get theirs."));
-            layout->addWidget(invite, 0,0, 1, 3); 
-            connect(invite, SIGNAL(clicked()), this, SLOT(create_contact_file()));
-
             //create contact list
             _list = new list;
-            layout->addWidget(_list, 1, 0, 2, 3);
+            layout->addWidget(_list, 0, 0, 2, 3);
 
             //create add button
             auto* add_new = new QPushButton{tr("add contact")};
             add_new->setToolTip(tr("add someone using their invite file"));
-            layout->addWidget(add_new, 3, 0, 1, 3); 
+            layout->addWidget(add_new, 2, 0, 1, 3); 
             connect(add_new, SIGNAL(clicked()), this, SLOT(new_contact()));
 
             update_contacts();
@@ -211,8 +205,8 @@ namespace fire
             id_txt->setMinimumWidth(id.size() * 8);
             id_txt->setReadOnly(true);
             id_txt->setFrame(false);
-            layout->addWidget(id_label, 4,0); 
-            layout->addWidget(id_txt, 4,1,1,2); 
+            layout->addWidget(id_label, 3,0); 
+            layout->addWidget(id_txt, 3,1,1,2); 
 
             //setup updated timer
             auto *t = new QTimer(this);
@@ -267,63 +261,23 @@ namespace fire
             return s.host() + ":" + n::port_to_string(s.port());
         }
 
+
 #ifdef _WIN64
-        bool contact_list_dialog::new_contact(const unsigned short* file, bool alert)
+        bool contact_list_dialog::new_contact(const unsigned short* file)
 #else
-        bool contact_list_dialog::new_contact(const std::string& file, bool alert)
+        bool contact_list_dialog::new_contact(const std::string& file)
 #endif
         {
             REQUIRE_FALSE(file.empty());
             INVARIANT(_service);
 
-            //load contact file
-            us::contact_file cf;
-
-            if(!us::load_contact_file(file, cf)) return false; 
-
-            //add greeter
-            if(!cf.greeter.empty())
-            {
-                bool found = false;
-                for(const auto& s : _service->user().greeters())
-                {
-                    auto a = greet_address(s);
-                    if(a == cf.greeter) {found = true; break;}
-                }
-                if(found) cf.greeter = "";
-            }
-
-            //add contact
-            if(!_service->confirm_contact(cf)) return false;
-
-            if(alert)
-            {
-                std::stringstream ss;
-                ss << "`" << cf.contact.name() << "' has been added";
-                QMessageBox::information(this, tr("Contact Added"), ss.str().c_str());
-            }
-            
-            return true;
+            return add_contact_gui(_service, file, this);
         }
 
         void contact_list_dialog::new_contact()
         {
             INVARIANT(_service);
-
-            //get file name to load
-            auto home = u::get_home_dir();
-            auto file = QFileDialog::getOpenFileName(this,
-                    tr("Open Invite File"), home.c_str(), tr("Invite File (*.finvite)"));
-
-            if(file.isEmpty()) { return;}
-
-#ifdef _WIN64
-            auto cf = convert16(file);
-#else
-            auto cf = convert(file);
-#endif
-
-            new_contact(cf);
+            add_contact_gui(_service, this);
         }
 
         void contact_list_dialog::update()
@@ -489,40 +443,6 @@ namespace fire
             _service->remove_greeter(_address);
             _label->setEnabled(false);
             _rm->setEnabled(false);
-        }
-
-        void contact_list_dialog::create_contact_file()
-        {
-            //have user select contact file 
-            auto home = u::get_home_dir();
-            std::string default_file = home + "/" + _service->user().info().name() + ".finvite";
-            auto file = QFileDialog::getSaveFileName(this, tr("Save File"),
-                    default_file.c_str(),
-                    tr("Invite File (*.finvite)"));
-
-            if(file.isEmpty())
-                return;
-
-            //user chooses greeter
-            auto total_greeters = _service->user().greeters().size();
-            std::string greeter;
-            if(total_greeters == 1) greeter = greet_address(_service->user().greeters().front());
-            else if(total_greeters > 1)
-            {
-                QStringList gs;
-                for(const auto& g : _service->user().greeters())
-                    gs << greet_address(g).c_str();
-
-                bool ok;
-                auto g = QInputDialog::getItem(this, tr("Suggested Greeter"),
-                        tr("Choose a greeter:"), gs, 0, false, &ok);
-                if (ok && !g.isEmpty())
-                    greeter = convert(g);
-            }
-
-            //save contact file
-            us::contact_file cf{ _service->user().info(), greeter};
-            us::save_contact_file(convert(file), cf);
         }
 
         intro_list::intro_list(us::user_service_ptr service) :
@@ -785,5 +705,103 @@ namespace fire
             _user_service->send_introduction(c2->id(), i2);
             close();
         }
+
+        void create_contact_file(us::user_service_ptr s, QWidget* w)
+        {
+            REQUIRE(s);
+            REQUIRE(w);
+
+            //have user select contact file 
+            auto home = u::get_home_dir();
+            std::string default_file = home + "/" + s->user().info().name() + ".finvite";
+            auto file = QFileDialog::getSaveFileName(w, w->tr("Save File"),
+                    default_file.c_str(),
+                    w->tr("Invite File (*.finvite)"));
+
+            if(file.isEmpty())
+                return;
+
+            //user chooses greeter
+            auto total_greeters = s->user().greeters().size();
+            std::string greeter;
+            if(total_greeters == 1) greeter = greet_address(s->user().greeters().front());
+            else if(total_greeters > 1)
+            {
+                QStringList gs;
+                for(const auto& g : s->user().greeters())
+                    gs << greet_address(g).c_str();
+
+                bool ok;
+                auto g = QInputDialog::getItem(w, w->tr("Suggested Greeter"),
+                        w->tr("Choose a greeter:"), gs, 0, false, &ok);
+                if (ok && !g.isEmpty())
+                    greeter = convert(g);
+            }
+
+            //save contact file
+            us::contact_file cf{ s->user().info(), greeter};
+            us::save_contact_file(convert(file), cf);
+        }
+
+#ifdef _WIN64
+        bool add_contact_gui(us::user_service_ptr us, const unsigned short* file, QWidget* p)
+#else
+        bool add_contact_gui(us::user_service_ptr us, const std::string& file, QWidget* p)
+#endif
+        {
+            REQUIRE(us);
+            REQUIRE_FALSE(file.empty());
+
+            //load contact file
+            us::contact_file cf;
+
+            if(!us::load_contact_file(file, cf)) return false; 
+
+            //add greeter
+            if(!cf.greeter.empty())
+            {
+                bool found = false;
+                for(const auto& s : us->user().greeters())
+                {
+                    auto a = greet_address(s);
+                    if(a == cf.greeter) {found = true; break;}
+                }
+                if(found) cf.greeter = "";
+            }
+
+            //add contact
+            if(!us->confirm_contact(cf)) return false;
+
+            if(p)
+            {
+                std::stringstream ss;
+                ss << "`" << cf.contact.name() << "' has been added";
+                QMessageBox::information(p, p->tr("Contact Added"), ss.str().c_str());
+            }
+            
+            return true;
+        }
+
+        void add_contact_gui(us::user_service_ptr s, QWidget* p)
+        {
+            REQUIRE(s);
+            REQUIRE(p);
+
+            //get file name to load
+            auto home = u::get_home_dir();
+            auto file = QFileDialog::getOpenFileName(p,
+                    p->tr("Open Invite File"), home.c_str(), p->tr("Invite File (*.finvite)"));
+
+            if(file.isEmpty()) { return;}
+
+#ifdef _WIN64
+            auto cf = convert16(file);
+#else
+            auto cf = convert(file);
+#endif
+
+            add_contact_gui(s, cf, p);
+        }
+
     }
 }

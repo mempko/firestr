@@ -156,15 +156,14 @@ namespace fire
             public:
                 void save_state();
 #ifdef _WIN64
-                bool new_contact(const unsigned short*, bool alert = false);
+                bool new_contact(const unsigned short*);
 #else
-                bool new_contact(const std::string&, bool alert = false);
+                bool new_contact(const std::string&);
 #endif
 
             public slots:
                 void new_contact();
                 void update();
-                void create_contact_file();
 
             protected:
                 void init_contacts_tab(QWidget* tab, QGridLayout* layout);
@@ -209,6 +208,15 @@ namespace fire
                 QLineEdit* _message_2;
                 QPushButton* _introduce;
         };
+
+#ifdef _WIN64
+        bool add_contact_gui(user::user_service_ptr, const unsigned short*, QWidget*);
+#else
+        bool add_contact_gui(user::user_service_ptr, const std::string&, QWidget*);
+#endif
+
+        void add_contact_gui(user::user_service_ptr, QWidget*);
+        void create_contact_file(user::user_service_ptr, QWidget* parent);
     }
 }
 
