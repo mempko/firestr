@@ -160,8 +160,6 @@ namespace fire
             if(!md->hasUrls()) return;
 
             auto urls = md->urls();
-            contact_list_dialog cl{"contacts", _user_service, this};
-            bool contact_added = false;
             for(const auto& url : urls)
             {
                 auto local = url.toLocalFile();
@@ -172,20 +170,13 @@ namespace fire
 #else
                     auto cf = convert(local);
 #endif
-                    if(cl.new_contact(cf, true))
-                        contact_added = true;
+                    add_contact_gui(_user_service, cf, this);
                 }
                 else if(local.endsWith(".fab"))
                 {
                     install_app(convert(local));
                 }
 
-            }
-
-            if(contact_added)
-            {
-                cl.exec();
-                cl.save_state();
             }
         }
 
@@ -336,16 +327,16 @@ namespace fire
                         "Once you both add each other,<br>"
                         "you are connected!"
                         ));
-                auto add_contact = new QPushButton(tr("connect with someone"));
+                auto ac = new QPushButton(tr("connect with someone"));
 
                 auto intro2 = new QLabel(tr("Once connected, start a conversation"));
                 auto add_conversation = new QPushButton(tr("start conversation"));
                 l->addWidget(intro);
-                l->addWidget(add_contact);
+                l->addWidget(ac);
                 l->addWidget(intro2);
                 l->addWidget(add_conversation);
 
-                connect(add_contact, SIGNAL(clicked()), this, SLOT(show_contact_list()));
+                connect(ac, SIGNAL(clicked()), this, SLOT(show_contact_list()));
                 connect(add_conversation, SIGNAL(clicked()), this, SLOT(create_conversation()));
             }
             else
@@ -389,6 +380,8 @@ namespace fire
             REQUIRE_FALSE(_debug_menu);
             REQUIRE(_about_action);
             REQUIRE(_close_action);
+            REQUIRE(_create_invite_action);
+            REQUIRE(_add_contact_action);
             REQUIRE(_contact_list_action);
             REQUIRE(_chat_app_action);
             REQUIRE(_app_editor_action);
@@ -401,6 +394,8 @@ namespace fire
             _main_menu->addAction(_close_action);
 
             _contact_menu = new QMenu{tr("&Contacts"), this};
+            _contact_menu->addAction(_create_invite_action);
+            _contact_menu->addAction(_add_contact_action);
             _contact_menu->addAction(_contact_list_action);
 
             _conversation_menu = new QMenu{tr("C&onversation"), this};
@@ -489,7 +484,13 @@ namespace fire
             _close_action = new QAction{tr("&Exit"), this};
             connect(_close_action, SIGNAL(triggered()), this, SLOT(close()));
 
-            _contact_list_action = new QAction{tr("&Contacts"), this};
+            _create_invite_action = new QAction{tr("&Save Invite"), this};
+            connect(_create_invite_action, SIGNAL(triggered()), this, SLOT(create_invite()));
+
+            _add_contact_action = new QAction{tr("&Add Contact"), this};
+            connect(_add_contact_action, SIGNAL(triggered()), this, SLOT(add_contact()));
+
+            _contact_list_action = new QAction{tr("&Contacts..."), this};
             connect(_contact_list_action, SIGNAL(triggered()), this, SLOT(show_contact_list()));
 
             _chat_app_action = new QAction{tr("&Chat"), this};
@@ -518,6 +519,7 @@ namespace fire
 
             ENSURE(_about_action);
             ENSURE(_close_action);
+            ENSURE(_create_invite_action);
             ENSURE(_contact_list_action);
             ENSURE(_create_conversation_action);
             ENSURE(_rename_conversation_action);
@@ -562,9 +564,21 @@ namespace fire
             ENSURE(_app_service);
         }
 
+        void main_window::create_invite()
+        {
+            INVARIANT(_user_service);
+            create_contact_file(_user_service, this);
+        }
+
+        void main_window::add_contact()
+        {
+            INVARIANT(_user_service);
+            gui::add_contact_gui(_user_service, this);
+        }
+
         void main_window::show_contact_list()
         {
-            ENSURE(_user_service);
+            INVARIANT(_user_service);
 
             contact_list_dialog cl{"contacts", _user_service, this};
             cl.exec();

@@ -64,6 +64,8 @@ namespace fire
 
             private slots:
                 void about();
+                void create_invite();
+                void add_contact();
                 void show_contact_list();
                 void make_chat_app();
                 void make_app_editor();
@@ -118,18 +120,24 @@ namespace fire
 
             private:
                 QMenu *_main_menu;
-                QMenu *_contact_menu;
                 QAction *_close_action;
                 QAction *_about_action;
+
+                QMenu *_contact_menu;
+                QAction *_create_invite_action;
+                QAction *_add_contact_action;
                 QAction *_contact_list_action;
+
                 QMenu *_conversation_menu;
                 QAction *_create_conversation_action;
                 QAction *_rename_conversation_action;
                 QAction *_quit_conversation_action;
+
                 QMenu *_app_menu;
                 QAction *_chat_app_action;
                 QAction *_app_editor_action;
                 QAction *_install_app_action;
+
                 QMenu *_debug_menu;
                 QAction *_debug_window_action;
 
