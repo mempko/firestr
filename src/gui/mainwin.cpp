@@ -1076,7 +1076,7 @@ namespace fire
 
             //setup alert widget
             std::stringstream s;
-            s << "<b>" << c->name() << "</b> is online" << std::endl;
+            s << "<b>" << c->name() << "</b> is <font color='green'>online</font>";
 
             auto w = new QWidget;
             auto l = new QHBoxLayout;
@@ -1084,14 +1084,6 @@ namespace fire
 
             auto t = new QLabel{tr(s.str().c_str())};
             l->addWidget(t);
-
-            auto b = new QPushButton{tr("new conversation")};
-            l->addWidget(b);
-            auto m = new QSignalMapper{w};
-
-            m->setMapping(b, QString{r.id.c_str()});
-            connect(b, SIGNAL(clicked()), m, SLOT(map()));
-            connect(m, SIGNAL(mapped(QString)), this, SLOT(create_conversation(QString)));
 
             //display alert
             show_alert(w);
@@ -1104,7 +1096,7 @@ namespace fire
 
             //setup alert widget
             std::stringstream s;
-            s << "<b>" << r.name << "</b> disconnected" << std::endl;
+            s << "<b>" << r.name << "</b> has <font color='red'>disconnected</font>";
 
             auto w = new QWidget;
             auto l = new QHBoxLayout;
