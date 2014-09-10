@@ -245,14 +245,14 @@ namespace fire
 
             LOG << "connecting to peers..." << std::endl;
 
+            //register with greeters
+            for(const auto& g : _user->greeters())
+                request_register(g);
+
             //send ping requests for all contacts
             //to handle local contacts on a network using 
             //last known ip/port
             send_ping_requests();
-
-            //register with greeters
-            for(const auto& g : _user->greeters())
-                request_register(g);
         }
 
         void user_service::request_register(const greet_server& g)
