@@ -27,21 +27,25 @@ There are two ways to have two or more instances of Firestr connect
 to each other. 
 
 If you are on a local network and only want to communicate within 
-the local network, you can simply run firestr executable in your
-build directory
+the local network, you can simply run firestr.
 
-If you want to communicate over the internet via p2p, you have to 
-first have to add a public firegreet instance to your greeter list
-under the contact menu.
+If you want to communicate over the internet, you have to 
+first have to add a public firegreet server to your greeter list
+under the contact menu. 
+
+You can run your own or add `http://mempko.com:8080'
 
 To connect with someone, create an invite file and give it to them in
 a secure way. Also get their invite file. They can then add you as a 
-contact via the invite file. After you both add each other to the contact, 
-list, firestr should automatically connect you with the other person. 
+contact using the invite file. After you both add each other as
+contacts, firestr should automatically connect you with the other 
+person. If you have added a greeter, it will talk to the greeter
+and use it as part of the connection process.
 
 The firegreet service is simply responsible for providing information
 to the parties on their public ip/port after which firestr will 
-initiate a p2p connection. 
+initiate a p2p connection. No communication between contacts is sent
+to the firegreet service.
 
 Once a contact is added, they are saved as your contact and you will
 connect to them the next time you start the application.
