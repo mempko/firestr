@@ -1,4 +1,3 @@
-===================================================================
 Library Dependencies
 ===================================================================
 gcc 4.7
@@ -8,18 +7,16 @@ Botan 1.10
 libsnappy
 libopus
 
-===================================================================
 Building Firestr
 ===================================================================
 
 Firestr uses CMake for it's meta-build configuration.
 
-> mkdir build
-> cd build
-> cmake 
-> make -j
+    $ mkdir build
+    $ cd build
+    $ cmake 
+    $ make -j
 
-===================================================================
 Running Firestr
 ===================================================================
 
@@ -33,7 +30,7 @@ If you want to communicate over the internet, you have to
 first have to add a public firegreet server to your greeter list
 under the contact menu. 
 
-You can run your own or add `http://mempko.com:8080'
+You can run your own or add mempko (http://mempko.com:8080)
 
 To connect with someone, create an invite file and give it to them in
 a secure way. Also get their invite file. They can then add you as a 
@@ -56,7 +53,6 @@ chatting or sharing applications.
 
 Have fun.
 
-===================================================================
 License GPLv3
 ===================================================================
 

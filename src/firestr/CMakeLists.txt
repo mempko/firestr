@@ -86,14 +86,21 @@ if(APPLE)
     set(CPACK_GENERATOR Bundle)
     include(CPack)
 
-else(APPLE)
+elseif(CMAKE_HOST_WIN32)
     add_executable(
         firestr
         ${src}
         ${moc_headers}
         ${moc_forms}
         ${moc_resources})
-endif(APPLE)
+else()
+    add_executable(
+        firestr
+        ${src}
+        ${moc_headers}
+        ${moc_forms}
+        ${moc_resources})
+endif()
 
 qt5_use_modules(firestr Widgets Network Multimedia MultimediaWidgets)
 
