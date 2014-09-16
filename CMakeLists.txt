@@ -88,3 +88,20 @@ else()
 endif()
 
 add_subdirectory(src)
+
+if(APPLE)
+else()
+    set(CPACK_GENERATOR "DEB")
+    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Maxim Noah Khailo <firestr.dev@gmail.com>") 
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.17), libgcc1 (>= 1:4.1.1), libgmp10, libssl1.0.0 (>= 1.0.0), libstdc++6 (>= 4.8.1), libqt5core5, libqt5widgets5, libqt5network5")
+    set(CPACK_DEBIAN_PACKAGE_LICENSE "GPLv3")
+    set(CPACK_PACKAGE_CONTACT "firestr.dev@gmail.com")
+    set(CPACK_PACKAGE_VERSION "0.2")
+    set(CPACK_PACKAGE_DESCRIPTION "A simple platform for p2p computation and communication.")
+    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A simple platform fo p2p computation and communication.")
+    set(CPACK_PACKAGE_SOURCE "")
+    SET (CPACK_COMPONENTS_ALL Libraries ApplicationData)
+    
+    include(CPack)
+endif()
+ 
