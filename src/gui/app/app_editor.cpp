@@ -173,8 +173,10 @@ namespace fire
 
             struct text_script
             {
+                text_script(const u::tracked_sclock& c) : clock(c){}
                 std::string from_id;
                 std::string code;
+                u::tracked_sclock clock;
                 u::bytes data;
             };
 
@@ -187,18 +189,24 @@ namespace fire
             {
                 m::message m;
                 m.meta.type = SCRIPT_CODE_MESSAGE;
-                m.meta.extra["code"] = t.code;
+                m.meta.extra["co"] = t.code;
+                m.meta.extra["cl"] = to_dict(t.clock);
                 m.data = t.data;
 
                 return m;
             }
 
-            void convert(const m::message& m, text_script& t)
+            text_script to_text_script(const m::message& m)
             {
                 REQUIRE_EQUAL(m.meta.type, SCRIPT_CODE_MESSAGE);
+
+                auto clock = u::to_tracked_sclock(m.meta.extra["cl"].as_dict());
+                text_script t{clock};
+
                 t.from_id = m.meta.extra["from_id"].as_string();
-                t.code = m.meta.extra["code"].as_string();
+                t.code = m.meta.extra["co"].as_string();
                 t.data = m.data;
+                return t;
             }
 
             m::message create_script_init_message()
@@ -227,7 +235,8 @@ namespace fire
                 _conversation{conversation},
                 _app{app},
                 _prev_pos{0},
-                _run_state{READY}
+                _run_state{READY},
+                _code_clock{conversation->user_service()->user().info().id()}
             {
                 REQUIRE(app_service);
                 REQUIRE(conversation_s);
@@ -258,7 +267,9 @@ namespace fire
                 _conversation{conversation},
                 _app{app},
                 _prev_pos{0},
-                _run_state{READY}
+                _run_state{READY},
+                _code_clock{conversation->user_service()->user().info().id()}
+                
             {
                 REQUIRE(app_service);
                 REQUIRE(conversation_s);
@@ -287,8 +298,11 @@ namespace fire
                 INVARIANT(layout());
                 INVARIANT(_conversation_service);
                 INVARIANT(_conversation);
+                INVARIANT(_conversation->user_service());
                 INVARIANT(_app_service);
                 INVARIANT(_app);
+
+                auto my_id = _conversation->user_service()->user().info().id();
 
                 _mail = std::make_shared<m::mailbox>(_id);
                 _sender = std::make_shared<ms::sender>(_conversation->user_service(), _mail);
@@ -737,7 +751,7 @@ namespace fire
             void app_editor::text_typed(QKeyEvent* e)
             {
                 INVARIANT(_script);
-                //TODO make more interactive by sending events instead of whole script
+
                 send_script(false);
             }
 
@@ -747,10 +761,7 @@ namespace fire
                 INVARIANT(_api);
 
                 //get the code
-                auto code = gui::convert(_script->toPlainText());
-                if(code.empty()) return false;
-
-                tm.code = code;
+                tm.code = gui::convert(_script->toPlainText());
 
                 //export the data
                 if(send_data)
@@ -768,9 +779,11 @@ namespace fire
                 INVARIANT(_conversation);
                 INVARIANT(_api);
 
+                //update clock before send
+                _code_clock++;
 
                 //set the code
-                text_script tm;
+                text_script tm{_code_clock};
                 if(!prepare_script_message(tm, send_data)) return;
 
                 //send it all
@@ -784,7 +797,9 @@ namespace fire
             void app_editor::send_script_to(const std::string& id)
             {
                 //set the code
-                text_script tm;
+                _code_clock++;
+                
+                text_script tm{_code_clock};
                 if(!prepare_script_message(tm, true)) return;
 
                 _sender->send(id, convert(tm)); 
@@ -1034,11 +1049,15 @@ namespace fire
 
                 if(m.meta.type == SCRIPT_CODE_MESSAGE)
                 {
-                    text_script t;
-                    convert(m, t);
-
+                    auto t = to_text_script(m);
                     auto c = _conversation->contacts().by_id(t.from_id);
                     if(!c) return;
+
+                    //ignore messages that are older
+                    if(t.clock < _code_clock) return;
+
+                    //merge clocks
+                    _code_clock += t.clock;
 
                     //if text is same, no change
                     auto code = gui::convert(_script->toPlainText());
