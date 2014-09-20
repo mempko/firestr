@@ -422,6 +422,8 @@ namespace fire
                 {
                     auto di = new data_item(_app->data(), p.first);
                     connect(di, SIGNAL(key_was_clicked(QString)), this, SLOT(key_was_clicked(QString)));
+                    connect(di, SIGNAL(data_updated()), this, SLOT(data_updated()));
+
                     _data_items->add(di);
                 }
 
@@ -525,6 +527,11 @@ namespace fire
                 _data_bytes.clear();
                 _data_key->setFocus(Qt::OtherFocusReason);
 
+                data_updated();
+            }
+
+            void app_editor::data_updated()
+            {
                 _run_state = CODE_CHANGED;
                 send_script(true);
             }
@@ -1242,6 +1249,8 @@ namespace fire
                 INVARIANT(_rm);
                 _d.remove(_key);
                 setEnabled(false);
+
+                emit data_updated();
             }
             void data_item::key_clicked()
             {

@@ -150,6 +150,7 @@ namespace fire
                     void load_data_from_file();
                     void data_key_edited();
                     void key_was_clicked(QString);
+                    void data_updated();
 
                 private:
                     void init();
@@ -217,6 +218,7 @@ namespace fire
 
                 signals:
                     void key_was_clicked(QString);
+                    void data_updated();
 
                 private:
                     QLabel* _key_label;
