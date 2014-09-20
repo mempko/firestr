@@ -1084,6 +1084,7 @@ namespace fire
                     if(data_changed)
                     {
                         u::dict data = u::decode<u::dict>(t.data);
+                        _app->data().clear();
                         _app->data().import_from(data);
 
                         //update data ui
