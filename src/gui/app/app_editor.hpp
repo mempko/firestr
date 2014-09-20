@@ -40,6 +40,7 @@
 #include "messages/sender.hpp"
 #include "gui/lua/api.hpp"
 #include "gui/app/app_service.hpp"
+#include "util/vclock.hpp"
 
 #include <QObject>
 #include <QLabel>
@@ -174,6 +175,9 @@ namespace fire
                     fire::message::mailbox_ptr _mail;
                     messages::sender_ptr _sender;
                     user::contact_list _contacts;
+
+                    //clock for keeping track of code
+                    util::tracked_sclock _code_clock;
 
                     //code tab
                     app_text_editor* _script;
