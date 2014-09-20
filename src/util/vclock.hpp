@@ -114,6 +114,16 @@ namespace fire
                     }
 
                     /**
+                     * Returns merged clock without modifying
+                     */
+                    vclock operator + (const vclock& o)
+                    {
+                        vclock n = *this;
+                        n+= o;
+                        return n;
+                    }
+
+                    /**
                      * returns -1 if o is greater
                      * returns 0 may be identical, or may not be
                      * returns 1 if o is less
