@@ -37,6 +37,7 @@
 #include "util/filesystem.hpp"
 
 #include <stdexcept>
+#include <set>
 
 #include <boost/filesystem.hpp>
 
@@ -211,6 +212,12 @@ namespace fire
             INVARIANT(_mutex);
             mutex_scoped_lock l(*_mutex);
 
+            return remove_intern(key);
+        }
+
+        bool disk_store::remove_intern(const std::string& key)
+        {
+            INVARIANT(_index);
             if(!_index->has(key)) return false;
 
             //remove data
@@ -222,6 +229,23 @@ namespace fire
 
             save_index();
             return true;
+        }
+        
+        using key_set = std::set<std::string>;
+
+        void disk_store::clear()
+        {
+            INVARIANT(_index);
+            INVARIANT(_mutex);
+            mutex_scoped_lock l(*_mutex);
+
+            key_set keys;
+            std::transform(_index->begin(), _index->end(),
+                    std::inserter(keys, keys.end()),
+                    [](const dict::value_type& p ) { return p.first;});
+
+            for(const auto& k : keys)
+                remove_intern(k);
         }
 
         disk_store::const_iterator disk_store::begin() const

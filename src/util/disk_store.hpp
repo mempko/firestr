@@ -60,6 +60,7 @@ namespace fire
                 bool has(const std::string& key) const;
                 void set(const std::string& key, const value&);
                 bool remove(const std::string& key);
+                void clear();
 
             public:
                 using const_iterator = dict::const_iterator;
@@ -71,6 +72,7 @@ namespace fire
                 void save_index();
                 void set_intern(const std::string& key, const value&);
                 void get_value(const std::string& key, value&) const;
+                bool remove_intern(const std::string& key);
 
             private:
                 std::string _path;

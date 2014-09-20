@@ -115,6 +115,9 @@ namespace fire
         {
             private:
                 using value_map = std::map<std::string, value>;
+
+            public:
+                using value_type = value_map::value_type;
         
             public:
                 dict();
