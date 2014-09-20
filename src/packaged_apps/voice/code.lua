@@ -1,3 +1,4 @@
+
 m = app:mic("got_sound", "opus")
 m:start()
 
@@ -13,7 +14,7 @@ muted = false
 talkers = {}
 row = 2
 update_timer = app:timer(1000, "update()")
-
+tick = 0;
 
 function init_talker(id, name)
 	if talkers[id] == nil then  
@@ -22,14 +23,16 @@ function init_talker(id, name)
 		if muted then s:mute() end
 		app:place(l, row, 0)
 		row = row + 1
-		talkers[id] = {n=name, ticks = 0, label=l, speaker=s}
+		talkers[id] = {n=name, ticks = 0, label=l, speaker=s, tick=0}
 	end
 end
 
 function got_sound(d)
+	tick = tick + 1
 	local m = app:message()
 	m:not_robust()
 	m:set_type("s")
+	m:set("t", tick)
 	m:set_bin("d", d)
 	app:send(m)
 end
@@ -40,13 +43,16 @@ function play_sound(m)
 	local name = m:from():name()
 	if #id == 0 then return end
 	init_talker(id, name)
+	local tick = m:get("t")
 	local u = talkers[id]
+	if tick < u.tick then return end
 	u.speaker:play(m:get_bin("d"))
 
 	if u.ticks > 1 then
 		u.label:set_text(u.n.." talking")
 	end
 	u.ticks = 0
+	u.tick = tick
 
 end
 
