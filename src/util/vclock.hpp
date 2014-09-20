@@ -68,10 +68,6 @@ namespace fire
 
         /**
          * Simple implementation of a vector clock with compare, increment, and merge
-         * The design behind this assumes that the clock is always associated with some
-         * id. Typically the id will represent a node in the network.
-         *
-         * This assumption helps simplify the vclock interface
          */
         template <class id_t>
             class vclock
@@ -103,10 +99,6 @@ namespace fire
 
                     /**
                      * Merge clock
-                     * Notice that there is only an update version of this and no
-                     * operator +.
-                     * This is because if you merge (a + b) which internal id should 
-                     * be stored, a or b?
                      */
                     vclock& operator += (const vclock& o) 
                     {
@@ -174,11 +166,10 @@ namespace fire
             };
 
         /**
-         * Simple implementation of a vector clock with compare, increment, and merge
-         * The design behind this assumes that the clock is always associated with some
-         * id. Typically the id will represent a node in the network.
+         * A tracked vector clock associates the vector clock with an id.
+         * Typically the id will represent a node in the network.
          *
-         * This assumption helps simplify the vclock interface
+         * This assumption helps simplify the vector clock interface
          */
         template <class id_t>
             class tracked_vclock
@@ -218,11 +209,14 @@ namespace fire
                     {
                         REQUIRE_FALSE(o._c.empty());
 
+                        //treat the sending id as special case
+                        //where you increment if local is less or equal than remote
                         auto l = _c[o.id()];
                         auto r = o._c[o.id()];
 
                         if(l <= r) _c[o.id()] = r + 1;
 
+                        //merge clock
                         _c += o._c;
 
                         INVARIANT(_c.has(_i));
