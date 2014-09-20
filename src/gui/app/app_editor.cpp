@@ -1100,7 +1100,7 @@ namespace fire
                     l::script_message sm{m, _api.get()};
                     _api->message_received(sm);
                 }
-                if(m.meta.type == SCRIPT_INIT_MESSAGE)
+                else if(m.meta.type == SCRIPT_INIT_MESSAGE)
                 {
                     script_init i;
                     convert(m, i);
