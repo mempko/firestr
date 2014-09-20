@@ -57,3 +57,9 @@ disk_store
 -------------------------------------------------------------------
 
 Simple database to store data on disk for an app
+
+vclock     
+-------------------------------------------------------------------
+
+Vector clock implementation. Includes a simple vector clock 
+and also a tracking vector clock.
