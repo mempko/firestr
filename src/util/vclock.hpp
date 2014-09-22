@@ -219,13 +219,6 @@ namespace fire
                     {
                         REQUIRE_FALSE(o._c.empty());
 
-                        //treat the sending id as special case
-                        //where you increment if local is less or equal than remote
-                        auto l = _c[o.id()];
-                        auto r = o._c[o.id()];
-
-                        if(l <= r) _c[o.id()] = r + 1;
-
                         //merge clock
                         _c += o._c;
 
