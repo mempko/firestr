@@ -170,7 +170,7 @@ namespace fire
                     .set("speaker", &lua_api::make_speaker)
                     .set("audio_encoder", &lua_api::make_audio_encoder)
                     .set("audio_decoder", &lua_api::make_audio_decoder)
-                    .set("clock", &lua_api::make_clock)
+                    .set("vclock", &lua_api::make_vclock)
                     .set("place", &lua_api::place)
                     .set("place_across", &lua_api::place_across)
                     .set("height", &lua_api::height)
@@ -221,8 +221,8 @@ namespace fire
                     .set("not_robust", &script_message::not_robust)
                     .set("get_bin", &script_message::get_bin)
                     .set("set_bin", &script_message::set_bin)
-                    .set("get_clock", &script_message::get_clock)
-                    .set("set_clock", &script_message::set_clock)
+                    .set("get_vclock", &script_message::get_vclock)
+                    .set("set_vclock", &script_message::set_vclock)
                     .set("is_local", &script_message::is_local)
                     .set("set_type", &script_message::set_type)
                     .set("type", &script_message::get_type)
@@ -234,8 +234,8 @@ namespace fire
                 SLB::Class<store_ref>{"store_ref", &manager}
                     .set("get_bin", &store_ref::get_bin)
                     .set("set_bin", &store_ref::set_bin)
-                    .set("get_clock", &store_ref::get_clock)
-                    .set("set_clock", &store_ref::set_clock)
+                    .set("get_vclock", &store_ref::get_vclock)
+                    .set("set_vclock", &store_ref::set_vclock)
                     .set("has", &store_ref::has)
                     .set("remove", &store_ref::remove)
                     .set("set", store_ref_set)
@@ -1232,7 +1232,7 @@ namespace fire
                 return opus_decoder{};
             }
 
-            vclock_wrapper lua_api::make_clock()
+            vclock_wrapper lua_api::make_vclock()
             {
                 INVARIANT(conversation);
                 INVARIANT(conversation->user_service());

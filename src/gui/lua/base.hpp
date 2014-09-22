@@ -187,8 +187,8 @@ namespace fire
                     app_ref app() const;
                     void set_type(const std::string&);
                     const std::string& get_type() const;
-                    void set_clock(const std::string&, const vclock_wrapper&);
-                    vclock_wrapper get_clock(const std::string&) const;
+                    void set_vclock(const std::string&, const vclock_wrapper&);
+                    vclock_wrapper get_vclock(const std::string&) const;
 
 
                 private:
@@ -211,8 +211,8 @@ namespace fire
 
                     void set_bin(const std::string&, const bin_data&);
                     bin_data get_bin(const std::string&) const;
-                    void set_clock(const std::string&, const vclock_wrapper&);
-                    vclock_wrapper get_clock(const std::string&) const;
+                    void set_vclock(const std::string&, const vclock_wrapper&);
+                    vclock_wrapper get_vclock(const std::string&) const;
                     bool has(const std::string&) const;
                     bool remove(const std::string&);
                     size_t size() const;

@@ -342,12 +342,12 @@ namespace fire
                 _v[k] = v.data;
             }
 
-            void script_message::set_clock(const std::string& k, const vclock_wrapper& c)
+            void script_message::set_vclock(const std::string& k, const vclock_wrapper& c)
             {
                 _v[k] = u::to_dict(c.clock());
             }
 
-            vclock_wrapper script_message::get_clock(const std::string& k) const
+            vclock_wrapper script_message::get_vclock(const std::string& k) const
             try
             {
                 if(!_v.has(k)) return vclock_wrapper{};
@@ -458,12 +458,12 @@ namespace fire
                 _d.set(k,v.data);
             }
 
-            void store_ref::set_clock(const std::string& k, const vclock_wrapper& c)
+            void store_ref::set_vclock(const std::string& k, const vclock_wrapper& c)
             {
                 _d.set(k, u::to_dict(c.clock()));
             }
 
-            vclock_wrapper store_ref::get_clock(const std::string& k) const
+            vclock_wrapper store_ref::get_vclock(const std::string& k) const
             try
             {
                 if(!_d.has(k)) return vclock_wrapper{};
