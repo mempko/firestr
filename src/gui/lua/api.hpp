@@ -158,6 +158,7 @@ namespace fire
                     speaker_ref make_speaker(const std::string& codec);
                     opus_encoder make_audio_encoder();
                     opus_decoder make_audio_decoder();
+                    vclock_wrapper make_clock();
 
                     //grid
                     grid_ref make_grid();

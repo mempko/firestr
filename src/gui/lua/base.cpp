@@ -342,6 +342,25 @@ namespace fire
                 _v[k] = v.data;
             }
 
+            void script_message::set_clock(const std::string& k, const vclock_wrapper& c)
+            {
+                _v[k] = u::to_dict(c.clock());
+            }
+
+            vclock_wrapper script_message::get_clock(const std::string& k) const
+            try
+            {
+                if(!_v.has(k)) return vclock_wrapper{};
+                
+                auto v = _v[k];
+                if(!v.is_dict()) return vclock_wrapper{};
+                return vclock_wrapper{u::to_tracked_sclock(v.as_dict())};
+            }
+            catch(...)
+            {
+                return vclock_wrapper{};
+            }
+
             contact_ref empty_contact_ref(lua_api& api)
             {
                 contact_ref e;
@@ -437,6 +456,25 @@ namespace fire
             void store_ref::set_bin(const std::string& k, const bin_data& v) 
             {
                 _d.set(k,v.data);
+            }
+
+            void store_ref::set_clock(const std::string& k, const vclock_wrapper& c)
+            {
+                _d.set(k, u::to_dict(c.clock()));
+            }
+
+            vclock_wrapper store_ref::get_clock(const std::string& k) const
+            try
+            {
+                if(!_d.has(k)) return vclock_wrapper{};
+                
+                auto v = _d.get(k);
+                if(!v.is_dict()) return vclock_wrapper{};
+                return vclock_wrapper{u::to_tracked_sclock(v.as_dict())};
+            }
+            catch(...)
+            {
+                return vclock_wrapper{};
             }
 
             bool store_ref::has(const std::string& k) const
@@ -672,6 +710,55 @@ namespace fire
                 auto v = r->get(key);
                 push_value(L, v);
                 return 1;
+            }
+
+            vclock_wrapper::vclock_wrapper(const u::tracked_sclock& c) : _good{true}, _c{c} { }
+            vclock_wrapper::vclock_wrapper(const std::string& id) : _good{true}, _c{id} { }
+            vclock_wrapper::vclock_wrapper() : _good{false}, _c{""} { }
+
+            u::tracked_sclock& vclock_wrapper::clock()
+            {
+                return _c;
+            }
+
+            const u::tracked_sclock& vclock_wrapper::clock() const
+            {
+                return _c;
+            }
+
+            bool vclock_wrapper::good() const
+            {
+                return _good;
+            }
+
+            void vclock_wrapper::increment()
+            {
+                _c++;
+            }
+
+            void vclock_wrapper::merge(const vclock_wrapper& o)
+            {
+                _c += o._c;
+            }
+
+            bool vclock_wrapper::conflict(const vclock_wrapper& o)
+            {
+                return _c.conflict(o._c);
+            }
+
+            bool vclock_wrapper::concurrent(const vclock_wrapper& o)
+            {
+                return _c.concurrent(o._c);
+            }
+
+            int vclock_wrapper::compare(const vclock_wrapper& o)
+            {
+                return _c.compare(o._c);
+            }
+
+            bool vclock_wrapper::same(const vclock_wrapper& o)
+            {
+                return _c.identical(o._c);
             }
         }
     }

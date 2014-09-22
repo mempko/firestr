@@ -38,6 +38,7 @@
 #include "message/mailbox.hpp"
 #include "messages/sender.hpp"
 
+#include "util/vclock.hpp"
 #include "util/disk_store.hpp"
 
 #include <QObject>
@@ -166,6 +167,7 @@ namespace fire
             };
 
             extern const std::string SCRIPT_MESSAGE;
+            class vclock_wrapper;
             class script_message
             {
                 public:
@@ -185,6 +187,9 @@ namespace fire
                     app_ref app() const;
                     void set_type(const std::string&);
                     const std::string& get_type() const;
+                    void set_clock(const std::string&, const vclock_wrapper&);
+                    vclock_wrapper get_clock(const std::string&) const;
+
 
                 private:
                     std::string _type;
@@ -206,6 +211,8 @@ namespace fire
 
                     void set_bin(const std::string&, const bin_data&);
                     bin_data get_bin(const std::string&) const;
+                    void set_clock(const std::string&, const vclock_wrapper&);
+                    vclock_wrapper get_clock(const std::string&) const;
                     bool has(const std::string&) const;
                     bool remove(const std::string&);
                     size_t size() const;
@@ -216,6 +223,31 @@ namespace fire
 
                 private:
                     util::disk_store& _d;
+            };
+
+            class vclock_wrapper
+            {
+                public:
+                    vclock_wrapper(const util::tracked_sclock&);
+                    vclock_wrapper(const std::string& id);
+                    vclock_wrapper();
+
+                public:
+                    bool good() const;
+                    void increment();
+                    void merge(const vclock_wrapper&);
+                    bool conflict(const vclock_wrapper&);
+                    bool concurrent(const vclock_wrapper&);
+                    int compare(const vclock_wrapper&);
+                    bool same(const vclock_wrapper&);
+
+                public:
+                    util::tracked_sclock& clock();
+                    const util::tracked_sclock& clock() const;
+
+                private:
+                    bool _good;
+                    util::tracked_sclock _c;
             };
 
             int store_ref_set(lua_State* L);
