@@ -170,6 +170,7 @@ namespace fire
                     .set("speaker", &lua_api::make_speaker)
                     .set("audio_encoder", &lua_api::make_audio_encoder)
                     .set("audio_decoder", &lua_api::make_audio_decoder)
+                    .set("clock", &lua_api::make_clock)
                     .set("place", &lua_api::place)
                     .set("place_across", &lua_api::place_across)
                     .set("height", &lua_api::height)
@@ -220,16 +221,21 @@ namespace fire
                     .set("not_robust", &script_message::not_robust)
                     .set("get_bin", &script_message::get_bin)
                     .set("set_bin", &script_message::set_bin)
+                    .set("get_clock", &script_message::get_clock)
+                    .set("set_clock", &script_message::set_clock)
                     .set("is_local", &script_message::is_local)
                     .set("set_type", &script_message::set_type)
                     .set("type", &script_message::get_type)
                     .set("app", &script_message::app)
+                    .set("has", &script_message::has)
                     .set("set", script_message_set)
                     .set("get", script_message_get);
 
                 SLB::Class<store_ref>{"store_ref", &manager}
                     .set("get_bin", &store_ref::get_bin)
                     .set("set_bin", &store_ref::set_bin)
+                    .set("get_clock", &store_ref::get_clock)
+                    .set("set_clock", &store_ref::set_clock)
                     .set("has", &store_ref::has)
                     .set("remove", &store_ref::remove)
                     .set("set", store_ref_set)
@@ -353,6 +359,15 @@ namespace fire
 
                 SLB::Class<opus_decoder>{"audio_decoder", &manager}
                     .set("decode", &opus_decoder::decode);
+
+                SLB::Class<vclock_wrapper>{"vclock", &manager}
+                    .set("good", &vclock_wrapper::good)
+                    .set("inc", &vclock_wrapper::increment)
+                    .set("merge", &vclock_wrapper::merge)
+                    .set("conflict", &vclock_wrapper::conflict)
+                    .set("concurrent", &vclock_wrapper::concurrent)
+                    .set("comp", &vclock_wrapper::compare)
+                    .set("equals", &vclock_wrapper::same);
 
                 state = std::make_shared<SLB::Script>(&manager);
                 state->set("app", this);
@@ -1209,12 +1224,19 @@ namespace fire
 
             opus_encoder lua_api::make_audio_encoder()
             {
-                return {};
+                return opus_encoder{};
             }
 
             opus_decoder lua_api::make_audio_decoder()
             {
-                return {};
+                return opus_decoder{};
+            }
+
+            vclock_wrapper lua_api::make_clock()
+            {
+                INVARIANT(conversation);
+                INVARIANT(conversation->user_service());
+                return vclock_wrapper{conversation->user_service()->user().info().id()};
             }
 
             void lua_api::connect_sound(int id, QAudioInput* i, QIODevice* d)
