@@ -183,10 +183,9 @@ namespace fire
 
             struct text_script
             {
-                text_script(const u::tracked_sclock& c) : clock(c){}
+                text_script(const u::cr_string& c) : code(c){}
                 std::string from_id;
-                std::string code;
-                u::tracked_sclock clock;
+                u::cr_string code;
                 u::bytes data;
             };
 
@@ -199,8 +198,8 @@ namespace fire
             {
                 m::message m;
                 m.meta.type = SCRIPT_CODE_MESSAGE;
-                m.meta.extra["co"] = t.code;
-                m.meta.extra["cl"] = to_dict(t.clock);
+                m.meta.extra["co"] = t.code.str();
+                m.meta.extra["cl"] = to_dict(t.code.clock());
                 m.data = t.data;
 
                 return m;
@@ -211,10 +210,11 @@ namespace fire
                 REQUIRE_EQUAL(m.meta.type, SCRIPT_CODE_MESSAGE);
 
                 auto clock = u::to_tracked_sclock(m.meta.extra["cl"].as_dict());
-                text_script t{clock};
+                auto code = m.meta.extra["co"].as_string();
+
+                text_script t{u::cr_string{clock, code}};
 
                 t.from_id = m.meta.extra["from_id"].as_string();
-                t.code = m.meta.extra["co"].as_string();
                 t.data = m.data;
                 return t;
             }
@@ -246,7 +246,7 @@ namespace fire
                 _app{app},
                 _prev_pos{0},
                 _run_state{READY},
-                _code_clock{conversation->user_service()->user().info().id()}
+                _code{conversation->user_service()->user().info().id()}
             {
                 REQUIRE(app_service);
                 REQUIRE(conversation_s);
@@ -278,7 +278,7 @@ namespace fire
                 _app{app},
                 _prev_pos{0},
                 _run_state{READY},
-                _code_clock{conversation->user_service()->user().info().id()}
+                _code{conversation->user_service()->user().info().id()}
                 
             {
                 REQUIRE(app_service);
@@ -316,6 +316,7 @@ namespace fire
 
                 _mail = std::make_shared<m::mailbox>(_id);
                 _sender = std::make_shared<ms::sender>(_conversation->user_service(), _mail);
+                _code.init_set(_app->code());
 
                 //create gui
                 auto tabs = new QTabWidget{this};
@@ -769,6 +770,9 @@ namespace fire
             {
                 INVARIANT(_script);
 
+                //update code before send
+                _code.set(gui::convert(_script->toPlainText()));
+
                 send_script(false);
             }
 
@@ -776,9 +780,6 @@ namespace fire
             {
                 INVARIANT(_script);
                 INVARIANT(_api);
-
-                //get the code
-                tm.code = gui::convert(_script->toPlainText());
 
                 //export the data
                 if(send_data)
@@ -796,11 +797,8 @@ namespace fire
                 INVARIANT(_conversation);
                 INVARIANT(_api);
 
-                //update clock before send
-                _code_clock++;
-
                 //set the code
-                text_script tm{_code_clock};
+                text_script tm{_code};
                 if(!prepare_script_message(tm, send_data)) return;
 
                 //send it all
@@ -813,10 +811,7 @@ namespace fire
 
             void app_editor::send_script_to(const std::string& id)
             {
-                //set the code
-                _code_clock++;
-                
-                text_script tm{_code_clock};
+                text_script tm{_code};
                 if(!prepare_script_message(tm, true)) return;
 
                 _sender->send(id, convert(tm)); 
@@ -1070,19 +1065,13 @@ namespace fire
                     auto c = _conversation->contacts().by_id(t.from_id);
                     if(!c) return;
 
-                    //ignore messages that are older
-                    if(t.clock < _code_clock) return;
-
-                    //merge clocks
-                    _code_clock += t.clock;
-
-                    //if text is same, no change
-                    auto code = gui::convert(_script->toPlainText());
-                    if(t.code == code && t.data.empty()) return;
+                    //merge code if there is a conflict
+                    bool merged = _code.merge(t.code);
+                     _code.merge(t.code);
 
                     //update text
                     auto pos = _script->textCursor().position();
-                    _script->setText(t.code.c_str());
+                    _script->setText(_code.str().c_str());
 
                     //put cursor back
                     auto cursor = _script->textCursor();
@@ -1100,10 +1089,11 @@ namespace fire
                         //update data ui
                         init_data();
 
-                        _prev_code = t.code;
+                        _prev_code = _code.str();
                         _run_state = READY;
                         run_script();
                     }
+                    if(merged) send_script(false);
                 }
                 else if(m.meta.type == l::SCRIPT_MESSAGE)
                 {
