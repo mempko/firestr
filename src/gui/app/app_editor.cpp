@@ -183,8 +183,10 @@ namespace fire
 
             struct text_script
             {
+                text_script(const u::cr_string& c) : code(c){}
+                bool init = false;
                 std::string from_id;
-                std::string code;
+                u::cr_string code;
                 u::bytes data;
             };
 
