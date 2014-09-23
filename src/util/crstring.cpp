@@ -73,9 +73,13 @@ namespace fire
                         auto b = _s;
                         auto c = o._s;
 
-                        util::merge(a, b, c, _s);
-                        r = merge_result::MERGED;
-                        _c++;
+                        auto merged = util::merge(a, b, c, _s);
+                        if(!merged) _s = b;
+                        else
+                        {
+                            r = merge_result::MERGED;
+                            _c++;
+                        }
                     }
                     break;
                 default:
