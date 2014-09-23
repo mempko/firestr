@@ -62,12 +62,6 @@ namespace fire
     {
         namespace app
         {
-            struct text_script
-            {
-                std::string from_id;
-                std::string code;
-                util::bytes data;
-            };
             struct highlight_rule
             {
                 QTextCharFormat format;
@@ -115,6 +109,7 @@ namespace fire
                     lua::lua_api* _api;
             };
 
+            class text_script;
             class app_editor : public message
             {
                 Q_OBJECT
@@ -140,8 +135,7 @@ namespace fire
                     fire::message::mailbox_ptr mail();
 
                 public slots:
-                    bool run_script();
-                    bool prepare_script_message(text_script& tm, bool send_data);
+                    bool run_script();                                        
                     void send_script(bool send_data = true);
                     void send_script_to(const std::string& id);
                     void ask_for_script();
@@ -161,6 +155,7 @@ namespace fire
                     void init();
                     void init_code_tab(QGridLayout*);
                     void init_data_tab(QGridLayout*);
+                    bool prepare_script_message(text_script& tm, bool send_data);
                     void init_data();
                     void set_app_name();
                     void update_app_code();

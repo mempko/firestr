@@ -276,10 +276,10 @@ namespace fire
 
 
 #ifdef _WIN64
-        bool contact_list_dialog::new_contact(const unsigned short* file, bool alert)
+        bool contact_list_dialog::new_contact(const unsigned short* file)
+        {
 #else
-        bool contact_list_dialog::new_contact(const std::string& file, bool alert)
-#endif
+        bool contact_list_dialog::new_contact(const std::string& file)
         {
             REQUIRE_FALSE(file.empty());
 #endif        
@@ -759,12 +759,13 @@ namespace fire
 
 #ifdef _WIN64
         bool add_contact_gui(us::user_service_ptr us, const unsigned short* file, QWidget* p)
+        {
 #else
         bool add_contact_gui(us::user_service_ptr us, const std::string& file, QWidget* p)
-#endif
         {
-            REQUIRE(us);
             REQUIRE_FALSE(file.empty());
+#endif    
+            REQUIRE(us);
 
             //load contact file
             us::contact_file cf;
