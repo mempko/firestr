@@ -1097,10 +1097,6 @@ namespace fire
                         _run_state = READY;
                         run_script();
                     }
-
-                    //resend merged script and data if a merge occurred
-                    if(merged == u::merge_result::MERGED && !t.init) 
-                        send_script(data_changed);
                 }
                 else if(m.meta.type == l::SCRIPT_MESSAGE)
                 {
