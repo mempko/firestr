@@ -177,13 +177,14 @@ namespace fire
                 const size_t TIMER_UPDATE = 1000; //in milliseconds
                 const size_t PADDING = 20;
                 const size_t MIN_EDIT_HEIGHT = 500;
-                const std::string SCRIPT_CODE_MESSAGE = "script";
+                const std::string SCRIPT_CODE_MESSAGE = "scpt";
                 const std::string SCRIPT_INIT_MESSAGE = "init";
             }
 
             struct text_script
             {
                 text_script(const u::cr_string& c) : code(c){}
+                bool init = false;
                 std::string from_id;
                 u::cr_string code;
                 u::bytes data;
@@ -198,8 +199,9 @@ namespace fire
             {
                 m::message m;
                 m.meta.type = SCRIPT_CODE_MESSAGE;
-                m.meta.extra["co"] = t.code.str();
-                m.meta.extra["cl"] = to_dict(t.code.clock());
+                if(t.init) m.meta.extra["i"] = 1;
+                m.meta.extra["c"] = t.code.str();
+                m.meta.extra["l"] = to_dict(t.code.clock());
                 m.data = t.data;
 
                 return m;
@@ -209,11 +211,12 @@ namespace fire
             {
                 REQUIRE_EQUAL(m.meta.type, SCRIPT_CODE_MESSAGE);
 
-                auto clock = u::to_tracked_sclock(m.meta.extra["cl"].as_dict());
-                auto code = m.meta.extra["co"].as_string();
+                auto clock = u::to_tracked_sclock(m.meta.extra["l"].as_dict());
+                auto code = m.meta.extra["c"].as_string();
 
                 text_script t{u::cr_string{clock, code}};
 
+                t.init = m.meta.extra.has("i");
                 t.from_id = m.meta.extra["from_id"].as_string();
                 t.data = m.data;
                 return t;
@@ -1095,7 +1098,9 @@ namespace fire
                         run_script();
                     }
 
-                    if(merged == u::merge_result::MERGED) send_script(true);
+                    //resend merged script and data if a merge occurred
+                    if(merged == u::merge_result::MERGED && !t.init) 
+                        send_script(data_changed);
                 }
                 else if(m.meta.type == l::SCRIPT_MESSAGE)
                 {
