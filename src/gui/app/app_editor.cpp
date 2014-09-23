@@ -544,6 +544,7 @@ namespace fire
             void app_editor::data_updated()
             {
                 _run_state = CODE_CHANGED;
+                _code.clock()++;
                 send_script(true);
             }
 
@@ -1066,7 +1067,7 @@ namespace fire
                     if(!c) return;
 
                     //merge code if there is a conflict
-                    bool merged = _code.merge(t.code);
+                    auto merged = _code.merge(t.code);
 
                     //update text
                     auto pos = _script->textCursor().position();
@@ -1082,7 +1083,8 @@ namespace fire
                     if(data_changed)
                     {
                         u::dict data = u::decode<u::dict>(t.data);
-                        _app->data().clear();
+                        if(merged == u::merge_result::UPDATED) 
+                            _app->data().clear();
                         _app->data().import_from(data);
 
                         //update data ui
@@ -1093,7 +1095,7 @@ namespace fire
                         run_script();
                     }
 
-                    if(merged) send_script(false);
+                    if(merged == u::merge_result::MERGED) send_script(true);
                 }
                 else if(m.meta.type == l::SCRIPT_MESSAGE)
                 {

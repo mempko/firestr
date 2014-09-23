@@ -40,6 +40,8 @@ namespace fire
 {
     namespace util 
     {
+        enum merge_result { NO_CHANGE, UPDATED, MERGED};
+
         /**
          * Implements a concurrent string which uses vector clocks and three way merge
          * for attaining eventual consistency.
@@ -53,6 +55,7 @@ namespace fire
             public:
                 const std::string& str() const;
                 const tracked_sclock& clock() const;
+                tracked_sclock& clock();
 
             public:
                 /**
@@ -64,7 +67,7 @@ namespace fire
                  * All consecutive changes are made using set
                  */
                 void set(const std::string&);
-                bool merge(const cr_string&);
+                merge_result merge(const cr_string&);
 
             private:
                 tracked_sclock _c;
