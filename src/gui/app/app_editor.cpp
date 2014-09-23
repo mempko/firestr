@@ -1067,7 +1067,6 @@ namespace fire
 
                     //merge code if there is a conflict
                     bool merged = _code.merge(t.code);
-                     _code.merge(t.code);
 
                     //update text
                     auto pos = _script->textCursor().position();
