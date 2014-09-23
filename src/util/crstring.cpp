@@ -43,17 +43,16 @@ namespace fire
 
         const std::string& cr_string::str() const { return _s; }
         const tracked_sclock& cr_string::clock() const { return _c; }
+        tracked_sclock& cr_string::clock() { return _c; }
 
         void cr_string::init_set(const std::string& s) { _s = s;}
         void cr_string::set(const std::string& s) { _s = s; _c++;}
 
-        bool cr_string::merge(const cr_string& o)
+        merge_result cr_string::merge(const cr_string& o)
         {
             auto cmp = o._c.compare(_c);
-            bool merged = false;
 
-            //merge clocks
-            _c += o._c;
+            merge_result r = merge_result::NO_CHANGE;
 
             //merge strings
             switch(cmp)
@@ -61,30 +60,32 @@ namespace fire
                 case -1: /*do nothing */ break;
 
                 //string is newer then set current to new
-                case 1: _s = o._s; break;
+                case 1: _s = o._s; r = merge_result::UPDATED; break;
 
                 //string is concurrent, do 3 way merge
                 case 0: 
                     {
+                        if(_c.identical(o._c)) break;
+
                         //check to see if we have last seen string from other node
                         //and use it as base string, otherwise use other nodes string
                         auto a = o._s;
-                        auto b = o._s;
-                        auto c = _s;
+                        auto b = _s;
+                        auto c = o._s;
 
-                        bool merged = util::merge(a, b, c, _s);
-
-                        //if we can't merge then pick other string
-                        //TODO: allow user defined strategies
-                        if(!merged) _s = o._s;
-
-                        merged = true;
+                        util::merge(a, b, c, _s);
+                        r = merge_result::MERGED;
+                        _c++;
                     }
                     break;
                 default:
                     CHECK(false && "missed case");
             }
-            return merged;
+
+            //merge clocks
+            _c += o._c;
+
+            return r;
         }
 
     }
