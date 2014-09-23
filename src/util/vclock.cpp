@@ -53,10 +53,9 @@ namespace fire
 
         dict to_dict(const tracked_sclock& c)
         {
-            dict d{
-                {"i", c.id()}, 
-                {"v", to_dict(c.clock())}
-            };
+            dict d;
+            d["i"] = c.id();
+            d["v"] = to_dict(c.clock());
             return d;
         }
 

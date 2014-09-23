@@ -201,7 +201,7 @@ namespace fire
                 m.meta.type = SCRIPT_CODE_MESSAGE;
                 if(t.init) m.meta.extra["i"] = 1;
                 m.meta.extra["c"] = t.code.str();
-                m.meta.extra["l"] = to_dict(t.code.clock());
+                m.meta.extra["l"] = u::to_dict(t.code.clock());
                 m.data = t.data;
 
                 return m;
