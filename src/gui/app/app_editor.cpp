@@ -1092,6 +1092,7 @@ namespace fire
                         _run_state = READY;
                         run_script();
                     }
+
                     if(merged) send_script(false);
                 }
                 else if(m.meta.type == l::SCRIPT_MESSAGE)
