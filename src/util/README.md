@@ -61,5 +61,12 @@ Simple database to store data on disk for an app
 vclock     
 -------------------------------------------------------------------
 
-Vector clock implementation. Includes a simple vector clock 
-and also a tracking vector clock.
+Vector clock/version vector implementation. 
+
+crstring     
+-------------------------------------------------------------------
+
+A concurrent string implementation which uses version vectors and a diff3 merge function
+to help maintain string replicas. For example the code editor uses this to help assist
+in achieving concurrent code editing.
+

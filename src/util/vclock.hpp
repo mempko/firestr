@@ -67,7 +67,7 @@ namespace fire
             }
 
         /**
-         * Simple implementation of a vector clock with compare, increment, and merge
+         * Simple implementation of a vector clock/version vector with compare, increment, and merge
          */
         template <class id_t>
             class vclock
@@ -103,8 +103,8 @@ namespace fire
                     vclock& operator += (const vclock& o) 
                     {
                         /**
-                         * For each key in the other vector clock
-                         * take the max. If the key didn't exist in this clock,
+                         * For each key in the other take the max. 
+                         * If the key didn't exist in this clock,
                          * then it will be added by the [] operator.
                          */
                         for(const auto& p : o._c)
@@ -176,10 +176,10 @@ namespace fire
             };
 
         /**
-         * A tracked vector clock associates the vector clock with an id.
+         * A tracked vector clock/version vector associates the vclock with an id.
          * Typically the id will represent a node in the network.
          *
-         * This assumption helps simplify the vector clock interface
+         * This assumption helps simplify the vclock interface
          */
         template <class id_t>
             class tracked_vclock
@@ -212,8 +212,7 @@ namespace fire
                     tracked_vclock operator ++ (int) { tracked_vclock o{*this}; _c[_i]++; return o;}
 
                     /**
-                     * Merge tracked clock. Assumes asynchronous from the original
-                     * vector clock paper.
+                     * Merge tracked clock. 
                      */
                     tracked_vclock& operator += (const tracked_vclock& o) 
                     {
@@ -322,7 +321,7 @@ namespace fire
             };
 
         /**
-         * A vector clock where Ids are strings. This can be used to store
+         * A vclock where Ids are strings. This can be used to store
          * clocks based on contact ids.
          */
         using sclock = vclock<std::string>;

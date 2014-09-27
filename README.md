@@ -1,7 +1,7 @@
 [Fire★](http://www.firestr.com) (Pronounced Fire Star) 0.3
 ===================================================================
 
-Fire★ in short, is a simple distributed, decentralized communication 
+Fire★ is a simple distributed, decentralized communication 
 and computation platform.
 
 You don't send a message to someone, you send software, which 

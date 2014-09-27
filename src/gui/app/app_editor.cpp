@@ -79,7 +79,7 @@ namespace fire
                 {"disable", "widget:disable() -- disables the widget"},
                 {"draw", "app:draw(width, height) -- creates a drawing canvas"},
                 {"edit","app:edit(text) -- creates an edit box"},
-                {"vclock","app:vclock() -- makes a new vector clock"},
+                {"vclock","app:vclock() -- makes a new vector clock/version vector"},
                 {"edited_callback", "edit:edited_callback() -- returns the callback used when text is changed"},
                 {"enable", "widget:enable() -- enables the widget"},
                 {"enabled", "widget:enabled() -- returns true if the widget is enabled"},
@@ -161,12 +161,12 @@ namespace fire
                 {"width", "image:height() -- returns the height of the image"},
                 {"encode", "audio_encoder:encode(pcm data) -- recieves mono 12khz pcm and encodes it using opus"},
                 {"decode", "audio_decoder:decode(opus data) -- recieves mono 12khz opus and decodes it to pcm"},
-                {"inc","vclock:inc() -- increment vector clock"},
-                {"merge","vclock:merge(vclock) -- merge two vector clocks"},
+                {"inc","vclock:inc() -- increment vclock"},
+                {"merge","vclock:merge(vclock) -- merge two vclock"},
                 {"conflict","vclock:conflict(vclock) -- returns true if there is a conflict between two clocks"},
                 {"concurrent","vclock:concurrent(vclock) -- returns true if two clocks are concurrent"},
                 {"comp","vclock:comp(vclock) -- compares two clocks. -1 if less, 0 if concurrent, 1 if new"},
-                {"equals","vclock::equals(vclock) -- returns true if two vector clocks are identical"},
+                {"equals","vclock::equals(vclock) -- returns true if two vclock are identical"},
             };
 
             const std::string LUA_NUMBERS = "[0-9\\.]+";
