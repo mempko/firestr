@@ -43,7 +43,7 @@ namespace fire
         enum merge_result { NO_CHANGE, UPDATED, MERGED};
 
         /**
-         * Implements a concurrent string which uses vector clocks and three way merge
+         * Implements a concurrent string which uses a version vector and three way merge
          * for attaining eventual consistency.
          */
         class cr_string
