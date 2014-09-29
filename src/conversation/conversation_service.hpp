@@ -87,7 +87,11 @@ namespace fire
                 void fire_conversation_alert(const std::string& id, bool visible);
 
             protected:
-                virtual void message_received(const message::message&);
+                void received_sync(const message::message&);
+                void received_quit(const message::message&);
+                void received_ask_contact_req(const message::message&);
+                void received_ask_contact_res(const message::message&);
+
                 void ask_about(
                         const std::string& id,
                         conversation_ptr conversation);

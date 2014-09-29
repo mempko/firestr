@@ -38,11 +38,15 @@
 
 #include <string>
 #include <memory>
+#include <unordered_map>
+#include <functional>
 
 namespace fire
 {
     namespace service
     {
+        using message_handler = std::function<void (const message::message&)>;
+        using handler_map = std::unordered_map<std::string, message_handler>;
         class service
         {
             public:
@@ -55,12 +59,13 @@ namespace fire
                 message::mailbox_ptr mail();
 
             protected:
-                virtual void message_received(const message::message&) = 0;
+                void handle(const std::string& type, message_handler);
 
             protected:
                 void send_event(const message::message&);
 
             private:
+                void message_received(const message::message&);
                 std::string _address;
                 bool _done;
                 message::mailbox_ptr _mail;
@@ -69,6 +74,7 @@ namespace fire
 
             private:
                 friend void service_thread(service*);
+                handler_map _h;
         };
 
         using service_ptr = std::shared_ptr<service>;

@@ -109,12 +109,6 @@ namespace fire
                 INVARIANT_FALSE(_tmp_app_home.empty());
             }
 
-            void app_service::message_received(const message::message& m)
-            {
-                INVARIANT(mail());
-                INVARIANT(_user_service);
-            }
-
             user::user_service_ptr app_service::user_service()
             {
                 ENSURE(_user_service);

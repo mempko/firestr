@@ -110,7 +110,12 @@ namespace fire
                 bool contact_available(const std::string& id) const;
 
             protected:
-                virtual void message_received(const message::message&);
+                void received_ping(const message::message& m);
+                void received_connect_request(const message::message& m);
+                void received_register_with_greeter(const message::message& m);
+                void received_greet_key_response(const message::message& m);
+                void received_greet_find_response(const message::message& m);
+                void received_introduction(const message::message& m);
 
             private:
                 int add_introduction(const contact_introduction&);
@@ -134,6 +139,8 @@ namespace fire
                 void fire_new_introduction(size_t i);
 
             private:
+                void init_handlers();
+
                 //ping specific 
                 void init_ping();
                 void init_reconnect();

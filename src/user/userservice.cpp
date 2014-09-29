@@ -188,6 +188,8 @@ namespace fire
         {
             REQUIRE_FALSE(c.home.empty());
 
+            init_handlers();
+
             if(!_user) throw std::runtime_error{"no user found at `" + _home + "'"};
             update_address(n::make_udp_address(c.host, c.port));
 
@@ -211,6 +213,18 @@ namespace fire
             _done = true;
             _ping_thread->join();
             _reconnect_thread->join();
+        }
+
+        void user_service::init_handlers()
+        {
+            using std::bind;
+            using namespace std::placeholders;
+            handle(PING, bind(&user_service::received_ping, this, _1));
+            handle(PING_REQUEST, bind(&user_service::received_connect_request, this, _1));
+            handle(REGISTER_WITH_GREETER, bind(&user_service::received_register_with_greeter, this, _1));
+            handle(ms::GREET_KEY_RESPONSE, bind(&user_service::received_greet_key_response, this, _1));
+            handle(ms::GREET_FIND_RESPONSE, bind(&user_service::received_greet_find_response, this, _1));
+            handle(INTRODUCTION, bind(&user_service::received_introduction, this, _1));
         }
 
         void user_service::add_contact_data(user::user_info_ptr u)
@@ -344,162 +358,168 @@ namespace fire
             _encrypted_channels->create_channel(address, key, public_val);
         }
 
-        void user_service::message_received(const message::message& m)
+        void user_service::received_ping(const message::message& m)
         {
-            if(m.meta.type == PING)
+            REQUIRE_EQUAL(m.meta.type, PING);
+
+            m::expect_remote(m);
+            m::expect_symmetric(m);
+
+            ping r;
+            convert(m, r);
+
+            bool fire_event = false;
+            bool cur_state = false;
             {
-                m::expect_remote(m);
-                m::expect_symmetric(m);
+                u::mutex_scoped_lock l(_ping_mutex);
 
-                ping r;
-                convert(m, r);
+                auto p = _contacts.find(r.from_id);
+                if(p == _contacts.end() || !p->second.contact) return;
 
-                bool fire_event = false;
-                bool cur_state = false;
+                auto& ticks = p->second.last_ping;
+                bool prev_state = available(ticks);
+
+                if(r.state == CONNECTED)
+                {
+                    ticks = 0;
+                }
+                else
+                {
+                    ticks = PING_THRESH + PING_THRESH;
+                    CHECK_FALSE(available(ticks));
+                }
+                cur_state = available(ticks);
+                fire_event = cur_state != prev_state || p->second.state == contact_data::CONNECTING;
+            }
+
+            if(fire_event)
+            {
+                if(cur_state) fire_contact_connected_event(r.from_id);
+                else 
                 {
                     u::mutex_scoped_lock l(_ping_mutex);
-
-                    auto p = _contacts.find(r.from_id);
-                    if(p == _contacts.end() || !p->second.contact) return;
-
-                    auto& ticks = p->second.last_ping;
-                    bool prev_state = available(ticks);
-
-                    if(r.state == CONNECTED)
-                    {
-                        ticks = 0;
-                    }
-                    else
-                    {
-                        ticks = PING_THRESH + PING_THRESH;
-                        CHECK_FALSE(available(ticks));
-                    }
-                    cur_state = available(ticks);
-                    fire_event = cur_state != prev_state || p->second.state == contact_data::CONNECTING;
-                }
-
-                if(fire_event)
-                {
-                    if(cur_state) fire_contact_connected_event(r.from_id);
-                    else 
-                    {
-                        u::mutex_scoped_lock l(_ping_mutex);
-                        fire_contact_disconnected_event(r.from_id);
-                    }
+                    fire_contact_disconnected_event(r.from_id);
                 }
             }
-            else if(m.meta.type == PING_REQUEST)
+        }
+
+        void user_service::received_connect_request(const message::message& m)
+        {
+            REQUIRE_EQUAL(m.meta.type, PING_REQUEST);
+            m::expect_remote(m);
+            m::expect_asymmetric(m);
+
+            ping_request r;
+            convert(m, r);
+
+            auto c = by_id(r.from_id);
+            if(!c) return;
+
+            //we are already connected to this contact
+            //send ping and return
+            if(contact_available(c->id())) 
             {
-                m::expect_remote(m);
-                m::expect_asymmetric(m);
+                LOG << "got connection request from: " << c->name() << " (" << c->address() << "), already connected..." << std::endl;
+                return;
+            }
 
-                ping_request r;
-                convert(m, r);
+            if(is_contact_connecting(c->id())) 
+            {
+                LOG << "got connection request from: " << c->name() << " (" << c->address() << "), already connecting..." << std::endl;
+                return;
+            }
 
-                auto c = by_id(r.from_id);
-                if(!c) return;
+            LOG << "got connection request from: " << c->name() << " ( old: " << c->address() << ", new: " << r.from_ip << ":" << r.from_port << "), sending ping back " << std::endl;
 
-                //we are already connected to this contact
-                //send ping and return
-                if(contact_available(c->id())) 
+            //update contact address to the one specified
+            //if it is different.
+            update_contact_address(c->id(), r.from_ip, r.from_port);
+
+            if(r.send_back) send_ping_request(c, false);
+            contact_connecting(c->id());
+
+            //update conversation to use DH 
+            auto address = n::make_udp_address(r.from_ip, r.from_port);
+            setup_security_conversation(address, c->key(), r.public_secret);
+            send_ping_to(CONNECTED, c->id(), true);
+        }
+
+        void user_service::received_register_with_greeter(const message::message& m)
+        {
+            REQUIRE_EQUAL(m.meta.type, REGISTER_WITH_GREETER);
+
+            m::expect_local(m);
+
+            register_with_greeter r;
+            convert(m, r);
+            do_regiser_with_greeter(r.tcp_addr, r.udp_addr, r.pub_key);
+        }
+
+        void user_service::received_greet_key_response(const message::message& m)
+        {
+            REQUIRE_EQUAL(m.meta.type, ms::GREET_KEY_RESPONSE);
+
+            m::expect_remote(m);
+            if(!m::is_plaintext(m) && !m::is_asymmetric(m)) return;
+
+            ms::greet_key_response rs{m};
+            add_greeter(rs.host(), rs.port(), rs.key());
+        }
+
+        void user_service::received_greet_find_response(const message::message& m)
+        {
+            REQUIRE_EQUAL(m.meta.type, ms::GREET_FIND_RESPONSE);
+            m::expect_remote(m);
+            m::expect_asymmetric(m);
+
+            ms::greet_find_response rs{m};
+            if(!rs.found()) return;
+
+            //send ping request using new local and remote address
+            auto c = by_id(rs.id());
+            if(c) 
+            {
+                CHECK(_contacts.count(c->id()));
+                if(contact_available(c->id()) || is_contact_connecting(c->id())) 
                 {
-                    LOG << "got connection request from: " << c->name() << " (" << c->address() << "), already connected..." << std::endl;
+                    LOG << "got greet response for: " << c->name() << " (" << c->id() << ") address:" << rs.external().ip << ":" << rs.external().port << " but already connecting..." << std::endl;
                     return;
                 }
 
-                if(is_contact_connecting(c->id())) 
+                auto local = n::make_udp_address(rs.local().ip, rs.local().port);
+                auto external = n::make_udp_address(rs.external().ip, rs.external().port);
+
+                LOG << "got greet response for: " << c->name() << " (" << c->id() << " ) local: " << local << " external: " << external <<  " sending requests..." << std::endl;
+                //create security conversations for local 
+                _encrypted_channels->create_channel(local, c->key());
+
+                //send ping request via local network 
+                send_ping_request(local);
+
+                //if external is different from local, create a security
+                //conversation and send a ping request. First one to make it
+                //wins the race.
+                if(external != local)
                 {
-                    LOG << "got connection request from: " << c->name() << " (" << c->address() << "), already connecting..." << std::endl;
-                    return;
-                }
-
-                LOG << "got connection request from: " << c->name() << " ( old: " << c->address() << ", new: " << r.from_ip << ":" << r.from_port << "), sending ping back " << std::endl;
-
-                //update contact address to the one specified
-                //if it is different.
-                update_contact_address(c->id(), r.from_ip, r.from_port);
-
-                if(r.send_back) send_ping_request(c, false);
-                contact_connecting(c->id());
-
-                //update conversation to use DH 
-                auto address = n::make_udp_address(r.from_ip, r.from_port);
-                setup_security_conversation(address, c->key(), r.public_secret);
-                send_ping_to(CONNECTED, c->id(), true);
-            }
-            else if(m.meta.type == REGISTER_WITH_GREETER)
-            {
-                m::expect_local(m);
-
-                register_with_greeter r;
-                convert(m, r);
-                do_regiser_with_greeter(r.tcp_addr, r.udp_addr, r.pub_key);
-            }
-            else if(m.meta.type == ms::GREET_KEY_RESPONSE)
-            {
-                m::expect_remote(m);
-                if(!m::is_plaintext(m) && !m::is_asymmetric(m)) return;
-
-                ms::greet_key_response rs{m};
-                add_greeter(rs.host(), rs.port(), rs.key());
-            }
-            else if(m.meta.type == ms::GREET_FIND_RESPONSE)
-            {
-                m::expect_remote(m);
-                m::expect_asymmetric(m);
-
-                ms::greet_find_response rs{m};
-                if(!rs.found()) return;
-
-                //send ping request using new local and remote address
-                auto c = by_id(rs.id());
-                if(c) 
-                {
-                    CHECK(_contacts.count(c->id()));
-                    if(contact_available(c->id()) || is_contact_connecting(c->id())) 
-                    {
-                        LOG << "got greet response for: " << c->name() << " (" << c->id() << ") address:" << rs.external().ip << ":" << rs.external().port << " but already connecting..." << std::endl;
-                        return;
-                    }
-
-                    auto local = n::make_udp_address(rs.local().ip, rs.local().port);
-                    auto external = n::make_udp_address(rs.external().ip, rs.external().port);
-
-                    LOG << "got greet response for: " << c->name() << " (" << c->id() << " ) local: " << local << " external: " << external <<  " sending requests..." << std::endl;
-                    //create security conversations for local 
-                    _encrypted_channels->create_channel(local, c->key());
-
-                    //send ping request via local network 
-                    send_ping_request(local);
-
-                    //if external is different from local, create a security
-                    //conversation and send a ping request. First one to make it
-                    //wins the race.
-                    if(external != local)
-                    {
-                        _encrypted_channels->create_channel(external, c->key());
-                        send_ping_request(external);
-                    }
+                    _encrypted_channels->create_channel(external, c->key());
+                    send_ping_request(external);
                 }
             }
-            else if(m.meta.type == INTRODUCTION)
-            {
-                m::expect_remote(m);
-                m::expect_symmetric(m);
+        }
 
-                contact_introduction i;
-                convert(m, i);
-                auto c = by_id(i.from_id);
-                if(c) 
-                {
-                    LOG << "got introduction from " << c->name() << " about " << i.contact.name() << "." << c->name() << " says: " << i.message << std::endl;
-                    auto index = add_introduction(i);
-                    if(index >= 0) fire_new_introduction(index);
-                }
-            }
-            else
+        void user_service::received_introduction(const message::message& m)
+        {
+            m::expect_remote(m);
+            m::expect_symmetric(m);
+
+            contact_introduction i;
+            convert(m, i);
+            auto c = by_id(i.from_id);
+            if(c) 
             {
-                throw std::runtime_error{"unsuported message type `" + m.meta.type +"'"};
+                LOG << "got introduction from " << c->name() << " about " << i.contact.name() << "." << c->name() << " says: " << i.message << std::endl;
+                auto index = add_introduction(i);
+                if(index >= 0) fire_new_introduction(index);
             }
         }
 
