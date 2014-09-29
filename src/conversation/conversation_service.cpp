@@ -205,11 +205,19 @@ namespace fire
             _post{post},
             _user_service{user_service}
         {
+            using std::bind;
+            using namespace std::placeholders;
+
             REQUIRE(post);
             REQUIRE(user_service);
             REQUIRE(mail());
 
             _sender = std::make_shared<ms::sender>(_user_service, mail());
+
+            handle(SYNC_CONVERSATION, bind(&conversation_service::received_sync, this, _1));
+            handle(QUIT_CONVERSATION, bind(&conversation_service::received_quit, this, _1));
+            handle(ASK_CONTACT_REQ, bind(&conversation_service::received_ask_contact_req, this, _1));
+            handle(ASK_CONTACT_RES, bind(&conversation_service::received_ask_contact_res, this, _1));
 
             INVARIANT(_post);
             INVARIANT(_user_service);
@@ -232,100 +240,108 @@ namespace fire
             }
         }
 
-        void conversation_service::message_received(const message::message& m)
+        void conversation_service::received_sync(const message::message& m)
         {
-            INVARIANT(mail());
             INVARIANT(_user_service);
+            REQUIRE_EQUAL(m.meta.type, SYNC_CONVERSATION);
             m::expect_symmetric(m);
 
-            if(m.meta.type == SYNC_CONVERSATION)
+            sync_conversation_msg s;
+            convert(m, s);
+
+            auto c = _user_service->user().contacts().by_id(s.from_id);
+            if(!c) return;
+
+            us::users contacts;
+            contacts.push_back(c);
+
+            auto self = _user_service->user().info().id();
+
+            //also get other contacts in the conversation and add them
+            //only if the user knows them
+            for(auto id : s.contacts)
             {
-                sync_conversation_msg s;
-                convert(m, s);
+                //skip self
+                if(id == self) continue;
 
-                auto c = _user_service->user().contacts().by_id(s.from_id);
-                if(!c) return;
+                auto oc = _user_service->user().contacts().by_id(id);
+                if(!oc) continue;
 
-                us::users contacts;
-                contacts.push_back(c);
-
-                auto self = _user_service->user().info().id();
-
-                //also get other contacts in the conversation and add them
-                //only if the user knows them
-                for(auto id : s.contacts)
-                {
-                    //skip self
-                    if(id == self) continue;
-
-                    auto oc = _user_service->user().contacts().by_id(id);
-                    if(!oc) continue;
-
-                    contacts.push_back(oc);
-                }
-
-                sync_conversation(s.from_id, s.conversation_id, contacts, s.apps);
+                contacts.push_back(oc);
             }
-            else if(m.meta.type == QUIT_CONVERSATION)
-            {
-                quit_conversation_msg q;
-                convert(m, q);
 
-                auto c = _user_service->user().contacts().by_id(q.from_id);
-                if(!c) return;
+            sync_conversation(s.from_id, s.conversation_id, contacts, s.apps);
+        }
 
-                auto s = conversation_by_id(q.conversation_id);
-                if(!s) return;
+        void conversation_service::received_quit(const message::message& m)
+        {
+            INVARIANT(_user_service);
+            REQUIRE_EQUAL(m.meta.type, QUIT_CONVERSATION);
+            m::expect_symmetric(m);
 
-                c = s->contacts().by_id(q.from_id);
-                if(!c) return;
+            quit_conversation_msg q;
+            convert(m, q);
 
-                s->contacts().remove(c);
-                fire_contact_removed(q.conversation_id, q.from_id);
-            }
-            else if(m.meta.type == ASK_CONTACT_REQ)
-            {
-                ask_contact_req_msg a;
-                convert(m, a);
+            auto c = _user_service->user().contacts().by_id(q.from_id);
+            if(!c) return;
 
-                bool hc = _user_service->user().contacts().has(a.from_id);
-                if(!hc) return;
+            auto s = conversation_by_id(q.conversation_id);
+            if(!s) return;
 
-                auto s = conversation_by_id(a.conversation_id);
-                if(!s) return;
+            c = s->contacts().by_id(q.from_id);
+            if(!c) return;
 
-                bool know = _user_service->user().contacts().has(a.id);
-                ask_contact_res_msg r;
-                r.conversation_id = a.conversation_id;
-                r.id = a.id;
-                r.status = know ? ask_contact_res_msg::KNOW : ask_contact_res_msg::DONT_KNOW;
-                _sender->send(a.from_id, convert(r));
-            }
-            else if(m.meta.type == ASK_CONTACT_RES)
-            {
-                ask_contact_res_msg r;
-                convert(m, r);
+            s->contacts().remove(c);
+            fire_contact_removed(q.conversation_id, q.from_id);
+        }
 
-                auto fc = _user_service->user().contacts().by_id(r.from_id);
-                if(!fc) return;
+        void conversation_service::received_ask_contact_req(const message::message& m)
+        {
+            INVARIANT(_user_service);
+            REQUIRE_EQUAL(m.meta.type, ASK_CONTACT_REQ);
+            m::expect_symmetric(m);
 
-                auto c = _user_service->user().contacts().by_id(r.id);
-                if(!c) return;
+            ask_contact_req_msg a;
+            convert(m, a);
 
-                auto s = conversation_by_id(r.conversation_id);
-                if(!s) return;
+            bool hc = _user_service->user().contacts().has(a.from_id);
+            if(!hc) return;
 
-                s->know_contact(r.id, r.from_id, 
-                        r.status == ask_contact_res_msg::KNOW ? 
-                        know_request::KNOW : know_request::DONT_KNOW);
+            auto s = conversation_by_id(a.conversation_id);
+            if(!s) return;
 
-                if(s->part_of_clique(r.id))
-                    add_contact_to_conversation_p(c, s);
-            }
-            else
-            {
-                throw std::runtime_error(SERVICE_ADDRESS + " received unknown message type `" + m.meta.type + "'");
-            }
+            bool know = _user_service->user().contacts().has(a.id);
+            ask_contact_res_msg r;
+            r.conversation_id = a.conversation_id;
+            r.id = a.id;
+            r.status = know ? ask_contact_res_msg::KNOW : ask_contact_res_msg::DONT_KNOW;
+            _sender->send(a.from_id, convert(r));
+        }
+
+        void conversation_service::received_ask_contact_res(const message::message& m)
+        {
+            INVARIANT(_user_service);
+            REQUIRE_EQUAL(m.meta.type, ASK_CONTACT_RES);
+            m::expect_symmetric(m);
+
+            ask_contact_res_msg r;
+            convert(m, r);
+
+            auto fc = _user_service->user().contacts().by_id(r.from_id);
+            if(!fc) return;
+
+            auto c = _user_service->user().contacts().by_id(r.id);
+            if(!c) return;
+
+            auto s = conversation_by_id(r.conversation_id);
+            if(!s) return;
+
+            s->know_contact(r.id, r.from_id, 
+                    r.status == ask_contact_res_msg::KNOW ? 
+                    know_request::KNOW : know_request::DONT_KNOW);
+
+            if(s->part_of_clique(r.id))
+                add_contact_to_conversation_p(c, s);
         }
 
         conversation_ptr conversation_service::sync_conversation(

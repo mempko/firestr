@@ -71,9 +71,6 @@ namespace fire
                 public:
                     user::user_service_ptr user_service();
 
-                protected:
-                    virtual void message_received(const fire::message::message&);
-
                 private:
                     void fire_apps_updated_event();
 

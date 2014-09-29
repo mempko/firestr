@@ -111,5 +111,24 @@ namespace fire
             if(!_event) return;
             _event->push_inbox(e);
         }
+
+        void service::handle(const std::string& t, message_handler h)
+        {
+            _h[t] = h;
+        }
+
+        void service::message_received(const message::message& m)
+        {
+            //find handler
+            auto h = _h.find(m.meta.type);
+            if(h == _h.end()) 
+            {
+                LOG << "error, no handler found for`" << m.meta.type << "' in " << _address << std::endl;
+                return;
+            }
+
+            //call handler
+            (h->second)(m);
+        }
     }
 }
