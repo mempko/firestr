@@ -47,6 +47,17 @@ namespace fire
     {
         using message_handler = std::function<void (const message::message&)>;
         using handler_map = std::unordered_map<std::string, message_handler>;
+
+        class service_map
+        {
+            public:
+                void handle(const std::string& type, message_handler);
+                bool handle(const message::message& m);
+
+            private:
+                handler_map _h;
+        };
+
         class service
         {
             public:
@@ -74,7 +85,7 @@ namespace fire
 
             private:
                 friend void service_thread(service*);
-                handler_map _h;
+                service_map _sm;
         };
 
         using service_ptr = std::shared_ptr<service>;
