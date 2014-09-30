@@ -110,6 +110,7 @@ namespace fire
                 REQUIRE(as);
                 REQUIRE_FALSE(id.empty());
 
+                init_handlers();
                 init();
 
                 INVARIANT(_api);
@@ -188,36 +189,57 @@ namespace fire
                 return _mail;
             }
 
-            void script_app::check_mail(m::message m) 
-            try
+            void script_app::init_handlers()
             {
+                using std::bind;
+                using namespace std::placeholders;
+
+                _sm.handle(l::SCRIPT_MESSAGE, 
+                        bind(&script_app::received_script_message, this, _1));
+                _sm.handle(l::EVENT_MESSAGE,
+                        bind(&script_app::received_event_message, this, _1));
+            }
+
+            void script_app::received_script_message(const m::message& m)
+            {
+                REQUIRE_EQUAL(m.meta.type, l::SCRIPT_MESSAGE);
+
                 INVARIANT(_conversation);
                 INVARIANT(_api);
 
+                bool local = m.meta.extra.has("local_app_id");
+                auto id = m.meta.extra["from_id"].as_string();
+
+                if(!local && !_conversation->user_service()->by_id(id)) 
+                    return;
+
+                l::script_message sm{m, _api.get()};
+                _api->message_received(sm);
+            }
+
+            void script_app::received_event_message(const m::message& m)
+            {
+                REQUIRE_EQUAL(m.meta.type, l::EVENT_MESSAGE);
+                INVARIANT(_conversation);
+                INVARIANT(_api);
+
+                auto id = m.meta.extra["from_id"].as_string();
+
+                if(!_conversation->user_service()->by_id(id)) 
+                    return;
+
+                l::event_message em{m, _api.get()};
+                _api->event_received(em);
+            }
+
+            void script_app::check_mail(m::message m) 
+            try
+            {
                 if(m::is_remote(m)) m::expect_symmetric(m);
                 else m::expect_plaintext(m);
 
-                if(m.meta.type == l::SCRIPT_MESSAGE)
-                {
-                    bool local = m.meta.extra.has("local_app_id");
-                    auto id = m.meta.extra["from_id"].as_string();
-
-                    if(!local && !_conversation->user_service()->by_id(id)) 
-                        return;
-
-                    l::script_message sm{m, _api.get()};
-                    _api->message_received(sm);
-                }
-                else if(m.meta.type == l::EVENT_MESSAGE)
-                {
-                    auto id = m.meta.extra["from_id"].as_string();
-
-                    if(!_conversation->user_service()->by_id(id)) 
-                        return;
-
-                    l::event_message em{m, _api.get()};
-                    _api->event_received(em);
-                }
+                if(!_sm.handle(m))
+                    LOG << "script_app: error in check_mail. Unknown message type `" << m.meta.type << "'" << std::endl;
             }
             catch(std::exception& e)
             {
