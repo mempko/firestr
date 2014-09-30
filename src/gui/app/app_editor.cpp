@@ -315,6 +315,8 @@ namespace fire
                 INVARIANT(_app_service);
                 INVARIANT(_app);
 
+                init_handlers();
+
                 auto my_id = _conversation->user_service()->user().info().id();
 
                 _mail = std::make_shared<m::mailbox>(_id);
@@ -1053,6 +1055,93 @@ namespace fire
                 _prev_pos = pos;
             }
 
+            void app_editor::init_handlers() 
+            {
+                using std::bind;
+                using namespace std::placeholders;
+
+                _sm.handle(SCRIPT_CODE_MESSAGE,
+                        bind(&app_editor::received_code, this, _1));
+                _sm.handle(l::SCRIPT_MESSAGE,
+                        bind(&app_editor::received_script_message, this, _1));
+                _sm.handle(SCRIPT_INIT_MESSAGE,
+                        bind(&app_editor::received_script_init, this, _1));
+                _sm.handle(l::EVENT_MESSAGE,
+                        bind(&app_editor::received_script_event, this, _1));
+            }
+
+            void app_editor::received_code(const m::message& m) 
+            {
+                REQUIRE_EQUAL(m.meta.type, SCRIPT_CODE_MESSAGE);
+                INVARIANT(_conversation);
+                INVARIANT(_app);
+
+                auto t = to_text_script(m);
+                auto c = _conversation->contacts().by_id(t.from_id);
+                if(!c) return;
+
+                //merge code if there is a conflict
+                auto merged = _code.merge(t.code);
+
+                //update text
+                auto pos = _script->textCursor().position();
+                _script->setText(_code.str().c_str());
+
+                //put cursor back
+                auto cursor = _script->textCursor();
+                cursor.setPosition(pos);
+                _script->setTextCursor(cursor);
+
+                //update data
+                bool data_changed = !t.data.empty();
+                if(data_changed)
+                {
+                    u::dict data = u::decode<u::dict>(t.data);
+                    if(merged == u::merge_result::UPDATED) 
+                        _app->data().clear();
+                    _app->data().import_from(data);
+
+                    //update data ui
+                    init_data();
+
+                    _prev_code = _code.str();
+                    _run_state = READY;
+                    run_script();
+                }
+            }
+
+            void app_editor::received_script_message(const m::message& m) 
+            {
+                REQUIRE_EQUAL(m.meta.type, l::SCRIPT_MESSAGE);
+                INVARIANT(_app);
+
+                l::script_message sm{m, _api.get()};
+                _api->message_received(sm);
+            }
+
+            void app_editor::received_script_init(const m::message& m) 
+            {
+                REQUIRE_EQUAL(m.meta.type, SCRIPT_INIT_MESSAGE);
+                INVARIANT(_conversation);
+
+                script_init i;
+                convert(m, i);
+
+                auto c = _conversation->contacts().by_id(i.from_id);
+                if(!c) return;
+
+                send_script_to(c->id());
+            }
+
+            void app_editor::received_script_event(const m::message& m) 
+            {
+                REQUIRE_EQUAL(m.meta.type, l::EVENT_MESSAGE);
+                INVARIANT(_api);
+
+                l::event_message sm{m, _api.get()};
+                _api->event_received(sm);
+            }
+
             void app_editor::check_mail(m::message m) 
             try
             {
@@ -1063,65 +1152,8 @@ namespace fire
                 if(m::is_remote(m)) m::expect_symmetric(m);
                 else m::expect_plaintext(m);
 
-                if(m.meta.type == SCRIPT_CODE_MESSAGE)
-                {
-                    auto t = to_text_script(m);
-                    auto c = _conversation->contacts().by_id(t.from_id);
-                    if(!c) return;
-
-                    //merge code if there is a conflict
-                    auto merged = _code.merge(t.code);
-
-                    //update text
-                    auto pos = _script->textCursor().position();
-                    _script->setText(_code.str().c_str());
-
-                    //put cursor back
-                    auto cursor = _script->textCursor();
-                    cursor.setPosition(pos);
-                    _script->setTextCursor(cursor);
-
-                    //update data
-                    bool data_changed = !t.data.empty();
-                    if(data_changed)
-                    {
-                        u::dict data = u::decode<u::dict>(t.data);
-                        if(merged == u::merge_result::UPDATED) 
-                            _app->data().clear();
-                        _app->data().import_from(data);
-
-                        //update data ui
-                        init_data();
-
-                        _prev_code = _code.str();
-                        _run_state = READY;
-                        run_script();
-                    }
-                }
-                else if(m.meta.type == l::SCRIPT_MESSAGE)
-                {
-                    l::script_message sm{m, _api.get()};
-                    _api->message_received(sm);
-                }
-                else if(m.meta.type == SCRIPT_INIT_MESSAGE)
-                {
-                    script_init i;
-                    convert(m, i);
-
-                    auto c = _conversation->contacts().by_id(i.from_id);
-                    if(!c) return;
-
-                    send_script_to(c->id());
-                }
-                else if(m.meta.type == l::EVENT_MESSAGE)
-                {
-                    l::event_message sm{m, _api.get()};
-                    _api->event_received(sm);
-                }
-                else
-                {
+                if(!_sm.handle(m))
                     LOG << "app_editor received unknown message `" << m.meta.type << "'" << std::endl;
-                }
             }
             catch(std::exception& e)
             {

@@ -153,6 +153,7 @@ namespace fire
 
                 private:
                     void init();
+                    void init_handlers();
                     void init_code_tab(QGridLayout*);
                     void init_data_tab(QGridLayout*);
                     bool prepare_script_message(text_script& tm, bool send_data);
@@ -167,6 +168,12 @@ namespace fire
                     void update_status_to_running();
 
                 private:
+                    void received_code(const fire::message::message&);
+                    void received_script_message(const fire::message::message&); 
+                    void received_script_init(const fire::message::message&); 
+                    void received_script_event(const fire::message::message&); 
+
+                private:
                     std::string _from_id;
                     std::string _id;
                     mail_service* _mail_service;
@@ -176,6 +183,7 @@ namespace fire
                     fire::message::mailbox_ptr _mail;
                     messages::sender_ptr _sender;
                     user::contact_list _contacts;
+                    service::service_map _sm;
 
                     //clock for keeping track of code
                     util::cr_string _code;
