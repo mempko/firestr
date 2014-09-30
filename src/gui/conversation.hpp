@@ -39,6 +39,7 @@
 #include "gui/app/app_service.hpp"
 #include "conversation/conversation.hpp"
 #include "conversation/conversation_service.hpp"
+#include "service/service.hpp"
 
 #include <QWidget>
 #include <QGridLayout>
@@ -79,11 +80,21 @@ namespace fire
                 void update_contact_select();
 
             private:
+                void init_handlers();
+                void received_new_app(const fire::message::message&);
+                void received_req_app(const fire::message::message&);
+                void received_conversation_synced(const fire::message::message&);
+                void received_contact_removed(const fire::message::message&);
+                void received_contact_added(const fire::message::message&);
+                void received_contact_connected(const fire::message::message&);
+                void received_contact_disconnected(const fire::message::message&);
                 void sync_apps();
                 void got_req_app_message(const messages::request_app&);
 
             private:
                 mail_service* _mail_service;
+                service::service_map _sm;
+
                 QGridLayout* _layout;
                 contact_select_widget* _contact_select;
                 QPushButton* _add_contact;
