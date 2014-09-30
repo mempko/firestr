@@ -122,15 +122,15 @@ namespace fire
                 //gui message handlers
                 void init_handlers();
 
-                void received_new_conversation(const fire::message::message& m);
-                void received_quit_conversation(const fire::message::message& m);
-                void received_conversation_synced(const fire::message::message& m);
-                void received_contact_removed_or_added_from_conversation(const fire::message::message& m);
-                void received_conversation_alert(const fire::message::message& m);
-                void received_contact_connected(const fire::message::message& m);
-                void received_contact_disconnected(const fire::message::message& m);
-                void received_new_introduction(const fire::message::message& m);
-                void received_apps_updated(const fire::message::message& m);
+                void received_new_conversation(const fire::message::message&);
+                void received_quit_conversation(const fire::message::message&);
+                void received_conversation_synced(const fire::message::message&);
+                void received_contact_removed_or_added_from_conversation(const fire::message::message&);
+                void received_conversation_alert(const fire::message::message&);
+                void received_contact_connected(const fire::message::message&);
+                void received_contact_disconnected(const fire::message::message&);
+                void received_new_introduction(const fire::message::message&);
+                void received_apps_updated(const fire::message::message&);
 
             private:
                 //gui service event handlers
