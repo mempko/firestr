@@ -55,7 +55,11 @@ namespace fire
                 if(!s->_mail->pop_inbox(m, true))
                     continue;
 
-                s->message_received(m);
+                if(!s->_sm.handle(m)) 
+                {
+                    LOG << "error, no handler found for`" << m.meta.type << "' in " 
+                        << s->_address << std::endl;
+                }
             }
             catch(std::exception& e)
             {
@@ -114,21 +118,24 @@ namespace fire
 
         void service::handle(const std::string& t, message_handler h)
         {
+            _sm.handle(t, h);
+        }
+
+        void service_map::handle(const std::string& t, message_handler h)
+        {
+            REQUIRE_FALSE(t.empty());
             _h[t] = h;
         }
 
-        void service::message_received(const message::message& m)
+        bool service_map::handle(const message::message& m)
         {
             //find handler
             auto h = _h.find(m.meta.type);
-            if(h == _h.end()) 
-            {
-                LOG << "error, no handler found for`" << m.meta.type << "' in " << _address << std::endl;
-                return;
-            }
+            if(h == _h.end()) return false;
 
             //call handler
             (h->second)(m);
+            return true;
         }
     }
 }
