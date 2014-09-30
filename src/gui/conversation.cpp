@@ -38,6 +38,8 @@
 
 #include <QtWidgets>
 
+#include <functional>
+
 namespace u = fire::util;
 namespace s = fire::conversation;
 namespace m = fire::message;
@@ -67,6 +69,8 @@ namespace fire
             REQUIRE(conversation_service);
             REQUIRE(conversation);
             REQUIRE(app_service);
+
+            init_handlers();
 
             _layout = new QGridLayout;
 
@@ -194,92 +198,145 @@ namespace fire
             return _name;
         }
 
-        void conversation_widget::check_mail(m::message m)
-        try
+        void conversation_widget::init_handlers()
         {
+            using std::bind;
+            using namespace std::placeholders;
+
+            _sm.handle(ms::NEW_APP, 
+                    bind(&conversation_widget::received_new_app, this, _1));
+            _sm.handle(ms::REQ_APP, 
+                    bind(&conversation_widget::received_req_app, this, _1));
+            _sm.handle(s::event::CONVERSATION_SYNCED, 
+                    bind(&conversation_widget::received_conversation_synced, this, _1));
+            _sm.handle(s::event::CONTACT_REMOVED, 
+                    bind(&conversation_widget::received_contact_removed, this, _1));
+            _sm.handle(s::event::CONTACT_ADDED, 
+                    bind(&conversation_widget::received_contact_added, this, _1));
+            _sm.handle(us::event::CONTACT_CONNECTED, 
+                    bind(&conversation_widget::received_contact_connected, this, _1));
+            _sm.handle(us::event::CONTACT_DISCONNECTED, 
+                    bind(&conversation_widget::received_contact_disconnected, this, _1));
+        }
+
+        void conversation_widget::received_new_app(const m::message& m)
+        {
+            REQUIRE_EQUAL(m.meta.type, ms::NEW_APP);
+
             INVARIANT(_messages);
             INVARIANT(_conversation);
             INVARIANT(_conversation_service);
+
+            m::expect_remote(m);
+            m::expect_symmetric(m);
+
+            //add new app and get metadata
+            if(!_messages->add_new_app(m)) return;
+            _conversation_service->fire_conversation_alert(_conversation->id(), false);
+        }
+
+        void conversation_widget::received_req_app(const m::message& m)
+        {
+            REQUIRE_EQUAL(m.meta.type, ms::REQ_APP);
+
+            m::expect_remote(m);
+            m::expect_symmetric(m);
+            got_req_app_message(m);
+        }
+
+        void conversation_widget::received_conversation_synced(const m::message& m)
+        {
+            REQUIRE_EQUAL(m.meta.type, s::event::CONVERSATION_SYNCED);
+
+            INVARIANT(_conversation);
+            INVARIANT(_conversation_service);
+
+            m::expect_local(m);
+
+            update_contacts();
+            _conversation_service->fire_conversation_alert(_conversation->id(), false);
+        }
+
+        void conversation_widget::received_contact_removed(const m::message& m)
+        {
+            REQUIRE_EQUAL(m.meta.type, s::event::CONTACT_REMOVED);
+
+            INVARIANT(_conversation);
+            INVARIANT(_conversation_service);
             INVARIANT(_conversation_service->user_service());
+
+            m::expect_local(m);
+
+            s::event::contact_removed r;
+            s::event::convert(m, r);
+
+            if(r.conversation_id != _conversation->id()) return;
+
+            auto c = _conversation_service->user_service()->by_id(r.contact_id);
+            if(!c) return;
+
+            update_contacts();
+            _conversation_service->fire_conversation_alert(_conversation->id(), false);
+        }
+
+        void conversation_widget::received_contact_added(const m::message& m)
+        {
+            REQUIRE_EQUAL(m.meta.type, s::event::CONTACT_ADDED);
+
+            INVARIANT(_conversation);
+            INVARIANT(_conversation_service);
+            INVARIANT(_conversation_service->user_service());
+
+            m::expect_local(m);
+
+            s::event::contact_added r;
+            s::event::convert(m, r);
+
+            if(r.conversation_id != _conversation->id()) return;
+
+            auto c = _conversation_service->user_service()->by_id(r.contact_id);
+            if(!c) return;
+
+            update_contacts();
+            _conversation_service->fire_conversation_alert(_conversation->id(), false);
+        }
+
+        void conversation_widget::received_contact_connected(const m::message& m)
+        {
+            REQUIRE_EQUAL(m.meta.type, us::event::CONTACT_CONNECTED);
+
+            m::expect_local(m);
+            update_contacts();
+        }
+
+        void conversation_widget::received_contact_disconnected(const m::message& m)
+        {
+            REQUIRE_EQUAL(m.meta.type, us::event::CONTACT_DISCONNECTED);
+            INVARIANT(_conversation);
+            INVARIANT(_conversation->mail());
+            
+            m::expect_local(m);
+
+            us::event::contact_disconnected r;
+            us::event::convert(m, r);
+
+            auto c = _conversation->contacts().by_id(r.id);
+            if(!c) return;
+
+            _conversation->contacts().remove(c);
+            update_contacts();
+        }
+
+
+        void conversation_widget::check_mail(m::message m)
+        try
+        {
+            INVARIANT(_conversation);
             INVARIANT(_conversation->mail());
 
-            if(m.meta.type == ms::NEW_APP)
+            if(!_sm.handle(m))
             {
-                m::expect_remote(m);
-                m::expect_symmetric(m);
-
-                //add new app and get metadata
-                if(!_messages->add_new_app(m)) return;
-                _conversation_service->fire_conversation_alert(_conversation->id(), false);
-            }
-            else if(m.meta.type == ms::REQ_APP)
-            {
-                m::expect_remote(m);
-                m::expect_symmetric(m);
-                got_req_app_message(m);
-            }
-            else if(m.meta.type == s::event::CONVERSATION_SYNCED)
-            {
-                m::expect_local(m);
-
-                update_contacts();
-                _conversation_service->fire_conversation_alert(_conversation->id(), false);
-            }
-            else if(m.meta.type == s::event::CONTACT_REMOVED)
-            {
-                m::expect_local(m);
-
-                s::event::contact_removed r;
-                s::event::convert(m, r);
-
-                if(r.conversation_id != _conversation->id()) return;
-
-                auto c = _conversation_service->user_service()->by_id(r.contact_id);
-                if(!c) return;
-
-                update_contacts();
-                _conversation_service->fire_conversation_alert(_conversation->id(), false);
-            }
-            else if(m.meta.type == s::event::CONTACT_ADDED)
-            {
-                m::expect_local(m);
-
-                s::event::contact_added r;
-                s::event::convert(m, r);
-
-                if(r.conversation_id != _conversation->id()) return;
-
-                auto c = _conversation_service->user_service()->by_id(r.contact_id);
-                if(!c) return;
-
-                update_contacts();
-                _conversation_service->fire_conversation_alert(_conversation->id(), false);
-            }
-            else if(m.meta.type == us::event::CONTACT_CONNECTED)
-            {
-                m::expect_local(m);
-
-                update_contacts();
-            }
-            else if(m.meta.type == us::event::CONTACT_DISCONNECTED)
-            {
-                m::expect_local(m);
-
-                us::event::contact_disconnected r;
-                us::event::convert(m, r);
-
-                auto c = _conversation->contacts().by_id(r.id);
-                if(!c) return;
-
-                _conversation->contacts().remove(c);
-                update_contacts();
-            }
-            else
-            {
-                std::stringstream s;
-                s << m;
-
-                _messages->add(new unknown_message{s.str()});
+                LOG << "conversation: unkown message `" << m.meta.type << "' in " << _conversation->mail()->address() << std::endl;
             }
         }
         catch(std::exception& e)

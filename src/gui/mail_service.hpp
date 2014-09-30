@@ -62,7 +62,6 @@ namespace fire
                 bool _done;
                 fire::message::mailbox_ptr _mail;
         };
-
     }
 }
 
