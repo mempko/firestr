@@ -119,11 +119,24 @@ namespace fire
                 void install_app(const std::string& file);
 
             private:
+                //gui message handlers
+                void init_handlers();
+
+                void received_new_conversation(const fire::message::message& m);
+                void received_quit_conversation(const fire::message::message& m);
+                void received_conversation_synced(const fire::message::message& m);
+                void received_contact_removed_or_added_from_conversation(const fire::message::message& m);
+                void received_conversation_alert(const fire::message::message& m);
+                void received_contact_connected(const fire::message::message& m);
+                void received_contact_disconnected(const fire::message::message& m);
+                void received_new_introduction(const fire::message::message& m);
+                void received_apps_updated(const fire::message::message& m);
+
+            private:
                 //gui service event handlers
 
                 void new_conversation_event(const std::string& id);
                 void quit_conversation_event(const std::string& id);
-                void conversation_synced_event(const fire::message::message& m);
                 void contact_removed_or_added_from_conversation_event(const fire::message::message& e);
                 void new_contact_event(const std::string& id);
                 void contact_connected_event(const user::event::contact_connected&);
@@ -176,6 +189,7 @@ namespace fire
                 app::app_service_ptr _app_service;
                 main_window_context _context;
                 bool _focus;
+                service::service_map _service_map;
         };
     }
 }

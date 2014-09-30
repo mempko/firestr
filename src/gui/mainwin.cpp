@@ -106,6 +106,7 @@ namespace fire
         {
             setWindowIcon(logo());
             setAcceptDrops(true);
+            init_handlers();
             setup_post();
             setup_services();
             create_actions();
@@ -723,67 +724,129 @@ namespace fire
                         "<p>This program is created by <b>Maxim Noah Khailo</b> and is licensed as GPLv3</p>"));
         }
 
+        void main_window::init_handlers()
+        {
+            using std::bind;
+            using namespace std::placeholders;
+
+            _service_map.handle(s::event::NEW_CONVERSATION,
+                    bind(&main_window::received_new_conversation, this, _1));
+            _service_map.handle(s::event::QUIT_CONVERSATION,
+                    bind(&main_window::received_quit_conversation, this, _1));
+            _service_map.handle(s::event::CONVERSATION_SYNCED,
+                    bind(&main_window::received_conversation_synced, this, _1));
+            _service_map.handle(s::event::CONTACT_REMOVED,
+                    bind(&main_window::received_contact_removed_or_added_from_conversation, this, _1));
+            _service_map.handle(s::event::CONTACT_ADDED,
+                    bind(&main_window::contact_removed_or_added_from_conversation_event, this, _1));
+            _service_map.handle(s::event::CONVERSATION_ALERT,
+                    bind(&main_window::received_conversation_alert, this, _1));
+            _service_map.handle(us::event::CONTACT_CONNECTED,
+                    bind(&main_window::received_contact_connected, this, _1));
+            _service_map.handle(us::event::CONTACT_DISCONNECTED,
+                    bind(&main_window::received_contact_disconnected, this, _1));
+            _service_map.handle(us::event::NEW_INTRODUCTION,
+                    bind(&main_window::received_new_introduction, this, _1));
+            _service_map.handle(a::event::APPS_UPDATED,
+                    bind(&main_window::received_apps_updated, this, _1));
+
+        }
+
+        void main_window::received_new_conversation(const m::message& m)
+        {
+            REQUIRE_EQUAL(m.meta.type, s::event::NEW_CONVERSATION);
+
+            s::event::new_conversation r;
+            s::event::convert(m, r);
+
+            new_conversation_event(r.conversation_id);
+        }
+
+        void main_window::received_quit_conversation(const m::message& m)
+        {
+            REQUIRE_EQUAL(m.meta.type, s::event::QUIT_CONVERSATION);
+
+            s::event::quit_conversation r;
+            s::event::convert(m, r);
+
+            quit_conversation_event(r.conversation_id);
+        }
+
+        void main_window::received_conversation_synced(const m::message& m)
+        {
+            REQUIRE_EQUAL(m.meta.type, s::event::CONVERSATION_SYNCED);
+
+            s::event::conversation_synced e;
+            s::event::convert(m, e);
+
+            INVARIANT(_conversation_service);
+
+            auto s = _conversation_service->conversation_by_id(e.conversation_id);
+            if(!s) return;
+
+            CHECK(s->mail());
+            s->mail()->push_inbox(m);
+        }
+
+        void main_window::received_contact_removed_or_added_from_conversation(const m::message& m)
+        {
+            REQUIRE(m.meta.type == s::event::CONTACT_REMOVED || m.meta.type == s::event::CONTACT_ADDED);
+
+            _conversation_service->broadcast_message(m);
+        }
+
+        void main_window::received_conversation_alert(const m::message& m)
+        {
+            REQUIRE_EQUAL(m.meta.type, s::event::CONVERSATION_ALERT);
+
+            s::event::conversation_alert e;
+            s::event::convert(m, e);
+            conversation_alert_event(e);
+        }
+
+        void main_window::received_contact_connected(const m::message& m)
+        {
+            REQUIRE_EQUAL(m.meta.type, us::event::CONTACT_CONNECTED);
+
+            us::event::contact_connected r;
+            us::event::convert(m, r);
+            contact_connected_event(r);
+        }
+
+        void main_window::received_contact_disconnected(const m::message& m)
+        {
+            REQUIRE_EQUAL(m.meta.type, us::event::CONTACT_DISCONNECTED);
+
+            us::event::contact_disconnected r;
+            us::event::convert(m, r);
+            contact_disconnected_event(r);
+        }
+
+        void main_window::received_new_introduction(const m::message& m)
+        {
+            REQUIRE_EQUAL(m.meta.type, us::event::NEW_INTRODUCTION);
+
+            us::event::new_introduction n;
+            us::event::convert(m, n);
+            new_intro_event(n);
+        }
+
+        void main_window::received_apps_updated(const m::message& m)
+        {
+            REQUIRE_EQUAL(m.meta.type, a::event::APPS_UPDATED);
+
+            a::event::apps_updated r;
+            a::event::convert(m, r);
+            apps_updated_event(r);
+        }
+
         void main_window::check_mail(m::message m)
         try
         {
             INVARIANT(_mail);
 
-            if(m.meta.type == s::event::NEW_CONVERSATION)
-            {
-                s::event::new_conversation r;
-                s::event::convert(m, r);
-
-                new_conversation_event(r.conversation_id);
-            }
-            else if(m.meta.type == s::event::QUIT_CONVERSATION)
-            {
-                s::event::quit_conversation r;
-                s::event::convert(m, r);
-
-                quit_conversation_event(r.conversation_id);
-            }
-            else if(m.meta.type == s::event::CONVERSATION_SYNCED)
-            {
-                conversation_synced_event(m);
-            }
-            else if(m.meta.type == s::event::CONTACT_REMOVED || m.meta.type == s::event::CONTACT_ADDED)
-            {
-                contact_removed_or_added_from_conversation_event(m);
-            }
-            else if(m.meta.type == s::event::CONVERSATION_ALERT)
-            {
-                s::event::conversation_alert e;
-                s::event::convert(m, e);
-                conversation_alert_event(e);
-            }
-            else if(m.meta.type == us::event::CONTACT_CONNECTED)
-            {
-                us::event::contact_connected r;
-                us::event::convert(m, r);
-                contact_connected_event(r);
-            }
-            else if(m.meta.type == us::event::CONTACT_DISCONNECTED)
-            {
-                us::event::contact_disconnected r;
-                us::event::convert(m, r);
-                contact_disconnected_event(r);
-            }
-            else if(m.meta.type == us::event::NEW_INTRODUCTION)
-            {
-                us::event::new_introduction n;
-                us::event::convert(m, n);
-                new_intro_event(n);
-            }
-            else if(m.meta.type == a::event::APPS_UPDATED)
-            {
-                a::event::apps_updated r;
-                a::event::convert(m, r);
-                apps_updated_event(r);
-            }
-            else
-            {
-                throw std::runtime_error(m.meta.type + " is an unknown message type.");
-            }
+            if(!_service_map.handle(m))
+                LOG << m.meta.type << " is an unknown message type in main window.";
         }
         catch(std::exception& e)
         {
@@ -1050,20 +1113,6 @@ namespace fire
             QWidget* w = _conversations->widget(ri);
             _conversations->removeTab(ri);
             if(w) delete w;
-        }
-
-        void main_window::conversation_synced_event(const m::message& m)
-        {
-            INVARIANT(_conversation_service);
-
-            s::event::conversation_synced e;
-            s::event::convert(m, e);
-
-            auto s = _conversation_service->conversation_by_id(e.conversation_id);
-            if(!s) return;
-
-            CHECK(s->mail());
-            s->mail()->push_inbox(m);
         }
 
         void main_window::conversation_alert_event(const s::event::conversation_alert& e)
