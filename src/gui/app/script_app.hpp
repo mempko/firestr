@@ -40,6 +40,7 @@
 #include "gui/message.hpp"
 
 #include "conversation/conversation_service.hpp"
+#include "service/service.hpp"
 
 #include "message/mailbox.hpp"
 #include "messages/sender.hpp"
@@ -89,6 +90,9 @@ namespace fire
 
                 private:
                     void init();
+                    void init_handlers();
+                    void received_script_message(const fire::message::message&);
+                    void received_event_message(const fire::message::message&);
 
                 private:
                     std::string _from_id;
@@ -107,6 +111,7 @@ namespace fire
                     QWidget* _canvas;
                     QGridLayout* _canvas_layout;
                     QPushButton* _clone;
+                    service::service_map _sm;
             };
 
             extern const std::string SCRIPT_APP;
