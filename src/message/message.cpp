@@ -40,7 +40,6 @@ namespace fire
         std::ostream& operator<<(std::ostream& o, const message& m)
         {
             const metadata& meta = m.meta;
-            const util::bytes& data = m.data;
 
             //write out type
             util::bytes mt = util::to_bytes(meta.type);
@@ -70,7 +69,6 @@ namespace fire
         std::istream& operator>>(std::istream& i, message& m)
         {
             metadata& meta = m.meta;
-            util::bytes& data = m.data;
 
             //read type
             util::bytes mt;
@@ -111,6 +109,7 @@ namespace fire
                 case metadata::symmetric: return "symmetric";
                 case metadata::asymmetric: return "asymmetric";
                 case metadata::plaintext: return "plaintext";
+                case metadata::conversation: return "conversation";
             }
             return "unknown";
         }

@@ -71,16 +71,8 @@ namespace fire
         }
 
         queue_debug::queue_debug(const std::string& name, m::mailbox_stats& stats) :
-            _mailbox{},
-            _mailbox_stats{&stats},
             _name_s{name},
-            _in_max{1},
-            _out_max{1},
-            _x{0},
-            _prev_in_push{0},
-            _prev_out_push{0},
-            _prev_in_pop{0},
-            _prev_out_pop{0}
+            _mailbox_stats{&stats}
         {
             REQUIRE(_mailbox_stats);
             _mailbox_stats->on = true;
@@ -89,14 +81,7 @@ namespace fire
 
         queue_debug::queue_debug(m::mailbox_wptr m) :
             _mailbox{m},
-            _mailbox_stats{nullptr},
-            _in_max{1},
-            _out_max{1},
-            _x{0},
-            _prev_in_push{0},
-            _prev_out_push{0},
-            _prev_in_pop{0},
-            _prev_out_pop{0}
+            _mailbox_stats{nullptr}
         {
             auto mb = m.lock();
             if(!mb) return;
@@ -136,7 +121,7 @@ namespace fire
             if(_mailbox_stats) _mailbox_stats->on = false;
         }
 
-        void draw_graph(QGraphicsView& v, int px, int py, int x, int y, size_t& max_y, const QPen& pen)
+        void draw_graph(QGraphicsView& v, int px, int py, int x, int y, int& max_y, const QPen& pen)
         {
             REQUIRE(v.scene());
             if(y > max_y) max_y = y;
@@ -189,13 +174,11 @@ namespace fire
                 s::conversation_service_ptr ss, 
                 const n::udp_stats& udps,
                 QWidget* parent) :
+            QDialog{parent},
             _post{p},
             _user_service{us},
-            _conversation_service{ss},
             _udp_stats(udps),
-            _log_last_file_pos{0},
-            _total_mailboxes{0},
-            QDialog{parent}
+            _conversation_service{ss}
         {
             REQUIRE(p);
             REQUIRE(us);

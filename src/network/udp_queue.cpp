@@ -81,10 +81,10 @@ namespace fire
         udp_connection::udp_connection(
                 endpoint_queue& in,
                 boost::asio::io_service& io) :
-            _in_queue(in),
-            _socket{new udp::socket{io}},
-            _io(io),
             _in_buffer(MAX_UDP_BUFF_SIZE),
+            _in_queue(in),
+            _io(io),
+            _socket{new udp::socket{io}},
             _writing{false}
         {
             boost::system::error_code error;
@@ -819,8 +819,9 @@ namespace fire
         void udp_run_thread(udp_queue*);
         void resend_thread(udp_queue*);
         udp_queue::udp_queue(const asio_params& p) :
-            _p(p), _done{false},
-            _io{new ba::io_service}
+            _p(p), 
+            _io{new ba::io_service},
+            _done{false}
         {
             REQUIRE_GREATER(_p.local_port, 0);
             _resolver.reset(new udp::resolver{*_io});

@@ -71,13 +71,13 @@ namespace fire
             private:
                 QGraphicsView* _in_graph;
                 QGraphicsView* _out_graph;
-                size_t _in_max;
-                size_t _out_max;
-                size_t _x;
-                size_t _prev_in_push;
-                size_t _prev_out_push;
-                size_t _prev_in_pop;
-                size_t _prev_out_pop;
+                int _in_max = 1;
+                int _out_max = 1;
+                int _x = 0;
+                int _prev_in_push = 0;
+                int _prev_out_push = 0;
+                int _prev_in_pop = 0;
+                int _prev_out_pop = 0;
                 QLabel* _name;
                 std::string _name_s;
                 fire::message::mailbox_wptr _mailbox;
@@ -116,9 +116,9 @@ namespace fire
 
                 added_mailboxes _added_mailboxes;
 
-                size_t _total_mailboxes;
+                size_t _total_mailboxes = 0;
                 QDateTime _log_last_modified;
-                std::streampos _log_last_file_pos;
+                std::streampos _log_last_file_pos = 0;
                 fire::message::post_office_ptr _post;
                 user::user_service_ptr _user_service;
                 const network::udp_stats& _udp_stats;

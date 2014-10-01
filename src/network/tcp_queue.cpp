@@ -74,13 +74,13 @@ namespace fire
                 std::mutex& in_mutex,
                 bool track,
                 bool con) :
+            _state{ con ? connected : disconnected},
             _io(io),
             _in_queue(in),
             _in_mutex(in_mutex),
             _last_in_socket(last_in),
             _track{track},
             _socket{new tcp::socket{io}},
-            _state{ con ? connected : disconnected},
             _writing{false},
             _retries{RETRIES}
         {
@@ -477,8 +477,9 @@ namespace fire
         void tcp_run_thread(tcp_queue*);
         void keep_alive_thread(tcp_queue*);
         tcp_queue::tcp_queue(const asio_params& p) : 
-            _p(p), _done{false},
-            _io{new ba::io_service}
+            _p(p), 
+            _io{new ba::io_service},
+            _done{false}
         {
             switch(_p.mode)
             {
@@ -689,7 +690,6 @@ namespace fire
         {
             CHECK(q);
             CHECK(q->_io);
-            size_t ticks = 0;
             if(q->_out) q->_out->send_keep_alive();
 
             while(!q->_done) 

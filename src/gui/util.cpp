@@ -109,9 +109,9 @@ namespace fire
                 q.setText("Update App?");
                 q.setInformativeText("App already exists in your collection, update it?");
                 auto *ub = q.addButton(w->tr("Update"), QMessageBox::ActionRole);
-                auto *cb = q.addButton(w->tr("New Version"), QMessageBox::ActionRole);
+                q.addButton(w->tr("New Version"), QMessageBox::ActionRole);
                 auto *canb = q.addButton(QMessageBox::Cancel);
-                auto ret = q.exec();
+                q.exec();
                 if(q.clickedButton() == canb) return false;
 
                 overwrite = q.clickedButton() == ub;

@@ -1844,14 +1844,14 @@ namespace SLB {
     bool syntaxError = luaL_loadstring(L,code.str().c_str()) != 0;
     if(syntaxError)
     {
-        const char *s = lua_tostring(L,-1);
+        lua_tostring(L,-1);
         _lastError = lua_tostring(L,-1);
         _lastErrorLine = parseErrorLine(_lastError);
         result = false;
     }
     else if(_errorHandler->call(_lua_state, 0, 0))
     {
-      const char *s = lua_tostring(L,-1);
+      lua_tostring(L,-1);
       _lastError = lua_tostring(L,-1);
       _lastErrorLine = _errorHandler->errorLine();
       result = false;

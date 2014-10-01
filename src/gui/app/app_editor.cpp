@@ -246,10 +246,9 @@ namespace fire
                 _app_service{app_service},
                 _conversation_service{conversation_s},
                 _conversation{conversation},
+                _code{conversation->user_service()->user().info().id()},
                 _app{app},
-                _prev_pos{0},
-                _run_state{READY},
-                _code{conversation->user_service()->user().info().id()}
+                _run_state{READY}
             {
                 REQUIRE(app_service);
                 REQUIRE(conversation_s);
@@ -278,10 +277,9 @@ namespace fire
                 _app_service{app_service},
                 _conversation_service{conversation_s},
                 _conversation{conversation},
+                _code{conversation->user_service()->user().info().id()},
                 _app{app},
-                _prev_pos{0},
-                _run_state{READY},
-                _code{conversation->user_service()->user().info().id()}
+                _run_state{READY}
                 
             {
                 REQUIRE(app_service);
@@ -980,15 +978,10 @@ namespace fire
             void app_editor::init_update()
             {
                 //ask for script first time on startup
-                switch(_started)
-                {
-                    case start_state::GET_CODE: 
-                        {
-                            ask_for_script();
-                            _started = start_state::DONE_START;
-                        }
-                        break;
-                }
+                if(_started != start_state::GET_CODE) return;
+
+                ask_for_script();
+                _started = start_state::DONE_START;
             }
 
             void app_editor::update()

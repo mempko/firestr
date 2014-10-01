@@ -61,10 +61,10 @@ namespace fire
                 s::conversation_service_ptr conversation_service,
                 s::conversation_ptr conversation,
                 a::app_service_ptr app_service) :
-            _conversation_service{conversation_service},
+            _messages{new message_list{app_service, conversation_service, conversation}},
             _conversation{conversation},
-            _app_service{app_service},
-            _messages{new message_list{app_service, conversation_service, conversation}}
+            _conversation_service{conversation_service},
+            _app_service{app_service}
         {
             REQUIRE(conversation_service);
             REQUIRE(conversation);

@@ -57,9 +57,9 @@ namespace fire
                 a::app_service_ptr app_service,
                 s::conversation_service_ptr conversation_s,
                 s::conversation_ptr conversation) :
-            _app_service{app_service},
             _conversation_service{conversation_s},
-            _conversation{conversation}
+            _conversation{conversation},
+            _app_service{app_service}
         {
             REQUIRE(app_service);
             REQUIRE(conversation_s);

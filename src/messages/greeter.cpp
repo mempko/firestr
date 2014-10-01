@@ -69,7 +69,7 @@ namespace fire
         }
 
         greet_key_response::greet_key_response(const std::string& key) :
-            _pub_key{key}, _host{}, _port{} {}
+             _host{}, _port{}, _pub_key{key} {}
 
         greet_key_response::greet_key_response(const m::message& m)
         {

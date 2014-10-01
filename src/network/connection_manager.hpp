@@ -43,7 +43,7 @@ namespace fire
 {
     namespace network 
     {
-        using assignment_map = std::unordered_map<std::string, int>; 
+        using assignment_map = std::unordered_map<std::string, size_t>; 
         using tcp_connection_pool = std::vector<tcp_queue_ptr>;
         using connection_map = std::unordered_map<std::string, connection*>; 
 

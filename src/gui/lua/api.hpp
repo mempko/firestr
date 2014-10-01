@@ -125,7 +125,7 @@ namespace fire
                     timer_map timers;
 
                     //id functions
-                    int ids;
+                    int ids = 0;
                     int new_id();
 
                     //observable functions

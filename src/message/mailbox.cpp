@@ -37,8 +37,8 @@ namespace fire
     {
         mailbox_stats::mailbox_stats() :
             in_push_count{0},
-            out_push_count{0},
             in_pop_count{0},
+            out_push_count{0},
             out_pop_count{0},
             on{false}
         {

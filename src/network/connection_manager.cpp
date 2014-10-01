@@ -45,10 +45,10 @@ namespace fire
         void tcp_send_thread(connection_manager*);
 
         connection_manager::connection_manager(size_t size, port_type local_port, bool tcp_listen) :
-            _tcp_listen{tcp_listen},
+            _rstate{receive_state::IN_UDP1},
             _pool(size),
             _local_port{local_port},
-            _rstate{receive_state::IN_UDP1},
+            _tcp_listen{tcp_listen},
             _done{false}
         {
             teardown_and_repool_tcp_connections();
@@ -242,10 +242,12 @@ namespace fire
         catch(std::exception& e)
         {
             LOG << "error connecting to `" << address << "'. " << e.what() << std::endl; 
+            return tcp_queue_ptr{};
         }
         catch(...)
         {
             LOG << "unknown error connecting to `" << address << "'." << std::endl; 
+            return tcp_queue_ptr{};
         }
 
         bool connection_manager::send(const std::string& to, const u::bytes& b, bool robust)
@@ -274,10 +276,12 @@ namespace fire
         catch(std::exception& e)
         {
             LOG << "error sending message to `" << to << "' (" << b.size() << " bytes). " << e.what() << std::endl; 
+            return false;
         }
         catch(...)
         {
             LOG << "unknown error sending message to `" << to << "' (" << b.size() << " bytes)." << std::endl; 
+            return false;
         }
 
         void connection_manager::transition_udp_state()

@@ -42,8 +42,8 @@ namespace fire
     {
         mail_service::mail_service(message::mailbox_ptr m, QObject* parent) : 
             QThread{parent},
-            _mail{m},
-            _done{false}
+            _done{false},
+            _mail{m}
         {
             REQUIRE(parent);
             REQUIRE(m);

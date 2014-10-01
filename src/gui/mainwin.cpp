@@ -82,26 +82,6 @@ namespace fire
         }
 
         main_window::main_window(const main_window_context& c) :
-            _start_screen{0},
-            _start_screen_attached{false},
-            _alert_screen{0},
-            _alerts{0},
-            _mail{0},
-            _master{0},
-            _about_action{0},
-            _close_action{0},
-            _create_conversation_action{0},
-            _rename_conversation_action{0},
-            _quit_conversation_action{0},
-            _debug_window_action{0},
-            _main_menu{0},
-            _contact_menu{0},
-            _app_menu{0},
-            _debug_menu{0},
-            _root{0},
-            _layout{0},
-            _conversations{0},
-            _focus{true},
             _context(c)
         {
             setWindowIcon(logo());

@@ -76,13 +76,12 @@ namespace fire
                     QGridLayout* cl,
                     list* o ) :
                 app{a},
-                sender{sndr},
-                conversation{s},
-                conversation_service{ss},
+                output{o},
                 canvas{c},
                 layout{cl},
-                output{o},
-                ids{0},
+                conversation{s},
+                conversation_service{ss},
+                sender{sndr},
                 _error{}
             {
 				_error.line = -1;
@@ -1097,10 +1096,12 @@ namespace fire
                 std::stringstream s;
                 s << "error in make_pen: " << e.what();
                 report_error(s.str());
+                return QPen{QColor{"red"}};
             }
             catch(...)
             {
                 report_error("error in make_pen: unknown");
+                return QPen{QColor{"red"}};
             }
 
             draw_ref lua_api::make_draw(int width, int height)
