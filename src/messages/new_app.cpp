@@ -46,8 +46,8 @@ namespace fire
                 const std::string& type) :
             _id{id},
             _type{type},
-            _data{},
-            _from_id{}
+            _from_id{},
+            _data{}
         {
         }
 
@@ -57,8 +57,8 @@ namespace fire
                 const u::bytes& data) :
             _id{id},
             _type{type},
-            _data{data},
-            _from_id{}
+            _from_id{},
+            _data{data}
         {
         }
 

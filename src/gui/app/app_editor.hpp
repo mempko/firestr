@@ -206,7 +206,7 @@ namespace fire
                     lua::lua_api_ptr _api;
                     app_ptr _app;
                     std::string _prev_code;
-                    int _prev_pos;
+                    int _prev_pos = 0;
                     enum run_state { CODE_CHANGED, DONE_TYPING, READY};
                     run_state  _run_state;
                     enum start_state { GET_CODE, DONE_START};

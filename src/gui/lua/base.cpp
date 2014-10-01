@@ -544,7 +544,7 @@ namespace fire
 
                         //lua arrays start with 1
                         if(ik != 0) ik --;
-                        if(ik >= a->size()) a->resize(ik + 1);
+                        if(ik >= static_cast<int>(a->size())) a->resize(ik + 1);
 
                         (*a)[ik] = v;
                     }

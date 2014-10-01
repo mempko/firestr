@@ -146,41 +146,41 @@ namespace fire
                 void conversation_alert_event(const conversation::event::conversation_alert&);
 
             private:
-                QMenu *_main_menu;
-                QAction *_close_action;
-                QAction *_about_action;
+                QMenu *_main_menu = nullptr;
+                QAction *_close_action = nullptr;
+                QAction *_about_action = nullptr;
 
-                QMenu *_contact_menu;
-                QAction *_create_invite_action;
-                QAction *_add_contact_action;
-                QAction *_contact_list_action;
+                QMenu *_contact_menu = nullptr;
+                QAction *_create_invite_action = nullptr;
+                QAction *_add_contact_action = nullptr;
+                QAction *_contact_list_action = nullptr;
 
-                QMenu *_conversation_menu;
-                QAction *_create_conversation_action;
-                QAction *_rename_conversation_action;
-                QAction *_quit_conversation_action;
+                QMenu *_conversation_menu = nullptr;
+                QAction *_create_conversation_action = nullptr;
+                QAction *_rename_conversation_action = nullptr;
+                QAction *_quit_conversation_action = nullptr;
 
-                QMenu *_app_menu;
-                QAction *_chat_app_action;
-                QAction *_app_editor_action;
-                QAction *_install_app_action;
+                QMenu *_app_menu = nullptr;
+                QAction *_chat_app_action = nullptr;
+                QAction *_app_editor_action = nullptr;
+                QAction *_install_app_action = nullptr;
 
-                QMenu *_debug_menu;
-                QAction *_debug_window_action;
+                QMenu *_debug_menu = nullptr;
+                QAction *_debug_window_action = nullptr;
 
-                MainTabs* _conversations;
-                QWidget* _start_screen;
-                bool _start_screen_attached;
+                MainTabs* _conversations = nullptr;
+                QWidget* _start_screen = nullptr;
+                bool _start_screen_attached = false;
 
-                QWidget* _alert_screen;
-                list* _alerts;
+                QWidget* _alert_screen = nullptr;
+                list* _alerts = nullptr;
                 int _alert_tab_index;
 
-                QWidget* _root;
-                QVBoxLayout* _layout;
+                QWidget* _root = nullptr;
+                QVBoxLayout* _layout = nullptr;
 
             private:
-                mail_service* _mail_service;
+                mail_service* _mail_service = nullptr;
                 fire::message::post_office_ptr _master;
                 fire::message::mailbox_ptr _mail;
                 fire::security::encrypted_channels_ptr _encrypted_channels;
@@ -188,7 +188,7 @@ namespace fire
                 conversation::conversation_service_ptr _conversation_service;
                 app::app_service_ptr _app_service;
                 main_window_context _context;
-                bool _focus;
+                bool _focus = true;
                 service::service_map _service_map;
         };
     }

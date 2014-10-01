@@ -80,8 +80,8 @@ namespace fire
                 const std::string& address, 
                 message::mailbox_ptr event) :
             _address{address},
-            _event{event},
-            _done{false}
+            _done{false},
+            _event{event}
         {
             REQUIRE_FALSE(address.empty());
 

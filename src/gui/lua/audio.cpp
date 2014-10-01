@@ -174,7 +174,8 @@ namespace fire
                 return {t};
             }
 
-            microphone::microphone(lua_api* api, int id, const std::string& codec) : _api{api}, _id{id}
+            microphone::microphone(lua_api* api, int id, const std::string& codec) :  
+                _id{id}, _api{api}
             {
                 REQUIRE(api);
                 INVARIANT(_api);
@@ -201,7 +202,7 @@ namespace fire
                 LOG << "using mic device: " << convert(_inf.deviceName()) << std::endl;
                 _i = new QAudioInput{_inf, _f, _api->canvas};
 
-                CHECK_GREATER_EQUAL(_f.sampleRate(), SAMPLE_RATE);
+                CHECK_GREATER_EQUAL(static_cast<size_t>(_f.sampleRate()), SAMPLE_RATE);
                 _skip = _f.sampleRate() / SAMPLE_RATE;
                 _channels = _f.channelCount();
 
@@ -243,7 +244,7 @@ namespace fire
                 const auto sdz = nz / 2;
 
                 int accum = 0;
-                int c = 1;
+                size_t c = 1;
                 size_t si = 0;
                 auto di = odz / 2;
 
@@ -290,8 +291,8 @@ namespace fire
                 INVARIANT(_i);
 
                 auto len = _i->bytesReady();
-                if(len == 0) return {};
-                if(len > MAX_SAMPLE_BYTES) len = MAX_SAMPLE_BYTES;
+                if(len <= 0) return {};
+                if(static_cast<size_t>(len) > MAX_SAMPLE_BYTES) len = MAX_SAMPLE_BYTES;
 
                 u::bytes data;
                 data.resize(len);
@@ -419,7 +420,7 @@ namespace fire
 
                 _o = new QAudioOutput{i, _f, _api};
 
-                CHECK_GREATER_EQUAL(_f.sampleRate(), SAMPLE_RATE);
+                CHECK_GREATER_EQUAL(static_cast<size_t>(_f.sampleRate()), SAMPLE_RATE);
                 _rep = _f.sampleRate() / SAMPLE_RATE;
                 _channels = _f.channelCount();
 

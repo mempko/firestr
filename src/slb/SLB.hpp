@@ -1617,7 +1617,7 @@ namespace SLB
 
         CallException(const std::string& m, int l) : 
             std::runtime_error(m.c_str()), 
-            message(m), errorLine(l) {}
+            errorLine(l), message(m) {}
         ~CallException() throw () {}
     };
 

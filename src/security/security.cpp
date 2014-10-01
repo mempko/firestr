@@ -169,7 +169,7 @@ namespace fire
             INVARIANT_FALSE(_ks.empty());
         }
 
-        public_key::public_key(const public_key& pk) : _k{}, _ks{pk._ks}
+        public_key::public_key(const public_key& pk) : _ks{pk._ks}, _k{}
         {
             if(!pk._k) return;
 

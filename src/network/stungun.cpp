@@ -178,7 +178,7 @@ namespace fire
 
             //create request
             out_header(out);
-            auto id = out_tranaction_id(out);
+            out_tranaction_id(out);
             out_empty_change_request(out);
             fix_length_field(out);
 
@@ -199,10 +199,10 @@ namespace fire
 
         stun_gun::stun_gun(QObject* parent, const std::string& stun_server, const std::string stun_port, const std::string port) :
             QObject{parent},
+            _state{stun_in_progress},
             _stun_server{stun_server}, 
             _stun_port{stun_port}, 
-            _int_port{port},
-            _state{stun_in_progress}
+            _int_port{port}
         {
             REQUIRE(parent);
 
@@ -289,7 +289,7 @@ namespace fire
         {
             attributes as;
 
-            auto size = in.device()->size();
+            size_t size = in.device()->size();
             size_t read = HEADER_SIZE;
             bool ok = true;
             while(ok && read < size)

@@ -673,11 +673,12 @@ namespace fire
         void ping_thread(user_service* s)
         try
         {
-            size_t send_ticks = 0;
-            size_t reconnect_ticks = 0;
             REQUIRE(s);
             REQUIRE(s->_user);
             REQUIRE(s->_encrypted_channels);
+
+            size_t send_ticks = 0;
+
             while(!s->_done)
             try
             {
