@@ -54,6 +54,7 @@ elseif(CMAKE_HOST_WIN32)
 
 else()
     #botan
+    add_definitions(-Wall -Werror)
     include_directories(/usr/include/botan-1.10/)
 endif()
 
