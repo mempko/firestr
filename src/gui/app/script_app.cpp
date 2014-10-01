@@ -110,7 +110,6 @@ namespace fire
                 REQUIRE(as);
                 REQUIRE_FALSE(id.empty());
 
-                init_handlers();
                 init();
 
                 INVARIANT(_api);
@@ -138,6 +137,8 @@ namespace fire
                 INVARIANT(layout());
                 INVARIANT(_conversation);
                 INVARIANT(_app);
+
+                init_handlers();
 
                 _clone = new QPushButton("+");
                 _clone->setMaximumSize(15,15);
