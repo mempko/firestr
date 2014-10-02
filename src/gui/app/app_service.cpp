@@ -103,10 +103,28 @@ namespace fire
                 u::create_directory(_app_home);
                 load_apps();
 
+                init_handlers();
+                start();
+
                 INVARIANT(_user_service);
                 INVARIANT(_sender);
                 INVARIANT_FALSE(_app_home.empty());
                 INVARIANT_FALSE(_tmp_app_home.empty());
+            }
+
+            void app_service::init_handlers()
+            {
+                using std::bind;
+                using namespace std::placeholders;
+
+                //sevices require at least one handler
+                //so creating a nop to satify requirements
+                handle("_", bind(&app_service::received_nop, this, _1));
+            }
+
+            void app_service::received_nop(const m::message& m)
+            {
+                //do nothing ATM
             }
 
             user::user_service_ptr app_service::user_service()

@@ -101,6 +101,7 @@ namespace fire
                         conversation_ptr conversation);
 
             private:
+                void init_handlers();
                 void fire_new_conversation_event(const std::string& id);
                 void fire_quit_conversation_event(const std::string& id);
                 void fire_conversation_synced_event(const std::string& id);

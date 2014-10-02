@@ -199,6 +199,8 @@ namespace fire
             init_ping();
             init_reconnect();
 
+            start();
+
             INVARIANT(_user);
             INVARIANT(_encrypted_channels);
             INVARIANT(mail());

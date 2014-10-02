@@ -47,6 +47,7 @@ namespace fire
         {
             REQUIRE(s);
             REQUIRE(s->_mail);
+            REQUIRE_GREATER(s->_sm.total_handlers(), 0);
 
             while(!s->_done)
             try
@@ -87,11 +88,8 @@ namespace fire
 
             _mail = std::make_shared<m::mailbox>(_address);
 
-            //start user thread
-            _thread.reset(new std::thread{service_thread, this});
-
             INVARIANT(_mail);
-            INVARIANT(_thread);
+            INVARIANT(_thread == nullptr);
         }
 
         service::~service()
@@ -108,6 +106,16 @@ namespace fire
         {
             ENSURE(_mail);
             return _mail;
+        }
+
+        void service::start()
+        {
+            REQUIRE(_thread == nullptr);
+
+            //start user thread
+            _thread.reset(new std::thread{service_thread, this});
+
+            ENSURE(_thread);
         }
 
         void service::send_event(const message::message& e)
@@ -136,6 +144,11 @@ namespace fire
             //call handler
             (h->second)(m);
             return true;
+        }
+
+        size_t service_map::total_handlers() const
+        {
+            return _h.size();
         }
     }
 }
