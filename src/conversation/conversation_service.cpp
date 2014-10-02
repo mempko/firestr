@@ -205,19 +205,14 @@ namespace fire
             _post{post},
             _user_service{user_service}
         {
-            using std::bind;
-            using namespace std::placeholders;
-
             REQUIRE(post);
             REQUIRE(user_service);
             REQUIRE(mail());
 
             _sender = std::make_shared<ms::sender>(_user_service, mail());
 
-            handle(SYNC_CONVERSATION, bind(&conversation_service::received_sync, this, _1));
-            handle(QUIT_CONVERSATION, bind(&conversation_service::received_quit, this, _1));
-            handle(ASK_CONTACT_REQ, bind(&conversation_service::received_ask_contact_req, this, _1));
-            handle(ASK_CONTACT_RES, bind(&conversation_service::received_ask_contact_res, this, _1));
+            init_handlers();
+            start();
 
             INVARIANT(_post);
             INVARIANT(_user_service);
@@ -238,6 +233,17 @@ namespace fire
                 CHECK(s.second);
                 quit_conversation(s.second->id());
             }
+        }
+
+        void conversation_service::init_handlers()
+        {
+            using std::bind;
+            using namespace std::placeholders;
+
+            handle(SYNC_CONVERSATION, bind(&conversation_service::received_sync, this, _1));
+            handle(QUIT_CONVERSATION, bind(&conversation_service::received_quit, this, _1));
+            handle(ASK_CONTACT_REQ, bind(&conversation_service::received_ask_contact_req, this, _1));
+            handle(ASK_CONTACT_RES, bind(&conversation_service::received_ask_contact_res, this, _1));
         }
 
         void conversation_service::received_sync(const message::message& m)

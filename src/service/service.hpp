@@ -53,6 +53,7 @@ namespace fire
             public:
                 void handle(const std::string& type, message_handler);
                 bool handle(const message::message& m);
+                size_t total_handlers() const;
 
             private:
                 handler_map _h;
@@ -67,6 +68,7 @@ namespace fire
                 virtual ~service();
 
             public:
+                void start();
                 message::mailbox_ptr mail();
 
             protected:

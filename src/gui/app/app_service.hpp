@@ -75,6 +75,8 @@ namespace fire
                     void fire_apps_updated_event();
 
                 private:
+                    void init_handlers();
+                    void received_nop(const fire::message::message&);
                     void load_apps();
 
                 private:
