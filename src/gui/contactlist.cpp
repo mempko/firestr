@@ -770,31 +770,43 @@ namespace fire
             //load contact file
             us::contact_file cf;
 
-            if(!us::load_contact_file(file, cf)) return false; 
+            bool added = false;
 
-            //add greeter
-            if(!cf.greeter.empty())
+            if(us::load_contact_file(file, cf)) 
             {
-                bool found = false;
-                for(const auto& s : us->user().greeters())
+                //add greeter
+                if(!cf.greeter.empty())
                 {
-                    auto a = greet_address(s);
-                    if(a == cf.greeter) {found = true; break;}
+                    bool found = false;
+                    for(const auto& s : us->user().greeters())
+                    {
+                        auto a = greet_address(s);
+                        if(a == cf.greeter) {found = true; break;}
+                    }
+                    if(found) cf.greeter = "";
                 }
-                if(found) cf.greeter = "";
-            }
 
-            //add contact
-            if(!us->confirm_contact(cf)) return false;
+                //add contact
+                added = us->confirm_contact(cf);
+            }
 
             if(p)
             {
                 std::stringstream ss;
-                ss << "`" << cf.contact.name() << "' has been added";
-                QMessageBox::information(p, p->tr("Contact Added"), ss.str().c_str());
+                if(added)
+                {
+                    ss << "`" << cf.contact.name() << "' has been added";
+                    QMessageBox::information(p, p->tr("Contact Added"), ss.str().c_str());
+                }
+                else
+                {
+                    ss << "There is something wrong with the invite file." << std::endl;
+                    ss << "Could not understand `" << file << "'" << std::endl;
+                    QMessageBox::critical(p, p->tr("Error Adding Contact"), ss.str().c_str());
+                }
             }
             
-            return true;
+            return added;
         }
 
         void add_contact_gui(us::user_service_ptr s, QWidget* p)
