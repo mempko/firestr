@@ -55,6 +55,7 @@ namespace fire
         {
             public:
                 value();
+                value(bool v);
                 value(int v);
                 value(size_t v);
                 value(double v);
@@ -65,6 +66,7 @@ namespace fire
                 value(const value& o);
 
             public:
+                operator bool() const;
                 operator int() const;
                 operator size_t() const;
                 operator double() const;
@@ -74,6 +76,7 @@ namespace fire
                 operator array() const;
 
             public:
+                value& operator=(bool v);
                 value& operator=(int v);
                 value& operator=(size_t v);
                 value& operator=(double v);
@@ -84,6 +87,7 @@ namespace fire
                 value& operator=(const value& o);
 
             public:
+                bool as_bool() const;
                 int as_int() const;
                 size_t as_size() const;
                 double as_double() const;
@@ -95,6 +99,7 @@ namespace fire
                 array& as_array();
                 
             public:
+                bool is_bool() const;
                 bool is_int() const;
                 bool is_size() const;
                 bool is_double() const;

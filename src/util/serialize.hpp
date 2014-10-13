@@ -46,6 +46,7 @@ namespace fire
         class mencode_out
         {
             public:
+                void operator()(bool t) { _v = t; }
                 void operator()(int t) { _v = t; }
                 void operator()(size_t t) { _v = t; }
                 void operator()(double t) { _v = t; }
@@ -135,6 +136,7 @@ namespace fire
                     tn.serialize(*this);
                 }
 
+                void operator()(const std::string& k, bool t) { _d[k] = t; }
                 void operator()(const std::string& k, int t) { _d[k] = t; }
                 void operator()(const std::string& k, size_t t) { _d[k] = t; }
                 void operator()(const std::string& k, double t) { _d[k] = t; }
@@ -191,6 +193,7 @@ namespace fire
                 mencode_in(const dict& d) : _d{d} { }
 
             public:
+                void operator()(bool& t) {  t = _v; }
                 void operator()(int& t) {  t = _v; }
                 void operator()(size_t& t) {  t = _v; }
                 void operator()(double& t) {  t = _v; }
@@ -210,7 +213,7 @@ namespace fire
                         typename C::value_type tv;
                         mencode_in in{v};
                         in(tv);
-                        t.emplace(t.end(), tv);
+                        t.insert(t.end(), tv);
                     }
                 }
 
@@ -224,7 +227,7 @@ namespace fire
                         typename C::value_type tv;
                         mencode_in in{v};
                         in(tv);
-                        t.emplace(t.end(), tv);
+                        t.insert(t.end(), tv);
                     }
                 }
 
@@ -281,6 +284,7 @@ namespace fire
                     t.serialize(*this);
                 }
 
+                void operator()(const std::string& k, bool& t) {  t = _d[k]; }
                 void operator()(const std::string& k, int& t) {  t = _d[k]; }
                 void operator()(const std::string& k, size_t& t) {  t = _d[k]; }
                 void operator()(const std::string& k, double& t) {  t = _d[k]; }
