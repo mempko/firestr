@@ -59,7 +59,6 @@ namespace fire
                 value(size_t v);
                 value(double v);
                 value(const std::string& v);
-                value(const char* v);
                 value(const bytes& v);
                 value(const dict& v);
                 value(const array& v);
@@ -79,7 +78,6 @@ namespace fire
                 value& operator=(size_t v);
                 value& operator=(double v);
                 value& operator=(const std::string& v);
-                value& operator=(const char* v);
                 value& operator=(const bytes& v);
                 value& operator=(const dict& v);
                 value& operator=(const array& v);
