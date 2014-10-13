@@ -142,5 +142,5 @@ namespace std
 }
 
 #define f_message(c) struct c : fire::message::as_message<c>
-#define f_message_init(c, ct) c() : fire::message::as_message<c>{ct} {};
+#define f_message_init(c, ct) c() : fire::message::as_message<c>(ct) {}
 #endif 
