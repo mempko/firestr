@@ -1,4 +1,4 @@
-[Fire★](http://www.firestr.com) (Pronounced Fire Star) 0.3
+[Fire★](http://www.firestr.com) (Pronounced Fire Star) 0.4
 ===================================================================
 
 Fire★ is a simple distributed, decentralized communication 
