@@ -100,12 +100,8 @@ namespace fire
                 extern const std::string APPS_UPDATED;
                 f_message(apps_updated) 
                 {
-                    bool nop = true;
                     f_message_init(apps_updated, APPS_UPDATED);
-                    f_serialize
-                    {
-                        f_s(nop);
-                    }
+                    f_serialize_empty;
                 };
             }
         }
