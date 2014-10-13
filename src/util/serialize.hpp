@@ -55,8 +55,10 @@ namespace fire
                 void operator()(const array& t) { _v = t; }
                 void operator()(const value& t) { _v = t; }
 
-            template <class T>
-                void operator()(const std::vector<T>& t)
+
+
+            template <class C>
+                void out_collection(const C& t)
                 {
                     array a;
                     for(const auto& v : t)
@@ -68,8 +70,8 @@ namespace fire
                     _v = a;
                 }
 
-            template <class T>
-                void operator()(const std::list<T>& t)
+            template <class C>
+                void out_collection(const std::string& k, const C& t)
                 {
                     array a;
                     for(const auto& v : t)
@@ -78,37 +80,11 @@ namespace fire
                         o(v);
                         a.add(o.val());
                     }
-                    _v = a;
+                    _d[k] = a;
                 }
 
-            template <class T>
-                void operator()(const std::set<T>& t)
-                {
-                    array a;
-                    for(const auto& v : t)
-                    {
-                        mencode_out o;
-                        o(v);
-                        a.add(o.val());
-                    }
-                    _v = a;
-                }
-
-            template <class T>
-                void operator()(const std::map<std::string, T>& t)
-                {
-                    dict d;
-                    for(const auto& v : t)
-                    {
-                        mencode_out o;
-                        o(o, v.second);
-                        d[v.first] = o.val();
-                    }
-                    _v = d;
-                }
-
-            template <class T>
-                void operator()(const std::unordered_map<std::string, T>& t)
+            template <class M>
+                void out_map(const M& t)
                 {
                     dict d;
                     for(const auto& v : t)
@@ -119,6 +95,39 @@ namespace fire
                     }
                     _v = d;
                 }
+
+            template <class M>
+                void out_map(const std::string& k, const M& t)
+                {
+                    dict d;
+                    for(const auto& v : t)
+                    {
+                        mencode_out o;
+                        o(v.second);
+                        d[v.first] = o.val();
+                    }
+                    _d[k] = d;
+                }
+
+            template <class T>
+                void operator()(const std::vector<T>& t) 
+                { out_collection(t); }
+
+            template <class T>
+                void operator()(const std::list<T>& t) 
+                { out_collection(t); }
+
+            template <class T>
+                void operator()(const std::set<T>& t) 
+                { out_collection(t); }
+
+            template <class T>
+                void operator()(const std::map<std::string, T>& t) 
+                { out_map(t); }
+
+            template <class T>
+                void operator()(const std::unordered_map<std::string, T>& t) 
+                { out_map(t); }
 
                 template<class T>
                 void operator()(const T& t) { 
@@ -136,69 +145,24 @@ namespace fire
                 void operator()(const std::string& k, const value& t) { _d[k] = t; }
 
             template <class T>
-                void operator()(const std::string& k, const std::vector<T>& t)
-                {
-                    array a;
-                    for(const auto& v : t)
-                    {
-                        mencode_out o;
-                        o(v);
-                        a.add(o.val());
-                    }
-                    _d[k] = a;
-                }
+                void operator()(const std::string& k, const std::vector<T>& t) 
+                { out_collection(k, t); }
 
             template <class T>
-                void operator()(const std::string& k, const std::list<T>& t)
-                {
-                    array a;
-                    for(const auto& v : t)
-                    {
-                        mencode_out o;
-                        o(v);
-                        a.add(o.val());
-                    }
-                    _d[k] = a;
-                }
+                void operator()(const std::string& k, const std::list<T>& t) 
+                { out_collection(k, t); }
 
             template <class T>
-                void operator()(const std::string& k, const std::set<T>& t)
-                {
-                    array a;
-                    for(const auto& v : t)
-                    {
-                        mencode_out o;
-                        o(v);
-                        a.add(o.val());
-                    }
-                    _d[k] = a;
-                }
+                void operator()(const std::string& k, const std::set<T>& t) 
+                { out_collection(k, t); }
 
             template <class T>
-                void operator()(const std::string& k, const std::map<std::string, T>& t)
-                {
-                    dict d;
-                    for(const auto& v : t)
-                    {
-                        mencode_out o;
-                        o(o, v.second);
-                        d[v.first] = o.val();
-                    }
-                    _d[k] = d;
-                }
+                void operator()(const std::string& k, const std::map<std::string, T>& t) 
+                { out_map(k, t); }
 
             template <class T>
-                void operator()(const std::string& k, const std::unordered_map<std::string, T>& t)
-                {
-                    dict d;
-                    for(const auto& v : t)
-                    {
-                        mencode_out o;
-                        o(v.second);
-                        d[v.first] = o.val();
-                    }
-                    _d[k] = d;
-                }
+                void operator()(const std::string& k, const std::unordered_map<std::string, T>& t) 
+                { out_map(k, t); }
 
             template <class T>
                 void operator()(const std::string& k, const T& t)
@@ -236,56 +200,56 @@ namespace fire
                 void operator()(array& t) {  t = _v; }
                 void operator()(value& t) {  t = _v; }
 
-            template <class T>
-                void operator()(std::vector<T>& t)
+            template <class C>
+                void in_collection(C& t)
                 {
                     t.clear();
                     const auto& a = _v.as_array();
                     for(const auto& v : a)
                     {
-                        T tv;
+                        typename C::value_type tv;
                         mencode_in in{v};
                         in(tv);
-                        t.emplace_back(tv);
+                        t.emplace(t.end(), tv);
                     }
                 }
 
-            template <class T>
-                void operator()(std::list<T>& t)
+            template <class C>
+                void in_collection(const std::string& k, C& t)
                 {
                     t.clear();
-                    const auto& a = _v.as_array();
+                    const auto& a = _d[k].as_array();
                     for(const auto& v : a)
                     {
-                        T tv;
+                        typename C::value_type tv;
                         mencode_in in{v};
                         in(tv);
-                        t.emplace_back(tv);
+                        t.emplace(t.end(), tv);
                     }
                 }
 
-            template <class T>
-                void operator()(std::set<T>& t)
-                {
-                    t.clear();
-                    const auto& a = _v.as_array();
-                    for(const auto& v : a)
-                    {
-                        T tv;
-                        mencode_in in{v};
-                        in(tv);
-                        t.insert(t.end(), tv);
-                    }
-                }
-
-            template <class T>
-                void operator()(std::map<std::string, T>& t)
+            template <class M>
+                void in_map(M& t)
                 {
                     t.clear();
                     const auto& d = _v.as_dict();
                     for(const auto& v : d)
                     {
-                        T tv;
+                        typename M::mapped_type tv;
+                        mencode_in in{v.second};
+                        in(tv);
+                        t[v.first] = tv;
+                    }
+                }
+
+            template <class M>
+                void in_map(const std::string& k, M& t)
+                {
+                    t.clear();
+                    const auto& d = _d[k].as_dict();
+                    for(const auto& v : d)
+                    {
+                        typename M::mapped_type tv;
                         mencode_in in{v.second};
                         in(tv);
                         t[v.first] = tv;
@@ -293,18 +257,24 @@ namespace fire
                 }
 
             template <class T>
-                void operator()(std::unordered_map<std::string, T>& t)
-                {
-                    t.clear();
-                    const auto& d = _v.as_dict();
-                    for(const auto& v : d)
-                    {
-                        T tv;
-                        mencode_in in{v.second};
-                        in(tv);
-                        t[v.first] = tv;
-                    }
-                }
+                void operator()(std::vector<T>& t) 
+                { in_collection(t); }
+
+            template <class T>
+                void operator()(std::list<T>& t) 
+                { in_collection(t); }
+
+            template <class T>
+                void operator()(std::set<T>& t) 
+                { in_collection(t); }
+
+            template <class T>
+                void operator()(std::map<std::string, T>& t) 
+                { in_map(t); }
+
+            template <class T>
+                void operator()(std::unordered_map<std::string, T>& t) 
+                { in_map(t); }
 
                 template<class T>
                 void operator()(T& t) { 
@@ -321,74 +291,24 @@ namespace fire
                 void operator()(const std::string& k, value& t) {  t = _d[k]; }
 
             template <class T>
-                void operator()(const std::string& k, std::vector<T>& t)
-                {
-                    t.clear();
-                    const auto& a = _d[k].as_array();
-                    for(const auto& v : a)
-                    {
-                        T tv;
-                        mencode_in in{v};
-                        in(tv);
-                        t.emplace_back(tv);
-                    }
-                }
+                void operator()(const std::string& k, std::vector<T>& t) 
+                { in_collection(k, t); }
 
             template <class T>
-                void operator()(const std::string& k, std::list<T>& t)
-                {
-                    t.clear();
-                    const auto& a = _d[k].as_array();
-                    for(const auto& v : a)
-                    {
-                        T tv;
-                        mencode_in in{v};
-                        in(tv);
-                        t.emplace_back(tv);
-                    }
-                }
+                void operator()(const std::string& k, std::list<T>& t) 
+                { in_collection(k, t); }
 
             template <class T>
-                void operator()(const std::string& k, std::set<T>& t)
-                {
-                    t.clear();
-                    const auto& a = _d[k].as_array();
-                    for(const auto& v : a)
-                    {
-                        T tv;
-                        mencode_in in{v};
-                        in(tv);
-                        t.insert(t.end(), tv);
-                    }
-                }
+                void operator()(const std::string& k, std::set<T>& t) 
+                { in_collection(k, t); }
 
             template <class T>
-                void operator()(const std::string& k, std::map<std::string, T>& t)
-                {
-                    t.clear();
-                    const auto& d = _d[k].as_dict();
-                    for(const auto& v : d)
-                    {
-                        T tv;
-                        mencode_in in{v.second};
-                        in(tv);
-                        t[v.first] = tv;
-                    }
-                }
+                void operator()(const std::string& k, std::map<std::string, T>& t) 
+                { in_map(k, t); }
 
             template <class T>
-                void operator()(const std::string& k, std::unordered_map<std::string, T>& t)
-                {
-                    t.clear();
-                    const auto& d = _d[k].as_dict();
-                    for(const auto& v : d)
-                    {
-                        T tv;
-                        mencode_in in{v.second};
-                        in(tv);
-                        t[v.first] = tv;
-                    }
-                }
+                void operator()(const std::string& k, std::unordered_map<std::string, T>& t) 
+                { in_map(k, t); }
 
             template <class T>
                 void operator()(const std::string& k, T& t)
