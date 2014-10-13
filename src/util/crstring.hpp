@@ -49,6 +49,7 @@ namespace fire
         class cr_string
         {
             public:
+                cr_string();
                 cr_string(const std::string& id);
                 cr_string(const tracked_sclock& c, const std::string& s);
 
