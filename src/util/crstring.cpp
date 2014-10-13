@@ -38,6 +38,7 @@ namespace fire
 {
     namespace util 
     {
+        cr_string::cr_string() : _c{""} {}
         cr_string::cr_string(const std::string& id) : _c{id} {}
         cr_string::cr_string(const tracked_sclock& c, const std::string& s) : _c{c}, _s{s} {}
 
