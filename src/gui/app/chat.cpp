@@ -37,6 +37,7 @@
 #include "util/log.hpp"
 #include "util/time.hpp"
 #include "util/uuid.hpp"
+#include "util/serialize.hpp"
 
 namespace m = fire::message;
 namespace ms = fire::messages;
@@ -59,27 +60,16 @@ namespace fire
                 const std::string MESSAGE = "m";
             }
 
-            struct text_message
+            f_message(text_message)
             {
-                std::string from_id;
                 std::string text;
+
+                f_message_init(text_message, MESSAGE);
+                f_serialize
+                {
+                    f_sk("t", text);
+                }
             };
-
-            m::message convert(const text_message& t)
-            {
-                m::message m;
-                m.meta.type = MESSAGE;
-                m.data = u::to_bytes(t.text);
-
-                return m;
-            }
-
-            void convert(const m::message& m, text_message& t)
-            {
-                REQUIRE_EQUAL(m.meta.type, MESSAGE);
-                t.from_id = m.meta.extra["from_id"].as_string();
-                t.text = u::to_str(m.data);
-            }
 
             QWidget* make_message_widget(const std::string& name, const std::string& text)
             {
@@ -197,7 +187,7 @@ namespace fire
                 {
                     CHECK(c);
                     if(!_conversation->user_service()->contact_available(c->id())) continue;
-                    _sender->send(c->id(), convert(tm)); 
+                    _sender->send(c->id(), tm.to_message()); 
                     sent = true;
                 }
 
@@ -216,7 +206,7 @@ namespace fire
                 if(m.meta.type == MESSAGE)
                 {
                     text_message t;
-                    convert(m, t);
+                    t.from_message(m);
 
                     auto c = _conversation->contacts().by_id(t.from_id);
                     if(!c) return;
