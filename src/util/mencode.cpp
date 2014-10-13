@@ -46,7 +46,6 @@ namespace fire
         value::value(size_t v) : _v{v} {}
         value::value(double v) : _v{v} {}
         value::value(const std::string& v) : _v{to_bytes(v)} {}
-        value::value(const char* v) : _v{to_bytes(v)} {}
         value::value(const bytes& v) : _v{v} {}
         value::value(const dict& v) : _v{v} {}
         value::value(const array& v) : _v{v} {}
@@ -64,7 +63,6 @@ namespace fire
         value& value::operator=(size_t v) { _v = v; return *this;}
         value& value::operator=(double v) { _v = v; return *this;}
         value& value::operator=(const std::string& v) { _v = to_bytes(v); return *this;}
-        value& value::operator=(const char* v) { _v = to_bytes(v); return *this;}
         value& value::operator=(const bytes& v) { _v = v; return *this;}
         value& value::operator=(const dict& v) { _v = v; return *this;}
         value& value::operator=(const array& v) { _v = v; return *this;}
