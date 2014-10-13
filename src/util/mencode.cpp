@@ -42,6 +42,7 @@ namespace fire
         using boost::lexical_cast;
 
         value::value() : _v{} {}
+        value::value(bool v) : _v{v} {}
         value::value(int v) : _v{v} {}
         value::value(size_t v) : _v{v} {}
         value::value(double v) : _v{v} {}
@@ -51,6 +52,7 @@ namespace fire
         value::value(const array& v) : _v{v} {}
         value::value(const value& o) : _v{o._v} {}
 
+        value::operator bool() const { return as_bool();}
         value::operator int() const { return as_int();}
         value::operator size_t() const { return as_size();}
         value::operator double() const { return as_double();}
@@ -59,6 +61,7 @@ namespace fire
         value::operator dict() const { return as_dict();}
         value::operator array() const { return as_array();}
 
+        value& value::operator=(bool v) { _v = v; return *this;}
         value& value::operator=(int v) { _v = v; return *this;}
         value& value::operator=(size_t v) { _v = v; return *this;}
         value& value::operator=(double v) { _v = v; return *this;}
@@ -71,6 +74,16 @@ namespace fire
             if(&o == this) return *this;
             _v = o._v; 
             return *this;
+        }
+
+        bool value::as_bool() const 
+        try
+        { 
+            return boost::any_cast<bool>(_v); 
+        }
+        catch (...)
+        {
+            throw std::runtime_error("value is not an boolean");
         }
 
         int value::as_int() const 
@@ -163,6 +176,7 @@ namespace fire
             throw std::runtime_error("value is not an array");
         }
                 
+        bool value::is_bool() const { return _v.type() == typeid(bool);}
         bool value::is_int() const { return _v.type() == typeid(int);}
         bool value::is_size() const { return _v.type() == typeid(size_t);}
         bool value::is_double() const { return _v.type() == typeid(double);}
@@ -250,6 +264,7 @@ namespace fire
             o << s << lexical_cast<std::string>(v) << e;
         }
 
+        void encode(std::ostream& o, bool v) { o << ( v ? 'T' : 'F'); }
         void encode(std::ostream& o, int v) { enc(o, 'i', ';', v); }
         void encode(std::ostream& o, size_t v) { enc(o, 's', ';', v); }
         void encode(std::ostream& o, double v) { enc(o, 'r', ';', v); }
@@ -291,6 +306,7 @@ namespace fire
         void encode(std::ostream& o, const value& v)
         {
             if(v.empty()) encode_empty(o);
+            else if(v.is_bool()) encode(o, v.as_bool());
             else if(v.is_int()) encode(o, v.as_int());
             else if(v.is_size()) encode(o, v.as_size());
             else if(v.is_double()) encode(o, v.as_double());
@@ -361,6 +377,23 @@ namespace fire
                 return lexical_cast<t>(sv);
             }
 
+        bool decode_bool(std::istream& i) 
+        { 
+            bool r = false;
+            int c = i.get();
+            if(!i.good()) return r;
+
+            if(c == 'T') r = true;
+            else if(c == 'F') { /*do nothing*/}
+            else
+            {
+                std::stringstream e;
+                e << "expected boolean at byte " << i.tellg();
+                throw std::runtime_error{e.str()}; 
+            }
+            return r;
+        }
+
         int decode_int(std::istream& i) 
         { 
             return dec<int>(i, "int", 'i', ';'); 
@@ -425,7 +458,8 @@ namespace fire
             int c = i.peek();
             if(!i.good()) return v;
 
-            if(c == 'i') v = decode_int(i);
+            if(c == 'F' || c == 'T') v = decode_bool(i);
+            else if(c == 'i') v = decode_int(i);
             else if(c == 's') v = decode_size(i);
             else if(c == 'r') v = decode_double(i);
             else if(c == 'd') v = decode_dict(i);
