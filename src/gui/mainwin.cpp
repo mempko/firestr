@@ -820,7 +820,7 @@ namespace fire
             REQUIRE_EQUAL(m.meta.type, a::event::APPS_UPDATED);
 
             a::event::apps_updated r;
-            a::event::convert(m, r);
+            r.from_message(m);
 
             apps_updated_event(r);
         }
