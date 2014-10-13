@@ -35,6 +35,7 @@
 #include "gui/util.hpp"
 #include "util/dbc.hpp"
 #include "util/log.hpp"
+#include "util/serialize.hpp"
 #include "util/string.hpp"
 #include "util/uuid.hpp"
 
@@ -181,59 +182,42 @@ namespace fire
                 const std::string SCRIPT_INIT_MESSAGE = "init";
             }
 
-            struct text_script
+            f_message(text_script)
             {
-                text_script(const u::cr_string& c) : code(c){}
                 bool init = false;
-                std::string from_id;
                 u::cr_string code;
                 u::bytes data;
+
+                f_message_init(text_script, SCRIPT_CODE_MESSAGE);
+                f_serialize_in
+                {
+                    if(f_has("i")) f_sk("i", init);
+
+                    std::string c;
+                    f_sk("c", c);
+
+                    u::dict ld;
+                    f_sk("l", ld);
+                    auto l = u::to_tracked_sclock(ld);
+
+                    code = u::cr_string{l, c};
+                    f_sk("d", data);
+                }
+
+                f_serialize_out
+                {
+                    if(init) f_sk("i", init);
+                    f_sk("c", code.str());
+                    f_sk("l", u::to_dict(code.clock()));
+                    f_sk("d", data);
+                }
             };
 
-            struct script_init
+            f_message(script_init)
             {
-                std::string from_id;
+                f_message_init(script_init, SCRIPT_INIT_MESSAGE);
+                f_serialize_empty;
             };
-
-            m::message convert(const text_script& t)
-            {
-                m::message m;
-                m.meta.type = SCRIPT_CODE_MESSAGE;
-                if(t.init) m.meta.extra["i"] = 1;
-                m.meta.extra["c"] = t.code.str();
-                m.meta.extra["l"] = u::to_dict(t.code.clock());
-                m.data = t.data;
-
-                return m;
-            }
-
-            text_script to_text_script(const m::message& m)
-            {
-                REQUIRE_EQUAL(m.meta.type, SCRIPT_CODE_MESSAGE);
-
-                auto clock = u::to_tracked_sclock(m.meta.extra["l"].as_dict());
-                auto code = m.meta.extra["c"].as_string();
-
-                text_script t{u::cr_string{clock, code}};
-
-                t.init = m.meta.extra.has("i");
-                t.from_id = m.meta.extra["from_id"].as_string();
-                t.data = m.data;
-                return t;
-            }
-
-            m::message create_script_init_message()
-            {
-                m::message m;
-                m.meta.type = SCRIPT_INIT_MESSAGE;
-                return m;
-            }
-
-            void convert(const m::message& m, script_init& t)
-            {
-                REQUIRE_EQUAL(m.meta.type, SCRIPT_INIT_MESSAGE);
-                t.from_id = m.meta.extra["from_id"].as_string();
-            }
 
             app_editor::app_editor(
                     app_service_ptr app_service, 
@@ -802,23 +786,26 @@ namespace fire
                 INVARIANT(_api);
 
                 //set the code
-                text_script tm{_code};
+                text_script tm;
+                tm.code = _code;
                 if(!prepare_script_message(tm, send_data)) return;
 
                 //send it all
+                auto m = tm.to_message();
                 for(auto c : _conversation->contacts().list())
                 {
                     CHECK(c);
-                    _sender->send(c->id(), convert(tm)); 
+                    _sender->send(c->id(), m); 
                 }
             }
 
             void app_editor::send_script_to(const std::string& id)
             {
-                text_script tm{_code};
+                text_script tm;
+                tm.code = _code;
                 if(!prepare_script_message(tm, true)) return;
 
-                _sender->send(id, convert(tm)); 
+                _sender->send(id, tm.to_message()); 
             }
 
             void app_editor::ask_for_script()
@@ -829,7 +816,8 @@ namespace fire
 
                 //if from self, return
                 if(_from_id == _conversation->user_service()->user().info().id()) return;
-                _sender->send(_from_id, create_script_init_message());
+                script_init init;
+                _sender->send(_from_id, init.to_message());
             }
 
             bool app_editor::run_script()
@@ -1069,7 +1057,8 @@ namespace fire
                 INVARIANT(_conversation);
                 INVARIANT(_app);
 
-                auto t = to_text_script(m);
+                text_script t;
+                t.from_message(m);
                 auto c = _conversation->contacts().by_id(t.from_id);
                 if(!c) return;
 
@@ -1118,7 +1107,7 @@ namespace fire
                 INVARIANT(_conversation);
 
                 script_init i;
-                convert(m, i);
+                i.from_message(m);
 
                 auto c = _conversation->contacts().by_id(i.from_id);
                 if(!c) return;

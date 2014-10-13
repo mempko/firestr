@@ -109,7 +109,7 @@ namespace fire
                     lua::lua_api* _api;
             };
 
-            class text_script;
+            struct text_script;
             class app_editor : public message
             {
                 Q_OBJECT
