@@ -37,6 +37,7 @@
 
 #include "util/env.hpp"
 #include "util/log.hpp"
+#include "util/serialize.hpp"
 
 #include <string>
 #include <cstdlib>
@@ -96,7 +97,6 @@ fn::port_type get_port(const std::string& home, fn::port_type cmd_port)
     return cached_port != 0 ? cached_port : cmd_port;
 }
 
-
 int main(int argc, char *argv[])
 try
 {
@@ -135,10 +135,12 @@ try
 catch(std::exception& e)
 {
     LOG << "program quit prematurely: " << e.what() << std::endl;
+    return 1;
 }
 catch(...)
 {
     LOG << "program quit prematurely: unknown reason" << std::endl;
+    return 1;
 }
 
 #ifdef _WIN64

@@ -318,7 +318,7 @@ namespace fire
             m::expect_local(m);
 
             us::event::contact_disconnected r;
-            us::event::convert(m, r);
+            r.from_message(m);
 
             auto c = _conversation->contacts().by_id(r.id);
             if(!c) return;

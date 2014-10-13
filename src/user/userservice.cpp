@@ -37,6 +37,7 @@
 #include "util/string.hpp"
 #include "util/dbc.hpp"
 #include "util/log.hpp"
+#include "util/serialize.hpp"
 
 #include <stdexcept>
 #include <ctime>
@@ -99,67 +100,33 @@ namespace fire
             r.state = m.data.size() == 1 ? m.data[0] : DISCONNECTED;
         }
 
-        struct ping_request 
+        f_message(ping_request)
         {
-            std::string to;
-            std::string from_id;
-            std::string from_ip;
-            int from_port;
             u::bytes public_secret;
             int send_back;
+
+            f_message_init(ping_request, PING_REQUEST);
+            f_serialize
+            {
+                f_s(send_back);
+                f_s(public_secret);
+            }
         };
 
-        m::message convert(const ping_request& r)
-        {
-            m::message m;
-            m.meta.type = PING_REQUEST;
-            m.meta.to = {r.to, SERVICE_ADDRESS};
-            m.meta.extra["from_id"] = r.from_id;
-            m.meta.extra["send_back"] = r.send_back;
-            m.meta.extra["public_secret"] = r.public_secret;
-
-            return m;
-        }
-
-        void convert(const m::message& m, ping_request& r)
-        {
-            REQUIRE_EQUAL(m.meta.type, PING_REQUEST);
-            REQUIRE_FALSE(m.meta.from.empty());
-            r.from_id = m.meta.extra["from_id"].as_string();
-            r.from_ip = m.meta.extra["from_ip"].as_string();
-            r.from_port = m.meta.extra["from_port"].as_int();
-            r.public_secret = m.meta.extra["public_secret"].as_bytes();
-            r.send_back = m.meta.extra["send_back"];
-        }
-
-        struct register_with_greeter
+        f_message(register_with_greeter) 
         {
             std::string tcp_addr;
             std::string udp_addr;
             std::string pub_key;
+
+            f_message_init(register_with_greeter, REGISTER_WITH_GREETER);
+            f_serialize
+            {
+                f_s(tcp_addr);
+                f_s(udp_addr);
+                f_s(pub_key);
+            }
         };
-
-        m::message convert(const register_with_greeter& r)
-        {
-            m::message m;
-            m.meta.type = REGISTER_WITH_GREETER;
-            m.meta.extra["tcp_addr"] = r.tcp_addr;
-            m.meta.extra["udp_addr"] = r.udp_addr;
-            m.meta.extra["pub_key"] = r.pub_key;
-            m.meta.to = {SERVICE_ADDRESS}; 
-
-            return m;
-        }
-
-        void convert(const m::message& m, register_with_greeter& r)
-        {
-            REQUIRE_EQUAL(m.meta.type, REGISTER_WITH_GREETER);
-            REQUIRE_FALSE(m.meta.from.empty());
-
-            r.tcp_addr = m.meta.extra["tcp_addr"].as_string();
-            r.udp_addr = m.meta.extra["udp_addr"].as_string();
-            r.pub_key = m.meta.extra["pub_key"].as_string();
-        }
 
         m::message convert(const std::string& to, const contact_introduction& in)
         {
@@ -290,9 +257,12 @@ namespace fire
             //tcp and udp register...
             auto tcp_s = n::make_tcp_address(g.host(), g.port());
             auto udp_s = n::make_udp_address(g.host(), g.port());
-            register_with_greeter r{tcp_s, udp_s, g.public_key()};
+            register_with_greeter r;
+            r.tcp_addr = tcp_s;
+            r.udp_addr = udp_s;
+            r.pub_key = g.public_key();
 
-            m::message m = convert(r);
+            m::message m = r.to_message();
             m.meta.to = {SERVICE_ADDRESS};
             mail()->push_outbox(m);
         }
@@ -412,7 +382,7 @@ namespace fire
             m::expect_asymmetric(m);
 
             ping_request r;
-            convert(m, r);
+            r.from_message(m);
 
             auto c = by_id(r.from_id);
             if(!c) return;
@@ -453,7 +423,7 @@ namespace fire
             m::expect_local(m);
 
             register_with_greeter r;
-            convert(m, r);
+            r.from_message(m);
             do_regiser_with_greeter(r.tcp_addr, r.udp_addr, r.pub_key);
         }
 
@@ -796,17 +766,15 @@ namespace fire
             INVARIANT(mail());
 
             const auto& s = _encrypted_channels->get_channel(address);
-            ping_request a
-            {
-                address, 
-                _user->info().id(), "", 0, //the ip and port will be filled in on other side
-                s.shared_secret.public_value(),
-                send_back
-            };
+            ping_request a;
+            a.from_id =_user->info().id(); 
+            a.public_secret = s.shared_secret.public_value(),
+            a.send_back = send_back;
 
             //we need to force using PK encryption here because of DH timing
             //to setup the shared key
-            auto m = convert(a);
+            auto m = a.to_message();
+            m.meta.to = {address, SERVICE_ADDRESS};
             m.meta.encryption = m::metadata::encryption_type::asymmetric;
             mail()->push_outbox(m);
         }
@@ -865,8 +833,9 @@ namespace fire
             bool state_changed = contact_connected(id);
             if(!state_changed) return;
 
-            event::contact_connected e{id};
-            send_event(event::convert(e));
+            event::contact_connected e;
+            e.id = id;
+            send_event(e.to_message());
         }
 
         void user_service::fire_contact_disconnected_event(const std::string& id)
@@ -888,8 +857,10 @@ namespace fire
             {
                 LOG << cd.contact->name() << " disconnected" << std::endl;
                 _encrypted_channels->remove_channel(cd.contact->address());
-                event::contact_disconnected e{id, cd.contact->name()};
-                send_event(event::convert(e));
+                event::contact_disconnected e;
+                e.id = id;
+                e.name = cd.contact->name();
+                send_event(e.to_message());
             }
             else CHECK(prev_state == contact_data::CONNECTING);
 
@@ -898,8 +869,9 @@ namespace fire
 
         void user_service::fire_new_introduction(size_t i)
         {
-            event::new_introduction n{i};
-            send_event(event::convert(n));
+            event::new_introduction n;
+            n.index = i;
+            send_event(n.to_message());
         }
 
 #ifdef _WIN64
@@ -1039,50 +1011,6 @@ namespace fire
             const std::string CONTACT_CONNECTED = "contact_con";
             const std::string CONTACT_DISCONNECTED = "contact_discon";
             const std::string NEW_INTRODUCTION = "new_introduction";
-
-            m::message convert(const contact_connected& c)
-            {
-                m::message m;
-                m.meta.type = CONTACT_CONNECTED;
-                m.data = u::to_bytes(c.id);
-                return m;
-            }
-
-            void convert(const m::message& m, contact_connected& c)
-            {
-                REQUIRE_EQUAL(m.meta.type, CONTACT_CONNECTED);
-                c.id = u::to_str(m.data);
-            }
-
-            m::message convert(const contact_disconnected& c)
-            {
-                m::message m;
-                m.meta.type = CONTACT_DISCONNECTED;
-                m.meta.extra["name"] = c.name;
-                m.data = u::to_bytes(c.id);
-                return m;
-            }
-
-            void convert(const m::message& m, contact_disconnected& c)
-            {
-                REQUIRE_EQUAL(m.meta.type, CONTACT_DISCONNECTED);
-                c.id = u::to_str(m.data);
-                c.name = m.meta.extra["name"].as_string();
-            }
-
-            m::message convert(const new_introduction& c)
-            {
-                m::message m;
-                m.meta.type = NEW_INTRODUCTION;
-                m.meta.extra["index"] = c.index;
-                return m;
-            }
-
-            void convert(const m::message& m, new_introduction& ni)
-            {
-                REQUIRE_EQUAL(m.meta.type, NEW_INTRODUCTION);
-                ni.index = m.meta.extra["index"].as_size();
-            }
         }
     }
 }

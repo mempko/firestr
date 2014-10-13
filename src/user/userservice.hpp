@@ -194,18 +194,41 @@ namespace fire
             extern const std::string CONTACT_DISCONNECTED;
             extern const std::string NEW_INTRODUCTION;
 
-            struct contact_connected { std::string id; };
-            struct contact_disconnected { std::string id; std::string name;};
-            struct new_introduction { size_t index;};
+            f_message(contact_connected)
+            { 
+                std::string id; 
 
-            message::message convert(const contact_connected&);
-            void convert(const message::message&, contact_connected&);
+                f_message_init(contact_connected, CONTACT_CONNECTED);
+                f_serialize 
+                { 
+                    f_s(id); 
+                }
+            };
 
-            message::message convert(const contact_disconnected&);
-            void convert(const message::message&, contact_disconnected&);
+            f_message(contact_disconnected)
+            { 
+                std::string id; 
+                std::string name;
 
-            message::message convert(const new_introduction&);
-            void convert(const message::message&, new_introduction&);
+                f_message_init(contact_disconnected, CONTACT_DISCONNECTED);
+                f_serialize 
+                { 
+                    f_s(id); 
+                    f_s(name); 
+                }
+            };
+
+            f_message(new_introduction)
+            { 
+                size_t index;
+
+                f_message_init(new_introduction, NEW_INTRODUCTION);
+                f_serialize
+                {
+                    f_s(index);
+                }
+            };
+
         }
     }
 }

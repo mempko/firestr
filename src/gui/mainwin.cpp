@@ -789,7 +789,7 @@ namespace fire
             REQUIRE_EQUAL(m.meta.type, us::event::CONTACT_CONNECTED);
 
             us::event::contact_connected r;
-            us::event::convert(m, r);
+            r.from_message(m);
             contact_connected_event(r);
         }
 
@@ -798,7 +798,7 @@ namespace fire
             REQUIRE_EQUAL(m.meta.type, us::event::CONTACT_DISCONNECTED);
 
             us::event::contact_disconnected r;
-            us::event::convert(m, r);
+            r.from_message(m);
             contact_disconnected_event(r);
         }
 
@@ -807,7 +807,7 @@ namespace fire
             REQUIRE_EQUAL(m.meta.type, us::event::NEW_INTRODUCTION);
 
             us::event::new_introduction n;
-            us::event::convert(m, n);
+            n.from_message(m);
             new_intro_event(n);
         }
 
@@ -1130,7 +1130,7 @@ namespace fire
 
             //display alert
             show_alert(w);
-            _conversation_service->broadcast_message(us::event::convert(r));
+            _conversation_service->broadcast_message(r.to_message());
         }
 
         void main_window::contact_disconnected_event(const us::event::contact_disconnected& r)
@@ -1149,7 +1149,7 @@ namespace fire
 
             //display alert
             show_alert(w);
-            _conversation_service->broadcast_message(us::event::convert(r));
+            _conversation_service->broadcast_message(r.to_message());
         }
 
         void main_window::new_intro_event(const user::event::new_introduction& i)
