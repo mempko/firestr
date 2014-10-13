@@ -322,6 +322,7 @@ namespace fire
                 }
 
             value val() const { return _d.size() ? value(_d) : _v;}
+            const dict& dct() const { return _d;}
 
             private:
                 value _v;
@@ -346,6 +347,10 @@ namespace fire
 }
 
 #define f_serialize template<class ar> void serialize(ar& a)
+#define f_serialize_in void serialize(fire::util::mencode_in& a)
+#define f_serialize_out void serialize(fire::util::mencode_out& a)
+#define f_serialize_empty template<class ar> void serialize(ar&) {}
+#define f_has(k) a.dct().has(k)
 #define f_s(x) a(#x, x)
 #define f_sk(k, x) a(k, x)
 
