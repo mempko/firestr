@@ -35,8 +35,10 @@
 #include <iostream>
 #include <deque>
 
+#include "util/serialize.hpp"
 #include "util/mencode.hpp"
 #include "util/bytes.hpp"
+#include "util/dbc.hpp"
 
 namespace fire
 {
@@ -80,6 +82,56 @@ namespace fire
         void expect_asymmetric(const message& m);
         void expect_plaintext(const message& m);
 
+
+
+        /**
+         * Converts your data structure into a message.
+         * Datastructure must have util::serialize method using f_serialize
+         */
+        template <class C>
+            struct as_message
+            {
+                const std::string type;
+                std::string from_id;
+                std::string from_ip;
+                int from_port = 0;
+
+                explicit as_message(const std::string& t) : type{t} {}
+
+                message to_message() const
+                {
+                    message m;
+                    m.meta.type = type;
+                    if(!from_id.empty()) m.meta.extra["from_id"] = from_id;
+                    if(!from_ip.empty()) m.meta.extra["from_ip"] = from_ip;
+                    if(from_port != 0) m.meta.extra["from_port"] = from_port;
+
+                    //serialize structure
+                    CHECK(this);
+                    const C& self = reinterpret_cast<const C&>(*this);
+                    util::serialize(m.data, self);
+
+                    ENSURE_EQUAL(m.meta.type, type);
+                    return m;
+                }
+
+                void from_message(const message& m)
+                {
+                    REQUIRE_EQUAL(m.meta.type, type);
+
+                    if(m.meta.extra.has("from_id")) 
+                        from_id = m.meta.extra["from_id"].as_string();
+                    if(m.meta.extra.has("from_ip")) 
+                        from_ip = m.meta.extra["from_ip"].as_string();
+                    if(m.meta.extra.has("from_port")) 
+                        from_port = m.meta.extra["from_port"];
+
+                    CHECK(this);
+                    C& self = reinterpret_cast<C&>(*this);
+                    util::deserialize(m.data, self);
+                }
+            };
+
     }
 
 }
@@ -88,4 +140,7 @@ namespace std
 {
     std::ostream& operator<<(std::ostream&, fire::message::address);
 }
+
+#define f_message(c) struct c : fire::message::as_message<c>
+#define f_message_init(c, ct) c() : fire::message::as_message<c>{ct} {};
 #endif 
