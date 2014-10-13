@@ -271,24 +271,12 @@ namespace fire
             void app_service::fire_apps_updated_event()
             {
                 event::apps_updated e;
-                send_event(event::convert(e));
+                send_event(e.to_message());
             }
 
             namespace event
             {
                 const std::string APPS_UPDATED = "apps_updated";
-
-                m::message convert(const apps_updated&)
-                {
-                    m::message m;
-                    m.meta.type = APPS_UPDATED;
-                    return m;
-                }
-
-                void convert(const m::message& m, apps_updated& e)
-                {
-                    REQUIRE_EQUAL(m.meta.type, APPS_UPDATED);
-                }
             }
 
         }
