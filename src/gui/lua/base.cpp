@@ -238,7 +238,7 @@ namespace fire
                 return good;
             }
 
-            const std::string EVENT_MESSAGE = "evt";
+            const std::string EVENT_MESSAGE = "#e";
             event_message::event_message(
                     const std::string& obj,
                     const std::string& type,
@@ -273,7 +273,7 @@ namespace fire
                 return m;
             }
 
-            const std::string SCRIPT_MESSAGE = "event_msg";
+            const std::string SCRIPT_MESSAGE = "#s";
             script_message::script_message(lua_api* api) : 
                 _from_id{}, _v{}, _api{api} 
                 { 
