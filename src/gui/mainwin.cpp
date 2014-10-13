@@ -737,7 +737,7 @@ namespace fire
             REQUIRE_EQUAL(m.meta.type, s::event::NEW_CONVERSATION);
 
             s::event::new_conversation r;
-            s::event::convert(m, r);
+            r.from_message(m);
 
             new_conversation_event(r.conversation_id);
         }
@@ -747,7 +747,7 @@ namespace fire
             REQUIRE_EQUAL(m.meta.type, s::event::QUIT_CONVERSATION);
 
             s::event::quit_conversation r;
-            s::event::convert(m, r);
+            r.from_message(m);
 
             quit_conversation_event(r.conversation_id);
         }
@@ -757,7 +757,7 @@ namespace fire
             REQUIRE_EQUAL(m.meta.type, s::event::CONVERSATION_SYNCED);
 
             s::event::conversation_synced e;
-            s::event::convert(m, e);
+            e.from_message(m);
 
             INVARIANT(_conversation_service);
 
@@ -780,7 +780,8 @@ namespace fire
             REQUIRE_EQUAL(m.meta.type, s::event::CONVERSATION_ALERT);
 
             s::event::conversation_alert e;
-            s::event::convert(m, e);
+            e.from_message(m);
+
             conversation_alert_event(e);
         }
 
@@ -790,6 +791,7 @@ namespace fire
 
             us::event::contact_connected r;
             r.from_message(m);
+
             contact_connected_event(r);
         }
 
@@ -799,6 +801,7 @@ namespace fire
 
             us::event::contact_disconnected r;
             r.from_message(m);
+
             contact_disconnected_event(r);
         }
 
@@ -808,6 +811,7 @@ namespace fire
 
             us::event::new_introduction n;
             n.from_message(m);
+
             new_intro_event(n);
         }
 
@@ -817,6 +821,7 @@ namespace fire
 
             a::event::apps_updated r;
             a::event::convert(m, r);
+
             apps_updated_event(r);
         }
 

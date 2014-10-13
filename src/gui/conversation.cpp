@@ -268,7 +268,7 @@ namespace fire
             m::expect_local(m);
 
             s::event::contact_removed r;
-            s::event::convert(m, r);
+            r.from_message(m);
 
             if(r.conversation_id != _conversation->id()) return;
 
@@ -290,7 +290,7 @@ namespace fire
             m::expect_local(m);
 
             s::event::contact_added r;
-            s::event::convert(m, r);
+            r.from_message(m);
 
             if(r.conversation_id != _conversation->id()) return;
 

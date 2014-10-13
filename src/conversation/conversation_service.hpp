@@ -132,56 +132,82 @@ namespace fire
         namespace event
         {
             extern const std::string NEW_CONVERSATION;
-            struct new_conversation
+            f_message(new_conversation)
             {
                 std::string conversation_id;
+
+                f_message_init(new_conversation, NEW_CONVERSATION);
+                f_serialize
+                {
+                    f_s(conversation_id);
+                }
             };
-            message::message convert(const new_conversation&);
-            void convert(const message::message&, new_conversation&);
 
             extern const std::string QUIT_CONVERSATION;
-            struct quit_conversation
+            f_message(quit_conversation)
             {
                 std::string conversation_id;
-            };
-            message::message convert(const quit_conversation&);
-            void convert(const message::message&, quit_conversation&);
 
+                f_message_init(quit_conversation, QUIT_CONVERSATION);
+                f_serialize
+                {
+                    f_s(conversation_id);
+                }
+            };
 
             extern const std::string CONVERSATION_SYNCED;
-            struct conversation_synced
+            f_message(conversation_synced)
             {
                 std::string conversation_id;
+
+                f_message_init(conversation_synced, CONVERSATION_SYNCED);
+                f_serialize
+                {
+                    f_s(conversation_id);
+                }
             };
-            message::message convert(const conversation_synced&);
-            void convert(const message::message&, conversation_synced&);
 
             extern const std::string CONTACT_REMOVED;
-            struct contact_removed
+            f_message(contact_removed)
             {
                 std::string conversation_id;
                 std::string contact_id;
+
+                f_message_init(contact_removed, CONTACT_REMOVED);
+                f_serialize
+                {
+                    f_s(conversation_id);
+                    f_s(contact_id);
+                }
             };
-            message::message convert(const contact_removed&);
-            void convert(const message::message&, contact_removed&);
 
             extern const std::string CONTACT_ADDED;
-            struct contact_added
+            f_message(contact_added)
             {
                 std::string conversation_id;
                 std::string contact_id;
+
+                f_message_init(contact_added, CONTACT_ADDED);
+                f_serialize
+                {
+                    f_s(conversation_id);
+                    f_s(contact_id);
+                }
             };
-            message::message convert(const contact_added&);
-            void convert(const message::message&, contact_added&);
 
             extern const std::string CONVERSATION_ALERT;
-            struct conversation_alert
+            f_message(conversation_alert)
             {
                 std::string conversation_id;
                 bool visible;
+
+                f_message_init(conversation_alert, CONVERSATION_ALERT);
+                f_serialize
+                {
+                    f_s(conversation_id);
+                    f_s(visible);
+                }
             };
-            message::message convert(const conversation_alert&);
-            void convert(const message::message&, conversation_alert&);
         }
     }
 }
