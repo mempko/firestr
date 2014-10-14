@@ -688,7 +688,7 @@ namespace fire
             if(!s) return;
 
             //load app
-            auto id = convert(qid);
+            std::string id = convert(qid);
             s->add_script_app(id);
         }
 

@@ -351,23 +351,24 @@ namespace fire
             INVARIANT(_messages);
 
             //find the app in the current conversation with the address specified
-            auto ad = std::find_if(_conversation->apps().begin(), _conversation->apps().end(), 
-                    [&](const s::app_metadatum& app) -> bool { return app.address == m.app_address;});
+            auto a = _conversation->apps().find(m.app_address);
 
-            if(ad == _conversation->apps().end()) return;
+            if(a == _conversation->apps().end()) return;
+
+            const auto& ad = a->second;
 
             //encode app from app catalog if it is a script app
             u::bytes encoded_app;
-            if(ad->type == SCRIPT_APP)
+            if(ad.type == SCRIPT_APP)
             {
-                auto ap = _messages->apps().find(ad->address);
+                auto ap = _messages->apps().find(ad.address);
                 if(ap == _messages->apps().end()) return;
                 m::message app_message = *ap->second;
                 encoded_app = u::encode(app_message);
             }
 
             //send the app back to the person who requested it.
-            ms::new_app n{ad->address, ad->type, encoded_app}; 
+            ms::new_app n{ad.address, ad.type, encoded_app}; 
             _conversation->send(m.from_id, n);
         }
 

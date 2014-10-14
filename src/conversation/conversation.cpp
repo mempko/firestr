@@ -250,7 +250,7 @@ namespace fire
 
         bool conversation::has_app(const std::string& address) const
         {
-            return _app_addresses.count(address) > 0;
+            return _app_metadata.count(address) > 0;
         }
 
         void conversation::add_app(const app_metadatum& d)
@@ -258,8 +258,7 @@ namespace fire
             REQUIRE(d.type != SCRIPT_APP || !d.id.empty());
             REQUIRE_FALSE(d.type.empty());
             REQUIRE_FALSE(d.address.empty());
-            _app_metadata.push_back(d);
-            _app_addresses.insert(d.address);
+            _app_metadata[d.address] = d;
         }
 
         bool conversation::send(const std::string& to, const message::message& m)

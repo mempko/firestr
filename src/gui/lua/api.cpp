@@ -652,9 +652,11 @@ namespace fire
                 const auto& apps = conversation->apps();
                 if(i >= apps.size()) return empty_app_ref(*this);
 
-                CHECK_FALSE(apps[i].address.empty());
+                auto ai = apps.begin(); 
+                std::advance(ai, i);
+                CHECK_FALSE(ai->second.address.empty());
 
-                auto id = apps[i].address;
+                auto id = ai->second.address;
 
                 app_ref r;
                 r.id = 0;
@@ -675,10 +677,10 @@ namespace fire
             void lua_api::send_local(const script_message& m)
             {
                 INVARIANT(conversation);
-                for(const auto& app : conversation->apps())
+                for(const auto& i : conversation->apps())
                 {
-                    CHECK_FALSE(app.address.empty());
-                    sender->send_to_local_app(app.address, m);
+                    CHECK_FALSE(i.second.address.empty());
+                    sender->send_to_local_app(i.second.address, m);
                 }
             }
 
