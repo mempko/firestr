@@ -42,6 +42,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 namespace fire
 {
@@ -54,8 +55,7 @@ namespace fire
             std::string address;
         };
 
-        using app_metadata = std::vector<app_metadatum>;
-        using app_address_set = std::set<std::string>;
+        using app_metadata = std::map<std::string, app_metadatum>;
 
         struct know_request
         {
@@ -143,7 +143,6 @@ namespace fire
                 messages::sender_ptr _sender;
                 user::contact_list _contacts;
                 app_metadata _app_metadata;
-                app_address_set _app_addresses;
                 pending_contact_adds _pending_adds;
                 bool _initiated_by_user;
         };

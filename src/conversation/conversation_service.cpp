@@ -427,8 +427,8 @@ namespace fire
 
             //get apps in conversation
             id_set apps;
-            for(const auto& app : s->apps())
-                apps.insert(app.address);
+            for(const auto& a : s->apps())
+                apps.insert(a.second.address);
 
             //send request to all contacts in conversation
             sync_conversation_msg ns;
