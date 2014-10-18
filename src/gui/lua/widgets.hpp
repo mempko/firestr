@@ -34,15 +34,19 @@
 
 #include "gui/lua/base.hpp"
 
-#include <QImage>
-
 namespace fire
 {
     namespace gui
     {
         namespace lua
         {
+            struct pen_ref : public widget_ref 
+            {
+                void set_width(int);
+            };
+
             struct image_ref;
+
             struct button_ref : public widget_ref
             {
                 std::string callback;
@@ -106,12 +110,6 @@ namespace fire
                     void remove(const widget_ref& r);
                     size_t size() const;
                     void clear();
-
-                private:
-                    using list_widget = std::pair<list*, QWidget*>;
-                    list* get_list() const;
-                    list_widget get_both(const widget_ref& r);
-
             };
             using list_ref_map = std::unordered_map<int, list_ref>;
 
@@ -145,8 +143,8 @@ namespace fire
                 void set_mouse_pressed_callback(const std::string&);  
                 void set_mouse_moved_callback(const std::string&);  
                 void set_mouse_dragged_callback(const std::string&);  
-                void set_pen(QPen);
-                QPen get_pen() { return pen;}
+                void set_pen(pen_ref);
+                pen_ref get_pen() { return pen;}
 
                 void mouse_pressed(int button, int x, int y);
                 void mouse_released(int button, int x, int y);
@@ -156,25 +154,9 @@ namespace fire
                 void handle(const std::string& t,  const util::value& event);
 
                 draw_view* get_view();
-                QPen pen;
+                pen_ref pen;
             };
             using draw_ref_map = std::unordered_map<int, draw_ref>;
-
-            class draw_view : public QGraphicsView
-            {
-                Q_OBJECT
-                public:
-                    draw_view(draw_ref, int width, int height, QWidget* parent = nullptr);
-
-                protected:
-                    void mousePressEvent(QMouseEvent*);
-                    void mouseReleaseEvent(QMouseEvent*);
-                    void mouseMoveEvent(QMouseEvent*);
-
-                private:
-                    draw_ref _ref;
-                    int _button;
-            };
 
             struct timer_ref : public basic_ref
             {
@@ -198,7 +180,6 @@ namespace fire
                 bool g;
             };
 
-            using QImage_ptr = std::shared_ptr<QImage>;
             using image_ref_map = std::unordered_map<int, image_ref>;
 
         }

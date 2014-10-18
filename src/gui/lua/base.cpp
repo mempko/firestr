@@ -29,16 +29,11 @@
  * also delete it here.
  */
 
-#include <QtWidgets>
-
 #include "gui/lua/base.hpp"
 #include "gui/lua/api.hpp"
 #include "gui/util.hpp"
 #include "util/dbc.hpp"
 #include "util/log.hpp"
-
-#include <QTimer>
-#include <QSignalMapper>
 
 #include <functional>
 
@@ -57,29 +52,10 @@ namespace fire
             namespace 
             {
                 const std::string ARRAY_K = "__a";
-                const size_t FRAMES = 480; //40ms of PCM frames. Opus can handles 2.5, 5, 10, 20, 40 or 60ms of audio per frame.
-                const size_t MAX_FRAMES = 2*FRAMES;
-                const size_t MAX_OPUS_DECODE_SIZE = MAX_FRAMES * sizeof(opus_int16);
-                const size_t SAMPLE_RATE = 12000;
-                const size_t SAMPLE_SIZE = 16;
-                const size_t CHANNELS = 1;
-                const std::string Q_CODEC = "audio/pcm";
-                const size_t MIN_BUF_SIZE = FRAMES * sizeof(opus_int16);
-            }
-
-            const size_t MAX_SAMPLE_BYTES = SAMPLE_SIZE * FRAMES;
-
-            void set_enabled(int id, widget_map& map, bool enabled)
-            {
-                auto w = get_widget<QWidget>(id, map);
-                if(!w) return;
-
-                w->setEnabled(enabled);
             }
 
             void observable_ref::set_name(const std::string& n)
             {
-                std::lock_guard<std::mutex> lock(api->mutex);
                 INVARIANT(api);
 
                 auto obs = api->get_observable(id);
@@ -92,33 +68,31 @@ namespace fire
 
             std::string observable_ref::get_name() const
             {
-                std::lock_guard<std::mutex> lock(api->mutex);
                 return _name;
             }
 
             bool widget_ref::enabled()
             {
                 INVARIANT(api);
-                std::lock_guard<std::mutex> lock(api->mutex);
+                INVARIANT(api->front);
 
-                auto w = get_widget<QWidget>(id, api->widgets);
-                return w ? w->isEnabled() : false;
+                return api->front->is_widget_enabled(id);
             }
 
             void widget_ref::enable()
             {
                 INVARIANT(api);
-                std::lock_guard<std::mutex> lock(api->mutex);
+                INVARIANT(api->front);
 
-                set_enabled(id, api->widgets, true);
+                api->front->widget_enable(id, true);
             }
 
             void widget_ref::disable()
             {
                 INVARIANT(api);
-                std::lock_guard<std::mutex> lock(api->mutex);
+                INVARIANT(api->front);
 
-                set_enabled(id, api->widgets, false);
+                api->front->widget_enable(id, true);
             }
 
             std::string app_ref::get_id() const
@@ -162,7 +136,6 @@ namespace fire
 
                 if(is_self) return true;
 
-                std::lock_guard<std::mutex> lock(api->mutex);
                 return api->conversation->user_service()->contact_available(user_id);
             }
 
@@ -198,44 +171,44 @@ namespace fire
                 data.insert(data.end(), n.data.begin(), n.data.end());
             }
 
-            std::string bin_file_data::get_name() const
+            std::string bin_file_data_wrapper::get_name() const
             {
-                return name;
+                return file.name;
             }
 
-            size_t bin_file_data::get_size() const
+            size_t bin_file_data_wrapper::get_size() const
             {
-                return data.data.size();
+                return file.data.size();
             }
 
-            bin_data bin_file_data::get_data() const
+            bin_data bin_file_data_wrapper::get_data() const
             {
-                return data;
+                return bin_data{file.data};
             }
  
-            bool bin_file_data::is_good() const
+            bool bin_file_data_wrapper::is_good() const
             {
-                return good;
+                return file.good;
             }
 
-            std::string file_data::get_name() const
+            std::string file_data_wrapper::get_name() const
             {
-                return name;
+                return file.name;
             }
 
-            size_t file_data::get_size() const
+            size_t file_data_wrapper::get_size() const
             {
-                return data.size();
+                return file.data.size();
             }
 
-            std::string file_data::get_data() const
+            std::string file_data_wrapper::get_data() const
             {
-                return data;
+                return file.data;
             }
  
-            bool file_data::is_good() const
+            bool file_data_wrapper::is_good() const
             {
-                return good;
+                return file.good;
             }
 
             const std::string EVENT_MESSAGE = "#e";
@@ -374,7 +347,6 @@ namespace fire
             {
                 INVARIANT(_api);
                 INVARIANT(_api->conversation);
-                std::lock_guard<std::mutex> lock(_api->mutex);
 
                 auto c = _api->conversation->contacts().by_id(_from_id);
                 if(!c || is_local()) return empty_contact_ref(*_api);

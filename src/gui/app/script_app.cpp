@@ -153,9 +153,18 @@ namespace fire
                 _canvas_layout = new QGridLayout{_canvas};
                 layout()->addWidget(_canvas, 0,0,2,1);
 
+                _front = std::make_shared<qtw::qt_frontend>(_canvas, _canvas_layout, nullptr);
+
                 _mail = std::make_shared<m::mailbox>(_id);
                 _sender = std::make_shared<ms::sender>(_conversation->user_service(), _mail);
-                _api = std::make_shared<l::lua_api>(_app, _sender, _conversation, _conversation_service, _canvas, _canvas_layout);
+                _api = std::make_shared<l::lua_api>(
+                        _app, 
+                        _sender, 
+                        _conversation, 
+                        _conversation_service, 
+                        _front.get());
+
+                _front->set_backend(_api.get());
                 _api->who_started_id = _from_id;
 
                 //run script
@@ -167,6 +176,9 @@ namespace fire
                 _mail_service = new mail_service{_mail, this};
                 _mail_service->start();
 
+                INVARIANT(_api);
+                INVARIANT(_mail_service);
+                INVARIANT(_front);
                 INVARIANT(_conversation);
                 INVARIANT(_mail);
                 INVARIANT(_sender);

@@ -29,8 +29,6 @@
  * also delete it here.
  */
 
-#include <QtWidgets>
-
 #include "gui/lua/api.hpp"
 #include "gui/util.hpp"
 #include "util/dbc.hpp"
@@ -39,9 +37,6 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/regex.hpp>
-
-#include <QTimer>
-#include <QTextBrowser>
 
 #include <functional>
 #include <cstdlib>
@@ -72,33 +67,28 @@ namespace fire
                     ms::sender_ptr sndr,
                     s::conversation_ptr s,
                     s::conversation_service_ptr ss,
-                    QWidget* c,
-                    QGridLayout* cl,
-                    list* o ) :
+                    api::frontend* f) :
                 app{a},
-                output{o},
-                canvas{c},
-                layout{cl},
+                front{f},
                 conversation{s},
                 conversation_service{ss},
                 sender{sndr},
                 _error{}
             {
+                REQUIRE(f);
 				_error.line = -1;
+
                 INVARIANT(app);
                 INVARIANT(sender);
                 INVARIANT(conversation);
                 INVARIANT(conversation_service);
-                INVARIANT(canvas);
-                INVARIANT(layout);
+                INVARIANT(front);
 
                 local_data.reset(new store_ref{app->local_data()});
                 data.reset(new store_ref{app->data()});
 
                 bind();
 
-                INVARIANT(canvas);
-                INVARIANT(layout);
                 INVARIANT(state);
                 INVARIANT(local_data);
                 INVARIANT(data);
@@ -109,28 +99,13 @@ namespace fire
                 reset_widgets();
             }
 
-            QWidget* make_output_widget(const std::string& name, const std::string& text)
-            {
-                std::string m = "<b>" + name + "</b>: " + text; 
-                return new QLabel{m.c_str()};
-            }
-
-            QWidget* make_error_widget(const std::string& text)
-            {
-                std::string m = "<b>error:</b> " + text; 
-                auto tb = new QTextBrowser;
-                tb->setHtml(m.c_str());
-                return tb;
-            }
-
             void lua_api::report_error(const std::string& e, int line)
             {
                 _error.line = line;
                 _error.message = e;
 
                 LOG << "script error: " << e << std::endl;
-                if(!output) return;
-                output->add(make_error_widget(e));
+                front->report_error(e);
             }
 
             error_info lua_api::get_error() const
@@ -138,7 +113,7 @@ namespace fire
                 return _error;
             }
 
-            int lua_api::new_id()
+            api::ref_id lua_api::new_id()
             {
                 ids++;
                 return ids;
@@ -195,8 +170,8 @@ namespace fire
                     .set("open_bin_file", &lua_api::open_bin_file)
                     .set("i_started", &lua_api::launched_local);
 
-                SLB::Class<QPen>{"pen", &manager}
-                    .set("set_width", &QPen::setWidth);
+                SLB::Class<pen_ref>{"pen", &manager}
+                    .set("set_width", &pen_ref::set_width);
 
                 SLB::Class<contact_ref>{"contact", &manager}
                     .set("id", &contact_ref::get_id)
@@ -331,17 +306,17 @@ namespace fire
                     .set("interval", &timer_ref::set_interval)
                     .set("when_triggered", &timer_ref::set_callback);
 
-                SLB::Class<bin_file_data>{"bin_file_data", &manager}
-                    .set("good", &bin_file_data::is_good)
-                    .set("name", &bin_file_data::get_name)
-                    .set("size", &bin_file_data::get_size)
-                    .set("data", &bin_file_data::get_data);
+                SLB::Class<bin_file_data_wrapper>{"bin_file_data", &manager}
+                    .set("good", &bin_file_data_wrapper::is_good)
+                    .set("name", &bin_file_data_wrapper::get_name)
+                    .set("size", &bin_file_data_wrapper::get_size)
+                    .set("data", &bin_file_data_wrapper::get_data);
 
-                SLB::Class<file_data>{"file_data", &manager}
-                    .set("good", &file_data::is_good)
-                    .set("name", &file_data::get_name)
-                    .set("size", &file_data::get_size)
-                    .set("data", &file_data::get_data);
+                SLB::Class<file_data_wrapper>{"file_data", &manager}
+                    .set("good", &file_data_wrapper::is_good)
+                    .set("name", &file_data_wrapper::get_name)
+                    .set("size", &file_data_wrapper::get_size)
+                    .set("data", &file_data_wrapper::get_data);
 
                 SLB::Class<microphone_ref>{"microphone_ref", &manager}
                     .set("when_sound", &microphone_ref::set_callback)
@@ -353,11 +328,11 @@ namespace fire
                     .set("mute", &speaker_ref::mute)
                     .set("unmute", &speaker_ref::unmute);
 
-                SLB::Class<opus_encoder>{"audio_encoder", &manager}
-                    .set("encode", &opus_encoder::encode);
+                SLB::Class<opus_encoder_wrapper>{"audio_encoder", &manager}
+                    .set("encode", &opus_encoder_wrapper::encode);
 
-                SLB::Class<opus_decoder>{"audio_decoder", &manager}
-                    .set("decode", &opus_decoder::decode);
+                SLB::Class<opus_decoder_wrapper>{"audio_decoder", &manager}
+                    .set("decode", &opus_decoder_wrapper::decode);
 
                 SLB::Class<vclock_wrapper>{"vclock", &manager}
                     .set("good", &vclock_wrapper::good)
@@ -394,36 +369,11 @@ namespace fire
                 return {-1, "unknown"};
             }
 
-            void delete_timers(timer_map& timers)
-            {
-                for(auto& t : timers)
-                {
-                    if(t.second == nullptr) continue;
-
-                    t.second->stop();
-                    delete t.second;
-                    t.second = nullptr;
-                }
-                timers.clear();
-            }
-
             void lua_api::reset_widgets()
             {
-                INVARIANT(layout);
+                INVARIANT(front);
+                front->reset();
 
-                //delete widgets without parent
-                delete_timers(timers);
-
-                //clear widgets
-                QLayoutItem *c = nullptr;
-
-                while((c = layout->takeAt(0)) != nullptr)
-                {
-                    if(c->widget()) delete c->widget();
-                    delete c;
-                }
-
-                if(output) output->clear();
                 button_refs.clear();
                 edit_refs.clear();
                 text_edit_refs.clear();
@@ -431,21 +381,15 @@ namespace fire
                 timer_refs.clear();
                 grid_refs.clear();
                 image_refs.clear();
-                images.clear();
-                widgets.clear();
                 observable_names.clear();
                 
 
-                ENSURE(widgets.empty());
-                ENSURE(timers.empty());
                 ENSURE(edit_refs.empty());
                 ENSURE(text_edit_refs.empty());
                 ENSURE(list_refs.empty());
                 ENSURE(timer_refs.empty());
                 ENSURE(grid_refs.empty());
                 ENSURE(image_refs.empty());
-                ENSURE(images.empty());
-                ENSURE_EQUAL(layout->count(), 0);
             }
 
             void lua_api::run(const std::string& code)
@@ -465,17 +409,10 @@ namespace fire
             //API implementation 
             void lua_api::print(const std::string& a)
             {
-                INVARIANT(conversation);
-                INVARIANT(conversation->user_service());
+                INVARIANT(front);
 
-                if(!output) 
-                {
-                    LOG << "script: " << a << std::endl;
-                    return;
-                }
-
-                auto self = conversation->user_service()->user().info().name();
-                output->add(make_output_widget(self, a));
+                LOG << "script: " << a << std::endl;
+                front->print(a);
             }
 
             void lua_api::alert()
@@ -488,8 +425,8 @@ namespace fire
 
             bool lua_api::visible() const
             {
-                INVARIANT(canvas);
-                return !canvas->visibleRegion().isEmpty();
+                INVARIANT(front);
+                return front->visible();
             }
 
             void lua_api::message_received(const script_message& m)
@@ -751,23 +688,16 @@ namespace fire
 
             grid_ref lua_api::make_grid()
             {
-                INVARIANT(layout);
-                INVARIANT(canvas);
-
+                INVARIANT(front);
                 //create button reference
                 grid_ref ref;
                 ref.id = new_id();
                 ref.api = this;
 
-                //create widget and new layout
-                auto b = new QWidget;
-                auto l = new QGridLayout;
-                b->setLayout(l);
-
                 //add ref and widget to maps
                 grid_refs[ref.id] = ref;
-                widgets[ref.id] = b;
-                layouts[ref.id] = l;
+
+                front->add_grid(ref.id);
 
                 ENSURE_FALSE(ref.id == 0);
                 ENSURE(ref.api);
@@ -776,58 +706,43 @@ namespace fire
 
             void lua_api::height(int h)
             {
-                INVARIANT(canvas);
-                canvas->setMinimumHeight(h);
+                INVARIANT(front);
+                front->height(h);
             }
 
             void lua_api::grow()
             {
-                INVARIANT(canvas);
-                INVARIANT(layout);
-                canvas->setMinimumHeight(layout->sizeHint().height() + PADDING);
+                INVARIANT(front);
+                front->grow();
             }
 
             void lua_api::place(const widget_ref& wr, int r, int c)
             {
-                INVARIANT(layout);
+                INVARIANT(front);
 
-                auto w = get_widget<QWidget>(wr.id, widgets);
-                if(!w) return;
-
-                layout->addWidget(w, r, c);
+                front->place(wr.id, r, c);
             }
 
             void lua_api::place_across(const widget_ref& wr, int r, int c, int row_span, int col_span)
             {
-                INVARIANT(layout);
+                INVARIANT(front);
 
-                auto w = get_widget<QWidget>(wr.id, widgets);
-                if(!w) return;
-
-                layout->addWidget(w, r, c, row_span, col_span);
+                front->place_across(wr.id, r, c, row_span, col_span);
             }
 
             button_ref lua_api::make_button(const std::string& text)
             {
-                INVARIANT(canvas);
+                INVARIANT(front);
 
                 //create button reference
                 button_ref ref;
                 ref.id = new_id();
                 ref.api = this;
 
-                //create button widget
-                auto b = new QPushButton(text.c_str(), canvas);
-
-                //map button to C++ callback
-                auto mapper = new QSignalMapper{canvas};
-                mapper->setMapping(b, ref.id);
-                connect(b, SIGNAL(clicked()), mapper, SLOT(map()));
-                connect(mapper, SIGNAL(mapped(int)), this, SLOT(button_clicked(int)));
-
                 //add ref and widget to maps
                 button_refs[ref.id] = ref;
-                widgets[ref.id] = b;
+
+                front->add_button(ref.id, text);
 
                 ENSURE_FALSE(ref.id == 0);
                 ENSURE(ref.callback.empty());
@@ -857,41 +772,19 @@ namespace fire
                 return nullptr;
             }
 
-            void lua_api::button_clicked(int id)
-            {
-                INVARIANT(state);
-
-                std::string callback;
-                std::string name;
-                {
-                    auto rp = button_refs.find(id);
-                    if(rp == button_refs.end()) return;
-
-                    callback = rp->second.callback;
-                    name = rp->second.get_name();
-                }
-                if(callback.empty()) return;
-
-                send_simple_event(name, "b");
-                run(callback);
-
-            }
-
             label_ref lua_api::make_label(const std::string& text)
             {
-                INVARIANT(canvas);
+                INVARIANT(front);
 
                 //create edit reference
                 label_ref ref;
                 ref.id = new_id();
                 ref.api = this;
 
-                //create edit widget
-                auto w = new QLabel{text.c_str(), canvas};
-
                 //add ref and widget to maps
                 label_refs[ref.id] = ref;
-                widgets[ref.id] = w;
+
+                front->add_label(ref.id, text);
 
                 ENSURE_FALSE(ref.id == 0);
                 ENSURE(ref.api);
@@ -900,30 +793,17 @@ namespace fire
 
             edit_ref lua_api::make_edit(const std::string& text)
             {
-                INVARIANT(canvas);
+                INVARIANT(front);
 
                 //create edit reference
                 edit_ref ref;
                 ref.id = new_id();
                 ref.api = this;
 
-                //create edit widget
-                auto e = new QLineEdit{text.c_str(), canvas};
-
-                //map edit to C++ callback
-                auto edit_mapper = new QSignalMapper{canvas};
-                edit_mapper->setMapping(e, ref.id);
-                connect(e, SIGNAL(textChanged(QString)), edit_mapper, SLOT(map()));
-                connect(edit_mapper, SIGNAL(mapped(int)), this, SLOT(edit_edited(int)));
-
-                auto finished_mapper = new QSignalMapper{canvas};
-                finished_mapper->setMapping(e, ref.id);
-                connect(e, SIGNAL(editingFinished()), finished_mapper, SLOT(map()));
-                connect(finished_mapper, SIGNAL(mapped(int)), this, SLOT(edit_finished(int)));
-
                 //add ref and widget to maps
                 edit_refs[ref.id] = ref;
-                widgets[ref.id] = e;
+
+                front->add_edit(ref.id, text);
 
                 ENSURE_FALSE(ref.id == 0);
                 ENSURE(ref.edited_callback.empty());
@@ -932,7 +812,7 @@ namespace fire
                 return ref;
             }
 
-            void lua_api::edit_edited(int id)
+            void lua_api::edit_edited(api::ref_id id)
             try
             {
                 INVARIANT(state);
@@ -966,7 +846,7 @@ namespace fire
                 report_error("error in edit_edited: unknown");
             }
 
-            void lua_api::edit_finished(int id)
+            void lua_api::edit_finished(api::ref_id id)
             try
             {
                 INVARIANT(state);
@@ -1002,25 +882,17 @@ namespace fire
 
             text_edit_ref lua_api::make_text_edit(const std::string& text)
             {
-                INVARIANT(canvas);
+                INVARIANT(front);
 
                 //create edit reference
                 text_edit_ref ref;
                 ref.id = new_id();
                 ref.api = this;
 
-                //create edit widget
-                auto e = new QTextEdit{text.c_str(), canvas};
-
-                //map edit to C++ callback
-                auto edit_mapper = new QSignalMapper{canvas};
-                edit_mapper->setMapping(e, ref.id);
-                connect(e, SIGNAL(textChanged()), edit_mapper, SLOT(map()));
-                connect(edit_mapper, SIGNAL(mapped(int)), this, SLOT(text_edit_edited(int)));
-
                 //add ref and widget to maps
                 text_edit_refs[ref.id] = ref;
-                widgets[ref.id] = e;
+
+                front->add_text_edit(ref.id, text);
 
                 ENSURE_FALSE(ref.id == 0);
                 ENSURE(ref.edited_callback.empty());
@@ -1028,7 +900,7 @@ namespace fire
                 return ref;
             }
 
-            void lua_api::text_edit_edited(int id)
+            void lua_api::text_edit_edited(api::ref_id id)
             try
             {
                 INVARIANT(state);
@@ -1064,61 +936,51 @@ namespace fire
 
             list_ref lua_api::make_list()
             {
-                INVARIANT(canvas);
+                INVARIANT(front);
 
                 //create edit reference
                 list_ref ref;
                 ref.id = new_id();
                 ref.api = this;
 
-                //create edit widget
-                auto w = new gui::list{canvas};
-                w->auto_scroll(true);
-
                 //add ref and widget to maps
                 list_refs[ref.id] = ref;
-                widgets[ref.id] = w;
+
+                front->add_list(ref.id);
 
                 ENSURE_FALSE(ref.id == 0);
                 ENSURE(ref.api);
                 return ref;
             }
 
-            QPen lua_api::make_pen(const std::string& color, int width)
-            try
+            pen_ref lua_api::make_pen(const std::string& color, int width)
             {
-                QPen p{QColor{color.c_str()}};
-                p.setWidth(width);
-                return p;
-            }
-            catch(std::exception& e)
-            {
-                std::stringstream s;
-                s << "error in make_pen: " << e.what();
-                report_error(s.str());
-                return QPen{QColor{"red"}};
-            }
-            catch(...)
-            {
-                report_error("error in make_pen: unknown");
-                return QPen{QColor{"red"}};
+                INVARIANT(front);
+
+                pen_ref ref;
+                ref.id = new_id();
+                ref.api = this;
+
+                front->add_pen(ref.id, color, width);
+
+                ENSURE_FALSE(ref.id == 0);
+                ENSURE(ref.api);
+                return ref;
             }
 
             draw_ref lua_api::make_draw(int width, int height)
             {
-                INVARIANT(canvas);
+                INVARIANT(front);
 
                 //create edit reference
                 draw_ref ref;
                 ref.id = new_id();
                 ref.api = this;
 
-                //create edit widget
-                auto w = new draw_view{ref, width, height, canvas};
-
                 //add ref and widget to maps
                 draw_refs[ref.id] = ref;
-                widgets[ref.id] = w;
+
+                front->add_draw(ref.id, width, height);
 
                 ENSURE_FALSE(ref.id == 0);
                 ENSURE(ref.api);
@@ -1127,7 +989,7 @@ namespace fire
 
             timer_ref lua_api::make_timer(int msec, const std::string& callback)
             {
-                INVARIANT(canvas);
+                INVARIANT(front);
 
                 //create edit reference
                 timer_ref ref;
@@ -1135,29 +997,17 @@ namespace fire
                 ref.api = this;
                 ref.callback = callback;
 
-                //create timer 
-                auto t = new QTimer;
-
-                //map timer to C++ callback
-                auto timer_mapper = new QSignalMapper{canvas};
-                timer_mapper->setMapping(t, ref.id);
-
-                connect(t, SIGNAL(timeout()), timer_mapper, SLOT(map()));
-                connect(timer_mapper, SIGNAL(mapped(int)), this, SLOT(timer_triggered(int)));
-
                 //add ref and widget to maps
                 timer_refs[ref.id] = ref;
-                timers[ref.id] = t;
 
-                //start timer
-                t->start(msec);
+                front->add_timer(ref.id, msec);
 
                 ENSURE_FALSE(ref.id == 0);
                 ENSURE(ref.api);
                 return ref;
             }
 
-            void lua_api::timer_triggered(int id)
+            void lua_api::timer_triggered(api::ref_id id)
             {
                 INVARIANT(state);
 
@@ -1174,7 +1024,7 @@ namespace fire
 
             image_ref lua_api::make_image(const bin_data& d)
             {
-                INVARIANT(canvas);
+                INVARIANT(front);
                 
                 //create edit reference
                 image_ref ref;
@@ -1182,24 +1032,10 @@ namespace fire
                 ref.api = this;
                 ref.w = 0;
                 ref.h = 0;
-                ref.g = false;
-
-                auto i = std::make_shared<QImage>();
-                bool loaded = i->loadFromData(reinterpret_cast<const u::ubyte*>(d.data.data()),d.data.size());
-
-                auto l = new QLabel;
-                if(loaded) 
-                {
-                    ref.w = i->width();
-                    ref.h = i->height();
-                    ref.g = true;
-                    l->setPixmap(QPixmap::fromImage(*i));
-                    l->setMinimumSize(i->width(), i->height());
-                }
 
                 image_refs[ref.id] = ref;
-                widgets[ref.id] = l;
-                images[ref.id] = i;
+
+                ref.g = front->add_image(ref.id, d.data);
 
                 ENSURE_FALSE(ref.id == 0);
                 ENSURE(ref.api);
@@ -1208,29 +1044,29 @@ namespace fire
 
             microphone_ref lua_api::make_mic(const std::string& callback, const std::string& codec)
             {
-                INVARIANT(canvas);
+                INVARIANT(front);
 
                 microphone_ref ref;
                 ref.id = new_id();
                 ref.api = this;
                 ref.callback = callback;
-                ref.mic.reset(new microphone{this, ref.id, codec});
                 mic_refs[ref.id] = ref;
+
+                front->add_mic(ref.id, codec);
 
                 ENSURE_FALSE(ref.id == 0);
                 ENSURE(ref.api);
-                ENSURE(ref.mic);
                 return ref;
             }
 
-            opus_encoder lua_api::make_audio_encoder()
+            opus_encoder_wrapper lua_api::make_audio_encoder()
             {
-                return opus_encoder{};
+                return opus_encoder_wrapper{};
             }
 
-            opus_decoder lua_api::make_audio_decoder()
+            opus_decoder_wrapper lua_api::make_audio_decoder()
             {
-                return opus_decoder{};
+                return opus_decoder_wrapper{};
             }
 
             vclock_wrapper lua_api::make_vclock()
@@ -1240,51 +1076,30 @@ namespace fire
                 return vclock_wrapper{conversation->user_service()->user().info().id()};
             }
 
-            void lua_api::connect_sound(int id, QAudioInput* i, QIODevice* d)
-            {
-                REQUIRE_GREATER_EQUAL(id, 0);
-                REQUIRE(i);
-                REQUIRE(d);
-                INVARIANT(canvas);
-
-                auto mapper = new QSignalMapper{canvas};
-                mapper->setMapping(d, id);
-                connect(d, SIGNAL(readyRead()), mapper, SLOT(map()));
-                connect(mapper, SIGNAL(mapped(int)), this, SLOT(got_sound(int)));
-            } 
-
             speaker_ref lua_api::make_speaker(const std::string& codec)
             {
-                INVARIANT(canvas);
+                INVARIANT(front);
 
                 speaker_ref ref;
                 ref.id = new_id();
                 ref.api = this;
-                ref.spkr.reset(new speaker{this, codec});
                 speaker_refs[ref.id] = ref;
+
+                front->add_speaker(ref.id, codec);
 
                 return ref;
             }
 
-            void lua_api::got_sound(int id)
+            void lua_api::got_sound(api::ref_id id, const u::bytes& bd)
             try
             {
                 auto mp = mic_refs.find(id);
                 if(mp == mic_refs.end()) return;
 
-                auto& ref = mp->second;
-                auto mic = ref.mic;
-                CHECK(mic);
-
-                bin_data bd{mic->read_data()};
-                if(bd.data.empty()) return;
-
-                if(!mic->recording()) return;
+                const auto& ref = mp->second;
                 if(ref.callback.empty()) return;
 
-                if(mic->codec() == codec_type::opus) bd.data = mic->encode(bd.data);
-                if(bd.data.empty()) return;
-                state->call(ref.callback, bd);
+                state->call(ref.callback, bin_data{bd});
             }
             catch(SLB::CallException& e)
             {
@@ -1297,86 +1112,126 @@ namespace fire
                 report_error("error in got_sound: unknown", state->getLastErrorLine());
             }
 
-            file_data lua_api::open_file()
+            void lua_api::draw_mouse_pressed(api::ref_id id, int button, int x, int y)
             {
-                INVARIANT(canvas);
+                auto dp = draw_refs.find(id);
+                if(dp == draw_refs.end()) return;
 
-                auto sf = get_file_name(canvas);
-                if(sf.empty()) return file_data{};
-                bf::path p = sf;
+                auto name = dp->second.get_name();
+                if(!name.empty())
+                {
+                    u::dict d;
+                    d["b"] = button;
+                    d["x"] = x;
+                    d["y"] = y;
+                    event_message em{name, "p", d, this};
+                    send(em);
+                }
 
-                std::ifstream f(sf.c_str());
-                if(!f) return file_data{};
-
-                std::string data{std::istream_iterator<char>(f), std::istream_iterator<char>()};
-
-                file_data fd;
-                fd.name = p.filename().string();
-                fd.data = std::move(data);
-                fd.good = true;
-                LOG << "opened file `" << fd.name << " size " << fd.data.size() << std::endl;
-                return fd;
+                dp->second.mouse_pressed(button, x, y);
             }
 
-            bin_file_data lua_api::open_bin_file()
+            void lua_api::draw_mouse_released(api::ref_id id, int button, int x, int y)
             {
-                INVARIANT(canvas);
-                auto sf = get_file_name(canvas);
-                if(sf.empty()) return bin_file_data{};
-                bf::path p = sf;
+                auto dp = draw_refs.find(id);
+                if(dp == draw_refs.end()) return;
 
-                bin_data bin;
-                if(!load_from_file(sf, bin.data)) return bin_file_data{};
+                auto name = dp->second.get_name();
+                if(!name.empty())
+                {
+                    u::dict d;
+                    d["b"] = button;
+                    d["x"] = x;
+                    d["y"] = y;
+                    event_message em{name, "r", d, this};
+                    send(em);
+                }
 
-                bin_file_data fd;
-                fd.name = p.filename().string();
-                fd.data = std::move(bin);
-                fd.good = true;
-                LOG << "opened bin file `" << fd.name << " size " << fd.data.data.size() << std::endl;
-                return fd;
+                dp->second.mouse_released(button, x, y);
             }
 
-            std::string sanatize(const std::string& s)
+            void lua_api::draw_mouse_dragged(api::ref_id id, int button, int x, int y)
             {
-                const boost::regex SANATIZE_PATH_REGEX("[\\\\\\/\\:]");  //matches \, /, and :
-                return boost::regex_replace (s, SANATIZE_PATH_REGEX , SANATIZE_REPLACE);
+                auto dp = draw_refs.find(id);
+                if(dp == draw_refs.end()) return;
+
+                auto name = dp->second.get_name();
+                if(!name.empty())
+                {
+                    u::dict d;
+                    d["b"] = button;
+                    d["x"] = x;
+                    d["y"] = y;
+                    event_message em{name, "d", d, this};
+                    send(em);
+                }
+                dp->second.mouse_dragged(button, x, y);
+            }
+
+            void lua_api::draw_mouse_moved(api::ref_id id, int x, int y)
+            {
+                auto dp = draw_refs.find(id);
+                if(dp == draw_refs.end()) return;
+
+                auto name = dp->second.get_name();
+                if(!name.empty())
+                {
+                    u::dict d;
+                    d["x"] = x;
+                    d["y"] = y;
+                    event_message em{name, "m", d, this};
+                    send(em);
+                }
+
+                dp->second.mouse_moved(x, y);
+            }
+
+            file_data_wrapper lua_api::open_file()
+            {
+                INVARIANT(front);
+                file_data_wrapper w;
+                w.file = front->open_file();
+                return w;
+            }
+
+            bin_file_data_wrapper lua_api::open_bin_file()
+            {
+                INVARIANT(front);
+                bin_file_data_wrapper w;
+                w.file = front->open_bin_file();
+                return w;
             }
 
             bool lua_api::save_file(const std::string& suggested_name, const std::string& data)
             {
-                if(data.empty()) return false;
-                auto home = u::get_home_dir();
-                std::string suggested_path = home + "/" + sanatize(suggested_name);
-                auto file = QFileDialog::getSaveFileName(canvas, tr("Save File"), suggested_path.c_str());
-                if(file.isEmpty()) return false;
-
-                auto fs = convert(file);
-                std::ofstream o(fs.c_str());
-                if(!o) return false;
-
-                o.write(data.c_str(), data.size());
-                LOG << "saved: " << fs << " size " << data.size() <<  std::endl;
-
-                return true;
+                INVARIANT(front);
+                return front->save_file(suggested_name, data);
             }
 
             bool lua_api::save_bin_file(const std::string& suggested_name, const bin_data& bin)
             {
-                if(bin.data.empty()) return false;
-                auto home = u::get_home_dir();
-                std::string suggested_path = home + "/" + sanatize(suggested_name);
-                auto file = QFileDialog::getSaveFileName(canvas, tr("Save File"), suggested_path.c_str());
-                if(file.isEmpty()) return false;
-
-                auto fs = convert(file);
-                std::ofstream o(fs.c_str(), std::fstream::out | std::fstream::binary);
-                if(!o) return false;
-
-                o.write(bin.data.data(), bin.data.size());
-                LOG << "saved bin: " << fs << " size " << bin.data.size() << std::endl;
-                return true;
+                INVARIANT(front);
+                return front->save_bin_file(suggested_name, bin.data);
             }
 
+            void lua_api::button_clicked(api::ref_id id)
+            {
+                INVARIANT(state);
+
+                std::string callback;
+                std::string name;
+                {
+                    auto rp = button_refs.find(id);
+                    if(rp == button_refs.end()) return;
+
+                    callback = rp->second.callback;
+                    name = rp->second.get_name();
+                }
+                if(callback.empty()) return;
+
+                send_simple_event(name, "b");
+                run(callback);
+            }
         }
     }
 }

@@ -39,6 +39,7 @@
 #include "message/mailbox.hpp"
 #include "messages/sender.hpp"
 #include "gui/lua/api.hpp"
+#include "gui/qtw/frontend.hpp"
 #include "gui/app/app_service.hpp"
 #include "util/crstring.hpp"
 
@@ -203,6 +204,7 @@ namespace fire
                     util::bytes _data_bytes;
                     list* _data_items;
 
+                    qtw::qt_frontend_ptr _front;
                     lua::lua_api_ptr _api;
                     app_ptr _app;
                     std::string _prev_code;

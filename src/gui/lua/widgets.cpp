@@ -29,17 +29,11 @@
  * also delete it here.
  */
 
-#include <QtWidgets>
-
 #include "gui/lua/widgets.hpp"
 #include "gui/lua/api.hpp"
 #include "gui/util.hpp"
 #include "util/dbc.hpp"
 #include "util/log.hpp"
-
-#include <QTimer>
-#include <QIcon>
-#include <QTransform>
 
 #include <functional>
 
@@ -58,57 +52,30 @@ namespace fire
             std::string button_ref::get_text() const
             {
                 INVARIANT(api);
-                std::lock_guard<std::mutex> lock(api->mutex);
+                INVARIANT(api->front);
 
-                auto rp = api->button_refs.find(id);
-                if(rp == api->button_refs.end()) return "";
-
-                auto button = get_widget<QPushButton>(id, api->widgets);
-                CHECK(button);
-
-                return gui::convert(button->text());
+                return api->front->button_get_text(id);
             }
 
             void button_ref::set_text(const std::string& t)
             {
                 INVARIANT(api);
-                QPushButton* button = nullptr;
-                {
-                    std::lock_guard<std::mutex> lock(api->mutex);
+                INVARIANT(api->front);
 
-                    auto rp = api->button_refs.find(id);
-                    if(rp == api->button_refs.end()) return;
-
-                    button = get_widget<QPushButton>(id, api->widgets);
-                }
-
-                CHECK(button);
-                button->setText(t.c_str());
+                api->front->button_set_text(id, t);
             }
 
             void button_ref::set_image(const image_ref& i)
             {
                 INVARIANT(api);
-                std::lock_guard<std::mutex> lock(api->mutex);
+                INVARIANT(api->front);
 
-                auto rp = api->button_refs.find(id);
-                if(rp == api->button_refs.end()) return;
-
-                auto button = get_widget<QPushButton>(id, api->widgets);
-                CHECK(button);
-
-                auto image = get_ptr_from_map<QImage_ptr>(i.id, api->images);
-                if(!image) return;
-
-                auto pm = QPixmap::fromImage(*image);
-                button->setIcon(pm);
-                button->setIconSize(pm.rect().size());
+                api->front->button_set_image(id, i.id);
             }
 
             void button_ref::set_callback(const std::string& c)
             {
                 INVARIANT(api);
-                std::lock_guard<std::mutex> lock(api->mutex);
 
                 auto rp = api->button_refs.find(id);
                 if(rp == api->button_refs.end()) return;
@@ -129,73 +96,37 @@ namespace fire
             std::string label_ref::get_text() const
             {
                 INVARIANT(api);
-                std::lock_guard<std::mutex> lock(api->mutex);
+                INVARIANT(api->front);
 
-                auto rp = api->label_refs.find(id);
-                if(rp == api->label_refs.end()) return "";
-
-                auto l = get_widget<QLabel>(id, api->widgets);
-                CHECK(l);
-
-                return gui::convert(l->text());
+                return api->front->label_get_text(id);
             }
 
             void label_ref::set_text(const std::string& t)
             {
                 INVARIANT(api);
-                QLabel* l = nullptr;
-                {
-                    std::lock_guard<std::mutex> lock(api->mutex);
+                INVARIANT(api->front);
 
-                    auto rp = api->label_refs.find(id);
-                    if(rp == api->label_refs.end()) return;
-
-                    l = get_widget<QLabel>(id, api->widgets);
-                    if(!l) return;
-                }
-
-                CHECK(l);
-                l->setText(t.c_str());
+                api->front->label_set_text(id, t);
             }
 
             std::string edit_ref::get_text() const
             {
                 INVARIANT(api);
-                std::lock_guard<std::mutex> lock(api->mutex);
+                INVARIANT(api->front);
 
-                auto rp = api->edit_refs.find(id);
-                if(rp == api->edit_refs.end()) return "";
-
-                auto edit = get_widget<QLineEdit>(id, api->widgets);
-                CHECK(edit);
-
-                return gui::convert(edit->text());
+                return api->front->edit_get_text(id);
             }
 
             void edit_ref::set_text(const std::string& t)
             {
                 INVARIANT(api);
 
-                QLineEdit* edit = nullptr;
-                {
-                    std::lock_guard<std::mutex> lock(api->mutex);
-
-                    auto rp = api->edit_refs.find(id);
-                    if(rp == api->edit_refs.end()) return;
-
-                    edit = get_widget<QLineEdit>(id, api->widgets);
-                }
-
-                CHECK(edit);
-                auto pt = gui::convert(edit->text());
-                if(t != pt) edit->setText(t.c_str());
+                api->front->edit_set_text(id, t);
             }
 
             void edit_ref::set_edited_callback(const std::string& c)
             {
                 INVARIANT(api);
-                std::lock_guard<std::mutex> lock(api->mutex);
-
                 auto rp = api->edit_refs.find(id);
                 if(rp == api->edit_refs.end()) return;
 
@@ -206,7 +137,6 @@ namespace fire
             void edit_ref::set_finished_callback(const std::string& c)
             {
                 INVARIANT(api);
-                std::lock_guard<std::mutex> lock(api->mutex);
 
                 auto rp = api->edit_refs.find(id);
                 if(rp == api->edit_refs.end()) return;
@@ -245,44 +175,17 @@ namespace fire
             std::string text_edit_ref::get_text() const
             {
                 INVARIANT(api);
-                std::lock_guard<std::mutex> lock(api->mutex);
+                INVARIANT(api->front);
 
-                auto rp = api->text_edit_refs.find(id);
-                if(rp == api->text_edit_refs.end()) return "";
-
-                auto edit = get_widget<QTextEdit>(id, api->widgets);
-                CHECK(edit);
-
-                return gui::convert(edit->toPlainText());
+                return api->front->text_edit_get_text(id);
             }
 
             void text_edit_ref::set_text(const std::string& t)
             {
                 INVARIANT(api);
-                QTextEdit* edit = nullptr;
-                {
-                    std::lock_guard<std::mutex> lock(api->mutex);
+                INVARIANT(api->front);
 
-                    auto rp = api->text_edit_refs.find(id);
-                    if(rp == api->text_edit_refs.end()) return;
-
-                    edit = get_widget<QTextEdit>(id, api->widgets);
-                }
-
-                CHECK(edit);
-                auto pt = gui::convert(edit->toPlainText());
-                if(t != pt)
-                {
-                    //save cursor
-                    auto pos = edit->textCursor().position();
-
-                    edit->setText(t.c_str());
-
-                    //put cursor back
-                    auto cursor = edit->textCursor();
-                    cursor.setPosition(pos);
-                    edit->setTextCursor(cursor);
-                }
+                api->front->text_edit_set_text(id, t);
             }
 
             void text_edit_ref::set_edited_callback(const std::string& c)
@@ -317,143 +220,59 @@ namespace fire
                 throw;
             }
 
-            list* list_ref::get_list() const
-            {
-                std::lock_guard<std::mutex> lock(api->mutex);
-                return get_widget<gui::list>(id, api->widgets);
-            }
-
-
-            list_ref::list_widget list_ref::get_both(const widget_ref& r)
-            {
-                std::lock_guard<std::mutex> lock(api->mutex);
-
-                auto l = get_widget<gui::list>(id, api->widgets);
-                auto w = get_widget<QWidget>(r.id, api->widgets);
-
-                return std::make_pair(l, w);
-            }
-
             void list_ref::add(const widget_ref& wr)
             {
                 REQUIRE_FALSE(wr.id == 0);
                 INVARIANT(api);
-                INVARIANT_FALSE(id == 0);
+                INVARIANT(api->front);
 
-                auto f = get_both(wr);
-
-                gui::list* l = f.first;
-                if(!l) return;
-
-                QWidget* w = f.second;
-                if(!w) return;
-
-                CHECK(l);
-                CHECK(w);
-                l->add(w);
+                api->front->list_add(id, wr.id);
             }
 
             void list_ref::remove(const widget_ref& wr)
             {
                 REQUIRE_FALSE(wr.id == 0);
                 INVARIANT(api);
-                INVARIANT_FALSE(id == 0);
+                INVARIANT(api->front);
 
-                auto f = get_both(wr);
-
-                auto l = f.first;
-                if(!l) return;
-
-                auto w = f.second;
-                if(!w) return;
-
-                CHECK(l);
-                CHECK(w);
-                l->remove(w, false);
+                api->front->list_remove(id, wr.id);
             }
 
             size_t list_ref::size() const
             {
                 INVARIANT(api);
-                INVARIANT_FALSE(id == 0);
+                INVARIANT(api->front);
 
-                auto l = get_list();
-                if(!l) return 0;
-
-                CHECK(l);
-                return l->size();
+                return api->front->list_size(id);
             }
 
             void list_ref::clear()
             {
                 INVARIANT(api);
-                INVARIANT_FALSE(id == 0);
+                INVARIANT(api->front);
 
-                gui::list* l = get_list();
-                if(!l) return;
-
-                CHECK(l);
-                l->clear(false); //clear but don't delete widgets
-            }
-
-            QGridLayout* get_layout(int id, layout_map& map)
-            {
-                auto lp = map.find(id);
-                return lp != map.end() ? lp->second : nullptr;
+                api->front->list_clear(id);
             }
 
             void grid_ref::place(const widget_ref& wr, int r, int c)
             {
                 INVARIANT(api);
-                INVARIANT_FALSE(id == 0);
+                INVARIANT(api->front);
 
-                QGridLayout* l = nullptr;
-                QWidget* w = nullptr;
-
-                {
-                    std::lock_guard<std::mutex> lock(api->mutex);
-
-                    l = get_layout(id, api->layouts);
-                    if(!l) return;
-
-                    w = get_widget<QWidget>(wr.id, api->widgets);
-                    if(!w) return;
-                }
-
-                CHECK(l);
-                CHECK(w);
-
-                l->addWidget(w, r, c);
+                api->front->grid_place(id, wr.id, r, c);
             }
 
             void grid_ref::place_across(const widget_ref& wr, int r, int c, int row_span, int col_span)
             {
                 INVARIANT(api);
-                INVARIANT_FALSE(id == 0);
+                INVARIANT(api->front);
 
-                QGridLayout* l = nullptr;
-                QWidget* w = nullptr;
-
-                {
-                    std::lock_guard<std::mutex> lock(api->mutex);
-
-                    l = get_layout(id, api->layouts);
-                    if(!l) return;
-
-                    w = get_widget<QWidget>(wr.id, api->widgets);
-                    if(!w) return;
-                }
-
-                CHECK(l);
-                CHECK(w);
-
-                l->addWidget(w, r, c, row_span, col_span);
+                api->front->grid_place_across(id, wr.id, r, c, row_span, col_span);
             }
 
             void draw_ref::set_mouse_released_callback(const std::string& c)
             {
                 INVARIANT(api);
-                std::lock_guard<std::mutex> lock(api->mutex);
 
                 auto rp = api->draw_refs.find(id);
                 if(rp == api->draw_refs.end()) return;
@@ -465,7 +284,6 @@ namespace fire
             void draw_ref::set_mouse_pressed_callback(const std::string& c)
             {
                 INVARIANT(api);
-                std::lock_guard<std::mutex> lock(api->mutex);
 
                 auto rp = api->draw_refs.find(id);
                 if(rp == api->draw_refs.end()) return;
@@ -477,7 +295,6 @@ namespace fire
             void draw_ref::set_mouse_moved_callback(const std::string& c)
             {
                 INVARIANT(api);
-                std::lock_guard<std::mutex> lock(api->mutex);
 
                 auto rp = api->draw_refs.find(id);
                 if(rp == api->draw_refs.end()) return;
@@ -489,7 +306,6 @@ namespace fire
             void draw_ref::set_mouse_dragged_callback(const std::string& c)
             {
                 INVARIANT(api);
-                std::lock_guard<std::mutex> lock(api->mutex);
 
                 auto rp = api->draw_refs.find(id);
                 if(rp == api->draw_refs.end()) return;
@@ -498,11 +314,9 @@ namespace fire
                 mouse_dragged_callback = c;
             }  
 
-            void draw_ref::set_pen(QPen p)
+            void draw_ref::set_pen(pen_ref p)
             {
                 INVARIANT(api);
-
-                std::lock_guard<std::mutex> lock(api->mutex);
 
                 auto rp = api->draw_refs.find(id);
                 if(rp == api->draw_refs.end()) return;
@@ -602,231 +416,82 @@ namespace fire
                     mouse_moved(d["x"].as_int(), d["y"].as_int());
             }
 
-            draw_view* draw_ref::get_view()
+            void pen_ref::set_width(int w)
             {
                 INVARIANT(api);
-                std::lock_guard<std::mutex> lock(api->mutex);
-
-                auto dp = api->draw_refs.find(id);
-                if(dp == api->draw_refs.end()) return nullptr;
-
-                auto w = get_widget<draw_view>(id, api->widgets);
-                if(w) CHECK(w->scene());
-                return w;
+                INVARIANT(api->front);
+                api->front->pen_set_width(id, w);
             }
 
             void draw_ref::line(double x1, double y1, double x2, double y2)
             {
                 INVARIANT(api);
+                INVARIANT(api->front);
 
-                auto w = get_view();
-                if(!w) return;
-
-                auto sp1 = w->mapToScene(x1,y1);
-                auto sp2 = w->mapToScene(x2,y2);
-                w->scene()->addLine(sp1.x(), sp1.y(), sp2.x(), sp2.y(), pen);
+                api->front->draw_line(id, pen.id, x1, y1, x2, y2);
             }
 
             void draw_ref::circle(double x, double y, double r)
             {
                 INVARIANT(api);
+                INVARIANT(api->front);
 
-                auto w = get_view();
-                if(!w) return;
-
-                auto sp = w->mapToScene(x,y);
-                auto spr = w->mapToScene(x+r,y+r);
-                auto rx = std::fabs(spr.x() - sp.x());
-                auto ry = std::fabs(spr.y() - sp.y());
-                w->scene()->addEllipse(sp.x()-rx, sp.y()-ry, 2*rx, 2*ry, pen);
+                api->front->draw_circle(id, pen.id, x, y, r);
             }
 
             void draw_ref::image(const image_ref& i, double x, double y, double w, double h)
             {
                 INVARIANT(api);
+                INVARIANT(api->front);
 
-                auto v = get_view();
-                if(!v) return;
                 if(!i.good()) return;
 
-                auto image = get_ptr_from_map<QImage_ptr>(i.id, api->images);
-                if(!image) return;
-
-                auto item = v->scene()->addPixmap(QPixmap::fromImage(*image));
-
-                CHECK(item);
-                CHECK_GREATER(image->width(), 0);
-                CHECK_GREATER(image->height(), 0);
-
-                auto o = v->mapToScene(x,y);
-                double sx = w / image->width();
-                double sy = h / image->height();
-
-                item->setTransformationMode(Qt::SmoothTransformation);
-                QTransform t;
-                t.translate(o.x(), o.y());
-                t.scale(sx, sy);
-                item->setTransform(t);
+                api->front->draw_image(id, i.id, x, y, w, h);
             }
 
             void draw_ref::clear()
             {
                 INVARIANT(api);
+                INVARIANT(api->front);
 
-                auto w = get_view();
-                if(!w) return;
-
-                w->scene()->clear();
-            }
-
-            draw_view::draw_view(draw_ref ref, int width, int height, QWidget* p) : 
-                QGraphicsView{p}, _ref{ref}, _button{0}
-            {
-                setScene(new QGraphicsScene{0.0,0.0,static_cast<qreal>(width),static_cast<qreal>(height)});
-                setMinimumSize(width,height);
-                setMouseTracking(true);
-                setRenderHint(QPainter::Antialiasing);
-            }
-
-            void draw_view::mousePressEvent(QMouseEvent* e)
-            {
-                if(!e) return;
-
-                INVARIANT(_ref.api);
-
-                auto ref = _ref.api->draw_refs.find(_ref.id);
-                if(ref == _ref.api->draw_refs.end()) return;
-
-                _button = e->button();
-                auto name = ref->second.get_name();
-                if(!name.empty())
-                {
-                    u::dict d;
-                    d["b"] = _button;
-                    d["x"] = e->pos().x();
-                    d["y"] = e->pos().y();
-                    event_message em{name, "p", d, _ref.api};
-                    _ref.api->send(em);
-                }
-                ref->second.mouse_pressed(e->button(), e->pos().x(), e->pos().y());
-            }
-
-            void draw_view::mouseReleaseEvent(QMouseEvent* e)
-            {
-                if(!e) return;
-
-                INVARIANT(_ref.api);
-
-                auto ref = _ref.api->draw_refs.find(_ref.id);
-                if(ref == _ref.api->draw_refs.end()) return;
-
-                _button = 0;
-                auto name = ref->second.get_name();
-                if(!name.empty())
-                {
-                    u::dict d;
-                    d["b"] = _button;
-                    d["x"] = e->pos().x();
-                    d["y"] = e->pos().y();
-                    event_message em{name, "r", d, _ref.api};
-                    _ref.api->send(em);
-                }
-                ref->second.mouse_released(e->button(), e->pos().x(), e->pos().y());
-            }
-
-            void draw_view::mouseMoveEvent(QMouseEvent* e)
-            {
-                if(!e) return;
-
-                INVARIANT(_ref.api);
-
-                auto ref = _ref.api->draw_refs.find(_ref.id);
-                if(ref == _ref.api->draw_refs.end()) return;
-
-                auto name = ref->second.get_name();
-                if(_button != 0) 
-                {
-                    if(!name.empty())
-                    {
-                        u::dict d;
-                        d["b"] = _button;
-                        d["x"] = e->pos().x();
-                        d["y"] = e->pos().y();
-                        event_message em{name, "d", d, _ref.api};
-                        _ref.api->send(em);
-                    }
-                    ref->second.mouse_dragged(_button, e->pos().x(), e->pos().y());
-                }
-                else
-                {
-                    if(!name.empty())
-                    {
-                        u::dict d;
-                        d["x"] = e->pos().x();
-                        d["y"] = e->pos().y();
-                        event_message em{name, "m", d, _ref.api};
-                        _ref.api->send(em);
-                    }
-
-                    ref->second.mouse_moved(e->pos().x(), e->pos().y());
-                }
-            }
-
-            QTimer* get_timer(int id, timer_map& m)
-            {
-                auto wp = m.find(id);
-                if(wp == m.end()) return nullptr;
-
-                CHECK(wp->second);
-                return wp->second;
+                api->front->draw_clear(id);
             }
 
             bool timer_ref::running()
             {
                 INVARIANT(api);
-                std::lock_guard<std::mutex> lock(api->mutex);
+                INVARIANT(api->front);
 
-                auto t = get_timer(id, api->timers);
-                return t ? t->isActive() : false;
+                return api->front->timer_running(id);
             }
 
             void timer_ref::stop()
             {
                 INVARIANT(api);
-                std::lock_guard<std::mutex> lock(api->mutex);
+                INVARIANT(api->front);
 
-                auto t = get_timer(id, api->timers);
-                if(!t) return;
-
-                t->stop();
+                api->front->timer_stop(id);
             }
 
             void timer_ref::start()
             {
                 INVARIANT(api);
-                std::lock_guard<std::mutex> lock(api->mutex);
+                INVARIANT(api->front);
 
-                auto t = get_timer(id, api->timers);
-                if(!t) return;
-
-                t->start();
+                api->front->timer_start(id);
             }
 
             void timer_ref::set_interval(int msec)
             {
                 INVARIANT(api);
-                std::lock_guard<std::mutex> lock(api->mutex);
+                INVARIANT(api->front);
 
-                auto t = get_timer(id, api->timers);
-                if(!t) return;
-
-                t->setInterval(msec);
+                api->front->timer_set_interval(id, msec);
             }
 
             void timer_ref::set_callback(const std::string& c)  
             {
                 INVARIANT(api);
-                std::lock_guard<std::mutex> lock(api->mutex);
 
                 auto rp = api->timer_refs.find(id);
                 if(rp == api->timer_refs.end()) return;
@@ -837,12 +502,16 @@ namespace fire
 
             int image_ref::width() const
             {
-                return w;
+                INVARIANT(api);
+                INVARIANT(api->front);
+                return api->front->image_width(id);
             }
 
             int image_ref::height() const
             {
-                return h;
+                INVARIANT(api);
+                INVARIANT(api->front);
+                return api->front->image_height(id);
             }
 
             bool image_ref::good() const

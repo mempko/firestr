@@ -34,10 +34,10 @@ ADD_DEFINITIONS(-std=c++11)
 include_directories(.)
 include_directories(..)
 
-file(GLOB src *.cpp app/*.cpp lua/*.cpp)
-file(GLOB headers *.hpp app/*.hpp lua/*.hpp)
-file(GLOB forms *.ui app/*.ui lua/*.ui)
-file(GLOB resources *.qrc app/*.qrc lua/*.qrc)
+file(GLOB src *.cpp app/*.cpp lua/*.cpp qtw/*.cpp) 
+file(GLOB headers *.hpp app/*.hpp lua/*.hpp qtw/*.hpp)
+file(GLOB forms *.ui app/*.ui lua/*.ui qtw/*.ui)
+file(GLOB resources *.qrc app/*.qrc lua/*.qrc qtw/*.qrc)
 
 #qt specific
 QT5_WRAP_CPP(moc_headers ${headers})
