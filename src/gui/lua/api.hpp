@@ -201,7 +201,6 @@ namespace fire
                     bin_file_data_wrapper open_bin_file();
                     bool save_file(const std::string& suggested_name, const std::string& data);
                     bool save_bin_file(const std::string& suggested_name, const bin_data& data);
-                    void connect_sound(int id, QAudioInput*, QIODevice*); 
 
                 private:
                     bool visible() const;
