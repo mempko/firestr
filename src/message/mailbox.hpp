@@ -35,12 +35,13 @@
 #include <memory>
 
 #include "message/message.hpp"
-#include "util/queue.hpp"
+#include "util/mailbox.hpp"
 
 namespace fire
 {
     namespace message
     {
+
         using queue = util::queue<message>;
 
         struct mailbox_stats
@@ -61,7 +62,6 @@ namespace fire
             public:
                 mailbox();
                 mailbox(const std::string&);
-                ~mailbox();
 
             public:
                 const std::string& address() const;
@@ -88,10 +88,7 @@ namespace fire
                 void done();
 
             private:
-
-                std::string _address;
-                queue _in;
-                queue _out;
+                util::mailbox<message> _m;
                 mailbox_stats _stats;
         };
 

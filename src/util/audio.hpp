@@ -29,15 +29,10 @@
  * also delete it here.
  */
 
-#ifndef FIRESTR_APP_LUA_AUDIO_H
-#define FIRESTR_APP_LUA_AUDIO_H
+#ifndef FIRESTR_APP_QTW_AUDIO_H
+#define FIRESTR_APP_QTW_AUDIO_H
 
-#include "gui/lua/base.hpp"
-#include "util/audio.hpp"
-
-#include <QAudioFormat>
-#include <QAudioInput>
-#include <QAudioOutput>
+#include "util/bytes.hpp"
 
 #include <string>
 #include <unordered_map>
@@ -45,31 +40,42 @@
 
 namespace fire
 {
-    namespace gui
+    namespace util
     {
-        namespace lua
+        class opus_encoder
         {
-            enum codec_type { pcm, opus};
+            public:
+                opus_encoder();
+                ~opus_encoder();
 
-            struct microphone_ref : public basic_ref
-            {
-                std::string callback;
-                void set_callback(const std::string&);
-                void stop();
-                void start();
-            };
-            using microphone_ref_map = std::unordered_map<int, microphone_ref>;
+            public:
+                bytes encode(const bytes&);
 
+            private:
+                OpusEncoder* _opus = nullptr;
+        };
+        using opus_encoder_ptr = std::shared_ptr<opus_encoder>;
 
-            struct speaker_ref : public basic_ref
-            {
-                void mute();
-                void unmute();
-                void play(const bin_data&);
-            };
+        class opus_decoder
+        {
+            public:
+                opus_decoder();
+                ~opus_decoder();
 
-            using speaker_ref_map = std::unordered_map<int, speaker_ref>;
-        }
+            public:
+                bytes decode(const bytes&);
+
+            private:
+                OpusDecoder* _opus = nullptr;
+        };
+        using opus_decoder_ptr = std::shared_ptr<opus_decoder>;
+
+        extern const size_t FRAMES; //40ms of PCM frames. Opus can handles 2.5, 5, 10, 20, 40 or 60ms of audio per frame.
+        extern const size_t MAX_FRAMES;
+        extern const size_t MAX_OPUS_DECODE_SIZE;
+        extern const size_t SAMPLE_RATE;
+        extern const size_t CHANNELS;
+        extern const size_t MIN_BUF_SIZE;
     }
 }
 

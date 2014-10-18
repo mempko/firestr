@@ -32,22 +32,16 @@
 #ifndef FIRESTR_APP_LUA_BASE_H
 #define FIRESTR_APP_LUA_BASE_H
 
+#include "gui/api/service.hpp"
 #include "gui/list.hpp"
 #include "gui/message.hpp"
 #include "conversation/conversation.hpp"
 #include "message/mailbox.hpp"
 #include "messages/sender.hpp"
 
+#include "util/audio.hpp"
 #include "util/vclock.hpp"
 #include "util/disk_store.hpp"
-
-#include <QObject>
-#include <QLabel>
-#include <QTextEdit>
-#include <QPushButton>
-#include <QComboBox>
-#include <QSignalMapper>
-#include <QGraphicsView>
 
 #include "slb/SLB.hpp"
 
@@ -121,22 +115,18 @@ namespace fire
                 std::string to_str() const;
             };
 
-            struct bin_file_data 
+            struct bin_file_data_wrapper 
             {
-                std::string name;
-                bin_data data;
-                bool good = false;
+                api::bin_file_data file;
                 std::string get_name() const;
                 size_t get_size() const;
                 bin_data get_data() const;
                 bool is_good() const;
             };
 
-            struct file_data 
+            struct file_data_wrapper
             {
-                std::string name;
-                std::string data;
-                bool good = false;
+                api::file_data file;
                 std::string get_name() const;
                 size_t get_size() const;
                 std::string get_data() const;
@@ -223,6 +213,22 @@ namespace fire
 
                 private:
                     util::disk_store& _d;
+            };
+
+            class opus_encoder_wrapper
+            {
+                public:
+                    bin_data encode(const bin_data& d) { return bin_data{_e.encode(d.data)};}
+                private:
+                    util::opus_encoder _e;
+            };
+
+            class opus_decoder_wrapper
+            {
+                public:
+                    bin_data decode(const bin_data& d) { return bin_data{_e.decode(d.data)};}
+                private:
+                    util::opus_decoder _e;
             };
 
             class vclock_wrapper

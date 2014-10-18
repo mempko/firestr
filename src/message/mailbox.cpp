@@ -53,46 +53,31 @@ namespace fire
             out_pop_count = 0;
         }
 
-        mailbox::mailbox() : 
-            _address{}, _in{}, _out{}
-        {
-        }
+        mailbox::mailbox() : _m{} { }
 
-        mailbox::mailbox(const std::string& a) : 
-            _address{a}, _in{}, _out{}
-        {
-        }
+        mailbox::mailbox(const std::string& a) : _m{a} { } 
 
-        mailbox::~mailbox()
-        {
-            done();
-        }
-
-        void mailbox::done()
-        {
-            _in.done();
-            _out.done();
-        }
+        void mailbox::done() { _m.done(); }
 
         const std::string& mailbox::address() const
         {
-            return _address;
+            return _m.address();
         }
 
         void mailbox::address(const std::string& a)
         {
-            _address = a;
+            _m.address(a);
         }
 
         void mailbox::push_inbox(const message& m)
         {
             if(_stats.on) _stats.in_push_count++;
-            _in.push(m);
+            _m.push_inbox(m);
         }
 
         bool mailbox::pop_inbox(message& m, bool wait)
         {
-            const bool p = _in.pop(m, wait);
+            const bool p = _m.pop_inbox(m, wait);
             if(_stats.on && p) _stats.in_pop_count++;
             return p;
         }
@@ -100,24 +85,24 @@ namespace fire
         void mailbox::push_outbox(const message& m)
         {
             if(_stats.on) _stats.out_push_count++;
-            _out.push(m);
+            _m.push_outbox(m);
         }
 
         bool mailbox::pop_outbox(message& m, bool wait)
         {
-            bool p = _out.pop(m, wait);
+            const bool p = _m.pop_outbox(m, wait);
             if(_stats.on && p) _stats.out_pop_count++;
             return p;
         }
 
         size_t mailbox::in_size() const
         {
-            return _in.size();
+            return _m.in_size();
         }
 
         size_t mailbox::out_size() const
         {
-            return _out.size();
+            return _m.out_size();
         }
 
         const mailbox_stats& mailbox::stats() const

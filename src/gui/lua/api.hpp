@@ -36,6 +36,7 @@
 #include "gui/lua/widgets.hpp"
 #include "gui/lua/audio.hpp"
 #include "gui/app/app.hpp"
+#include "gui/api/service.hpp"
 #include "conversation/conversation_service.hpp"
 
 namespace fire
@@ -45,10 +46,6 @@ namespace fire
         namespace lua
         {
             using script_ptr = std::shared_ptr<SLB::Script>;
-            using widget_map = std::unordered_map<int, QWidget*>;
-            using image_map = std::unordered_map<int, QImage_ptr>;
-            using layout_map = std::unordered_map<int, QGridLayout*>;
-            using timer_map = std::unordered_map<int, QTimer*>;
             using callback_map = std::unordered_map<std::string, std::string>;
 
             struct error_info
@@ -58,20 +55,29 @@ namespace fire
             };
             using error_infos = std::vector<error_info>;
 
-            class lua_api : public QObject
+            class lua_api : public api::backend
             {
-                Q_OBJECT
                 public:
                     lua_api(
                             app::app_ptr a,
                             messages::sender_ptr sender,
                             conversation::conversation_ptr conversation,
                             conversation::conversation_service_ptr conversation_service,
-                            QWidget* can,
-                            QGridLayout* lay,
-                            list* out = nullptr);
+                            api::frontend*);
 
                     ~lua_api();
+
+                public:
+                    virtual void button_clicked(api::ref_id);
+                    virtual void edit_edited(api::ref_id id);
+                    virtual void edit_finished(api::ref_id id);
+                    virtual void text_edit_edited(api::ref_id id);
+                    virtual void timer_triggered(api::ref_id id);
+                    virtual void got_sound(api::ref_id id, const util::bytes&);
+                    virtual void draw_mouse_pressed(api::ref_id, int button, int x, int y);
+                    virtual void draw_mouse_released(api::ref_id, int button, int x, int y);
+                    virtual void draw_mouse_dragged(api::ref_id, int button, int x, int y);
+                    virtual void draw_mouse_moved(api::ref_id, int x, int y);
 
                 public:
                     //misc
@@ -79,13 +85,11 @@ namespace fire
                     store_ref_ptr local_data;
                     store_ref_ptr data;
                     error_infos errors; 
-                    list* output;
-                    QWidget* canvas;
-                    QGridLayout* layout;
                     SLB::Manager manager;
                     script_ptr state;
                     std::string who_started_id;
-                    std::mutex mutex;
+
+                    api::frontend* front;
 
                     //message
                     conversation::conversation_ptr conversation;
@@ -118,15 +122,9 @@ namespace fire
                     microphone_ref_map mic_refs;
                     speaker_ref_map speaker_refs;
 
-                    //all widgets referenced are stored here
-                    layout_map layouts;
-                    widget_map widgets;
-                    image_map images;
-                    timer_map timers;
-
                     //id functions
-                    int ids = 0;
-                    int new_id();
+                    api::ref_id ids = 0;
+                    api::ref_id new_id();
 
                     //observable functions
                     observable_ref_name_map observable_names;
@@ -149,15 +147,15 @@ namespace fire
                     text_edit_ref make_text_edit(const std::string& text);
                     list_ref make_list();
                     draw_ref make_draw(int width, int height);
-                    QPen make_pen(const std::string& color, int width);
+                    pen_ref make_pen(const std::string& color, int width);
                     timer_ref make_timer(int msec, const std::string& callback);
                     image_ref make_image(const bin_data& data);
 
                     //multimedia
                     microphone_ref make_mic(const std::string& callback, const std::string& codec);
                     speaker_ref make_speaker(const std::string& codec);
-                    opus_encoder make_audio_encoder();
-                    opus_decoder make_audio_decoder();
+                    opus_encoder_wrapper make_audio_encoder();
+                    opus_decoder_wrapper make_audio_decoder();
                     vclock_wrapper make_vclock();
 
                     //grid
@@ -199,19 +197,11 @@ namespace fire
                     bool launched_local() const;
 
                     //file
-                    file_data open_file();
-                    bin_file_data open_bin_file();
+                    file_data_wrapper open_file();
+                    bin_file_data_wrapper open_bin_file();
                     bool save_file(const std::string& suggested_name, const std::string& data);
                     bool save_bin_file(const std::string& suggested_name, const bin_data& data);
                     void connect_sound(int id, QAudioInput*, QIODevice*); 
-
-                public slots:
-                    void button_clicked(int id);
-                    void edit_edited(int id);
-                    void edit_finished(int id);
-                    void text_edit_edited(int id);
-                    void timer_triggered(int id);
-                    void got_sound(int id);
 
                 private:
                     bool visible() const;
