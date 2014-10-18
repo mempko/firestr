@@ -211,20 +211,6 @@ namespace fire
             };
 
             using lua_api_ptr = std::shared_ptr<lua_api>;
-
-            template<class W, class M>
-                W* get_widget(int id, M& map)
-                {
-                    auto wp = map.find(id);
-                    return wp != map.end() ? dynamic_cast<W*>(wp->second) : nullptr;
-                }
-
-            template<class W, class M>
-                W get_ptr_from_map(int id, M& map)
-                {
-                    auto wp = map.find(id);
-                    return wp != map.end() ? wp->second : nullptr;
-                }
         }
     }
 }
