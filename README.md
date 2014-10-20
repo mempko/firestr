@@ -1,6 +1,8 @@
 [Fire★](http://www.firestr.com) (Pronounced Fire Star) 0.4
 ===================================================================
 
+[![Documentation Status](https://readthedocs.org/projects/fire/badge/?version=latest)](https://readthedocs.org/projects/fire/?badge=latest)
+
 Fire★ is a simple distributed, decentralized communication 
 and computation platform.
 
