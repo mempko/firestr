@@ -153,7 +153,8 @@ namespace fire
                 _canvas_layout = new QGridLayout{_canvas};
                 layout()->addWidget(_canvas, 0,0,2,1);
 
-                _front = std::make_shared<qtw::qt_frontend>(_canvas, _canvas_layout, nullptr);
+                auto front = std::make_shared<qtw::qt_frontend>(_canvas, _canvas_layout, nullptr);
+                _front = std::make_shared<qtw::qt_frontend_client>(front);
 
                 _mail = std::make_shared<m::mailbox>(_id);
                 _sender = std::make_shared<ms::sender>(_conversation->user_service(), _mail);
