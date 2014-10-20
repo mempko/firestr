@@ -36,7 +36,7 @@
 #include "gui/app/app_service.hpp"
 #include "gui/list.hpp"
 #include "gui/lua/api.hpp"
-#include "gui/qtw/frontend.hpp"
+#include "gui/qtw/frontend_client.hpp"
 #include "gui/mail_service.hpp"
 #include "gui/message.hpp"
 
@@ -108,7 +108,7 @@ namespace fire
 
                 private:
                     mail_service* _mail_service;
-                    qtw::qt_frontend_ptr _front;
+                    qtw::qt_frontend_client_ptr _front;
                     lua::lua_api_ptr _api;
                     QWidget* _canvas;
                     QGridLayout* _canvas_layout;
