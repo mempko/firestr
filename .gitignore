@@ -1,0 +1,7 @@
+# OS X
+
+.DS_Store
+
+# Remove stuff mkdocs builds
+
+docs/site/
