@@ -43,12 +43,15 @@ namespace fire
             qt_frontend_client::qt_frontend_client(qt_frontend_ptr f) : _f{f}
             {
                 REQUIRE(f);
-                qRegisterMetaType<string_promise_ptr>("std::promise<std::string>>");
-                qRegisterMetaType<int_promise_ptr>("std::promise<int>>");
-                qRegisterMetaType<bool_promise_ptr>("std::promise<bool>>");
-                qRegisterMetaType<size_t_promise_ptr>("std::promise<size_t>>");
-                qRegisterMetaType<file_data_promise_ptr>("std::promise<file_data>>");
-                qRegisterMetaType<bin_file_data_promise_ptr>("std::promise<bin_file_data>>");
+                qRegisterMetaType<std::string>("std::string");
+                qRegisterMetaType<util::bytes>("util::bytes");
+                qRegisterMetaType<api::ref_id>("api::ref_id");
+                qRegisterMetaType<string_promise_ptr>("string_promise_ptr");
+                qRegisterMetaType<int_promise_ptr>("int_promise_ptr");
+                qRegisterMetaType<bool_promise_ptr>("bool_promise_ptr");
+                qRegisterMetaType<size_t_promise_ptr>("size_t_promise_ptr");
+                qRegisterMetaType<file_data_promise_ptr>("file_data_promise_ptr");
+                qRegisterMetaType<bin_file_data_promise_ptr>("bin_file_data_promise_ptr");
 
                 F_CON(place(api::ref_id, int, int));
                 F_CON(place_across(api::ref_id, int, int, int, int));

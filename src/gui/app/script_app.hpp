@@ -36,12 +36,11 @@
 #include "gui/app/app_service.hpp"
 #include "gui/list.hpp"
 #include "gui/lua/api.hpp"
+#include "gui/lua/backend_client.hpp"
 #include "gui/qtw/frontend_client.hpp"
-#include "gui/mail_service.hpp"
 #include "gui/message.hpp"
 
 #include "conversation/conversation_service.hpp"
-#include "service/service.hpp"
 
 #include "message/mailbox.hpp"
 #include "messages/sender.hpp"
@@ -86,12 +85,10 @@ namespace fire
                     fire::message::mailbox_ptr mail();
 
                 public slots:
-                    void check_mail(fire::message::message);
                     void clone_app();
 
                 private:
                     void init();
-                    void init_handlers();
                     void received_script_message(const fire::message::message&);
                     void received_event_message(const fire::message::message&);
 
@@ -107,13 +104,12 @@ namespace fire
                     app_service_ptr _app_service;
 
                 private:
-                    mail_service* _mail_service;
                     qtw::qt_frontend_client_ptr _front;
+                    lua::backend_client_ptr _back;
                     lua::lua_api_ptr _api;
                     QWidget* _canvas;
                     QGridLayout* _canvas_layout;
                     QPushButton* _clone;
-                    service::service_map _sm;
             };
 
             extern const std::string SCRIPT_APP;
