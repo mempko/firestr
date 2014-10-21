@@ -19,7 +19,7 @@ Features
 Installation
 ------------
 
-See our [quickstart guide](#TODO)
+See our [quickstart guide](quickstart)
 
 Contribute
 ----------
@@ -33,4 +33,4 @@ Contribute
 Support
 -------
 
-If you are having issues, please let us know on the [issue tracker](https://github.com/mempko/firestr/issues) or the [Mailing List](mailto:firestr@librelist.com) and we'll try our best to help out.
+If you are having issues, please let us know on the [issue tracker](https://github.com/mempko/firestr/issues), the irc channel (#firestr on freenode), or the [Mailing List](mailto:firestr@librelist.com) and we'll try our best to help out.
