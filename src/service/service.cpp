@@ -92,6 +92,23 @@ namespace fire
             INVARIANT(_thread == nullptr);
         }
 
+        service::service(
+                message::mailbox_ptr mail, 
+                message::mailbox_ptr event) :
+            _done{false},
+            _mail{mail},
+            _event{event}
+        {
+            REQUIRE(mail);
+
+            _address = mail->address();
+
+            ENSURE(_mail);
+            ENSURE_FALSE(_address.empty());
+            ENSURE(_thread == nullptr);
+        }
+
+
         service::~service()
         {
             INVARIANT(_thread);

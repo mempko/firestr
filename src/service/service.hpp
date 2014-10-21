@@ -65,13 +65,16 @@ namespace fire
                 service(
                         const std::string& address,
                         message::mailbox_ptr event = nullptr);
+                service(
+                        message::mailbox_ptr mail,
+                        message::mailbox_ptr event = nullptr);
                 virtual ~service();
 
             public:
                 void start();
                 message::mailbox_ptr mail();
 
-            protected:
+            public:
                 void handle(const std::string& type, message_handler);
 
             protected:
