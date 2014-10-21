@@ -124,9 +124,7 @@ namespace fire
             {
                 INVARIANT(_app);
                 INVARIANT(_conversation);
-                INVARIANT(_mail_service);
 
-                _mail_service->done();
                 LOG << "closed app " << _app->name() << "(" << _app->id() << ")" << std::endl;
                 
             }
@@ -138,8 +136,8 @@ namespace fire
                 INVARIANT(_conversation);
                 INVARIANT(_app);
 
-                init_handlers();
-
+                //setup frontend
+                
                 _clone = new QPushButton("+");
                 _clone->setMaximumSize(15,15);
                 _clone->setMinimumSize(15,15);
@@ -152,34 +150,37 @@ namespace fire
                 _canvas = new QWidget;
                 _canvas_layout = new QGridLayout{_canvas};
                 layout()->addWidget(_canvas, 0,0,2,1);
-
                 auto front = std::make_shared<qtw::qt_frontend>(_canvas, _canvas_layout, nullptr);
                 _front = std::make_shared<qtw::qt_frontend_client>(front);
 
+                //setup mail
                 _mail = std::make_shared<m::mailbox>(_id);
                 _sender = std::make_shared<ms::sender>(_conversation->user_service(), _mail);
+
+                //setup api and backend
                 _api = std::make_shared<l::lua_api>(
                         _app, 
                         _sender, 
                         _conversation, 
                         _conversation_service, 
                         _front.get());
-
-                _front->set_backend(_api.get());
                 _api->who_started_id = _from_id;
 
-                //run script
-                _api->run(_app->code());
+                _back = std::make_shared<l::backend_client>(_api.get(), _mail); 
+
+                //assign backend to frontend
+                _front->set_backend(_back.get());
+
+                //run script and start backend on seperate thread
+                _back->run(_app->code());
+                _back->start();
 
                 setMinimumHeight(layout()->sizeHint().height() + PADDING);
 
                 //setup mail service
-                _mail_service = new mail_service{_mail, this};
-                _mail_service->start();
-
                 INVARIANT(_api);
-                INVARIANT(_mail_service);
                 INVARIANT(_front);
+                INVARIANT(_back);
                 INVARIANT(_conversation);
                 INVARIANT(_mail);
                 INVARIANT(_sender);
@@ -201,17 +202,6 @@ namespace fire
             {
                 ENSURE(_mail);
                 return _mail;
-            }
-
-            void script_app::init_handlers()
-            {
-                using std::bind;
-                using namespace std::placeholders;
-
-                _sm.handle(l::SCRIPT_MESSAGE, 
-                        bind(&script_app::received_script_message, this, _1));
-                _sm.handle(l::EVENT_MESSAGE,
-                        bind(&script_app::received_event_message, this, _1));
             }
 
             void script_app::received_script_message(const m::message& m)
@@ -244,24 +234,6 @@ namespace fire
 
                 l::event_message em{m, _api.get()};
                 _api->event_received(em);
-            }
-
-            void script_app::check_mail(m::message m) 
-            try
-            {
-                if(m::is_remote(m)) m::expect_symmetric(m);
-                else m::expect_plaintext(m);
-
-                if(!_sm.handle(m))
-                    LOG << "script_app: error in check_mail. Unknown message type `" << m.meta.type << "'" << std::endl;
-            }
-            catch(std::exception& e)
-            {
-                LOG << "script_app: error in check_mail. " << e.what() << std::endl;
-            }
-            catch(...)
-            {
-                LOG << "script_app: unexpected error in check_mail." << std::endl;
             }
 
             void script_app::clone_app()

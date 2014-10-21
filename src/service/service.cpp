@@ -88,8 +88,8 @@ namespace fire
 
             _mail = std::make_shared<m::mailbox>(_address);
 
-            INVARIANT(_mail);
-            INVARIANT(_thread == nullptr);
+            ENSURE(_mail);
+            ENSURE(_thread == nullptr);
         }
 
         service::service(
