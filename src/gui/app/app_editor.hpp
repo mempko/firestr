@@ -39,7 +39,9 @@
 #include "message/mailbox.hpp"
 #include "messages/sender.hpp"
 #include "gui/lua/api.hpp"
+#include "gui/lua/backend_client.hpp"
 #include "gui/qtw/frontend.hpp"
+#include "gui/qtw/frontend_client.hpp"
 #include "gui/app/app_service.hpp"
 #include "util/crstring.hpp"
 
@@ -143,7 +145,6 @@ namespace fire
                     void text_typed(QKeyEvent*);
                     void save_app();
                     void export_app();
-                    void check_mail(fire::message::message);
                     void init_update();
                     void update();
                     void add_data();
@@ -168,23 +169,27 @@ namespace fire
                     void update_status_to_waiting();
                     void update_status_to_running();
 
-                private:
+
+                signals:
+                    void got_code(const fire::message::message&);
+                    void got_init(const fire::message::message&);
+
+                private slots:
+                    void emit_got_code(const fire::message::message&);
+                    void emit_got_init(const fire::message::message&);
+
                     void received_code(const fire::message::message&);
-                    void received_script_message(const fire::message::message&); 
                     void received_script_init(const fire::message::message&); 
-                    void received_script_event(const fire::message::message&); 
 
                 private:
                     std::string _from_id;
                     std::string _id;
-                    mail_service* _mail_service;
                     app_service_ptr _app_service;
                     conversation::conversation_service_ptr _conversation_service;
                     conversation::conversation_ptr _conversation;
                     fire::message::mailbox_ptr _mail;
                     messages::sender_ptr _sender;
                     user::contact_list _contacts;
-                    service::service_map _sm;
 
                     //clock for keeping track of code
                     util::cr_string _code;
@@ -204,8 +209,10 @@ namespace fire
                     util::bytes _data_bytes;
                     list* _data_items;
 
-                    qtw::qt_frontend_ptr _front;
+                    qtw::qt_frontend_client_ptr _front;
                     lua::lua_api_ptr _api;
+                    lua::backend_client_ptr _back;
+
                     app_ptr _app;
                     std::string _prev_code;
                     int _prev_pos = 0;
