@@ -201,6 +201,10 @@ namespace fire
                     friend class speaker;
 
                 private:
+                    bool _can_text_callback = true;
+                    bool _can_edit_callback = true;
+
+                private:
                     //all widgets referenced are stored here
                     layout_map layouts;
                     widget_map widgets;

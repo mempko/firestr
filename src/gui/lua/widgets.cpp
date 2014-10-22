@@ -160,15 +160,12 @@ namespace fire
 
                 if(callback.empty()) return;
 
-                rp->second.can_callback = false;
                 api->state->call(callback, v.as_string());
-                rp->second.can_callback = true;
             }
             catch(...)
             {
                 auto rp = api->edit_refs.find(id);
                 if(rp == api->edit_refs.end()) return;
-                rp->second.can_callback = true;
                 throw;
             }
 
@@ -208,15 +205,12 @@ namespace fire
                 if(rp == api->text_edit_refs.end()) return;
 
                 if(rp->second.edited_callback.empty()) return;
-                rp->second.can_callback = false;
                 api->state->call(rp->second.edited_callback, v.as_string());
-                rp->second.can_callback = true;
             }
             catch(...)
             {
                 auto rp = api->text_edit_refs.find(id);
                 if(rp == api->text_edit_refs.end()) return;
-                rp->second.can_callback = true;
                 throw;
             }
 

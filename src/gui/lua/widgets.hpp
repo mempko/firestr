@@ -71,7 +71,6 @@ namespace fire
 
             struct edit_ref : public widget_ref
             {
-                bool can_callback = true;
                 std::string edited_callback;
                 std::string finished_callback;
 
@@ -90,7 +89,6 @@ namespace fire
 
             struct text_edit_ref : public widget_ref
             {
-                bool can_callback = true;
                 std::string edited_callback;
 
                 std::string get_text() const; 

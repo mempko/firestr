@@ -815,7 +815,6 @@ namespace fire
 
                 auto rp = edit_refs.find(id);
                 if(rp == edit_refs.end()) return;
-                if(!rp->second.can_callback) return;
 
                 auto callback = rp->second.edited_callback;
                 if(callback.empty()) return;
@@ -849,7 +848,6 @@ namespace fire
 
                 auto rp = edit_refs.find(id);
                 if(rp == edit_refs.end()) return;
-                if(!rp->second.can_callback) return;
 
                 auto callback = rp->second.finished_callback;
                 if(callback.empty()) return;
@@ -903,7 +901,6 @@ namespace fire
 
                 auto rp = text_edit_refs.find(id);
                 if(rp == text_edit_refs.end()) return;
-                if(!rp->second.can_callback) return;
 
                 auto callback = rp->second.edited_callback;
                 if(callback.empty()) return;
