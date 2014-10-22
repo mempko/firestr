@@ -126,6 +126,7 @@ namespace fire
             {
                 REQUIRE(c);
                 REQUIRE(cl);
+
                 ENSURE(canvas)
                 ENSURE(layout)
             }
@@ -847,14 +848,12 @@ namespace fire
             void qt_frontend::height(int h)
             {
                 INVARIANT(canvas);
+
                 canvas->setMinimumHeight(h);
             }
 
             void qt_frontend::grow()
             {
-                INVARIANT(canvas);
-                INVARIANT(layout);
-                canvas->setMinimumHeight(layout->sizeHint().height() + PADDING);
             }
 
             void qt_frontend::reset()

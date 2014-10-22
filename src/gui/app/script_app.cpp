@@ -175,8 +175,6 @@ namespace fire
                 _back->run(_app->code());
                 _back->start();
 
-                setMinimumHeight(layout()->sizeHint().height() + PADDING);
-
                 //setup mail service
                 INVARIANT(_api);
                 INVARIANT(_front);
