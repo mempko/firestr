@@ -327,13 +327,20 @@ namespace fire
                 if(!le) return;
 
                 auto pt = gui::convert(le->text());
-                if(t != pt) le->setText(t.c_str());
+                if(t != pt) 
+                {
+                    _can_edit_callback = false;
+                    le->setText(t.c_str());
+                }
             }
 
             void qt_frontend::edit_edited(int id)
             {
                 INVARIANT(back);
-                back->edit_edited(id);
+                if(_can_edit_callback) 
+                    back->edit_edited(id);
+
+                _can_edit_callback = true;
             }
 
             void qt_frontend::edit_finished(int id)
@@ -375,6 +382,7 @@ namespace fire
                     //save cursor
                     auto pos = edit->textCursor().position();
 
+                    _can_text_callback = false;
                     edit->setText(t.c_str());
 
                     //put cursor back
@@ -387,7 +395,10 @@ namespace fire
             void qt_frontend::text_edit_edited(int id)
             {
                 INVARIANT(back);
-                back->text_edit_edited(id);
+                if(_can_text_callback)
+                    back->text_edit_edited(id);
+
+                _can_text_callback = true;
             }
 
             void qt_frontend::add_list(api::ref_id id)
