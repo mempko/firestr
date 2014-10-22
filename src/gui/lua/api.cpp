@@ -56,12 +56,6 @@ namespace fire
     {
         namespace lua
         {
-            namespace
-            {
-                const std::string SANATIZE_REPLACE = "_";
-                const size_t PADDING = 40;
-            }
-
             lua_api::lua_api(
                     a::app_ptr a,
                     ms::sender_ptr sndr,
@@ -395,8 +389,9 @@ namespace fire
             void lua_api::run(const std::string& code)
             {
                 REQUIRE_FALSE(code.empty());
-
+                INVARIANT(front);
                 auto error = execute(code);
+
                 if(error.message.empty())
                 {
                     _error.line = -1;
@@ -404,6 +399,7 @@ namespace fire
                     return;
                 }
                 report_error(error.message, error.line);
+
             }
 
             //API implementation 

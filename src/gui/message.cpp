@@ -46,11 +46,12 @@ namespace fire
 
             //setup layout
             _layout = new QGridLayout{_root};
-            _layout->setSizeConstraint(QLayout::SetMinimumSize);
+            _layout->setSizeConstraint(QLayout::SetMinAndMaxSize);
 
             //setup base
             setWidgetResizable(true);
             setWidget(_root);
+            setLayout(_layout);
             setFrameShape(QFrame::NoFrame);
             setContentsMargins(0,0,0,0);
 

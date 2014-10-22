@@ -516,7 +516,6 @@ namespace fire
             void qt_frontend_client::grow()
             {
                 emit got_grow();
-
             }
 
             bool qt_frontend_client::visible()
