@@ -3,11 +3,11 @@ Quickstart Guide
 
 The best way to get started with Fire★ depends on which platform you're running.  Currently, we support:
 
-  * [Windows](#Windows)
+  * [Windows](quickstart#Windows)
 
-  * [Ubuntu](#Ubuntu)
+  * [Ubuntu](quickstart#Ubuntu)
 
-  * [Other Platforms](#Other Platforms)
+  * [Other Platforms](quickstart#Other Platforms)
 
 Windows
 -------
@@ -36,7 +36,7 @@ Ubuntu
 Other Platforms
 ---------------
 
-At the moment, Fire★ only provides official builds for Ubuntu and Windows (although if you'd like to maintain a Fire★ build for the platform of your choice, please feel free to [get in touch](#support).  However, you can compile from [source](https://github.com/mempko/firestr).  At the moment, we recommend gcc/g++ over clang for compilation.
+At the moment, Fire★ only provides official builds for Ubuntu and Windows (although if you'd like to maintain a Fire★ build for the platform of your choice, please feel free to [get in touch](quickstart#support).  However, you can compile from [source](https://github.com/mempko/firestr).  At the moment, we recommend gcc/g++ over clang for compilation.
 
 Support
 -------
