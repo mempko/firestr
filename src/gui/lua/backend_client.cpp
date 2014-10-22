@@ -349,7 +349,7 @@ namespace fire
             void backend_client::edit_edited(ref_id id)
             {
                 INVARIANT(mail());
-                text_edit_edited_msg m;
+                edit_edited_msg m;
                 m.id = id;
                 mail()->push_inbox(m.to_message());
             }
