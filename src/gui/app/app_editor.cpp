@@ -283,8 +283,6 @@ namespace fire
             app_editor::~app_editor()
             {
                 INVARIANT(_conversation);
-                INVARIANT(_mail_service);
-                _mail_service->done();
             }
 
             void app_editor::init()
@@ -296,8 +294,6 @@ namespace fire
                 INVARIANT(_conversation->user_service());
                 INVARIANT(_app_service);
                 INVARIANT(_app);
-
-                init_handlers();
 
                 auto my_id = _conversation->user_service()->user().info().id();
 
@@ -323,7 +319,11 @@ namespace fire
 
                 init_data_tab(data_layout);
 
+                //init handlers
+                init_handlers();
+
                 //run app
+
                 run_script();
 
                 INVARIANT(_app);
@@ -344,6 +344,7 @@ namespace fire
                 INVARIANT(_conversation_service);
                 INVARIANT(_conversation);
                 INVARIANT(_app_service);
+                INVARIANT(_mail);
 
                 _canvas = new QWidget;
                 _canvas_layout = new QGridLayout;
@@ -352,7 +353,8 @@ namespace fire
                 l->addWidget(_canvas, 0, 0, 1, 4);
                 l->addWidget(_output, 1, 0, 1, 4);
 
-                _front = std::make_shared<qtw::qt_frontend>(_canvas, _canvas_layout, _output);
+                auto front = std::make_shared<qtw::qt_frontend>(_canvas, _canvas_layout, _output);
+                _front = std::make_shared<qtw::qt_frontend_client>(front);
                 _api = std::make_shared<l::lua_api>(
                         _app, 
                         _sender, 
@@ -360,7 +362,9 @@ namespace fire
                         _conversation_service, 
                         _front.get());
 
-                _front->set_backend(_api.get());
+                _back = std::make_shared<l::backend_client>(_api.get(), _mail); 
+
+                _front->set_backend(_back.get());
 
                 //text edit
                 _script = new app_text_editor{_api.get()};
@@ -390,10 +394,6 @@ namespace fire
 
                 setMinimumHeight(layout()->sizeHint().height() + PADDING);
 
-                //setup mail service
-                _mail_service = new mail_service{_mail, this};
-                _mail_service->start();
-
                 //setup update timer
                 auto *t2 = new QTimer(this);
                 connect(t2, SIGNAL(timeout()), this, SLOT(update()));
@@ -409,7 +409,6 @@ namespace fire
                 INVARIANT(_canvas_layout);
                 INVARIANT(_output);
                 INVARIANT(_status);
-                INVARIANT(_mail_service);
             }
 
             void app_editor::init_data()
@@ -828,7 +827,8 @@ namespace fire
                 INVARIANT(_script);
                 INVARIANT(_conversation);
                 INVARIANT(_conversation_service);
-                INVARIANT(_api);
+                INVARIANT(_front);
+                INVARIANT(_back);
                 INVARIANT(_output);
 
                 //alert of change
@@ -839,8 +839,8 @@ namespace fire
                 if(code.empty()) return true;
 
                 //run the code
-                _api->reset_widgets();
-                _api->run(code);
+                _front->reset();
+                _back->run(code);
                 update_error(_api->get_error());
                 bool has_no_errors = _api->get_error().line == -1;
                 if(has_no_errors) update_status_to_no_errors();
@@ -1041,17 +1041,31 @@ namespace fire
 
             void app_editor::init_handlers() 
             {
+                qRegisterMetaType<m::message>("fire::message::message");
+                connect(this, SIGNAL(got_code(const fire::message::message&)), this, SLOT(received_code(const fire::message::message&)));
+                connect(this, SIGNAL(got_init(const fire::message::message&)), this, SLOT(received_script_init(const fire::message::message&)));
+
+                INVARIANT(_back);
                 using std::bind;
                 using namespace std::placeholders;
 
-                _sm.handle(SCRIPT_CODE_MESSAGE,
-                        bind(&app_editor::received_code, this, _1));
-                _sm.handle(l::SCRIPT_MESSAGE,
-                        bind(&app_editor::received_script_message, this, _1));
-                _sm.handle(SCRIPT_INIT_MESSAGE,
-                        bind(&app_editor::received_script_init, this, _1));
-                _sm.handle(l::EVENT_MESSAGE,
-                        bind(&app_editor::received_script_event, this, _1));
+                _back->handle(SCRIPT_CODE_MESSAGE, 
+                        bind(&app_editor::emit_got_code, this, _1));
+
+                _back->handle(SCRIPT_INIT_MESSAGE, 
+                        bind(&app_editor::emit_got_init, this, _1));
+
+                _back->start();
+            }
+
+            void app_editor::emit_got_code(const m::message& m)
+            {
+                emit got_code(m);
+            }
+
+            void app_editor::emit_got_init(const m::message& m)
+            {
+                emit got_init(m);
             }
 
             void app_editor::received_code(const m::message& m) 
@@ -1095,15 +1109,6 @@ namespace fire
                 }
             }
 
-            void app_editor::received_script_message(const m::message& m) 
-            {
-                REQUIRE_EQUAL(m.meta.type, l::SCRIPT_MESSAGE);
-                INVARIANT(_app);
-
-                l::script_message sm{m, _api.get()};
-                _api->message_received(sm);
-            }
-
             void app_editor::received_script_init(const m::message& m) 
             {
                 REQUIRE_EQUAL(m.meta.type, SCRIPT_INIT_MESSAGE);
@@ -1116,37 +1121,6 @@ namespace fire
                 if(!c) return;
 
                 send_script_to(c->id());
-            }
-
-            void app_editor::received_script_event(const m::message& m) 
-            {
-                REQUIRE_EQUAL(m.meta.type, l::EVENT_MESSAGE);
-                INVARIANT(_api);
-
-                l::event_message sm{m, _api.get()};
-                _api->event_received(sm);
-            }
-
-            void app_editor::check_mail(m::message m) 
-            try
-            {
-                INVARIANT(_mail);
-                INVARIANT(_conversation);
-                INVARIANT(_conversation_service);
-
-                if(m::is_remote(m)) m::expect_symmetric(m);
-                else m::expect_plaintext(m);
-
-                if(!_sm.handle(m))
-                    LOG << "app_editor received unknown message `" << m.meta.type << "'" << std::endl;
-            }
-            catch(std::exception& e)
-            {
-                LOG << "app_editor: error in check_mail. " << e.what() << std::endl;
-            }
-            catch(...)
-            {
-                LOG << "app_editor: unexpected error in check_mail." << std::endl;
             }
 
             lua_highlighter::lua_highlighter(QTextDocument* parent) :
