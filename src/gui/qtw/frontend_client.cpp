@@ -147,6 +147,16 @@ namespace fire
                 ENSURE(_f);
             }
 
+            qt_frontend_client::~qt_frontend_client()
+            {
+                if(!_done) stop();
+            }
+
+            void qt_frontend_client::stop()
+            {
+                _done = true;
+            }
+
             void qt_frontend_client::set_backend(api::backend* b)
             {
                 REQUIRE(b);
@@ -157,22 +167,26 @@ namespace fire
             //all widgets
             void qt_frontend_client::place(api::ref_id id, int r, int c)
             {
+                if(_done) return;
                 emit got_place(id, r, c);
             }
 
             void qt_frontend_client::place_across(api::ref_id id, int r, int c, int row_span, int col_span)
             {
+                if(_done) return;
                 emit got_place_across(id, r, c, row_span, col_span);
 
             }
 
             void qt_frontend_client::widget_enable(api::ref_id id, bool b)
             {
+                if(_done) return;
                 emit got_widget_enable(id, b);
             }
 
             bool qt_frontend_client::is_widget_enabled(api::ref_id id)
             {
+                if(_done) return false;
                 auto p = std::make_shared<std::promise<bool>>();
                 auto f = p->get_future();
 
@@ -184,17 +198,19 @@ namespace fire
             //grid
             void qt_frontend_client::add_grid(api::ref_id id)
             {
+                if(_done) return;
                 emit got_add_grid(id);
             }
 
             void qt_frontend_client::grid_place(api::ref_id grid_id, api::ref_id widget_id, int r, int c)
             {
+                if(_done) return;
                 emit got_grid_place(grid_id, widget_id, r, c);
-
             }
 
             void qt_frontend_client::grid_place_across(api::ref_id grid_id, api::ref_id widget_id, int r, int c, int row_span, int col_span)
             {
+                if(_done) return;
                 emit got_grid_place_across(grid_id, widget_id, r, c, row_span, col_span);
             }
 
@@ -202,11 +218,13 @@ namespace fire
             //button
             void qt_frontend_client::add_button(api::ref_id id, const std::string& t)
             {
+                if(_done) return;
                 emit got_add_button(id, t);
             }
 
             std::string qt_frontend_client::button_get_text(api::ref_id id)
             {
+                if(_done) return "";
                 auto p = std::make_shared<std::promise<std::string>>();
                 auto f = p->get_future();
 
@@ -217,12 +235,14 @@ namespace fire
 
             void qt_frontend_client::button_set_text(api::ref_id id, const std::string& t)
             {
+                if(_done) return;
                 emit got_button_set_text(id, t);
 
             }
 
             void qt_frontend_client::button_set_image(api::ref_id id, api::ref_id image_id)
             {
+                if(_done) return;
                 emit got_button_set_image(id, image_id);
             }
 
@@ -230,11 +250,13 @@ namespace fire
             //label
             void qt_frontend_client::add_label(api::ref_id id, const std::string& t)
             {
+                if(_done) return;
                 emit got_add_label(id, t);
             }
 
             std::string qt_frontend_client::label_get_text(api::ref_id id)
             {
+                if(_done) return "";
                 auto p = std::make_shared<std::promise<std::string>>();
                 auto f = p->get_future();
 
@@ -245,6 +267,7 @@ namespace fire
 
             void qt_frontend_client::label_set_text(api::ref_id id, const std::string& t)
             {
+                if(_done) return;
                 emit got_label_set_text(id, t);
             }
 
@@ -252,11 +275,13 @@ namespace fire
             //edit
             void qt_frontend_client::add_edit(api::ref_id id, const std::string& t)
             {
+                if(_done) return;
                 emit got_add_edit(id, t);
             }
 
             std::string qt_frontend_client::edit_get_text(api::ref_id id)
             {
+                if(_done) return "";
                 auto p = std::make_shared<std::promise<std::string>>();
                 auto f = p->get_future();
 
@@ -267,17 +292,20 @@ namespace fire
 
             void qt_frontend_client::edit_set_text(api::ref_id id, const std::string& t)
             {
+                if(_done) return;
                 emit got_edit_set_text(id, t);
             }
 
             //text edit
             void qt_frontend_client::add_text_edit(api::ref_id id, const std::string& t)
             {
+                if(_done) return;
                 emit got_add_text_edit(id, t);
             }
 
             std::string qt_frontend_client::text_edit_get_text(api::ref_id id)
             {
+                if(_done) return "";
                 auto p = std::make_shared<std::promise<std::string>>();
                 auto f = p->get_future();
 
@@ -288,6 +316,7 @@ namespace fire
 
             void qt_frontend_client::text_edit_set_text(api::ref_id id, const std::string& t)
             {
+                if(_done) return;
                 emit got_text_edit_set_text(id, t);
             }
 
@@ -295,21 +324,25 @@ namespace fire
             //list
             void qt_frontend_client::add_list(api::ref_id id)
             {
+                if(_done) return;
                 emit got_add_list(id);
             }
 
             void qt_frontend_client::list_add(api::ref_id list_id, api::ref_id widget_id)
             {
+                if(_done) return;
                 emit got_list_add(list_id, widget_id);
             }
 
             void qt_frontend_client::list_remove(api::ref_id list_id, api::ref_id widget_id)
             {
+                if(_done) return;
                 emit got_list_remove(list_id, widget_id);
             }
 
             size_t qt_frontend_client::list_size(api::ref_id id)
             {
+                if(_done) return 0;
                 auto p = std::make_shared<std::promise<size_t>>();
                 auto f = p->get_future();
 
@@ -320,54 +353,64 @@ namespace fire
 
             void qt_frontend_client::list_clear(api::ref_id id)
             {
+                if(_done) return;
                 emit got_list_clear(id);
             }
 
             //pen
             void qt_frontend_client::add_pen(api::ref_id id, const std::string& color, int width)
             {
+                if(_done) return;
                 emit got_add_pen(id, color, width);
             }
 
             void qt_frontend_client::pen_set_width(api::ref_id id, int width)
             {
+                if(_done) return;
                 emit got_pen_set_width(id, width);
             }
 
             //draw
             void qt_frontend_client::add_draw(api::ref_id id, int width, int height)
             {
+                if(_done) return;
                 emit got_add_draw(id, width, height);
             }
 
             void qt_frontend_client::draw_line(api::ref_id id, api::ref_id pen_id, double x1, double y1, double x2, double y2)
             {
+                if(_done) return;
                 emit got_draw_line(id, pen_id, x1, y1, x2, y2);
             }
 
             void qt_frontend_client::draw_circle(api::ref_id id, api::ref_id pen_id, double x, double y, double r)
             {
+                if(_done) return;
                 emit got_draw_circle(id, pen_id, x, y, r);
             }
 
             void qt_frontend_client::draw_image(api::ref_id id, api::ref_id image_id, double x, double y, double w, double h)
             {
+                if(_done) return;
                 emit got_draw_image(id, image_id, x, y, w, h);
             }
 
             void qt_frontend_client::draw_clear(api::ref_id id)
             {
+                if(_done) return;
                 emit got_draw_clear(id);
             }
 
             //timer
             void qt_frontend_client::add_timer(api::ref_id id, int msec)
             {
+                if(_done) return;
                 emit got_add_timer(id, msec);
             }
 
             bool qt_frontend_client::timer_running(api::ref_id id)
             {
+                if(_done) return false;
                 auto p = std::make_shared<std::promise<bool>>();
                 auto f = p->get_future();
 
@@ -378,22 +421,26 @@ namespace fire
 
             void qt_frontend_client::timer_stop(api::ref_id id)
             {
+                if(_done) return;
                 emit got_timer_stop(id);
             }
 
             void qt_frontend_client::timer_start(api::ref_id id)
             {
+                if(_done) return;
                 emit got_timer_start(id);
             }
 
             void qt_frontend_client::timer_set_interval(api::ref_id id, int msec)
             {
+                if(_done) return;
                 emit got_timer_set_interval(id, msec);
             }
 
             //image
             bool qt_frontend_client::add_image(api::ref_id id, const util::bytes& d)
             {
+                if(_done) return false;
                 auto p = std::make_shared<std::promise<bool>>();
                 auto f = p->get_future();
                 emit got_add_image(id, d, p);
@@ -402,6 +449,7 @@ namespace fire
 
             int qt_frontend_client::image_width(api::ref_id id)
             {
+                if(_done) return 0;
                 auto p = std::make_shared<std::promise<int>>();
                 auto f = p->get_future();
 
@@ -412,6 +460,7 @@ namespace fire
 
             int qt_frontend_client::image_height(api::ref_id id)
             {
+                if(_done) return 0;
                 auto p = std::make_shared<std::promise<int>>();
                 auto f = p->get_future();
 
@@ -424,16 +473,19 @@ namespace fire
             //mic
             void qt_frontend_client::add_mic(api::ref_id id, const std::string& codec)
             {
+                if(_done) return;
                 emit got_add_mic(id, codec);
             }
 
             void qt_frontend_client::mic_start(api::ref_id id)
             {
+                if(_done) return;
                 emit got_mic_start(id);
             }
 
             void qt_frontend_client::mic_stop(api::ref_id id)
             {
+                if(_done) return;
                 emit got_mic_stop(id);
             }
 
@@ -441,21 +493,25 @@ namespace fire
             //speaker
             void qt_frontend_client::add_speaker(api::ref_id id, const std::string& codec)
             {
+                if(_done) return;
                 emit got_add_speaker(id, codec);
             }
 
             void qt_frontend_client::speaker_mute(api::ref_id id)
             {
+                if(_done) return;
                 emit got_speaker_mute(id);
             }
 
             void qt_frontend_client::speaker_unmute(api::ref_id id)
             {
+                if(_done) return;
                 emit got_speaker_unmute(id);
             }
 
             void qt_frontend_client::speaker_play(api::ref_id id, const util::bytes& b)
             {
+                if(_done) return;
                 emit got_speaker_play(id, b);
             }
 
@@ -463,6 +519,7 @@ namespace fire
             //file
             api::file_data qt_frontend_client::open_file()
             {
+                if(_done) return api::file_data{};
                 auto p = std::make_shared<std::promise<api::file_data>>();
                 auto f = p->get_future();
 
@@ -473,6 +530,7 @@ namespace fire
 
             api::bin_file_data qt_frontend_client::open_bin_file()
             {
+                if(_done) return api::bin_file_data{};
                 auto p = std::make_shared<std::promise<api::bin_file_data>>();
                 auto f = p->get_future();
 
@@ -483,6 +541,7 @@ namespace fire
 
             bool qt_frontend_client::save_file(const std::string& name, const std::string& data)
             {
+                if(_done) return false;
                 auto p = std::make_shared<std::promise<bool>>();
                 auto f = p->get_future();
 
@@ -493,6 +552,7 @@ namespace fire
 
             bool qt_frontend_client::save_bin_file(const std::string& name, const util::bytes& data)
             {
+                if(_done) return false;
                 auto p = std::make_shared<std::promise<bool>>();
                 auto f = p->get_future();
 
@@ -504,22 +564,26 @@ namespace fire
             //debug
             void qt_frontend_client::print(const std::string& t)
             {
+                if(_done) return;
                 emit got_print(t);
             }
 
             //overall gui
             void qt_frontend_client::height(int h)
             {
+                if(_done) return;
                 emit got_height(h);
             }
 
             void qt_frontend_client::grow()
             {
+                if(_done) return;
                 emit got_grow();
             }
 
             bool qt_frontend_client::visible()
             {
+                if(_done) return false;
                 auto p = std::make_shared<std::promise<bool>>();
                 auto f = p->get_future();
 
@@ -532,12 +596,14 @@ namespace fire
             //errors
             void qt_frontend_client::report_error(const std::string& e)
             {
+                if(_done) return;
                 emit got_report_error(e);
             }
 
 
             void qt_frontend_client::reset()
             {
+                if(_done) return;
                 emit got_reset();
             }
 

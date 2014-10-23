@@ -61,9 +61,11 @@ namespace fire
 
                 public:
                     qt_frontend_client(qt_frontend_ptr);
+                    ~qt_frontend_client();
 
                 public:
                     void set_backend(api::backend*);
+                    void stop();
 
                 public:
                     //all widgets
@@ -345,6 +347,7 @@ namespace fire
 
                 private:
                     qt_frontend_ptr _f;
+                    bool _done = false;
             };
 
             using qt_frontend_client_ptr = std::shared_ptr<qt_frontend_client>;

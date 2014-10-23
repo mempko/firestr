@@ -123,10 +123,11 @@ namespace fire
             script_app::~script_app()
             {
                 INVARIANT(_app);
-                INVARIANT(_conversation);
-
+                INVARIANT(_back);
+                LOG << "closing app " << _app->name() << "(" << _app->id() << ")" << std::endl;
+                _front->stop();
+                _back->stop();
                 LOG << "closed app " << _app->name() << "(" << _app->id() << ")" << std::endl;
-                
             }
 
             void script_app::init()
