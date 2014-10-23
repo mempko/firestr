@@ -114,9 +114,7 @@ namespace fire
             INVARIANT(_thread);
             INVARIANT(_mail);
 
-            _done = true;
-            _mail->done();
-            _thread->join();
+            if(!_done) stop();
         }
 
         message::mailbox_ptr service::mail()
@@ -133,6 +131,13 @@ namespace fire
             _thread.reset(new std::thread{service_thread, this});
 
             ENSURE(_thread);
+        }
+
+        void service::stop()
+        {
+            _done = true;
+            _mail->done();
+            _thread->join();
         }
 
         void service::send_event(const message::message& e)

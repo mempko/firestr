@@ -283,6 +283,9 @@ namespace fire
             app_editor::~app_editor()
             {
                 INVARIANT(_conversation);
+                INVARIANT(_back);
+                _front->stop();
+                _back->stop();
             }
 
             void app_editor::init()

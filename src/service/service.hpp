@@ -72,6 +72,7 @@ namespace fire
 
             public:
                 void start();
+                void stop();
                 message::mailbox_ptr mail();
 
             public:
