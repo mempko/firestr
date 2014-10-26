@@ -479,11 +479,11 @@ namespace fire
 
                 obs->handle(e.type(), e.value());
             }
-            catch(SLB::CallException& e)
+            catch(SLB::CallException& er)
             {
                 std::stringstream s;
-                s << "error in event_received: " << e.what();
-                report_error(s.str(), e.errorLine);
+                s << "error in event_received: " << er.what();
+                report_error(s.str(), er.errorLine);
             }
             catch(...)
             {
