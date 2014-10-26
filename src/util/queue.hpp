@@ -120,7 +120,8 @@ namespace fire
                         {
                             if(_done) return false;
                             _c.wait(lock);
-                        }
+                        } 
+                        if(_done) return false;
 
                         REQUIRE_FALSE(_q.empty());
 
@@ -149,6 +150,8 @@ namespace fire
                             if(_done) return;
                             _c.wait(lock);
                         }
+                        if(_done) return;
+
                         REQUIRE_FALSE(_q.empty());
                         _q.pop_front();
                         return;
