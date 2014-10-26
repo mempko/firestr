@@ -42,6 +42,13 @@ namespace fire
                 const std::chrono::seconds TIMEOUT{1};
             }
 
+            template<class T, class D>
+                T get_until(std::future<T>& f, const D& d)
+                {
+                    return f.wait_for(TIMEOUT) == std::future_status::timeout ? 
+                        d : f.get();
+                }
+
 #define F_CON(x) connect(this, SIGNAL(got_##x), this, SLOT(do_##x))
 
             qt_frontend_client::qt_frontend_client(qt_frontend_ptr f) : _f{f}
@@ -196,10 +203,7 @@ namespace fire
 
                 emit got_is_widget_enabled(id, p);
 
-                if(f.wait_for(TIMEOUT) == std::future_status::timeout)
-                    return false;
-
-                return f.get();
+                return get_until(f, false);
             }
 
             //grid
@@ -237,10 +241,7 @@ namespace fire
 
                 emit got_button_get_text(id, p);
 
-                if(f.wait_for(TIMEOUT) == std::future_status::timeout)
-                    return "";
-
-                return f.get();
+                return get_until(f, "");
             }
 
             void qt_frontend_client::button_set_text(api::ref_id id, const std::string& t)
@@ -272,10 +273,7 @@ namespace fire
 
                 emit got_label_get_text(id, p);
 
-                if(f.wait_for(TIMEOUT) == std::future_status::timeout)
-                    return "";
-
-                return f.get();
+                return get_until(f, "");
             }
 
             void qt_frontend_client::label_set_text(api::ref_id id, const std::string& t)
@@ -300,10 +298,7 @@ namespace fire
 
                 emit got_edit_get_text(id, p);
 
-                if(f.wait_for(TIMEOUT) == std::future_status::timeout)
-                    return "";
-
-                return f.get();
+                return get_until(f, "");
             }
 
             void qt_frontend_client::edit_set_text(api::ref_id id, const std::string& t)
@@ -327,10 +322,7 @@ namespace fire
 
                 emit got_text_edit_get_text(id, p);
 
-                if(f.wait_for(TIMEOUT) == std::future_status::timeout)
-                    return "";
-
-                return f.get();
+                return get_until(f, "");
             }
 
             void qt_frontend_client::text_edit_set_text(api::ref_id id, const std::string& t)
@@ -367,10 +359,7 @@ namespace fire
 
                 emit got_list_size(id, p);
 
-                if(f.wait_for(TIMEOUT) == std::future_status::timeout)
-                    return 0;
-
-                return f.get();
+                return get_until(f, 0);
             }
 
             void qt_frontend_client::list_clear(api::ref_id id)
@@ -438,10 +427,7 @@ namespace fire
 
                 emit got_timer_running(id, p);
 
-                if(f.wait_for(TIMEOUT) == std::future_status::timeout)
-                    return false;
-
-                return f.get();
+                return get_until(f, false);
             }
 
             void qt_frontend_client::timer_stop(api::ref_id id)
@@ -468,12 +454,10 @@ namespace fire
                 if(_done) return false;
                 auto p = std::make_shared<std::promise<bool>>();
                 auto f = p->get_future();
+
                 emit got_add_image(id, d, p);
 
-                if(f.wait_for(TIMEOUT) == std::future_status::timeout)
-                    return false;
-
-                return f.get();
+                return get_until(f, false);
             }
 
             int qt_frontend_client::image_width(api::ref_id id)
@@ -484,10 +468,7 @@ namespace fire
 
                 emit got_image_width(id, p);
 
-                if(f.wait_for(TIMEOUT) == std::future_status::timeout)
-                    return 0;
-
-                return f.get();
+                return get_until(f, 0);
             }
 
             int qt_frontend_client::image_height(api::ref_id id)
@@ -498,10 +479,7 @@ namespace fire
 
                 emit got_image_height(id, p);
 
-                if(f.wait_for(TIMEOUT) == std::future_status::timeout)
-                    return 0;
-
-                return f.get();
+                return get_until(f, 0);
             }
 
 
@@ -582,10 +560,7 @@ namespace fire
 
                 emit got_save_file(name, data, p);
 
-                if(f.wait_for(TIMEOUT) == std::future_status::timeout)
-                    return false;
-
-                return f.get();
+                return get_until(f, false);
             }
 
             bool qt_frontend_client::save_bin_file(const std::string& name, const util::bytes& data)
@@ -596,10 +571,7 @@ namespace fire
 
                 emit got_save_bin_file(name, data, p);
 
-                if(f.wait_for(TIMEOUT) == std::future_status::timeout)
-                    return false;
-
-                return f.get();
+                return get_until(f, false);
             }
 
             //debug
@@ -630,10 +602,7 @@ namespace fire
 
                 emit got_visible(p);
 
-                if(f.wait_for(TIMEOUT) == std::future_status::timeout)
-                    return false;
-
-                return f.get();
+                return get_until(f, false);
             }
 
 
