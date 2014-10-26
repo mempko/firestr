@@ -37,6 +37,10 @@ namespace fire
     {
         namespace qtw
         {
+            namespace
+            {
+                const std::chrono::seconds TIMEOUT{1};
+            }
 
 #define F_CON(x) connect(this, SIGNAL(got_##x), this, SLOT(do_##x))
 
@@ -192,6 +196,9 @@ namespace fire
 
                 emit got_is_widget_enabled(id, p);
 
+                if(f.wait_for(TIMEOUT) == std::future_status::timeout)
+                    return false;
+
                 return f.get();
             }
 
@@ -230,6 +237,9 @@ namespace fire
 
                 emit got_button_get_text(id, p);
 
+                if(f.wait_for(TIMEOUT) == std::future_status::timeout)
+                    return "";
+
                 return f.get();
             }
 
@@ -262,6 +272,9 @@ namespace fire
 
                 emit got_label_get_text(id, p);
 
+                if(f.wait_for(TIMEOUT) == std::future_status::timeout)
+                    return "";
+
                 return f.get();
             }
 
@@ -287,6 +300,9 @@ namespace fire
 
                 emit got_edit_get_text(id, p);
 
+                if(f.wait_for(TIMEOUT) == std::future_status::timeout)
+                    return "";
+
                 return f.get();
             }
 
@@ -310,6 +326,9 @@ namespace fire
                 auto f = p->get_future();
 
                 emit got_text_edit_get_text(id, p);
+
+                if(f.wait_for(TIMEOUT) == std::future_status::timeout)
+                    return "";
 
                 return f.get();
             }
@@ -347,6 +366,9 @@ namespace fire
                 auto f = p->get_future();
 
                 emit got_list_size(id, p);
+
+                if(f.wait_for(TIMEOUT) == std::future_status::timeout)
+                    return 0;
 
                 return f.get();
             }
@@ -416,6 +438,9 @@ namespace fire
 
                 emit got_timer_running(id, p);
 
+                if(f.wait_for(TIMEOUT) == std::future_status::timeout)
+                    return false;
+
                 return f.get();
             }
 
@@ -444,6 +469,10 @@ namespace fire
                 auto p = std::make_shared<std::promise<bool>>();
                 auto f = p->get_future();
                 emit got_add_image(id, d, p);
+
+                if(f.wait_for(TIMEOUT) == std::future_status::timeout)
+                    return false;
+
                 return f.get();
             }
 
@@ -455,6 +484,9 @@ namespace fire
 
                 emit got_image_width(id, p);
 
+                if(f.wait_for(TIMEOUT) == std::future_status::timeout)
+                    return 0;
+
                 return f.get();
             }
 
@@ -465,6 +497,9 @@ namespace fire
                 auto f = p->get_future();
 
                 emit got_image_height(id, p);
+
+                if(f.wait_for(TIMEOUT) == std::future_status::timeout)
+                    return 0;
 
                 return f.get();
             }
@@ -547,6 +582,9 @@ namespace fire
 
                 emit got_save_file(name, data, p);
 
+                if(f.wait_for(TIMEOUT) == std::future_status::timeout)
+                    return false;
+
                 return f.get();
             }
 
@@ -557,6 +595,9 @@ namespace fire
                 auto f = p->get_future();
 
                 emit got_save_bin_file(name, data, p);
+
+                if(f.wait_for(TIMEOUT) == std::future_status::timeout)
+                    return false;
 
                 return f.get();
             }
@@ -588,6 +629,9 @@ namespace fire
                 auto f = p->get_future();
 
                 emit got_visible(p);
+
+                if(f.wait_for(TIMEOUT) == std::future_status::timeout)
+                    return false;
 
                 return f.get();
             }
@@ -634,7 +678,6 @@ namespace fire
                 p->set_value(_f->is_widget_enabled(id));
             }
 
-
             //grid
             void qt_frontend_client::do_add_grid(api::ref_id id)
             {
@@ -680,7 +723,6 @@ namespace fire
                 _f->button_set_image(id, image_id);
             }
 
-
             //label
             void qt_frontend_client::do_add_label(api::ref_id id, const std::string& t)
             {
@@ -700,7 +742,6 @@ namespace fire
                 _f->label_set_text(id, t);
             }
 
-
             //edit
             void qt_frontend_client::do_add_edit(api::ref_id id, const std::string& t)
             {
@@ -719,7 +760,6 @@ namespace fire
                 INVARIANT(_f);
                 _f->edit_set_text(id, t);
             }
-
 
             //text edit
             void qt_frontend_client::do_add_text_edit(api::ref_id id, const std::string& t)
@@ -783,7 +823,6 @@ namespace fire
                 INVARIANT(_f);
                 _f->pen_set_width(id, width);
             }
-
 
             //draw
             void qt_frontend_client::do_add_draw(api::ref_id id, int width, int height)
