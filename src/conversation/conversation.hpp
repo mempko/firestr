@@ -107,6 +107,7 @@ namespace fire
                         know_request::req_state);
 
                 bool part_of_clique(std::string& id);
+                void remove_contact(std::string& id);
 
             public:
                 const std::string& id() const;

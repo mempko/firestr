@@ -157,6 +157,15 @@ namespace fire
             return how_many_know == requests.size();
         }
 
+        void conversation::remove_contact(std::string& id)
+        {
+            auto c = _contacts.by_id(id);
+            if(c) _contacts.remove(c);
+
+            auto pi = _pending_adds.find(id);
+            if(pi != _pending_adds.end()) _pending_adds.erase(pi);
+        }
+
         const std::string& conversation::id() const
         {
             ENSURE_FALSE(_id.empty());
