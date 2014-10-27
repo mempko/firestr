@@ -211,10 +211,7 @@ namespace fire
             auto s = conversation_by_id(q.conversation_id);
             if(!s) return;
 
-            c = s->contacts().by_id(q.from_id);
-            if(!c) return;
-
-            s->contacts().remove(c);
+            s->remove_contact(q.from_id);
             fire_contact_removed(q.conversation_id, q.from_id);
         }
 
