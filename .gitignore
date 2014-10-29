@@ -5,3 +5,4 @@
 # Remove stuff mkdocs builds
 
 docs/site/
+site/
