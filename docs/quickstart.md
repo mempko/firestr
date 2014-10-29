@@ -38,6 +38,11 @@ Other Platforms
 
 At the moment, Fire★ only provides official builds for Ubuntu and Windows (although if you'd like to maintain a Fire★ build for the platform of your choice, please feel free to [get in touch](quickstart#support).  However, you can compile from [source](https://github.com/mempko/firestr).  At the moment, we recommend gcc/g++ over clang for compilation.
 
+After Installation
+------------------
+
+After installation, you may want to [install some apps](../installing_apps), and get started doing cool things with your friends.
+
 Support
 -------
 
