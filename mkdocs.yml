@@ -1,0 +1,5 @@
+site_name: Fire★ Documentation
+pages:
+  - [index.md, Home]
+  - [quickstart.md, Quickstart Guide]
+  - [installing_apps.md, Installing Apps]
