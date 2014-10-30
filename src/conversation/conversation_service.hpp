@@ -105,12 +105,19 @@ namespace fire
                 void fire_new_conversation_event(const std::string& id);
                 void fire_quit_conversation_event(const std::string& id);
                 void fire_conversation_synced_event(const std::string& id);
+
                 void fire_contact_removed(
                         const std::string& conversation_id,
                         const std::string& contact_id);
+
                 void fire_contact_added(
                         const std::string& conversation_id,
                         const std::string& contact_id);
+
+                void fire_not_part_of_clique(
+                        const std::string& conversation_id,
+                        const std::string& contact_id,
+                        const contact_id_set&);
 
                 void request_apps(
                         const std::string& from_id,
@@ -192,6 +199,22 @@ namespace fire
                 {
                     f_s(conversation_id);
                     f_s(contact_id);
+                }
+            };
+
+            extern const std::string NOT_PART_OF_CLIQUE;
+            f_message(not_part_of_clique)
+            {
+                std::string conversation_id;
+                std::string contact_id;
+                contact_id_set dont_know;
+
+                f_message_init(not_part_of_clique, NOT_PART_OF_CLIQUE);
+                f_serialize
+                {
+                    f_s(conversation_id);
+                    f_s(contact_id);
+                    f_s(dont_know);
                 }
             };
 

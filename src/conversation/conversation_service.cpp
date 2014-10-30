@@ -260,8 +260,14 @@ namespace fire
                     r.status == 1 ? 
                     know_request::KNOW : know_request::DONT_KNOW);
 
-            if(s->part_of_clique(r.id))
-                add_contact_to_conversation_p(c, s);
+            auto part_ret = s->part_of_clique(r.id);
+            switch(part_ret.is_part)
+            {
+                case clique_status::PART: add_contact_to_conversation_p(c, s); break;
+                case clique_status::NOT_PART: fire_not_part_of_clique(s->id(), c->id(), part_ret.contacts); break;
+                case clique_status::DONT_KNOW: break; // do nothing
+                default: CHECK(false && "missed case");
+            };
         }
 
         conversation_ptr conversation_service::sync_conversation(
@@ -533,11 +539,14 @@ namespace fire
             const std::string CONVERSATION_SYNCED = "conversation_synced_event";
             const std::string CONTACT_REMOVED = "conversation_contact_removed";
             const std::string CONTACT_ADDED = "conversation_contact_added";
+            const std::string NOT_PART_OF_CLIQUE = "not_part_of_clique";
             const std::string CONVERSATION_ALERT = "conversation_alert";
         }
 
         void conversation_service::fire_new_conversation_event(const std::string& id)
         {
+            REQUIRE_FALSE(id.empty());
+
             event::new_conversation e;
             e.conversation_id = id;
             send_event(e.to_message());
@@ -545,6 +554,8 @@ namespace fire
 
         void conversation_service::fire_quit_conversation_event(const std::string& id)
         {
+            REQUIRE_FALSE(id.empty());
+
             event::quit_conversation e;
             e.conversation_id = id;
             send_event(e.to_message());
@@ -552,6 +563,8 @@ namespace fire
 
         void conversation_service::fire_conversation_synced_event(const std::string& id)
         {
+            REQUIRE_FALSE(id.empty());
+
             event::conversation_synced e;
             e.conversation_id = id;
             send_event(e.to_message());
@@ -561,6 +574,9 @@ namespace fire
                 const std::string& conversation_id, 
                 const std::string& contact_id)
         {
+            REQUIRE_FALSE(conversation_id.empty());
+            REQUIRE_FALSE(contact_id.empty());
+
             event::contact_removed e;
             e.conversation_id = conversation_id;
             e.contact_id = contact_id;
@@ -571,9 +587,28 @@ namespace fire
                 const std::string& conversation_id, 
                 const std::string& contact_id)
         {
+            REQUIRE_FALSE(conversation_id.empty());
+            REQUIRE_FALSE(contact_id.empty());
+
             event::contact_added e;
             e.conversation_id = conversation_id;
             e.contact_id = contact_id;
+            send_event(e.to_message());
+        }
+
+        void conversation_service::fire_not_part_of_clique(
+                const std::string& conversation_id, 
+                const std::string& contact_id,
+                const contact_id_set& contacts)
+        {
+            REQUIRE_FALSE(conversation_id.empty());
+            REQUIRE_FALSE(contact_id.empty());
+            REQUIRE_FALSE(contacts.empty());
+
+            event::not_part_of_clique e;
+            e.conversation_id = conversation_id;
+            e.contact_id = contact_id;
+            e.dont_know = contacts;
             send_event(e.to_message());
         }
 

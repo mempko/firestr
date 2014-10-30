@@ -78,6 +78,13 @@ namespace fire
             know_requests requests; 
         };
 
+        using contact_id_set = std::set<std::string>;
+        struct clique_status
+        {
+            enum status { NOT_PART, PART, DONT_KNOW} is_part;
+            contact_id_set contacts;
+        };
+
         using pending_contact_adds = std::unordered_map<std::string, pending_contact_add>;
 
         class conversation 
@@ -106,7 +113,7 @@ namespace fire
                         const std::string& from, 
                         know_request::req_state);
 
-                bool part_of_clique(std::string& id);
+                clique_status part_of_clique(std::string& id);
                 void remove_contact(std::string& id);
 
             public:

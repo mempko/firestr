@@ -131,6 +131,7 @@ namespace fire
                 void received_contact_disconnected(const fire::message::message&);
                 void received_new_introduction(const fire::message::message&);
                 void received_apps_updated(const fire::message::message&);
+                void received_not_part_of_clique(const fire::message::message&);
 
             private:
                 //gui service event handlers
@@ -144,6 +145,7 @@ namespace fire
                 void apps_updated_event(const app::event::apps_updated&);
                 void new_intro_event(const user::event::new_introduction&);
                 void conversation_alert_event(const conversation::event::conversation_alert&);
+                void not_part_of_clique_event(const conversation::event::not_part_of_clique& e);
 
             private:
                 QMenu *_main_menu = nullptr;
