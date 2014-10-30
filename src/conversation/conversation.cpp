@@ -123,7 +123,9 @@ namespace fire
             for(auto c : _contacts.list())
             {
                 CHECK(c);
-                a.requests[c->id()].state = know_request::SENT;
+                auto& req = a.requests[c->id()];
+                req.state = know_request::SENT;
+                req.to = c->id();
             }
         }
 
@@ -141,12 +143,33 @@ namespace fire
             ri->second.state = s;
         }
 
-        bool conversation::part_of_clique(std::string& id)
+        clique_status conversation::part_of_clique(std::string& id)
         {
-            auto pi = _pending_adds.find(id);
-            if(pi == _pending_adds.end()) return false;
+            clique_status r;
+            r.is_part = clique_status::DONT_KNOW;
 
+            //find pending add
+            auto pi = _pending_adds.find(id);
+            if(pi == _pending_adds.end()) return r;
+
+            //get requests. 
             const auto& requests = pi->second.requests;
+            if(requests.size() != _contacts.size()) return r;
+
+            //count how many requests are in sent state
+            size_t how_many_sent = 
+                std::count_if(
+                    requests.begin(), requests.end(),
+                    [](const know_requests::value_type& p)
+                    { 
+                        return p.second.state == know_request::SENT;
+                    });
+
+            //if we still have sent requests without responses,
+            //we still don't know
+            if(how_many_sent > 0) return r;
+
+            //count how many requests are in know state
             size_t how_many_know = 
                 std::count_if(
                     requests.begin(), requests.end(),
@@ -154,7 +177,22 @@ namespace fire
                     { 
                         return p.second.state == know_request::KNOW;
                     });
-            return how_many_know == requests.size();
+
+            //if everyone knows the contact, then they are part of clique
+            if(how_many_know == requests.size())
+            {
+                r.is_part = clique_status::PART;
+                return r;
+            }
+
+            //otherwise they are not part of clique and we need to collect
+            //the ids of the contacts who don't know them
+            r.is_part = clique_status::NOT_PART;
+            for(const auto& req : requests)
+                if(req.second.state == know_request::DONT_KNOW)
+                    r.contacts.insert(req.second.to);
+
+            return r;
         }
 
         void conversation::remove_contact(std::string& id)

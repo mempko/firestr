@@ -729,6 +729,8 @@ namespace fire
                     bind(&main_window::received_new_introduction, this, _1));
             _service_map.handle(a::event::APPS_UPDATED,
                     bind(&main_window::received_apps_updated, this, _1));
+            _service_map.handle(s::event::NOT_PART_OF_CLIQUE,
+                    bind(&main_window::received_not_part_of_clique, this, _1));
 
         }
 
@@ -823,6 +825,15 @@ namespace fire
             r.from_message(m);
 
             apps_updated_event(r);
+        }
+        
+        void main_window::received_not_part_of_clique(const m::message& m)
+        {
+            REQUIRE_EQUAL(m.meta.type, s::event::NOT_PART_OF_CLIQUE);
+
+            s::event::not_part_of_clique r;
+            r.from_message(m);
+            not_part_of_clique_event(r);
         }
 
         void main_window::check_mail(m::message m)
@@ -1106,6 +1117,62 @@ namespace fire
 
             auto t = find_conversation(_conversations, e.conversation_id);
             if(!_focus || !e.visible) alert_tab(t);
+        }
+
+        void main_window::not_part_of_clique_event(const s::event::not_part_of_clique& e)
+        {
+            REQUIRE_FALSE(e.conversation_id.empty());
+            REQUIRE_FALSE(e.contact_id.empty());
+            REQUIRE_FALSE(e.dont_know.empty());
+            
+            INVARIANT(_conversations);
+            INVARIANT(_conversation_service);
+            INVARIANT(_user_service);
+
+            auto ci = find_conversation(_conversations, e.conversation_id);
+            if(ci == -1) return;
+
+            auto sw = _conversations->widget(ci);
+            if(!sw) return;
+
+            auto s = dynamic_cast<conversation_widget*>(sw);
+            if(!s) return;
+
+            auto c = _user_service->by_id(e.contact_id);
+            if(!c) return;
+
+            std::set<std::string> names;
+            for(const auto& id : e.dont_know)
+            {
+                CHECK_FALSE(id.empty());
+
+                auto dc = _user_service->by_id(id);
+                if(!dc) return;
+
+                names.insert(dc->name());
+            }
+
+            std::stringstream ss;
+            ss << " Could not add <b>" << c->name() << "</b> to the conversation because <br/>";
+
+            if(names.size() == 1)
+            {
+                ss << "<b>" << (*names.begin()) << "</b>" <<  " does not know them";
+            }
+            else
+            {
+                size_t i = 0;
+                for(const auto& name : names)
+                {
+                    if(i < names.size() - 1) ss << "<b>" << name << "</b>, ";
+                    else ss << " and <b>" << name << "</b>";
+                    i++;
+                }
+                ss << " do not know them";
+            }
+
+            QMessageBox::warning(this, tr("Could Not Add To Conversation"), ss.str().c_str());
+
         }
 
         void main_window::contact_removed_or_added_from_conversation_event(const m::message& e)
