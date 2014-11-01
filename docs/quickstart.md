@@ -41,7 +41,7 @@ At the moment, Fire★ only provides official builds for Ubuntu and Windows (alt
 After Installation
 ------------------
 
-After installation, you may want to [install some apps](../installing_apps), and get started doing cool things with your friends.
+After installation, you may want to [install some apps](installing_apps.md), and get started doing cool things with your friends.
 
 Support
 -------
