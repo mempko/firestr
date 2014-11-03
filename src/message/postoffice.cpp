@@ -197,7 +197,7 @@ namespace fire
             for(auto p : _boxes)
             {
                 if(p.second.lock()) continue;
-                to_be_deleted.insert(p.first);
+                to_be_deleted.insert(to_be_deleted.end(), p.first);
             }
 
             for(const auto& address : to_be_deleted)
