@@ -38,6 +38,7 @@ namespace fire
 {
     namespace util
     {
+        void setup_env();
         std::string get_home_dir();
         std::string get_default_firestr_home();
     }
