@@ -5,6 +5,8 @@ The best way to get started with Fire★ depends on which platform you're runnin
 
   * [Windows](quickstart#Windows)
 
+  * [OS X](quickstart#OS X)
+
   * [Ubuntu](quickstart#Ubuntu)
 
   * [Other Platforms](quickstart#Other Platforms)
@@ -15,6 +17,21 @@ Windows
   * Download the [latest build](http://mempko.com/firestr/build/0.4/firestr_0.4_win64.zip)
 
   * Run `firestr.exe`
+
+  * You should be asked to input a username and password
+
+  * Congratulations! You're running Fire★!
+
+OS X
+----
+
+  * Download the [latest build](http://mempko.com/firestr/build/0.4/firestr_0.4.dmg)
+
+  * Open `firestr_0.4.dmg`
+
+  * Drag the Fire★!icon into `Applications`
+
+  * Launch Fire★!from like any other app
 
   * You should be asked to input a username and password
 
@@ -32,6 +49,7 @@ Ubuntu
   * You should be asked to input a username and password
 
   * Congratulations! You're running Fire★!
+
 
 Other Platforms
 ---------------
