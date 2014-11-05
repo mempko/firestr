@@ -34,6 +34,14 @@
 #include <cstdlib>
 #include <boost/filesystem.hpp>
 
+#include <botan/botan.h>
+
+#ifdef __APPLE__
+#include <QProcess>
+#include <QString>
+#include <QStringList>
+#endif
+
 namespace bf = boost::filesystem;
 
 namespace fire
@@ -71,6 +79,21 @@ namespace fire
 
             bf::path r = root / "firestr";
             return r.string();
+        }
+
+        void setup_env()
+        {
+            Botan::LibraryInitializer init;
+
+#ifdef __APPLE__
+            QString p = "defaults";
+            QStringList a;
+            a << "write" << "com.mempko.firestr" << "NSAppSleepDisabled" << "-bool" << "YES";
+
+            QProcess m;
+            m.start(p, a);
+            m.waitForFinished();
+#endif
         }
     }
 }
