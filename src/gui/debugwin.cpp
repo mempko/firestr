@@ -249,7 +249,7 @@ namespace fire
 
                 auto mb = new queue_debug{m.second};
                 l.add(mb);
-                added.insert(m.first);
+                added.insert(added.end(), m.first);
             }
 
             for(const auto& of : o.offices())
