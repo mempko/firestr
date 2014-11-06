@@ -190,7 +190,7 @@ namespace fire
             r.is_part = clique_status::NOT_PART;
             for(const auto& req : requests)
                 if(req.second.state == know_request::DONT_KNOW)
-                    r.contacts.insert(req.second.to);
+                    r.contacts.insert(r.contacts.end(), req.second.to);
 
             return r;
         }

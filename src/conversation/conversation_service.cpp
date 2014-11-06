@@ -314,7 +314,7 @@ namespace fire
             {
                 if(s->has_app(app)) continue;
                 LOG << "conversation: " << s->id() << " needs app with address: " << app << std::endl;
-                need_apps.insert(app);
+                need_apps.insert(need_apps.end(), app);
             }
 
             //done creating conversation, fire event

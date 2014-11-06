@@ -208,7 +208,7 @@ namespace fire
                 {
                     CHECK_FALSE(wm.second.chunks.empty());
                     bool remove_non_robust = queue_chunks(wm.second);
-                    if(remove_non_robust) em.insert(wm.second.chunks[0].sequence);
+                    if(remove_non_robust) em.insert(em.end(), wm.second.chunks[0].sequence);
                 }
 
                 //cleanup exhausted messages that are not robust
@@ -801,7 +801,7 @@ namespace fire
                     } 
 
                     bool erase = robust ?  wm.ticks >= RESEND_THRESHOLD : all_sent(wm);
-                    if(erase) em.insert(sequence);
+                    if(erase) em.insert(em.end(), sequence);
                 }
 
                 //erase all exhaused messages
