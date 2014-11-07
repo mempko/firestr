@@ -222,6 +222,7 @@ namespace fire
                     _messages->verticalScrollBar()->scroll(0, _messages->verticalScrollBar()->maximum());
 
                     _conversation_service->fire_conversation_alert(_conversation->id(), visible());
+                    alerted();
                 }
                 else
                 {

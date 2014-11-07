@@ -158,6 +158,8 @@ namespace fire
                 _canvas_layout = new QGridLayout{_canvas};
                 layout()->addWidget(_canvas, 1,0,2,3);
                 auto front = std::make_shared<qtw::qt_frontend>(_canvas, _canvas_layout, nullptr);
+                connect(front.get(), SIGNAL(alerted()), this, SLOT(got_alert()));
+
                 _front = std::make_shared<qtw::qt_frontend_client>(front);
 
                 set_main(_canvas);
@@ -249,6 +251,11 @@ namespace fire
                 INVARIANT(_app);
 
                 install_app_gui(*_app, *_app_service, this);
+            }
+
+            void script_app::got_alert()
+            {
+                alerted();
             }
 
         }

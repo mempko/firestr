@@ -86,6 +86,7 @@ namespace fire
 
                 public slots:
                     void clone_app();
+                    void got_alert();
 
                 private:
                     void setup_decorations();

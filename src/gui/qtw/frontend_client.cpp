@@ -149,6 +149,7 @@ namespace fire
                 F_CON(height(int));
                 F_CON(grow());
                 F_CON(visible(bool_promise_ptr));
+                F_CON(alert());
 
                 //errors
                 F_CON(report_error(const std::string&));
@@ -605,6 +606,11 @@ namespace fire
                 return get_until(f, false);
             }
 
+            void qt_frontend_client::alert()
+            {
+                if(_done) return;
+                emit got_alert();
+            }
 
             //errors
             void qt_frontend_client::report_error(const std::string& e)
@@ -970,6 +976,12 @@ namespace fire
             {
                 INVARIANT(_f);
                 p->set_value(_f->visible());
+            }
+
+            void qt_frontend_client::do_alert()
+            {
+                INVARIANT(_f);
+                _f->alert();
             }
 
             //errors

@@ -415,8 +415,10 @@ namespace fire
             {
                 INVARIANT(conversation);
                 INVARIANT(conversation_service);
+                INVARIANT(front);
 
                 conversation_service->fire_conversation_alert(conversation->id(), visible());
+                front->alert();
             }
 
             bool lua_api::visible() const

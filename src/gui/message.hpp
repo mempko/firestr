@@ -51,6 +51,7 @@ namespace fire
                 virtual const std::string& id() const = 0;
                 virtual const std::string& type() const = 0;
                 virtual fire::message::mailbox_ptr mail() = 0;
+
             public:
                 bool visible() const;
 

@@ -92,6 +92,9 @@ namespace fire
                 public:
                     void set_backend(api::backend*);
 
+                signals:
+                    void alerted();
+
                 public:
                     //all widgets
                     virtual void place(api::ref_id, int r, int c);
@@ -179,6 +182,7 @@ namespace fire
                     virtual void height(int h);
                     virtual void grow();
                     virtual bool visible();
+                    virtual void alert();
 
                     //errors
                     virtual void report_error(const std::string& e);

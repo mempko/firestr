@@ -837,6 +837,11 @@ namespace fire
                 return !canvas->visibleRegion().isEmpty();
             }
 
+            void qt_frontend::alert() 
+            {
+                emit alerted();
+            }
+
             void qt_frontend::print(const std::string& m)
             {
                 if(!output) return;
