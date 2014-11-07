@@ -55,8 +55,7 @@ namespace fire
 
             namespace
             {
-                const size_t TIMER_SLEEP = 100;//in milliseconds
-                const size_t PADDING = 20;
+                const size_t PADDING = 100;
                 const std::string MESSAGE = "m";
             }
 
@@ -81,7 +80,7 @@ namespace fire
             chat_app::chat_app(
                     s::conversation_service_ptr conversation_s,
                     s::conversation_ptr conversation) :
-                message{},
+                generic_app{},
                 _id{u::uuid()},
                 _conversation_service{conversation_s},
                 _conversation{conversation}
@@ -95,7 +94,7 @@ namespace fire
                     const std::string& id, 
                     s::conversation_service_ptr conversation_s,
                     s::conversation_ptr conversation) :
-                message{},
+                generic_app{},
                 _id{id},
                 _conversation_service{conversation_s},
                 _conversation{conversation}
@@ -119,21 +118,29 @@ namespace fire
                 INVARIANT(layout());
                 INVARIANT(_conversation);
 
+                set_title("Chat");
+
                 _mail = std::make_shared<m::mailbox>(_id);
                 _sender = std::make_shared<ms::sender>(_conversation->user_service(), _mail);
+
+                _main = new QWidget;
+                _main_layout = new QGridLayout{_main};
+                layout()->addWidget(_main, 1,0,2,3);
+
+                set_main(_main);
 
                 //message list
                 _messages = new list;
                 _messages->auto_scroll(true);
-                layout()->addWidget(_messages, 0, 0, 1, 2);
+                _main_layout->addWidget(_messages, 0, 0, 1, 2);
 
                 //text edit
                 _message = new QLineEdit;
-                layout()->addWidget(_message, 1, 0);
+                _main_layout->addWidget(_message, 1, 0);
 
                 //send button
                 _send = new QPushButton{tr("send")};
-                layout()->addWidget(_send, 1, 1);
+                _main_layout->addWidget(_send, 1, 1);
 
                 connect(_message, SIGNAL(returnPressed()), this, SLOT(send_message()));
                 connect(_send, SIGNAL(clicked()), this, SLOT(send_message()));

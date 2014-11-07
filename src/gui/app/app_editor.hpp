@@ -33,7 +33,7 @@
 #define FIRESTR_APP_APP_EDITOR_H
 
 #include "gui/list.hpp"
-#include "gui/message.hpp"
+#include "gui/app/generic_app.hpp"
 #include "gui/mail_service.hpp"
 #include "conversation/conversation_service.hpp"
 #include "message/mailbox.hpp"
@@ -113,7 +113,7 @@ namespace fire
             };
 
             struct text_script;
-            class app_editor : public message
+            class app_editor : public generic_app
             {
                 Q_OBJECT
 
