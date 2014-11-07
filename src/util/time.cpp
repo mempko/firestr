@@ -47,6 +47,14 @@ namespace fire
             s << std::ctime(&nt);
             return s.str();
         }
+
+        std::string hour_min_sec()
+        {
+            auto t = std::time(0);
+            char str[20];
+            if(std::strftime(str, sizeof(str), "%r", std::localtime(&t))) return {str};
+            else return "";
+        }
     }
 }
 

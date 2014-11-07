@@ -73,7 +73,7 @@ namespace fire
             QWidget* make_message_widget(const std::string& name, const std::string& text)
             {
                 std::stringstream s;
-                s << "<font color='gray'>" << u::timestamp() << "</font> <b>" << name << "</b>: " << text;
+                s << "<font color='gray'>" << u::hour_min_sec() << "</font> <b>" << name << "</b>: " << text;
                 return new QLabel{s.str().c_str()};
             }
 
