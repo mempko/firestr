@@ -224,7 +224,7 @@ namespace fire
                     s::conversation_service_ptr conversation_s, 
                     s::conversation_ptr conversation, 
                     app_ptr app) :
-                message{},
+                generic_app{},
                 _from_id{conversation->user_service()->user().info().id()},
                 _id{u::uuid()},
                 _app_service{app_service},
@@ -255,7 +255,7 @@ namespace fire
                     s::conversation_service_ptr conversation_s, 
                     s::conversation_ptr conversation,
                     app_ptr app) :
-                message{},
+                generic_app{},
                 _from_id{from_id},
                 _id{id},
                 _app_service{app_service},
@@ -298,6 +298,8 @@ namespace fire
                 INVARIANT(_app_service);
                 INVARIANT(_app);
 
+                set_title("App Editor");
+
                 auto my_id = _conversation->user_service()->user().info().id();
 
                 _mail = std::make_shared<m::mailbox>(_id);
@@ -306,7 +308,9 @@ namespace fire
 
                 //create gui
                 auto tabs = new QTabWidget{this};
-                layout()->addWidget(tabs);
+                layout()->addWidget(tabs, 1,0,2,3);
+
+                set_main(tabs);
 
                 //code tab
                 auto code_tab = new QWidget{this};
@@ -836,6 +840,7 @@ namespace fire
 
                 //alert of change
                 _conversation_service->fire_conversation_alert(_conversation->id(), visible());
+                alerted();
 
                 //get the code
                 auto code = gui::convert(_script->toPlainText());

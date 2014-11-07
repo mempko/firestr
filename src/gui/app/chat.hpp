@@ -34,7 +34,7 @@
 
 #include "gui/list.hpp"
 #include "gui/mail_service.hpp"
-#include "gui/message.hpp"
+#include "gui/app/generic_app.hpp"
 #include "conversation/conversation_service.hpp"
 #include "message/mailbox.hpp"
 #include "messages/sender.hpp"
@@ -53,7 +53,7 @@ namespace fire
     {
         namespace app
         {
-            class chat_app : public message
+            class chat_app : public generic_app
             {
                 Q_OBJECT
 
@@ -87,6 +87,8 @@ namespace fire
                     fire::message::mailbox_ptr _mail;
                     messages::sender_ptr _sender;
 
+                    QWidget* _main;
+                    QGridLayout* _main_layout;
                     gui::list* _messages;
                     QLineEdit* _message;
                     QPushButton* _send;

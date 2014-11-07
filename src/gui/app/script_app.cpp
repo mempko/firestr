@@ -56,18 +56,12 @@ namespace fire
         {
             const std::string SCRIPT_APP = "SCRIPT_APP";
 
-            namespace
-            {
-                const size_t TIMER_SLEEP = 40; //in milliseconds
-                const size_t PADDING = 20;
-            }
-
             script_app::script_app(
                     app_ptr app, 
                     app_service_ptr as,
                     s::conversation_service_ptr conversation_s,
                     s::conversation_ptr conversation) :
-                message{},
+                generic_app{},
                 _from_id{conversation->user_service()->user().info().id()},
                 _id{u::uuid()},
                 _conversation_service{conversation_s},
@@ -96,7 +90,7 @@ namespace fire
                     app_ptr app, app_service_ptr as, 
                     s::conversation_service_ptr conversation_s,
                     s::conversation_ptr conversation) :
-                message{},
+                generic_app{},
                 _from_id{from_id},
                 _id{id},
                 _conversation_service{conversation_s},
@@ -130,6 +124,26 @@ namespace fire
                 LOG << "closed app " << _app->name() << "(" << _app->id() << ")" << std::endl;
             }
 
+            void script_app::setup_decorations()
+            {
+                INVARIANT(_app);
+                REQUIRE_FALSE(_clone);
+
+                set_title(_app->name().c_str());
+
+                _clone = new QPushButton{"+"};
+                _clone->setMaximumSize(15,15);
+                _clone->setMinimumSize(15,15);
+                _clone->setStyleSheet("border: 0px; border-radius: 6px; background-color: 'light green'; color: 'white';");
+                _clone->setToolTip(tr("add app to your collection"));
+
+                connect(_clone, SIGNAL(clicked()), this, SLOT(clone_app()));
+
+                layout()->addWidget(_clone, 0,2);
+
+                ENSURE(_clone);
+            }
+
             void script_app::init()
             {
                 INVARIANT(root());
@@ -138,21 +152,15 @@ namespace fire
                 INVARIANT(_app);
 
                 //setup frontend
-                
-                _clone = new QPushButton("+");
-                _clone->setMaximumSize(15,15);
-                _clone->setMinimumSize(15,15);
-                _clone->setStyleSheet("border: 0px; background-color: 'light green'; color: 'white';");
-                _clone->setToolTip(tr("add app to your collection"));
-
-                connect(_clone, SIGNAL(clicked()), this, SLOT(clone_app()));
-                layout()->addWidget(_clone, 0,1);
+                setup_decorations();
 
                 _canvas = new QWidget;
                 _canvas_layout = new QGridLayout{_canvas};
-                layout()->addWidget(_canvas, 0,0,2,1);
+                layout()->addWidget(_canvas, 1,0,2,3);
                 auto front = std::make_shared<qtw::qt_frontend>(_canvas, _canvas_layout, nullptr);
                 _front = std::make_shared<qtw::qt_frontend_client>(front);
+
+                set_main(_canvas);
 
                 //setup mail
                 _mail = std::make_shared<m::mailbox>(_id);

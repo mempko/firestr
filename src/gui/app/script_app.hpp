@@ -34,11 +34,11 @@
 
 #include "gui/app/app.hpp"
 #include "gui/app/app_service.hpp"
+#include "gui/app/generic_app.hpp"
 #include "gui/list.hpp"
 #include "gui/lua/api.hpp"
 #include "gui/lua/backend_client.hpp"
 #include "gui/qtw/frontend_client.hpp"
-#include "gui/message.hpp"
 
 #include "conversation/conversation_service.hpp"
 
@@ -60,7 +60,7 @@ namespace fire
     {
         namespace app
         {
-            class script_app : public message
+            class script_app : public generic_app
             {
                 Q_OBJECT
 
@@ -88,6 +88,7 @@ namespace fire
                     void clone_app();
 
                 private:
+                    void setup_decorations();
                     void init();
                     void received_script_message(const fire::message::message&);
                     void received_event_message(const fire::message::message&);
@@ -107,9 +108,9 @@ namespace fire
                     qtw::qt_frontend_client_ptr _front;
                     lua::backend_client_ptr _back;
                     lua::lua_api_ptr _api;
-                    QWidget* _canvas;
-                    QGridLayout* _canvas_layout;
-                    QPushButton* _clone;
+                    QWidget* _canvas = nullptr;
+                    QGridLayout* _canvas_layout = nullptr;
+                    QPushButton* _clone = nullptr;
             };
 
             extern const std::string SCRIPT_APP;
