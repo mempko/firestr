@@ -52,7 +52,8 @@ namespace fire
         {
             auto t = std::time(0);
             char str[20];
-            if(std::strftime(str, sizeof(str), "%r", std::localtime(&t))) return {str};
+            if(std::strftime(str, sizeof(str), "%I:%M:%S", std::localtime(&t))) 
+                return std::string(str);
             else return "";
         }
     }
