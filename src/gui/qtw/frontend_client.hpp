@@ -154,6 +154,7 @@ namespace fire
                     virtual void height(int h);
                     virtual void grow();
                     virtual bool visible();
+                    virtual void alert();
 
                     //errors
                     virtual void report_error(const std::string& e);
@@ -252,6 +253,7 @@ namespace fire
 
                     void got_reset();
                     void got_visible(bool_promise_ptr);
+                    void got_alert();
 
                 public slots:
                     void do_place(api::ref_id, int r, int c);
@@ -339,6 +341,7 @@ namespace fire
                     void do_height(int h);
                     void do_grow();
                     void do_visible(bool_promise_ptr);
+                    void do_alert();
 
                     //errors
                     void do_report_error(const std::string& e);

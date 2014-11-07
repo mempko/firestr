@@ -142,6 +142,7 @@ namespace fire
                 virtual void height(int h) = 0;
                 virtual bool visible() = 0;
                 virtual void grow() = 0;
+                virtual void alert() = 0;
 
                 //errors
                 virtual void report_error(const std::string& e) = 0;
