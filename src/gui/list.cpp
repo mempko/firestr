@@ -86,6 +86,7 @@ namespace fire
             REQUIRE(w);
             INVARIANT(_layout);
 
+            _just_added = true;
             _layout->addWidget(w);
         }
 
@@ -137,6 +138,8 @@ namespace fire
         void list::scroll_to_bottom(int min, int max)
         {
             Q_UNUSED(min);
+            if(!_just_added) return;
+            _just_added = false;
             if(_auto_scroll) verticalScrollBar()->setValue(max);
         }
     }
