@@ -38,6 +38,7 @@ namespace fire
     namespace util 
     {
         std::string timestamp();
+        std::string hour_min_sec();
     }
 }
 
