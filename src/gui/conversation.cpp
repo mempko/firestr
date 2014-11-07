@@ -141,9 +141,9 @@ namespace fire
             bool enabled = _contact_select->count() > 0;
             _add_contact->setEnabled(enabled);
             if(enabled) 
-                _add_contact->setStyleSheet("border: 0px; background-color: 'green'; color: 'white';");
+                _add_contact->setStyleSheet("border: 0px; border-radius: 8px; background-color: 'green'; color: 'white';");
             else 
-                _add_contact->setStyleSheet("border: 0px; background-color: 'grey'; color: 'white';");
+                _add_contact->setStyleSheet("border: 0px; border-radius: 8px; background-color: 'grey'; color: 'white';");
         }
 
         void conversation_widget::add(message* m)

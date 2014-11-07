@@ -91,7 +91,7 @@ namespace fire
             auto b = new QPushButton("x");
             b->setMaximumSize(20,20);
             b->setMinimumSize(20,20);
-            b->setStyleSheet("border: 0px; background-color: 'light grey'; color: 'red';");
+            b->setStyleSheet("border: 0px; border-radius: 8px; background-color: 'light grey'; color: 'red';");
 
             ENSURE(b);
             return b;
