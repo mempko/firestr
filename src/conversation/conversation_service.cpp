@@ -422,13 +422,13 @@ namespace fire
             for(auto c : s->contacts().list()) 
             {
                 CHECK(c);
-                contacts.insert(c->id());
+                contacts.insert(contacts.end(), c->id());
             }
 
             //get apps in conversation
             id_set apps;
             for(const auto& a : s->apps())
-                apps.insert(a.second.address);
+                apps.insert(apps.end(), a.second.address);
 
             //send request to all contacts in conversation
             sync_conversation_msg ns;

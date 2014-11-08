@@ -1149,7 +1149,7 @@ namespace fire
                 auto dc = _user_service->by_id(id);
                 if(!dc) return;
 
-                names.insert(dc->name());
+                names.insert(names.end(), dc->name());
             }
 
             std::stringstream ss;
