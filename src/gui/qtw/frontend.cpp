@@ -727,14 +727,15 @@ namespace fire
                 auto mic = mi->second;
                 CHECK(mic);
 
+                const bool rec = mic->recording();
+
                 u::bytes bd = mic->read_data();
-                if(bd.empty()) return;
-
-                if(!mic->recording()) return;
-                if(mic->codec() == codec_type::opus) bd = mic->encode(bd);
-                if(bd.empty()) return;
-
-                back->got_sound(id, bd);
+                while(!bd.empty())
+                {
+                    if(mic->codec() == codec_type::opus) bd = mic->encode(bd);
+                    if(rec && !bd.empty()) back->got_sound(id, bd);
+                    bd = mic->read_data();
+                }
             }
             
             api::file_data qt_frontend::open_file()

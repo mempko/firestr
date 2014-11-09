@@ -184,18 +184,22 @@ namespace fire
                 INVARIANT(_i);
 
                 auto len = _i->bytesReady();
-                if(len <= 0) return {};
-                if(static_cast<size_t>(len) > MAX_SAMPLE_BYTES) len = MAX_SAMPLE_BYTES;
+                if(len > 0)
+                {
+                    if(static_cast<size_t>(len) > MAX_SAMPLE_BYTES) len = MAX_SAMPLE_BYTES;
 
-                u::bytes data;
-                data.resize(len);
+                    u::bytes data;
+                    data.resize(len);
 
-                auto l = _d->read(data.data(), len);
-                if(l <= 0) return {};
-                data.resize(l);
+                    auto l = _d->read(data.data(), len);
+                    if(l > 0) 
+                    {
+                        data.resize(l);
 
-                //decimate and add to buffer
-                decimate(data, _buffer, _channels, _skip);
+                        //decimate and add to buffer
+                        decimate(data, _buffer, _channels, _skip);
+                    }
+                }
 
                 if(_buffer.size() < MIN_BUF_SIZE) return {};
 
