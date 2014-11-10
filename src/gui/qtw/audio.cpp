@@ -82,6 +82,12 @@ namespace fire
                 _t = parse_codec(codec);
 
                 _inf = QAudioDeviceInfo::defaultInputDevice();
+                if(_inf.isNull())
+                {
+                    LOG << "No audio input found" << std::endl;
+                    return;
+                }
+
                 if (!_inf.isFormatSupported(_f)) 
                 {
                     _f = _inf.nearestFormat(_f);
@@ -178,10 +184,8 @@ namespace fire
 
             u::bytes microphone::read_data()
             {
-                REQUIRE(_d);
-                if(!_d) return {};
-
-                INVARIANT(_i);
+                if(!_i) return u::bytes{};
+                if(!_d) return u::bytes{};
 
                 auto len = _i->bytesReady();
                 if(len > 0)
@@ -229,13 +233,13 @@ namespace fire
 
             void microphone::stop()
             {
-                INVARIANT(_i);
                 _recording = false;
             }
 
             void microphone::start()
             {
-                INVARIANT(_i);
+                if(!_i) return;
+
                 INVARIANT(_back);
                 if(!_d)
                 {
@@ -277,11 +281,17 @@ namespace fire
                 _f.setCodec(Q_CODEC.c_str()); 
                 _t = parse_codec(codec);
 
-                QAudioDeviceInfo i{QAudioDeviceInfo::defaultOutputDevice()};
-                if (!i.isFormatSupported(_f)) _f = i.nearestFormat(_f);
-                LOG << "using speaker device: " << convert(i.deviceName()) << std::endl;
+                auto inf = QAudioDeviceInfo::defaultOutputDevice();
+                if(inf.isNull())
+                {
+                    LOG << "No audio output device found" << std::endl;
+                    return;
+                }
 
-                _o = new QAudioOutput{i, _f, _front};
+                if (!inf.isFormatSupported(_f)) _f = inf.nearestFormat(_f);
+                LOG << "using speaker device: " << convert(inf.deviceName()) << std::endl;
+
+                _o = new QAudioOutput{inf, _f, _front};
 
                 CHECK_GREATER_EQUAL(static_cast<size_t>(_f.sampleRate()), SAMPLE_RATE);
                 _rep = _f.sampleRate() / SAMPLE_RATE;
@@ -303,19 +313,17 @@ namespace fire
 
             void speaker::mute()
             {
-                INVARIANT(_o);
                 _mute = true;
             }
 
             void speaker::unmute()
             {
-                INVARIANT(_o);
                 _mute = false;
             }
 
             void speaker::play(const u::bytes& d)
             {
-                INVARIANT(_o);
+                if(!_o) return;
                 if(_mute) return;
                 if(d.empty()) return;
 
