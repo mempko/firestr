@@ -3,3 +3,4 @@ pages:
   - [index.md, Home]
   - [quickstart.md, Quickstart Guide]
   - [installing_apps.md, Installing Apps]
+  - [api/hello_world.md, Writing Apps]
