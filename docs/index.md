@@ -19,7 +19,12 @@ Features
 Installation
 ------------
 
-See our [quickstart guide](quickstart)
+See our [quickstart guide](quickstart.md)
+
+Creating Applications
+------------
+
+  * [Hello World](api/hello_world.md)  
 
 Contribute
 ----------
