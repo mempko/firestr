@@ -1,6 +1,10 @@
 site_name: Fire★ Documentation
+theme: readthedocs
 pages:
   - [index.md, Home]
-  - [quickstart.md, Quickstart Guide]
-  - [installing_apps.md, Installing Apps]
-  - [api/hello_world.md, Writing Apps]
+  - [quickstart.md, 'Quickstart Guide']
+  - [installing_apps.md, 'Installing Apps']
+  - [api/index.md, 'Creating Apps', 'Creating Apps']
+  - [api/hello_world.md, 'Creating Apps', 'Hello World']
+  - [api/reference.md, 'Creating Apps', 'API Reference']
+
