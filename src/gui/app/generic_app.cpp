@@ -53,10 +53,8 @@ namespace fire
 
                 _title = new QLabel{};
 
-                _show_hide = new QPushButton{"-"};
-                _show_hide->setMaximumSize(15,15);
-                _show_hide->setMinimumSize(15,15);
-                _show_hide->setStyleSheet("border: 0px; border-radius: 6px; background-color: 'pink'; color: 'white';");
+                _show_hide = new QPushButton;
+                make_minimize(*_show_hide);
                 _show_hide->setToolTip(tr("minimize app"));
                 connect(_show_hide, SIGNAL(clicked()), this, SLOT(toggle_visible()));
                 
@@ -98,8 +96,7 @@ namespace fire
 
                 if(_visible)
                 {
-                    _show_hide->setText("+");
-                    _show_hide->setStyleSheet("border: 0px; border-radius: 6px; background-color: 'blue'; color: 'white';");
+                    make_maximize(*_show_hide);
                     _show_hide->setToolTip(tr("show app"));
                     _visible = false;
                     _min_height = root()->minimumHeight();
@@ -111,8 +108,7 @@ namespace fire
                 else
                 {
                     _title->setText(_title_text.c_str());
-                    _show_hide->setText("-");
-                    _show_hide->setStyleSheet("border: 0px; border-radius: 6px; background-color: 'pink'; color: 'white';");
+                    make_minimize(*_show_hide);
                     _show_hide->setToolTip(tr("hide app"));
                     _visible = true;
                     root()->setMinimumHeight(_min_height);

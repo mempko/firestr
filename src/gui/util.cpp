@@ -95,16 +95,195 @@ namespace fire
             return true;
         }
 
+        void make_small(QWidget& b)
+        {
+            b.setFont(QFont{"Entypo", 26});
+            b.setMaximumSize(20,20);
+            b.setMinimumSize(20,20);
+        }
+
+        void make_big(QWidget& b)
+        {
+            b.setFont(QFont{"Entypo", 40});
+            b.setMaximumSize(40,40);
+            b.setMinimumSize(40,40);
+        }
+
+        void make_big_centered(QWidget& b)
+        {
+            b.setFont(QFont{"Entypo", 40});
+            b.setMaximumHeight(40);
+            b.setMinimumHeight(40);
+        }
+
+        void make_x(QPushButton& b)
+        {
+            REQUIRE(GUI_SETUP_CALLED);
+            make_small(b);
+            b.setText(u8"\u2716");
+            b.setStyleSheet("border: 0px; color: 'red';");
+        }
+
         QPushButton* make_x_button()
         {
-            auto b = new QPushButton("x");
-            b->setMaximumSize(20,20);
-            b->setMinimumSize(20,20);
-            b->setStyleSheet("border: 0px; border-radius: 8px; background-color: 'light grey'; color: 'red';");
+            auto b = new QPushButton;
+            make_x(*b);
 
             ENSURE(b);
             return b;
         }
+
+        void make_plus(QPushButton& b)
+        {
+            REQUIRE(GUI_SETUP_CALLED);
+
+            make_small(b);
+            b.setText(u8"\u2295");
+            b.setStyleSheet("border: 0px; color: 'green';");
+        }
+
+        void make_minimize(QPushButton& b)
+        {
+            REQUIRE(GUI_SETUP_CALLED);
+
+            make_small(b);
+            b.setText(u8"\u229F");
+            b.setStyleSheet("border: 0px; color: 'grey';");
+        }
+
+        void make_maximize(QPushButton& b)
+        {
+            REQUIRE(GUI_SETUP_CALLED);
+
+            make_small(b);
+            b.setText(u8"\u229E");
+            b.setStyleSheet("border: 0px; color: 'grey';");
+        }
+
+        void make_install(QPushButton& b)
+        {
+            REQUIRE(GUI_SETUP_CALLED);
+
+            make_small(b);
+            b.setText(u8"\uE778");
+            b.setStyleSheet("border: 0px; color: 'green';");
+        }
+
+        void make_reply(QPushButton& b)
+        {
+            REQUIRE(GUI_SETUP_CALLED);
+
+            make_small(b);
+            b.setText(u8"\uE712");
+            b.setStyleSheet("border: 0px; color: 'black';");
+        }
+
+        void make_export(QPushButton& b)
+        {
+            REQUIRE(GUI_SETUP_CALLED);
+
+            make_big(b);
+            b.setText(u8"\uE715");
+            b.setStyleSheet("border: 0px; color: 'black';");
+        }
+
+        void make_save(QPushButton& b)
+        {
+            REQUIRE(GUI_SETUP_CALLED);
+
+            make_big(b);
+            b.setText(u8"\U0001F4BE");
+            b.setStyleSheet("border: 0px; color: 'black';");
+        }
+
+        void make_add_contact_small(QPushButton& b)
+        {
+            REQUIRE(GUI_SETUP_CALLED);
+
+            make_small(b);
+            b.setText(u8"\uE700");
+            b.setStyleSheet("border: 0px; color: 'green';");
+        }
+
+        void make_add_contact(QPushButton& b)
+        {
+            REQUIRE(GUI_SETUP_CALLED);
+
+            make_big_centered(b);
+            b.setText(u8"\uE700");
+            b.setStyleSheet("border: 0px; color: 'green';");
+        }
+
+        void make_add_to_list(QPushButton& b)
+        {
+            REQUIRE(GUI_SETUP_CALLED);
+
+            make_big_centered(b);
+            b.setText(u8"\uE003");
+            b.setStyleSheet("border: 0px; color: 'green';");
+        }
+
+        void make_introduce(QPushButton& b)
+        {
+            REQUIRE(GUI_SETUP_CALLED);
+
+            make_big_centered(b);
+            b.setText(u8"\U0001F465");
+            b.setStyleSheet("border: 0px; color: 'green';");
+        }
+
+        void make_progress_00(QLabel& w)
+        {
+            REQUIRE(GUI_SETUP_CALLED);
+
+            make_small(w);
+            w.setStyleSheet("border: 0px; color: 'black';");
+        }
+
+        void make_progress_0(QLabel& w)
+        {
+            REQUIRE(GUI_SETUP_CALLED);
+            make_progress_00(w);
+            w.setText(u8"\uE768");
+        }
+
+        void make_progress_1(QLabel& w)
+        {
+            REQUIRE(GUI_SETUP_CALLED);
+            make_progress_00(w);
+            w.setText(u8"\uE769");
+        }
+
+        void make_progress_2(QLabel& w)
+        {
+            REQUIRE(GUI_SETUP_CALLED);
+            make_progress_00(w);
+            w.setText(u8"\uE76A");
+        }
+
+        void make_progress_3(QLabel& w)
+        {
+            REQUIRE(GUI_SETUP_CALLED);
+            make_progress_00(w);
+            w.setText(u8"\uE76B");
+        }
+
+        void make_error(QLabel& w)
+        {
+            REQUIRE(GUI_SETUP_CALLED);
+            make_small(w);
+            w.setText(u8"\u26A0");
+            w.setStyleSheet("border: 0px; color: 'red';");
+        }
+
+        void make_thumbs_up(QLabel& w)
+        {
+            REQUIRE(GUI_SETUP_CALLED);
+            make_small(w);
+            w.setText(u8"\U0001F44D");
+            w.setStyleSheet("border: 0px; color: 'green';");
+        }
+
 
         bool install_app_gui(a::app& a, a::app_service& s, QWidget* w)
         {

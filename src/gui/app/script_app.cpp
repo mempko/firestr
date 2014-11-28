@@ -131,11 +131,9 @@ namespace fire
 
                 set_title(_app->name().c_str());
 
-                _clone = new QPushButton{"+"};
-                _clone->setMaximumSize(15,15);
-                _clone->setMinimumSize(15,15);
-                _clone->setStyleSheet("border: 0px; border-radius: 6px; background-color: 'light green'; color: 'white';");
-                _clone->setToolTip(tr("add app to your collection"));
+                _clone = new QPushButton;
+                make_install(*_clone);
+                _clone->setToolTip(tr("install app"));
 
                 connect(_clone, SIGNAL(clicked()), this, SLOT(clone_app()));
 

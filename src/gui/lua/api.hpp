@@ -53,7 +53,6 @@ namespace fire
                 int line;
                 std::string message;
             };
-            using error_infos = std::vector<error_info>;
 
             class lua_api : public api::backend
             {
@@ -84,7 +83,6 @@ namespace fire
                     app::app_ptr app;
                     store_ref_ptr local_data;
                     store_ref_ptr data;
-                    error_infos errors; 
                     SLB::Manager manager;
                     script_ptr state;
                     std::string who_started_id;

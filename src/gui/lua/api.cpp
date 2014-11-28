@@ -390,15 +390,14 @@ namespace fire
             {
                 REQUIRE_FALSE(code.empty());
                 INVARIANT(front);
+
+                _error.line = -1;
+                _error.message.clear();
+
                 auto error = execute(code);
 
-                if(error.message.empty())
-                {
-                    _error.line = -1;
-                    _error.message.clear();
-                    return;
-                }
-                report_error(error.message, error.line);
+                if(!error.message.empty())
+                    report_error(error.message, error.line);
 
             }
 
