@@ -32,13 +32,17 @@
 #include "gui/util.hpp"
 #include "gui/app/app_service.hpp"
 #include "util/env.hpp"
+#include "util/log.hpp"
 
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QLineEdit>
 #include <QInputDialog>
+#include <QFontDatabase>
 
 #include <fstream>
+
+#include "gui/data/entypo.dat"
 
 namespace u = fire::util;
 namespace a = fire::gui::app;
@@ -47,6 +51,11 @@ namespace fire
 {
     namespace gui
     {
+        namespace
+        {
+            bool GUI_SETUP_CALLED = false;
+        }
+
         std::string convert(const QString& q)
         {
             return q.toUtf8().constData();
@@ -134,6 +143,25 @@ namespace fire
             else s.save_app(a);
 
             return true;
+        }
+
+        void setup_entypo()
+        {
+            auto entypo = QByteArray::fromRawData(reinterpret_cast<const char*>(data::entypo_ttf), data::entypo_ttf_len);
+            auto id = QFontDatabase::addApplicationFontFromData(entypo);
+
+            for(auto l : QFontDatabase::applicationFontFamilies(id))
+                LOG << "loaded font: " << convert(l) << " id: " << id << std::endl;
+        }
+
+        void setup_gui()
+        {
+            REQUIRE_FALSE(GUI_SETUP_CALLED);
+
+            setup_entypo();
+            GUI_SETUP_CALLED = true;
+
+            ENSURE(GUI_SETUP_CALLED);
         }
 
     }
