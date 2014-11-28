@@ -95,7 +95,6 @@ end
 
 function init_game()
 	app:place(d, 0, 0)
-	app:height(320)
 
 	make_paddle(10, "l" )
 	make_paddle(W-PW-10, "r")
