@@ -41,6 +41,7 @@ namespace fire
 {
     namespace gui
     {
+        void setup_gui();
         std::string convert(const QString&);
         const unsigned short* convert16(const QString&);
         std::string app_id(const user::local_user& l);

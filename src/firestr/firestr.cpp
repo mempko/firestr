@@ -33,6 +33,7 @@
 
 #include "user/user.hpp"
 #include "gui/mainwin.hpp"
+#include "gui/util.hpp"
 #include "network/util.hpp"
 
 #include "util/env.hpp"
@@ -47,6 +48,7 @@
 
 namespace po = boost::program_options;
 namespace ip = boost::asio::ip;
+namespace fg = fire::gui;
 namespace fg = fire::gui;
 namespace fn = fire::network;
 namespace fu = fire::util;
@@ -117,6 +119,8 @@ try
     c.debug = vm.count("debug");
 
     CREATE_LOG(c.home);
+
+    fg::setup_gui();
 
     c.user = fg::setup_user(c.home);
     if(!c.user) return 0;
