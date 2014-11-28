@@ -341,7 +341,9 @@ namespace fire
                         "<b>Welcome!</b><br><br>"
                         "Start by creating a conversation"
                         ));
-                auto add_conversation = new QPushButton(tr("create conversation"));
+                auto add_conversation = new QPushButton;
+                make_new_conversation(*add_conversation);
+                add_conversation->setToolTip(tr("Create a new conversation"));
                 l->addWidget(intro);
                 l->addWidget(add_conversation);
                 connect(add_conversation, SIGNAL(clicked()), this, SLOT(create_conversation()));
