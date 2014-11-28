@@ -35,6 +35,7 @@
 #include <QString>
 #include <QWidget>
 #include <QPushButton>
+#include <QLabel>
 #include "user/user.hpp"
 
 namespace fire
@@ -47,7 +48,28 @@ namespace fire
         std::string app_id(const user::local_user& l);
         std::string get_file_name(QWidget* root);
         bool load_from_file(const std::string& f, fire::util::bytes& data);
+
+
         QPushButton* make_x_button();
+        void make_x(QPushButton&);
+        void make_plus(QPushButton&);
+        void make_minimize(QPushButton&);
+        void make_maximize(QPushButton&);
+        void make_install(QPushButton&);
+        void make_reply(QPushButton&);
+        void make_save(QPushButton&);
+        void make_export(QPushButton&);
+        void make_add_contact_small(QPushButton&);
+        void make_add_contact(QPushButton&);
+        void make_add_to_list(QPushButton&);
+        void make_introduce(QPushButton&);
+
+        void make_progress_0(QLabel&);
+        void make_progress_1(QLabel&);
+        void make_progress_2(QLabel&);
+        void make_progress_3(QLabel&);
+        void make_error(QLabel&);
+        void make_thumbs_up(QLabel&);
 
         namespace app
         {

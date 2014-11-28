@@ -204,22 +204,13 @@ namespace fire
             layout->addWidget(_list, 0, 0, 2, 3);
 
             //create add button
-            auto* add_new = new QPushButton{tr("add contact")};
+            auto add_new = new QPushButton;
+            make_add_contact(*add_new);
             add_new->setToolTip(tr("add someone using their invite file"));
             layout->addWidget(add_new, 2, 0, 1, 3); 
             connect(add_new, SIGNAL(clicked()), this, SLOT(new_contact()));
 
             update_contacts();
-
-            //create id label
-            std::string id = _service->user().info().id(); 
-            auto* id_label = new QLabel{tr("Your ID")};
-            auto* id_txt = new QLineEdit{id.c_str()};
-            id_txt->setMinimumWidth(id.size() * 8);
-            id_txt->setReadOnly(true);
-            id_txt->setFrame(false);
-            layout->addWidget(id_label, 3,0); 
-            layout->addWidget(id_txt, 3,1,1,2); 
 
             //setup updated timer
             auto *t = new QTimer(this);
@@ -235,7 +226,8 @@ namespace fire
             auto il = new intro_list{_service};
 
             layout->addWidget(il, 0,0);
-            auto* introduce = new QPushButton{tr("introduce")};
+            auto introduce = new QPushButton;
+            make_introduce(*introduce);
             introduce->setToolTip(tr("Introduce one of your contacts to another.\nThey won't need to exchange invite files."));
             layout->addWidget(introduce, 1,0); 
             connect(introduce, SIGNAL(clicked()), il, SLOT(introduce()));
@@ -250,7 +242,8 @@ namespace fire
             gl->setToolTip(tr(GREETER_TIP));
 
             layout->addWidget(gl, 0,0);
-            auto* add_new = new QPushButton{tr("add")};
+            auto add_new = new QPushButton;
+            make_add_to_list(*add_new);
             add_new->setToolTip(tr(GREETER_TIP));
             layout->addWidget(add_new, 1,0); 
             connect(add_new, SIGNAL(clicked()), gl, SLOT(add_greeter()));

@@ -139,7 +139,9 @@ namespace fire
                 _main_layout->addWidget(_message, 1, 0);
 
                 //send button
-                _send = new QPushButton{tr("send")};
+                _send = new QPushButton;
+                make_reply(*_send);
+                _send->setToolTip(tr("Send"));
                 _main_layout->addWidget(_send, 1, 1);
 
                 connect(_message, SIGNAL(returnPressed()), this, SLOT(send_message()));

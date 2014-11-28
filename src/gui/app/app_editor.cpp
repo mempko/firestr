@@ -387,17 +387,22 @@ namespace fire
 
                 //add status bar
                 _status = new QLabel;
-                l->addWidget(_status, 3, 0);
+                l->addWidget(_status, 3, 0, 1, 2);
 
                 //save button
-                auto save = new QPushButton{tr("save")};
-                l->addWidget(save, 3, 1, 1, 2);
+                auto save = new QPushButton;
+                make_save(*save);
+                save->setToolTip(tr("Save"));
+                l->addWidget(save, 3, 2);
                 connect(save, SIGNAL(clicked()), this, SLOT(save_app()));
 
                 //export button
-                auto expt = new QPushButton{tr("export")};
+                auto expt = new QPushButton;
+                make_export(*expt);
                 l->addWidget(expt, 3, 3);
+                expt->setToolTip(tr("Export to File"));
                 connect(expt, SIGNAL(clicked()), this, SLOT(export_app()));
+
 
                 setMinimumHeight(layout()->sizeHint().height() + PADDING);
 
@@ -464,8 +469,8 @@ namespace fire
                 value_layout->addWidget(_data_value);
                 value_layout->addWidget(load_button);
 
-                _add_button = new QPushButton{tr("+")};
-                _add_button->setMaximumSize(20,20);
+                _add_button = new QPushButton;
+                make_plus(*_add_button);
                 connect(_add_button, SIGNAL(clicked()), this, SLOT(add_data()));
 
                 l->addWidget(key_label, 0, 0);
@@ -947,31 +952,31 @@ namespace fire
             void app_editor::update_status_to_errors()
             {
                 INVARIANT(_status);
-                _status->setText(tr("<font color='red'>errors</font>"));
+                make_error(*_status);
             }
 
             void app_editor::update_status_to_no_errors()
             {
                 INVARIANT(_status);
-                _status->setText(tr("<font color='green'>no errors</font>"));
+                make_thumbs_up(*_status);
             }
 
             void app_editor::update_status_to_typing()
             {
                 INVARIANT(_status);
-                _status->setText(tr("<font color='orange'>typing...</font>"));
+                make_progress_1(*_status);
             }
 
             void app_editor::update_status_to_waiting()
             {
                 INVARIANT(_status);
-                _status->setText(tr("<font color='orange'>waiting...</font>"));
+                make_progress_2(*_status);
             }
 
             void app_editor::update_status_to_running()
             {
                 INVARIANT(_status);
-                _status->setText(tr("<font color='red'>running...</font>"));
+                make_progress_3(*_status);
             }
 
             void app_editor::init_update()
@@ -1231,8 +1236,8 @@ namespace fire
 
                 _value_label = new QLabel{vs.str().c_str()};
 
-                _rm = new QPushButton{tr("x")};
-                _rm->setMaximumSize(20,20);
+                _rm = new QPushButton;
+                make_x(*_rm);
                 connect(_rm, SIGNAL(clicked()), this, SLOT(remove()));
                 connect(_key_label, SIGNAL(linkActivated(QString)), this, SLOT(key_clicked()));
 

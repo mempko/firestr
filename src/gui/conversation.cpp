@@ -82,10 +82,9 @@ namespace fire
             };
 
             _contact_list = new contact_list{conversation_service->user_service(), _conversation->contacts()};
-            _add_contact = new QPushButton{"+"};
-            _add_contact->setMaximumSize(20,20);
-            _add_contact->setMinimumSize(20,20);
-            _add_contact->setToolTip(tr("add person to this conversation"));
+            _add_contact = new QPushButton;
+            make_add_contact_small(*_add_contact);
+            _add_contact->setToolTip(tr("Add person to this conversation"));
             connect(_add_contact, SIGNAL(clicked()), this, SLOT(add_contact()));
 
             update_contact_select();
@@ -141,9 +140,9 @@ namespace fire
             bool enabled = _contact_select->count() > 0;
             _add_contact->setEnabled(enabled);
             if(enabled) 
-                _add_contact->setStyleSheet("border: 0px; border-radius: 8px; background-color: 'green'; color: 'white';");
+                _add_contact->setStyleSheet("border: 0px; color: 'green';");
             else 
-                _add_contact->setStyleSheet("border: 0px; border-radius: 8px; background-color: 'grey'; color: 'white';");
+                _add_contact->setStyleSheet("border: 0px; color: 'grey';");
         }
 
         void conversation_widget::add(message* m)
