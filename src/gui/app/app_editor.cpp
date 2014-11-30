@@ -65,6 +65,7 @@ namespace fire
             const std::string APP_EDITOR = "APP_EDITOR";
             const std::string LUA_KEYWORDS = "\\b(store|app|and|break|do|else|elseif|end|false|for|function|if|in|local|nil|not|or|repeat|return|then|true|until|while|pairs)\\b";
             const std::string LUA_QUOTE = "\".*[^\\\\]\"";
+            const std::string LUA_COMMENT = "--.*$";
 
             using api_doc = std::unordered_map<std::string, std::string>;
             const api_doc API_KEYWORDS{
@@ -1191,6 +1192,15 @@ namespace fire
                     r.format.setForeground(Qt::darkGreen);
                     r.format.setFontWeight(QFont::Bold);
                     r.regex = QRegExp{LUA_QUOTE.c_str()};
+                    _rules.emplace_back(r);
+                }
+
+                //comment
+                {
+                    highlight_rule r;
+                    r.format.setForeground(Qt::darkGray);
+                    r.format.setFontWeight(QFont::Bold);
+                    r.regex = QRegExp{LUA_COMMENT.c_str()};
                     _rules.emplace_back(r);
                 }
             }
