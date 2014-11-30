@@ -124,6 +124,7 @@ Example/useful apps
 slb           
 -------------------------------------------------------------------
 
-Lua and the SLB Lua binding library written by Jose L. Hidalgo Valiño
+The SLB Lua binding library written by Jose L. Hidalgo Valiño. 
+Also contains Lua 5.2 which is available at [lua.org](http://www.lua.org).
 
 
