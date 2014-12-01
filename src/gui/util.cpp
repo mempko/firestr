@@ -47,6 +47,12 @@
 namespace u = fire::util;
 namespace a = fire::gui::app;
 
+#ifdef _WIN64
+#define UT8
+#else
+#define UT8 u8
+#endif
+
 namespace fire
 {
     namespace gui
@@ -120,7 +126,7 @@ namespace fire
         {
             REQUIRE(GUI_SETUP_CALLED);
             make_small(b);
-            b.setText(u8"\u2716");
+            b.setText(UT8"\xE2\x9c\x96");  //\u2716
             b.setStyleSheet("border: 0px; color: 'red';");
         }
 
@@ -138,7 +144,7 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_small(b);
-            b.setText(u8"\u2295");
+            b.setText(UT8"\xe2\x8a\x95"); //\u2295
             b.setStyleSheet("border: 0px; color: 'green';");
         }
 
@@ -147,7 +153,7 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_small(b);
-            b.setText(u8"\u229F");
+            b.setText(UT8"\xe2\x8a\x9f"); //\u229F
             b.setStyleSheet("border: 0px; color: 'grey';");
         }
 
@@ -156,7 +162,7 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_small(b);
-            b.setText(u8"\u229E");
+            b.setText(UT8"\xe2\x8a\x9e"); //\u229E
             b.setStyleSheet("border: 0px; color: 'grey';");
         }
 
@@ -165,7 +171,7 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_small(b);
-            b.setText(u8"\uE778");
+            b.setText(UT8"\xee\x9d\xb8"); //\uE778
             b.setStyleSheet("border: 0px; color: 'green';");
         }
 
@@ -174,7 +180,7 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_small(b);
-            b.setText(u8"\uE712");
+            b.setText(UT8"\xee\x9c\x92"); //\uE712
             b.setStyleSheet("border: 0px; color: 'black';");
         }
 
@@ -183,7 +189,7 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_big(b);
-            b.setText(u8"\uE715");
+            b.setText(UT8"\xee\x9c\x95"); //\uE715
             b.setStyleSheet("border: 0px; color: 'black';");
         }
 
@@ -192,7 +198,7 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_big(b);
-            b.setText(u8"\U0001F4BE");
+            b.setText(UT8"\xf0\x9f\x92\xbe"); //\U0001F4BE
             b.setStyleSheet("border: 0px; color: 'black';");
         }
 
@@ -201,7 +207,7 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_small(b);
-            b.setText(u8"\uE700");
+            b.setText(UT8"\xee\x9c\x80"); //\uE700
             b.setStyleSheet("border: 0px; color: 'green';");
         }
 
@@ -210,7 +216,7 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_big_centered(b);
-            b.setText(u8"\uE700");
+            b.setText(UT8"\xee\x9c\x80"); //\uE700
             b.setStyleSheet("border: 0px; color: 'green';");
         }
 
@@ -219,7 +225,7 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_big_centered(b);
-            b.setText(u8"\uE003");
+            b.setText(UT8"\xee\x80\x83"); //\uE003
             b.setStyleSheet("border: 0px; color: 'green';");
         }
 
@@ -228,7 +234,7 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_big_centered(b);
-            b.setText(u8"\U0001F465");
+            b.setText(UT8"\xf0\x9f\x91\xa5"); //\U0001F465
             b.setStyleSheet("border: 0px; color: 'green';");
         }
 
@@ -237,7 +243,7 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_big_centered(b);
-            b.setText(u8"\U0001F465");
+            b.setText(UT8"\xf0\x9f\x91\xa5"); //\U0001F465
             b.setStyleSheet("border: 0px; color: 'green';");
         }
 
@@ -262,35 +268,35 @@ namespace fire
         {
             REQUIRE(GUI_SETUP_CALLED);
             make_progress_00(w);
-            w.setText(u8"\uE768");
+            w.setText(UT8"\xee\x9d\xa8"); //\uE768
         }
 
         void make_progress_1(QLabel& w)
         {
             REQUIRE(GUI_SETUP_CALLED);
             make_progress_00(w);
-            w.setText(u8"\uE769");
+            w.setText(UT8"\xee\x9d\xa9"); //\uE769
         }
 
         void make_progress_2(QLabel& w)
         {
             REQUIRE(GUI_SETUP_CALLED);
             make_progress_00(w);
-            w.setText(u8"\uE76A");
+            w.setText(UT8"\xee\x9d\xaa"); //\uE76A
         }
 
         void make_progress_3(QLabel& w)
         {
             REQUIRE(GUI_SETUP_CALLED);
             make_progress_00(w);
-            w.setText(u8"\uE76B");
+            w.setText(UT8"\xee\x9d\xab"); //\uE76B
         }
 
         void make_error(QLabel& w)
         {
             REQUIRE(GUI_SETUP_CALLED);
             make_small(w);
-            w.setText(u8"\u26A0");
+            w.setText(UT8"\xe2\x9a\xa0"); //\u26A0
             w.setStyleSheet("border: 0px; color: 'red';");
         }
 
@@ -298,10 +304,9 @@ namespace fire
         {
             REQUIRE(GUI_SETUP_CALLED);
             make_small(w);
-            w.setText(u8"\U0001F44D");
+            w.setText(UT8"\xf0\x9f\x91\x8d"); //\U0001F44D
             w.setStyleSheet("border: 0px; color: 'green';");
         }
-
 
         bool install_app_gui(a::app& a, a::app_service& s, QWidget* w)
         {
