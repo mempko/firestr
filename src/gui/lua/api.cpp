@@ -78,19 +78,11 @@ namespace fire
                 INVARIANT(conversation_service);
                 INVARIANT(front);
 
-                local_data.reset(new store_ref{app->local_data()});
-                data.reset(new store_ref{app->data()});
-
-                bind();
+                reset();
 
                 INVARIANT(state);
                 INVARIANT(local_data);
                 INVARIANT(data);
-            }
-
-            lua_api::~lua_api()
-            {
-                reset_widgets();
             }
 
             void lua_api::report_error(const std::string& e, int line)
@@ -111,6 +103,17 @@ namespace fire
             {
                 ids++;
                 return ids;
+            }
+
+            void lua_api::reset()
+            {  
+                reset_refs();
+
+                local_data.reset(new store_ref{app->local_data()});
+                data.reset(new store_ref{app->data()});
+
+                state.reset();
+                bind();
             }
 
             void lua_api::bind()
@@ -387,11 +390,8 @@ namespace fire
                 return {-1, "unknown"};
             }
 
-            void lua_api::reset_widgets()
+            void lua_api::reset_refs()
             {
-                INVARIANT(front);
-                front->reset();
-
                 button_refs.clear();
                 edit_refs.clear();
                 text_edit_refs.clear();

@@ -61,6 +61,8 @@ namespace fire
                     virtual void draw_mouse_dragged(api::ref_id, int button, int x, int y);
                     virtual void draw_mouse_moved(api::ref_id, int x, int y);
 
+                    virtual void reset();
+
                 private:
                     void init_handlers();
                     void received_script_message(const fire::message::message& m);

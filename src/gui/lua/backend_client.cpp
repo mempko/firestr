@@ -58,6 +58,7 @@ namespace fire
                 const std::string DRAW_MOUSE_RELEASED = "d_r";
                 const std::string DRAW_MOUSE_DRAGGED = "d_d";
                 const std::string DRAW_MOUSE_MOVED = "d_m";
+                const std::string RESET_BACKEND = "r_b";
             }
 
             f_message(run_code_msg)
@@ -198,6 +199,14 @@ namespace fire
                 }
             };
 
+            f_message(reset_msg)
+            {
+                f_message_init(reset_msg, RESET_BACKEND);
+                f_serialize
+                {
+                }
+            };
+
             backend_client::backend_client(lua_api* api, m::mailbox_ptr m) : 
                 s::service{m},
                 _api{api} 
@@ -228,6 +237,12 @@ namespace fire
                             run_code_msg b;
                             b.from_message(m);
                             _api->run(b.code);
+                        });
+
+                handle(RESET_BACKEND, [&](const m::message& m)
+                        {
+                            if(!m::is_local(m)) return;
+                            _api->reset();
                         });
 
                 handle(BUTTON_CLICKED, [&](const m::message& m)
@@ -335,6 +350,13 @@ namespace fire
                 INVARIANT(mail());
                 run_code_msg m;
                 m.code = code;
+                mail()->push_inbox(m.to_message());
+            }
+
+            void backend_client::reset()
+            {
+                INVARIANT(mail());
+                reset_msg m;
                 mail()->push_inbox(m.to_message());
             }
 
