@@ -856,6 +856,7 @@ namespace fire
                 if(code.empty()) return true;
 
                 //run the code
+                _back->reset();
                 _front->reset();
                 _back->run(code);
                 update_error(_api->get_error());

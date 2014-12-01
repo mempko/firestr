@@ -165,6 +165,8 @@ namespace fire
                 virtual void draw_mouse_released(ref_id, int button, int x, int y) = 0;
                 virtual void draw_mouse_dragged(ref_id, int button, int x, int y) = 0;
                 virtual void draw_mouse_moved(ref_id, int x, int y) = 0;
+
+                virtual void reset() = 0;
             };
 
         }

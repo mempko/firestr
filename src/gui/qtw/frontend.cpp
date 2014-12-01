@@ -131,6 +131,11 @@ namespace fire
                 ENSURE(layout)
             }
 
+            qt_frontend::~qt_frontend()
+            {
+                reset();
+            }
+
             void qt_frontend::set_backend(api::backend* b)
             {
                 REQUIRE(b);
@@ -257,9 +262,7 @@ namespace fire
             std::string qt_frontend::button_get_text(api::ref_id id)
             {
                 auto button = get_widget<QPushButton>(id, widgets);
-                CHECK(button);
-
-                return gui::convert(button->text());
+                return button ? gui::convert(button->text()) : "";
             }
 
             void qt_frontend::button_set_text(api::ref_id id, const std::string& t)

@@ -88,6 +88,7 @@ namespace fire
 
                 public:
                     qt_frontend(QWidget* c, QGridLayout* cl, list* output);
+                    ~qt_frontend();
 
                 public:
                     void set_backend(api::backend*);

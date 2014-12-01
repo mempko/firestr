@@ -64,8 +64,6 @@ namespace fire
                             conversation::conversation_service_ptr conversation_service,
                             api::frontend*);
 
-                    ~lua_api();
-
                 public:
                     virtual void button_clicked(api::ref_id);
                     virtual void edit_edited(api::ref_id id);
@@ -77,6 +75,7 @@ namespace fire
                     virtual void draw_mouse_released(api::ref_id, int button, int x, int y);
                     virtual void draw_mouse_dragged(api::ref_id, int button, int x, int y);
                     virtual void draw_mouse_moved(api::ref_id, int x, int y);
+                    virtual void reset();
 
                 public:
                     //misc
@@ -103,7 +102,7 @@ namespace fire
                     void bind();
                     error_info execute(const std::string&);
                     void run(const std::string&);
-                    void reset_widgets();
+                    void reset_refs();
                     void message_received(const script_message&);
                     void event_received(const event_message&);
                     void send_to_helper(user::user_info_ptr, const script_message&); 
