@@ -61,6 +61,8 @@ namespace fire
                 virtual void place_across(ref_id id, int r, int c, int row_span, int col_span) = 0;
                 virtual void widget_enable(ref_id, bool) = 0;
                 virtual bool is_widget_enabled(ref_id) = 0;
+                virtual void widget_visible(ref_id, bool) = 0;
+                virtual bool is_widget_visible(ref_id) = 0;
 
                 //grid
                 virtual void add_grid(ref_id) = 0;

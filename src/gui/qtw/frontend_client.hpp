@@ -73,6 +73,8 @@ namespace fire
                     virtual void place_across(api::ref_id id, int r, int c, int row_span, int col_span);
                     virtual void widget_enable(api::ref_id, bool);
                     virtual bool is_widget_enabled(api::ref_id);
+                    virtual void widget_visible(api::ref_id, bool);
+                    virtual bool is_widget_visible(api::ref_id);
 
                     //grid
                     virtual void add_grid(api::ref_id);
@@ -167,6 +169,8 @@ namespace fire
                     void got_place_across(api::ref_id id, int r, int c, int row_span, int col_span);
                     void got_widget_enable(api::ref_id, bool);
                     bool got_is_widget_enabled(api::ref_id, bool_promise_ptr);
+                    void got_widget_visible(api::ref_id, bool);
+                    bool got_is_widget_visible(api::ref_id, bool_promise_ptr);
 
                     //grid
                     void got_add_grid(api::ref_id);
@@ -260,6 +264,8 @@ namespace fire
                     void do_place_across(api::ref_id id, int r, int c, int row_span, int col_span);
                     void do_widget_enable(api::ref_id, bool);
                     void do_is_widget_enabled(api::ref_id, bool_promise_ptr);
+                    void do_widget_visible(api::ref_id, bool);
+                    void do_is_widget_visible(api::ref_id, bool_promise_ptr);
 
                     //grid
                     void do_add_grid(api::ref_id);

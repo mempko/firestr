@@ -101,6 +101,8 @@ namespace fire
                     virtual void place_across(api::ref_id id, int r, int c, int row_span, int col_span);
                     virtual void widget_enable(api::ref_id, bool);
                     virtual bool is_widget_enabled(api::ref_id);
+                    virtual void widget_visible(api::ref_id, bool);
+                    virtual bool is_widget_visible(api::ref_id);
 
                     //grid
                     virtual void add_grid(api::ref_id);
