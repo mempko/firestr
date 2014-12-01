@@ -600,7 +600,7 @@ button:enabled
 
     enabled() : bool
 
-Returns true if the button is enabled
+Returns true if the button is enabled.
 
     en = my_button:enabled()
 
@@ -616,11 +616,38 @@ Enables the button.
 button:disable
 -----
 
-    disable : nil
+    disable() : nil
 
 Disables the button.
 
     my_button:disable()
+
+button:visible
+-----
+
+    visible() : bool
+
+Returns true if the button is visible
+
+    en = my_button:visible()
+
+button:show
+-----
+
+    show() : nil
+
+Makes the button visible.
+
+    my_button:show()
+
+button:hide
+-----
+
+    hide() : nil
+
+Hides the button.
+
+    my_button:hide()
 
 label object
 =====
@@ -651,7 +678,7 @@ label:enabled
 
     enabled() : bool
 
-Returns true if the label is enabled
+Returns true if the label is enabled.
 
     en = my_label:enabled()
 
@@ -672,6 +699,33 @@ label:disable
 Disables the label.
 
     my_label:disable()
+
+label:visible
+-----
+
+    visible() : bool
+
+Returns true if the label is visible.
+
+    en = my_label:visible()
+
+label:show
+-----
+
+    show() : nil
+
+Makes the label visible.
+
+    my_label:show()
+
+label:hide
+-----
+
+    hide() : nil
+
+Hides the label.
+
+    my_label:hide()
 
 edit object
 =====
@@ -779,7 +833,7 @@ edit:enabled
 
     enabled() : bool
 
-Returns true if the edit is enabled
+Returns true if the edit is enabled.
 
     en = my_edit:enabled()
 
@@ -801,6 +855,32 @@ Disables the edit.
 
     my_edit:disable()
 
+edit:visible
+-----
+
+    visible() : bool
+
+Returns true if the edit is visible
+
+    en = my_edit:visible()
+
+edit:show
+-----
+
+    show() : nil
+
+Makes the edit visible.
+
+    my_edit:show()
+
+edit:hide
+-----
+
+    hide() : nil
+
+Hides the edit.
+
+    my_edit:hide()
 
 text_edit object
 =====
@@ -880,7 +960,7 @@ text_edit:enabled
 
     enabled() : bool
 
-Returns true if the text_edit is enabled
+Returns true if the text_edit is enabled.
 
     en = my_text_edit:enabled()
 
@@ -902,6 +982,32 @@ Disables the text_edit.
 
     my_text_edit:disable()
 
+text_edit:visible
+-----
+
+    visible() : bool
+
+Returns true if the text_edit is visible
+
+    en = my_text_edit:visible()
+
+text_edit:show
+-----
+
+    show() : nil
+
+Makes the text_edit visible.
+
+    my_text_edit:show()
+
+text_edit:hide
+-----
+
+    hide() : nil
+
+Hides the text_edit.
+
+    my_text_edit:hide()
 
 list object
 =====
@@ -954,7 +1060,7 @@ list:enabled
 
     enabled() : bool
 
-Returns true if the list is enabled
+Returns true if the list is enabled.
 
     en = my_list:enabled()
 
@@ -975,6 +1081,33 @@ list:disable
 Disables the list.
 
     my_list:disable()
+
+list:visible
+-----
+
+    visible() : bool
+
+Returns true if the list is visible
+
+    en = my_list:visible()
+
+list:show
+-----
+
+    show() : nil
+
+Makes the list visible.
+
+    my_list:show()
+
+list:hide
+-----
+
+    hide() : nil
+
+Hides the list.
+
+    my_list:hide()
 
 grid object
 =====
@@ -1015,7 +1148,7 @@ grid:enabled
 
     enabled() : bool
 
-Returns true if the grid is enabled
+Returns true if the grid is enabled.
 
     en = my_grid:enabled()
 
@@ -1036,6 +1169,33 @@ grid:disable
 Disables the grid.
 
     my_grid:disable()
+
+grid:visible
+-----
+
+    visible() : bool
+
+Returns true if the grid is visible
+
+    en = my_grid:visible()
+
+grid:show
+-----
+
+    show() : nil
+
+Makes the grid visible.
+
+    my_grid:show()
+
+grid:hide
+-----
+
+    hide() : nil
+
+Hides the grid.
+
+    my_grid:hide()
 
 draw object
 =====
@@ -1238,7 +1398,7 @@ draw:enabled
 
     enabled() : bool
 
-Returns true if the draw is enabled
+Returns true if the draw is enabled.
 
     en = my_draw:enabled()
 
@@ -1259,6 +1419,33 @@ draw:disable
 Disables the draw.
 
     my_draw:disable()
+
+draw:visible
+-----
+
+    visible() : bool
+
+Returns true if the draw is visible
+
+    en = my_draw:visible()
+
+draw:show
+-----
+
+    show() : nil
+
+Makes the draw visible.
+
+    my_draw:show()
+
+draw:hide
+-----
+
+    hide() : nil
+
+Hides the draw.
+
+    my_draw:hide()
 
 image object
 =====
@@ -1299,7 +1486,7 @@ image:enabled
 
     enabled() : bool
 
-Returns true if the image is enabled
+Returns true if the image is enabled.
 
     en = my_image:enabled()
 
@@ -1320,6 +1507,33 @@ image:disable
 Disables the image.
 
     my_image:disable()
+
+image:visible
+-----
+
+    visible() : bool
+
+Returns true if the image is visible
+
+    en = my_image:visible()
+
+image:show
+-----
+
+    show() : nil
+
+Makes the image visible.
+
+    my_image:show()
+
+image:hide
+-----
+
+    hide() : nil
+
+Hides the image.
+
+    my_image:hide()
 
 bin_data object
 =====

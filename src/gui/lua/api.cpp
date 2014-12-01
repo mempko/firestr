@@ -214,7 +214,10 @@ namespace fire
                     .set("place_across", &grid_ref::place_across)
                     .set("enabled", &widget_ref::enabled)
                     .set("enable", &widget_ref::enable)
-                    .set("disable", &widget_ref::disable);
+                    .set("disable", &widget_ref::disable)
+                    .set("visible", &widget_ref::visible)
+                    .set("show", &widget_ref::show)
+                    .set("hide", &widget_ref::hide);
 
                 SLB::Class<button_ref>{"button", &manager}
                     .set("text", &button_ref::get_text)
@@ -225,14 +228,20 @@ namespace fire
                     .set("set_name", &observable_ref::set_name)
                     .set("enabled", &widget_ref::enabled)
                     .set("enable", &widget_ref::enable)
-                    .set("disable", &widget_ref::disable);
+                    .set("disable", &widget_ref::disable)
+                    .set("visible", &widget_ref::visible)
+                    .set("show", &widget_ref::show)
+                    .set("hide", &widget_ref::hide);
 
                 SLB::Class<label_ref>{"label", &manager}
                     .set("text", &label_ref::get_text)
                     .set("set_text", &label_ref::set_text)
                     .set("enabled", &widget_ref::enabled)
                     .set("enable", &widget_ref::enable)
-                    .set("disable", &widget_ref::disable);
+                    .set("disable", &widget_ref::disable)
+                    .set("visible", &widget_ref::visible)
+                    .set("show", &widget_ref::show)
+                    .set("hide", &widget_ref::hide);
 
                 SLB::Class<edit_ref>{"edit", &manager}
                     .set("text", &edit_ref::get_text)
@@ -244,7 +253,10 @@ namespace fire
                     .set("set_name", &observable_ref::set_name)
                     .set("enabled", &widget_ref::enabled)
                     .set("enable", &widget_ref::enable)
-                    .set("disable", &widget_ref::disable);
+                    .set("disable", &widget_ref::disable)
+                    .set("visible", &widget_ref::visible)
+                    .set("show", &widget_ref::show)
+                    .set("hide", &widget_ref::hide);
 
                 SLB::Class<text_edit_ref>{"text_edit", &manager}
                     .set("text", &text_edit_ref::get_text)
@@ -254,7 +266,10 @@ namespace fire
                     .set("set_name", &observable_ref::set_name)
                     .set("enabled", &widget_ref::enabled)
                     .set("enable", &widget_ref::enable)
-                    .set("disable", &widget_ref::disable);
+                    .set("disable", &widget_ref::disable)
+                    .set("visible", &widget_ref::visible)
+                    .set("show", &widget_ref::show)
+                    .set("hide", &widget_ref::hide);
 
                 SLB::Class<list_ref>{"list_ref", &manager}
                     .set("add", &list_ref::add)
@@ -263,7 +278,10 @@ namespace fire
                     .set("clear", &list_ref::clear)
                     .set("enabled", &widget_ref::enabled)
                     .set("enable", &widget_ref::enable)
-                    .set("disable", &widget_ref::disable);
+                    .set("disable", &widget_ref::disable)
+                    .set("visible", &widget_ref::visible)
+                    .set("show", &widget_ref::show)
+                    .set("hide", &widget_ref::hide);
 
                 SLB::Class<draw_ref>{"draw", &manager}
                     .set("mouse_moved_callback", &draw_ref::get_mouse_moved_callback)
@@ -278,6 +296,9 @@ namespace fire
                     .set("enabled", &widget_ref::enabled)
                     .set("enable", &widget_ref::enable)
                     .set("disable", &widget_ref::disable)
+                    .set("visible", &widget_ref::visible)
+                    .set("show", &widget_ref::show)
+                    .set("hide", &widget_ref::hide)
                     .set("clear", &draw_ref::clear)
                     .set("line", &draw_ref::line)
                     .set("circle", &draw_ref::circle)
@@ -289,6 +310,9 @@ namespace fire
                     .set("enabled", &image_ref::enabled)
                     .set("enable", &image_ref::enable)
                     .set("disable", &image_ref::disable)
+                    .set("visible", &image_ref::visible)
+                    .set("show", &image_ref::show)
+                    .set("hide", &image_ref::hide)
                     .set("width", &image_ref::width)
                     .set("height", &image_ref::height)
                     .set("good", &image_ref::good);

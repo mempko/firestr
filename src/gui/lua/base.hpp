@@ -83,6 +83,9 @@ namespace fire
                 bool enabled(); 
                 void enable();
                 void disable();
+                bool visible(); 
+                void show();
+                void hide();
             };
 
             class script_message;
