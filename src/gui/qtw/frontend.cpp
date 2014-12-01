@@ -161,6 +161,20 @@ namespace fire
                 return w ? w->isEnabled() : false;
             }
 
+            void qt_frontend::widget_visible(api::ref_id id, bool vis)
+            {
+                auto w = get_widget<QWidget>(id, widgets);
+                if(!w) return;
+
+                w->setVisible(vis);
+            }
+
+            bool qt_frontend::is_widget_visible(api::ref_id id)
+            {
+                auto w = get_widget<QWidget>(id, widgets);
+                return w ? w->isVisible() : false;
+            }
+
             void qt_frontend::place_across(api::ref_id id, int r, int c, int row_span, int col_span)
             {
                 INVARIANT(layout);
@@ -432,7 +446,10 @@ namespace fire
                 auto w = get_widget<QWidget>(widget_id, widgets);
                 if(!w) return;
 
+                w->setVisible(false);
                 l->remove(w, false);
+
+
             }
 
             size_t qt_frontend::list_size(api::ref_id id)
@@ -445,6 +462,7 @@ namespace fire
 
             void qt_frontend::list_clear(api::ref_id id)
             {
+
                 auto l = get_widget<list>(id, widgets);
                 if(!l) return;
 

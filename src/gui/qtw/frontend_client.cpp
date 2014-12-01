@@ -64,10 +64,13 @@ namespace fire
                 qRegisterMetaType<file_data_promise_ptr>("file_data_promise_ptr");
                 qRegisterMetaType<bin_file_data_promise_ptr>("bin_file_data_promise_ptr");
 
+                //widgets
                 F_CON(place(api::ref_id, int, int));
                 F_CON(place_across(api::ref_id, int, int, int, int));
                 F_CON(widget_enable(api::ref_id, bool));
                 F_CON(is_widget_enabled(api::ref_id, bool_promise_ptr));
+                F_CON(widget_visible(api::ref_id, bool));
+                F_CON(is_widget_visible(api::ref_id, bool_promise_ptr));
 
                 //grid
                 F_CON(add_grid(api::ref_id));
@@ -203,6 +206,23 @@ namespace fire
                 auto f = p->get_future();
 
                 emit got_is_widget_enabled(id, p);
+
+                return get_until(f, false);
+            }
+
+            void qt_frontend_client::widget_visible(api::ref_id id, bool b)
+            {
+                if(_done) return;
+                emit got_widget_visible(id, b);
+            }
+
+            bool qt_frontend_client::is_widget_visible(api::ref_id id)
+            {
+                if(_done) return false;
+                auto p = std::make_shared<std::promise<bool>>();
+                auto f = p->get_future();
+
+                emit got_is_widget_visible(id, p);
 
                 return get_until(f, false);
             }
@@ -651,6 +671,18 @@ namespace fire
             {
                 INVARIANT(_f);
                 p->set_value(_f->is_widget_enabled(id));
+            }
+
+            void qt_frontend_client::do_widget_visible(api::ref_id id, bool b)
+            {
+                INVARIANT(_f);
+                _f->widget_visible(id, b);
+            }
+
+            void qt_frontend_client::do_is_widget_visible(api::ref_id id, bool_promise_ptr p)
+            {
+                INVARIANT(_f);
+                p->set_value(_f->is_widget_visible(id));
             }
 
             //grid
