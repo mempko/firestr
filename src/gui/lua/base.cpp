@@ -92,7 +92,31 @@ namespace fire
                 INVARIANT(api);
                 INVARIANT(api->front);
 
-                api->front->widget_enable(id, true);
+                api->front->widget_enable(id, false);
+            }
+
+            bool widget_ref::visible()
+            {
+                INVARIANT(api);
+                INVARIANT(api->front);
+
+                return api->front->is_widget_visible(id);
+            }
+
+            void widget_ref::show()
+            {
+                INVARIANT(api);
+                INVARIANT(api->front);
+
+                api->front->widget_visible(id, true);
+            }
+
+            void widget_ref::hide()
+            {
+                INVARIANT(api);
+                INVARIANT(api->front);
+
+                api->front->widget_visible(id, false);
             }
 
             std::string app_ref::get_id() const
