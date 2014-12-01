@@ -104,8 +104,8 @@ namespace fire
         void make_small(QWidget& b)
         {
             b.setFont(QFont{"Entypo", 26});
-            b.setMaximumSize(20,20);
-            b.setMinimumSize(20,20);
+            b.setMaximumSize(24,24);
+            b.setMinimumSize(24,24);
         }
 
         void make_big(QWidget& b)
