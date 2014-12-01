@@ -466,7 +466,17 @@ namespace fire
                 auto l = get_widget<list>(id, widgets);
                 if(!l) return;
 
-                l->clear(false); //clear but don't delete widgets
+                //hide all the widgets in the list
+                for(size_t i = 0; i < l->size(); i++)
+                {
+                    auto w = l->get(i);
+                    CHECK(w);
+                    w->setVisible(false);
+                }
+
+                l->clear(false); //clear but don't delete widgets because there might
+                                 //be a widget ref on the lua side which can be used
+                                 //to place the widget somewhere else
             }
 
             void qt_frontend::add_pen(api::ref_id id, const std::string& color, int width)
