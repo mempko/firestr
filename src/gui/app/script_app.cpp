@@ -127,13 +127,25 @@ namespace fire
             void script_app::setup_decorations()
             {
                 INVARIANT(_app);
+                INVARIANT(_app_service);
                 REQUIRE_FALSE(_clone);
 
                 set_title(_app->name().c_str());
 
                 _clone = new QPushButton;
                 make_install(*_clone);
-                _clone->setToolTip(tr("install app"));
+
+                //color the install icon depending on whether the app is already installed
+                bool exists = _app_service->available_apps().count(_app->id());
+                if(exists) 
+                {
+                    _clone->setToolTip(tr("update app"));
+                    _clone->setStyleSheet("border: 0px; color: 'black';");
+                }
+                else
+                {
+                    _clone->setToolTip(tr("install app"));
+                }
 
                 connect(_clone, SIGNAL(clicked()), this, SLOT(clone_app()));
 
