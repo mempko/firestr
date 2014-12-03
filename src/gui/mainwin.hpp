@@ -33,6 +33,7 @@
 #define FIRESTR_MAINWIN_H
 
 #include <QMainWindow>
+#include "gui/contactlist.hpp"
 #include "gui/conversation.hpp"
 #include "gui/app/app_service.hpp"
 #include "gui/mail_service.hpp"
@@ -173,6 +174,8 @@ namespace fire
                 MainTabs* _conversations = nullptr;
                 QWidget* _start_screen = nullptr;
                 bool _start_screen_attached = false;
+
+                contact_list* _start_contacts;
 
                 QWidget* _alert_screen = nullptr;
                 list* _alerts = nullptr;

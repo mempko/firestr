@@ -336,15 +336,30 @@ namespace fire
             }
             else
             {
-                auto intro = new QLabel(
-                        tr(
-                        "<b>Welcome!</b><br><br>"
-                        "Start by creating a conversation"
-                        ));
+                _start_contacts = new contact_list{_user_service, _user_service->user().contacts(), 
+                    [&](us::user_info_ptr u) {
+                        REQUIRE(u);
+
+                        auto con = new QPushButton;
+                        std::stringstream ss;
+                        ss << "New converesation with `" << u->name() << "'";
+                        con->setToolTip(ss.str().c_str());
+                        make_new_conversation_small(*con);
+
+                        auto mapper = new QSignalMapper{this};
+                        mapper->setMapping(con, QString(u->id().c_str()));
+                        connect(con, SIGNAL(clicked()), mapper, SLOT(map()));
+                        connect(mapper, SIGNAL(mapped(QString)), this, SLOT(create_conversation(QString)));
+
+                        return new user_info{u, _user_service, true, con};
+                    }
+                };
+                _start_contacts->update_status(true);
+
                 auto add_conversation = new QPushButton;
                 make_new_conversation(*add_conversation);
                 add_conversation->setToolTip(tr("Create a new conversation"));
-                l->addWidget(intro);
+                l->addWidget(_start_contacts);
                 l->addWidget(add_conversation);
                 connect(add_conversation, SIGNAL(clicked()), this, SLOT(create_conversation()));
             }
@@ -1186,6 +1201,11 @@ namespace fire
         {
             INVARIANT(_user_service);
             INVARIANT(_conversation_service);
+            INVARIANT(_start_contacts);
+
+            //update start contact list
+            _start_contacts->update(_user_service->user().contacts());
+            _start_contacts->update_status(true);
 
             //get user
             auto c = _user_service->user().contacts().by_id(r.id);
@@ -1210,6 +1230,11 @@ namespace fire
         void main_window::contact_disconnected_event(const us::event::contact_disconnected& r)
         {
             INVARIANT(_user_service);
+            INVARIANT(_start_contacts);
+
+            //update start contact list
+            _start_contacts->update(_user_service->user().contacts());
+            _start_contacts->update_status(true);
 
             //setup alert widget
             std::stringstream s;

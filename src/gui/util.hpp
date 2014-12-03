@@ -64,6 +64,7 @@ namespace fire
         void make_add_to_list(QPushButton&);
         void make_introduce(QPushButton&);
         void make_new_conversation(QPushButton&);
+        void make_new_conversation_small(QPushButton&);
 
         void make_progress_0(QLabel&);
         void make_progress_1(QLabel&);
