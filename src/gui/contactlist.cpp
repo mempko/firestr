@@ -57,16 +57,21 @@ namespace fire
             const char* GREETER_TIP = "A greeter helps connect you with your contacts.\nTry adding 'mempko.com:8080' and ask them to do the same.";
         }
 
-        std::string user_text(
+        bool is_online(
                 us::user_info_ptr c, 
                 us::user_service_ptr s, 
                 bool force_offline = false)
         {
             REQUIRE(c);
             REQUIRE(s);
+            return !force_offline && s->contact_available(c->id());
+        }
 
-            bool online = !force_offline && s->contact_available(c->id());
-
+        std::string user_text(
+                us::user_info_ptr c, 
+                bool online)
+        {
+            REQUIRE(c);
             std::stringstream ss;
             ss << "<font color='" << (online ? "green" : "red") << "'>" << c->name() << "</font>";
             return ss.str();
@@ -76,9 +81,10 @@ namespace fire
                 us::user_info_ptr p, 
                 us::user_service_ptr s,
                 bool compact,
-                bool remove) :
+                QPushButton* action) :
             _contact{p},
-            _service{s}
+            _service{s},
+            _action{action}
         {
             REQUIRE(p)
             REQUIRE(s)
@@ -86,18 +92,14 @@ namespace fire
             auto* layout = new QGridLayout{this};
             setLayout(layout);
 
-            _user_text = new QLabel{user_text(p, _service).c_str()};
+            bool online = is_online(p, _service);
+            _user_text = new QLabel{user_text(p, online).c_str()};
             _user_text->setToolTip(p->address().c_str());
 
             if(compact)
             {
                 layout->addWidget(_user_text, 0,0);
-                if(remove)
-                {
-                    _rm = make_x_button();
-                    layout->addWidget(_rm, 0,1);
-                    connect(_rm, SIGNAL(clicked()), this, SLOT(remove()));
-                }
+                if(_action) layout->addWidget(_action, 0,1);
             }
             else
             {
@@ -112,40 +114,28 @@ namespace fire
             ENSURE(_user_text);
         }
 
-        void user_info::update()
+        void user_info::update(bool update_action)
         {
             INVARIANT(_service);
             INVARIANT(_contact);
             INVARIANT(_user_text);
 
-            _user_text->setText(user_text(_contact, _service).c_str());
+            bool online = is_online(_contact, _service);
+            _user_text->setText(user_text(_contact, online).c_str());
+
+            if(_action && update_action) _action->setVisible(online);
         }
 
-        void user_info::update(std::function<bool(us::user_info&)> f)
+        void user_info::update(std::function<bool(us::user_info&)> f, bool update_action)
         {
             INVARIANT(_service);
             INVARIANT(_contact);
             INVARIANT(_user_text);
 
-            _user_text->setText(user_text(_contact, _service, !f(*_contact)).c_str());
-        }
+            bool online = is_online(_contact, _service , !f(*_contact));
+            _user_text->setText(user_text(_contact, online).c_str());
 
-        void user_info::remove()
-        {
-            INVARIANT(_service);
-            INVARIANT(_contact);
-            INVARIANT(_rm);
-            INVARIANT(_user_text);
-
-            std::stringstream msg;
-            msg << convert(tr("Are you sure you want to remove `")) << _contact->name() << "'?";
-            auto a = QMessageBox::warning(this, tr("Remove Contact?"), msg.str().c_str(), QMessageBox::Yes | QMessageBox::No);
-            if(a != QMessageBox::Yes) return;
-
-            _service->remove_contact(_contact->id());
-
-            _rm->setEnabled(false);
-            _user_text->setEnabled(false);
+            if(_action && update_action) _action->setVisible(online);
         }
 
         contact_list_dialog::contact_list_dialog(
@@ -181,7 +171,10 @@ namespace fire
                 tabs->addTab(contacts_tab, tr("contacts"));
                 tabs->addTab(greeters_tab, tr("greeters"));
             }
+
             tabs->addTab(intro_tab, tr("introductions"));
+            if(!_service->user().introductions().empty())
+                    tabs->tabBar()->setTabTextColor(2, QColor{"red"});
 
             init_greeters_tab(greeters_tab, greeters_layout);
             init_contacts_tab(contacts_tab, contacts_layout);
@@ -257,7 +250,19 @@ namespace fire
             _list->clear();
 
             for(auto u : _service->user().contacts().list())
-                _list->add(new user_info{u, _service, true, true});
+            {
+                auto rm = make_x_button();
+                std::stringstream ss;
+                ss << "Remove `" << u->name() << "'";
+                rm->setToolTip(ss.str().c_str());
+
+                auto mapper = new QSignalMapper{this};
+                mapper->setMapping(rm, QString(u->id().c_str()));
+                connect(rm, SIGNAL(clicked()), mapper, SLOT(map()));
+                connect(mapper, SIGNAL(mapped(QString)), this, SLOT(remove(QString)));
+
+                _list->add(new user_info{u, _service, true, rm});
+            }
 
             _prev_contacts = _service->user().contacts().size();
         }
@@ -311,9 +316,40 @@ namespace fire
             restoreGeometry(settings.value("contact_list/geometry").toByteArray());
         }
 
-        contact_list::contact_list(us::user_service_ptr service, const us::contact_list& contacts, bool remove) :
+        void contact_list_dialog::remove(QString qid)
+        {
+            INVARIANT(_service);
+
+            auto id = convert(qid);
+            auto c = _service->by_id(id);
+            if(!c) return;
+
+            std::stringstream msg;
+            msg << convert(tr("Are you sure you want to remove `")) << c->name() << "'?";
+            auto a = QMessageBox::warning(this, tr("Remove Contact?"), msg.str().c_str(), QMessageBox::Yes | QMessageBox::No);
+            if(a != QMessageBox::Yes) return;
+
+            _service->remove_contact(id);
+            
+            update();
+        }
+
+        user_info* simple_info(us::user_info_ptr u, us::user_service_ptr s)
+        {
+            REQUIRE(s);
+            REQUIRE(u);
+            return new user_info{u, s};
+        }
+
+        contact_list::contact_list(us::user_service_ptr service, const us::contact_list& contacts) :
+            contact_list(service, contacts, 
+                    [=](us::user_info_ptr u) { return simple_info(u, _service);})
+        {
+        }
+
+        contact_list::contact_list(us::user_service_ptr service, const us::contact_list& contacts, make_user_info mk) :
             _service{service},
-            _remove{remove}
+            _mk{mk}
         {
             REQUIRE(service);
             for(auto u : contacts.list())
@@ -331,7 +367,7 @@ namespace fire
             INVARIANT(_service);
             if(_contacts.by_id(u->id())) return;
 
-            auto ui = new user_info{u, _service, true, _remove};
+            auto ui = _mk(u);
             add(ui);
             _contacts.add(u);
             _contact_widgets.push_back(ui);
@@ -351,16 +387,16 @@ namespace fire
             ENSURE_LESS_EQUAL(_contacts.size(), contacts.size());
         }
 
-        void contact_list::update_status()
+        void contact_list::update_status(bool update_action)
         {
             for(auto p : _contact_widgets)
             {
                 CHECK(p);
-                p->update();
+                p->update(update_action);
             }
         }
 
-        void contact_list::update_status(std::function<bool(us::user_info&)> f)
+        void contact_list::update_status(std::function<bool(us::user_info&)> f, bool update_action)
         {
             for(auto p : _contact_widgets)
             {
@@ -432,7 +468,12 @@ namespace fire
             _address = _server.host() + ":" + n::port_to_string(_server.port());
             _label = new QLabel{_address.c_str()};
             layout->addWidget( _label, 0,0);
+
             _rm = make_x_button();
+            std::stringstream ss;
+            ss << "Remove `" << _address << "'";
+            _rm->setToolTip(ss.str().c_str());
+
             layout->addWidget(_rm, 0,1);
             connect(_rm, SIGNAL(clicked()), this, SLOT(remove()));
 
@@ -485,12 +526,17 @@ namespace fire
 
             layout->addWidget( _label, 0,0);
 
-            std::stringstream a;
-            a << convert(tr("add ")) << _intro.contact.name(); 
-            _accept = new QPushButton{a.str().c_str()};
+            _accept = new QPushButton;
+            make_add_contact_small(*_accept);
+            std::stringstream ss;
+            ss << "Add `" << _intro.contact.name() << "'";
+            _accept->setToolTip(ss.str().c_str());
             layout->addWidget(_accept, 0,1);
 
             _rm = make_x_button();
+            std::stringstream ss2;
+            ss2 << "Remove `" << _intro.contact.name() << "'";
+            _rm->setToolTip(ss2.str().c_str());
             layout->addWidget(_rm, 0,2);
 
             std::stringstream m;

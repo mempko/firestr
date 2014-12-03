@@ -241,6 +241,15 @@ namespace fire
             b.setStyleSheet("border: 0px; color: 'green';");
         }
 
+        void make_new_conversation_small(QPushButton& b)
+        {
+            REQUIRE(GUI_SETUP_CALLED);
+
+            make_small(b);
+            b.setText(u8"\U0001F465");
+            b.setStyleSheet("border: 0px; color: 'green';");
+        }
+
         void make_progress_00(QLabel& w)
         {
             REQUIRE(GUI_SETUP_CALLED);

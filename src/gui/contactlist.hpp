@@ -56,39 +56,42 @@ namespace fire
                 user_info(
                         user::user_info_ptr, 
                         user::user_service_ptr,
-                        bool compact = false,
-                        bool remove = false);
+                        bool compact = true,
+                        QPushButton* action = nullptr);
 
             public slots:
-                void update();
-                void update(std::function<bool(user::user_info&)> f);
-                void remove();
+                void update(bool update_action = false);
+                void update(std::function<bool(user::user_info&)> f, bool update_action = false);
 
             private:
                 user::user_info_ptr _contact;
                 user::user_service_ptr _service;
-                QPushButton* _rm;
+                QPushButton* _action;
                 QLabel* _user_text;
         };
         using user_info_ptrs = std::vector<user_info*>;
+
+
+        using make_user_info = std::function<user_info*(user::user_info_ptr)>;
 
         class contact_list : public list
         {
             Q_OBJECT
             public:
-                contact_list(user::user_service_ptr, const user::contact_list&, bool remove = false);
+                contact_list(user::user_service_ptr, const user::contact_list&);
+                contact_list(user::user_service_ptr, const user::contact_list&, make_user_info);
 
             public slots:
                 void add_contact(user::user_info_ptr);
                 void update(const user::contact_list&);
-                void update_status();
-                void update_status(std::function<bool(user::user_info&)> f);
+                void update_status(bool update_action = false);
+                void update_status(std::function<bool(user::user_info&)> f, bool update_action = false);
 
             protected:
                 user::user_service_ptr _service;
                 user::contact_list _contacts;
                 user_info_ptrs _contact_widgets;
-                bool _remove;
+                make_user_info _mk;
         };
 
         class greeter_info : public QWidget
@@ -178,6 +181,7 @@ namespace fire
             public slots:
                 void new_contact();
                 void update();
+                void remove(QString);
 
             protected:
                 void init_contacts_tab(QWidget* tab, QGridLayout* layout);
