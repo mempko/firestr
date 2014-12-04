@@ -79,6 +79,10 @@ namespace fire
             const std::string NEW_APP_S = "<new app>";
             const std::string GUI_MAIL = "gui";
             const QString NEW_CONVERSATION_NAME = "new"; 
+            const int MAIN_X = 80;
+            const int MAIN_Y = 80;
+            const int MAIN_W = 480;
+            const int MAIN_H = 640;
         }
 
         main_window::main_window(const main_window_context& c) :
@@ -86,6 +90,7 @@ namespace fire
         {
             setWindowIcon(logo());
             setAcceptDrops(true);
+            setGeometry(MAIN_X, MAIN_Y, MAIN_W, MAIN_H);
             init_handlers();
             setup_post();
             setup_services();
