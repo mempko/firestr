@@ -38,6 +38,7 @@
 #include "util/time.hpp"
 #include "util/uuid.hpp"
 #include "util/serialize.hpp"
+#include "util/string.hpp"
 
 namespace m = fire::message;
 namespace ms = fire::messages;
@@ -62,11 +63,27 @@ namespace fire
             f_message(text_message)
             {
                 std::string text;
+                u::tracked_sclock clock{""};
+                bool has_clock = false;
 
                 f_message_init(text_message, MESSAGE);
-                f_serialize
+                f_serialize_in
                 {
                     f_sk("t", text);
+                    if(f_has("c")) 
+                    {
+                        has_clock = true;
+
+                        u::dict cd;
+                        f_sk("c", cd);
+                        clock = u::to_tracked_sclock(cd);
+                    }
+                }
+
+                f_serialize_out
+                {
+                    f_sk("t", text);
+                    f_sk("c", u::to_dict(clock));
                 }
             };
 
@@ -82,6 +99,7 @@ namespace fire
                     s::conversation_ptr conversation) :
                 generic_app{},
                 _id{u::uuid()},
+                _clock{conversation->user_service()->user().info().id()},
                 _conversation_service{conversation_s},
                 _conversation{conversation}
             {
@@ -96,6 +114,7 @@ namespace fire
                     s::conversation_ptr conversation) :
                 generic_app{},
                 _id{id},
+                _clock{conversation->user_service()->user().info().id()},
                 _conversation_service{conversation_s},
                 _conversation{conversation}
             {
@@ -183,13 +202,22 @@ namespace fire
                 INVARIANT(_conversation);
 
                 auto text = gui::convert(_message->text());
-                _message->clear();
 
+                ///don't send empty messages
+                u::trim(text);
+                if(text.empty()) return;
+
+                //update gui
+                _message->clear();
                 auto self = _conversation->user_service()->user().info().name();
                 _messages->add(make_message_widget(self, text));
 
+                //send the message 
+                _clock++;
+
                 text_message tm;
                 tm.text = text;
+                tm.clock = _clock;
 
                 bool sent = false;
                 for(auto c : _conversation->contacts().list())
@@ -219,6 +247,16 @@ namespace fire
 
                     auto c = _conversation->contacts().by_id(t.from_id);
                     if(!c) return;
+
+                    //older clients do not have clocks
+                    if(t.has_clock)
+                    {
+                        //discard resent messages
+                        if(t.clock <= _clock) return;
+
+                        //merge clocks
+                        _clock += t.clock;
+                    }
 
                     _messages->add(make_message_widget(c->name(), t.text));
                     _messages->verticalScrollBar()->scroll(0, _messages->verticalScrollBar()->maximum());

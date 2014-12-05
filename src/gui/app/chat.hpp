@@ -38,6 +38,7 @@
 #include "conversation/conversation_service.hpp"
 #include "message/mailbox.hpp"
 #include "messages/sender.hpp"
+#include "util/vclock.hpp"
 
 #include <QObject>
 #include <QLabel>
@@ -82,6 +83,7 @@ namespace fire
                 private:
                     std::string _id;
                     mail_service* _mail_service;
+                    util::tracked_sclock _clock;
                     conversation::conversation_service_ptr _conversation_service;
                     conversation::conversation_ptr _conversation;
                     fire::message::mailbox_ptr _mail;
