@@ -83,6 +83,8 @@ namespace fire
                     size_t& operator[](id_t i) { return _c[i];}
                     const size_t& operator[](id_t i) const 
                     { 
+                        REQUIRE_GREATER(i, 0);
+
                         auto it = _c.find(i);
                         CHECK(it != _c.end());
                         return it->second;
@@ -159,9 +161,9 @@ namespace fire
 
                     bool operator > (const vclock& o) const { return compare(o) == 1; }
 
-                    bool operator <= (const vclock& o) const { return compare(o) <= 0; }
+                    bool operator <= (const vclock& o) const { return compare(o) == -1 || identical(o); }
 
-                    bool operator >= (const vclock& o) const { return compare(o) >= 0; }
+                    bool operator >= (const vclock& o) const { return compare(o) == 1 || identical(o); }
 
                     bool identical(const vclock& o) const { return _c == o._c; }
 
@@ -194,11 +196,11 @@ namespace fire
                     /**
                      * New clock using id
                      */
-                    tracked_vclock(id_t i) : _c{}, _i{i} { _c[i] = 0;}
+                    tracked_vclock(id_t i) : _c{}, _i{i} { _c[i] = 1;}
                     tracked_vclock(id_t i, size_t v) : _c{}, _i{i} { _c[i] = v;}
                     tracked_vclock(id_t i, const vclock<id_t>& c) : _c{c}, _i{i} 
                     {
-                        if(!_c.has(i)) _c[i] = 0;
+                        if(!_c.has(i)) _c[i] = 1;
                     }
 
                     operator vclock<id_t>() const { return _c;}
@@ -266,28 +268,28 @@ namespace fire
                     {
                         REQUIRE_FALSE(o._c.empty());
                         INVARIANT(_c.has(_i));
-                        return _c.compare(o._c) == -1;
+                        return _c < o._c;
                     }
 
                     bool operator > (const tracked_vclock& o) const
                     {
                         REQUIRE_FALSE(o._c.empty());
                         INVARIANT(_c.has(_i));
-                        return _c.compare(o._c) == 1;
+                        return _c > o._c;
                     }
 
                     bool operator <= (const tracked_vclock& o) const
                     {
                         REQUIRE_FALSE(o._c.empty());
                         INVARIANT(_c.has(_i));
-                        return _c.compare(o._c) <= 0;
+                        return _c <= o._c;
                     }
 
                     bool operator >= (const tracked_vclock& o) const
                     {
                         REQUIRE_FALSE(o._c.empty());
                         INVARIANT(_c.has(_i));
-                        return compare(o) >= 0;
+                        return _c >= o._c;
                     }
 
                     bool identical(const tracked_vclock& o) const
