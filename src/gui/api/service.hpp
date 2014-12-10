@@ -103,10 +103,21 @@ namespace fire
 
                 //draw
                 virtual void add_draw(ref_id, int width, int height) = 0;
-                virtual void draw_line(ref_id, ref_id pen_id, double x1, double y1, double x2, double y2) = 0;
-                virtual void draw_circle(ref_id, ref_id pen_id, double x, double y, double r) = 0;
-                virtual void draw_image(ref_id, ref_id image_id, double x, double y, double w, double h) = 0;
+                virtual void draw_line(ref_id, ref_id line, ref_id pen_id, double x1, double y1, double x2, double y2) = 0;
+                virtual void draw_circle(ref_id, ref_id circle, ref_id pen_id, double x, double y, double r) = 0;
+                virtual void draw_image(ref_id, ref_id image, ref_id image_id, double x, double y, double w, double h) = 0;
                 virtual void draw_clear(ref_id id) = 0;
+
+                //draw_line
+                virtual void draw_line_set(ref_id id, ref_id line, double x1, double y1, double x2, double y2) = 0;
+                virtual void draw_line_set_pen(ref_id id, ref_id line, ref_id pen_id) = 0;
+
+                //draw_circle
+                virtual void draw_circle_set(ref_id id, ref_id circle, double x, double y, double r) = 0;
+                virtual void draw_circle_set_pen(ref_id id, ref_id circle, ref_id pen_id) = 0;
+
+                //draw_image
+                virtual void draw_image_set(ref_id id, ref_id image, double x, double y, double w, double h) = 0;
 
                 //timer
                 virtual void add_timer(ref_id, int msec) = 0;

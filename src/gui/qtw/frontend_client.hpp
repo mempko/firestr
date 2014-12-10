@@ -115,10 +115,23 @@ namespace fire
 
                     //draw
                     virtual void add_draw(api::ref_id id, int width, int height);
-                    virtual void draw_line(api::ref_id id, api::ref_id pen_id, double x1, double y1, double x2, double y2);
-                    virtual void draw_circle(api::ref_id id, api::ref_id pen_id, double x, double y, double r);
-                    virtual void draw_image(api::ref_id id, api::ref_id image_id, double x, double y, double w, double h);
+                    virtual void draw_line(api::ref_id id, api::ref_id line, api::ref_id pen_id, double x1, double y1, double x2, double y2);
+                    virtual void draw_circle(api::ref_id id, api::ref_id circle, api::ref_id pen_id, double x, double y, double r);
+                    virtual void draw_image(api::ref_id id, api::ref_id image, api::ref_id image_id, double x, double y, double w, double h);
                     virtual void draw_clear(api::ref_id id);
+
+                    //draw_line
+                    virtual void draw_line_set(api::ref_id id, api::ref_id line, double x1, double y1, double x2, double y2);
+                    virtual void draw_line_set_pen(api::ref_id id, api::ref_id line, api::ref_id pen_id);
+
+                    //draw_circle
+                    virtual void draw_circle_set(api::ref_id id, api::ref_id circle, double x, double y, double r);
+                    virtual void draw_circle_set_pen(api::ref_id id, api::ref_id circle, api::ref_id pen_id);
+
+                    //draw_image
+                    virtual void draw_image_set(api::ref_id id, api::ref_id image, double x, double y, double w, double h);
+
+
 
                     //timer
                     virtual void add_timer(api::ref_id id, int msec);
@@ -211,10 +224,21 @@ namespace fire
 
                     //draw
                     void got_add_draw(api::ref_id id, int width, int height);
-                    void got_draw_line(api::ref_id id, api::ref_id pen_id, double x1, double y1, double x2, double y2);
-                    void got_draw_circle(api::ref_id id, api::ref_id pen_id, double x, double y, double r);
-                    void got_draw_image(api::ref_id id, api::ref_id image_id, double x, double y, double w, double h);
+                    void got_draw_line(api::ref_id id, api::ref_id line_id, api::ref_id pen_id, double x1, double y1, double x2, double y2);
+                    void got_draw_circle(api::ref_id id, api::ref_id circle_id, api::ref_id pen_id, double x, double y, double r);
+                    void got_draw_image(api::ref_id id, api::ref_id image_ref_id, api::ref_id image_id, double x, double y, double w, double h);
                     void got_draw_clear(api::ref_id id);
+
+                    //draw_line
+                    void got_draw_line_set(api::ref_id id, api::ref_id line, double x1, double y1, double x2, double y2);
+                    void got_draw_line_set_pen(api::ref_id id, api::ref_id line, api::ref_id pen_id);
+
+                    //draw_circle
+                    void got_draw_circle_set(api::ref_id id, api::ref_id circle, double x, double y, double r);
+                    void got_draw_circle_set_pen(api::ref_id id, api::ref_id circle, api::ref_id pen_id);
+
+                    //draw_image
+                    void got_draw_image_set(api::ref_id id, api::ref_id image, double x, double y, double w, double h);
 
                     //timer
                     void got_add_timer(api::ref_id id, int msec);
@@ -306,10 +330,21 @@ namespace fire
 
                     //draw
                     void do_add_draw(api::ref_id id, int width, int height);
-                    void do_draw_line(api::ref_id id, api::ref_id pen_id, double x1, double y1, double x2, double y2);
-                    void do_draw_circle(api::ref_id id, api::ref_id pen_id, double x, double y, double r);
-                    void do_draw_image(api::ref_id id, api::ref_id image_id, double x, double y, double w, double h);
+                    void do_draw_line(api::ref_id id, api::ref_id line_id, api::ref_id pen_id, double x1, double y1, double x2, double y2);
+                    void do_draw_circle(api::ref_id id, api::ref_id circle_id, api::ref_id pen_id, double x, double y, double r);
+                    void do_draw_image(api::ref_id id, api::ref_id image_ref_id, api::ref_id image_id, double x, double y, double w, double h);
                     void do_draw_clear(api::ref_id id);
+
+                    //draw_line
+                    void do_draw_line_set(api::ref_id id, api::ref_id line, double x1, double y1, double x2, double y2);
+                    void do_draw_line_set_pen(api::ref_id id, api::ref_id line, api::ref_id pen_id);
+
+                    //draw_circle
+                    void do_draw_circle_set(api::ref_id id, api::ref_id circle, double x, double y, double r);
+                    void do_draw_circle_set_pen(api::ref_id id, api::ref_id circle, api::ref_id pen_id);
+
+                    //draw_image
+                    void do_draw_image_set(api::ref_id id, api::ref_id image, double x, double y, double w, double h);
 
                     //timer
                     void do_add_timer(api::ref_id id, int msec);
