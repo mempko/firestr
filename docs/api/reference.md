@@ -1350,29 +1350,32 @@ Clears all graphics from the draw surface.
 draw:line
 -----
 
-    line(x1:int, y1:int, x2:int, y2:int) : nil
+    line(x1:int, y1:int, x2:int, y2:int) : line
 
-Draws a line from **x1**, **y1** to **x2**, **y2**
+Draws a line from **x1**, **y1** to **x2**, **y2**. Returns a reference
+[line object](reference.md#line-object) which can be used to manipulate the line.
 
-    my_draw:line(0, 0, 500, 500)
+    line_ref = my_draw:line(0, 0, 500, 500)
 
 draw:circle
 -----
 
-    circle(x:int, y:int, radius:int) : nil
+    circle(x:int, y:int, radius:int) : circle
 
-Draws a circle at **x**, **y** with the **radius** specified.
+Draws a circle at **x**, **y** with the **radius** specified. Returns a reference
+[circle object](reference.md#circle-object) which can be used to manipulate the circle.
 
-    my_draw:circle(50, 50, 20)
+    circle_ref = my_draw:circle(50, 50, 20)
 
 draw:image
 -----
 
-    image(img:image, x:int, y:int, width:int, height:int) : nil
+    image(img:image, x:int, y:int, width:int, height:int) : draw_image
 
-Draws an image at **x**, **y** with the **width** and **height** specified.
+Draws an image at **x**, **y** with the **width** and **height** specified. Returns a reference
+[draw_image](reference.md#draw_image-object) which can be used to manipulate the image.
 
-    my_draw:image(my_img, 50, 60, 120, 120)
+    img_ref = my_draw:image(my_img, 50, 60, 120, 120)
 
 draw:pen
 -----
@@ -1446,6 +1449,74 @@ draw:hide
 Hides the draw.
 
     my_draw:hide()
+
+line object
+=====
+
+The line object is a reference to a line in a draw canvas
+Use [draw:line](reference.md#drawline) to create one.
+
+line:set
+-----
+
+    set(x1: double, y1: double, x2: double, y2: double ) : nil
+
+Sets the location of a line in the [draw object](reference.md#draw-oject).
+
+    ln = my_draw:line(0, 0, 500, 500)
+    ln:set(500, 500, 345, 699)
+
+line:set_pen
+-----
+
+    set_pen(pen: pen) : nil
+
+Sets the pen of a line in the [draw object](reference.md#draw-oject).
+
+    ln = my_draw:line(0, 0, 500, 500)
+    ln:set_pen(app:pen("red", 3))
+
+circle object
+=====
+
+The circle object is a reference to a circle in a draw canvas
+Use [draw:circle](reference.md#drawcircle) to create one.
+
+circle:set
+-----
+
+    set(x: double, y: double, r: double) : nil
+
+Sets the location of a circle in the [draw object](reference.md#draw-oject) with the radius specified.
+
+    cr = my_draw:circle(0, 0, 40)
+    cr:set(500, 500, 50)
+
+circle:set_pen
+-----
+
+    set_pen(pen: pen) : nil
+
+Sets the pen of a circle in the [draw object](reference.md#draw-oject).
+
+    cr = my_draw:circle(0, 0, 40)
+    cr:set_pen(app:pen("red", 3))
+
+draw_image object
+=====
+
+The draw_image object is a reference to an image in a draw canvas
+Use [draw:image](reference.md#drawimage) to create one.
+
+draw_image:set
+-----
+
+    set(x: int, y: int, w: int, h: int) : nil
+
+Sets the location of an image in the [draw object](reference.md#draw-oject) with the width and height specified.
+
+    image_ref = my_draw:image(my_img, 0, 0, 50, 50)
+    image_ref:set(500, 500, 50,50) --translates the image
 
 image object
 =====
