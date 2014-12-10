@@ -1,4 +1,5 @@
 
+
 W = 500
 H = 500
 PW = 10
@@ -26,6 +27,9 @@ ball_image = app:image(data:get_bin("ball.png"))
 d = app:draw(W,H)
 app:height(H + 20)
 
+bg_ref = d:image(bg, 0, 0, W, H)
+ball_ref = d:image(ball_image, ball.x-BHW, ball.y-BHH, BDW, BDH)
+
 d:when_mouse_moved("mouse_moved")
 d:when_mouse_pressed("mouse_pressed")
 
@@ -38,21 +42,22 @@ function make_paddle(x, type)
 	p.y = H / 2
 	p.py = y
 	p.type = type
+	p.graphic = d:image(pdl, p.x, p.y-PHH, PDW, PDH) 
+
 	paddles[type] = p
 end
 
 function reset_game()
 	ball = {x = W / 2, y = H/2, vx=0, vy=0, px = 0, py = 0, mc = 0}
-	send_reset()
 end
 
 function draw()
-	d:clear()
-	d:image(bg, 0, 0, W, H)
+	bg_ref:set(0, 0, W, H)
+
 	for k,p in pairs(paddles) do
-		d:image(pdl, p.x, p.y-PHH, PDW, PDH) 
+		p.graphic:set(p.x, p.y-PHH, PDW, PDH) 
 	end
-	d:image(ball_image, ball.x-BHW, ball.y-BHH, BDW, BDH)
+	ball_ref:set(ball.x-BHW, ball.y-BHH, BDW, BDH)
 end
 
 function update()
@@ -90,6 +95,7 @@ function update_ball()
 
 	if ball.x -BHW < 0 or ball.x +BHW> W and lc then
 		reset_game()
+		send_reset()
 	end
 end
 
