@@ -49,6 +49,7 @@ namespace fire
         {
             using QImage_ptr = std::shared_ptr<QImage>;
             using widget_map = std::unordered_map<api::ref_id, QWidget*>;
+            using graphics_map = std::unordered_map<api::ref_id, QGraphicsItem*>;
             using image_map = std::unordered_map<api::ref_id, QImage_ptr>;
             using layout_map = std::unordered_map<api::ref_id, QGridLayout*>;
             using timer_map = std::unordered_map<api::ref_id, QTimer*>;
@@ -70,6 +71,9 @@ namespace fire
                             int height, 
                             QWidget* parent = nullptr);
 
+                    void add_go(api::ref_id, QGraphicsItem*);
+                    QGraphicsItem* get_go(api::ref_id) const;
+
                 protected:
                     void mousePressEvent(QMouseEvent*);
                     void mouseReleaseEvent(QMouseEvent*);
@@ -80,6 +84,7 @@ namespace fire
                     qt_frontend* _front;
                     api::backend* _back;
                     int _button;
+                    graphics_map _graphics;
             };
 
             class qt_frontend : public QObject, public api::frontend
@@ -144,10 +149,21 @@ namespace fire
 
                     //draw
                     virtual void add_draw(api::ref_id id, int width, int height);
-                    virtual void draw_line(api::ref_id id, api::ref_id pen_id, double x1, double y1, double x2, double y2);
-                    virtual void draw_circle(api::ref_id id, api::ref_id pen_id, double x, double y, double r);
-                    virtual void draw_image(api::ref_id id, api::ref_id image_id, double x, double y, double w, double h);
+                    virtual void draw_line(api::ref_id id, api::ref_id line, api::ref_id pen_id, double x1, double y1, double x2, double y2);
+                    virtual void draw_circle(api::ref_id id, api::ref_id circle, api::ref_id pen_id, double x, double y, double r);
+                    virtual void draw_image(api::ref_id id, api::ref_id image, api::ref_id image_id, double x, double y, double w, double h);
                     virtual void draw_clear(api::ref_id id);
+
+                    //draw_line
+                    virtual void draw_line_set(api::ref_id id, api::ref_id line, double x1, double y1, double x2, double y2);
+                    virtual void draw_line_set_pen(api::ref_id id, api::ref_id line, api::ref_id pen_id);
+
+                    //draw_circle
+                    virtual void draw_circle_set(api::ref_id id, api::ref_id circle, double x, double y, double r);
+                    virtual void draw_circle_set_pen(api::ref_id id, api::ref_id circle, api::ref_id pen_id);
+
+                    //draw_image
+                    virtual void draw_image_set(api::ref_id id, api::ref_id image, double x, double y, double w, double h);
 
                     //timer
                     virtual void add_timer(api::ref_id id, int msec);

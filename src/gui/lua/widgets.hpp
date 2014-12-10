@@ -120,7 +120,30 @@ namespace fire
 
             using grid_ref_map = std::unordered_map<int, grid_ref>;
 
-            class draw_view;
+            struct draw_line_ref : public basic_ref
+            {
+                int view_id;
+                void set(double x1, double y1, double x2, double y2);
+                void set_pen(pen_ref);
+            };
+            using draw_line_ref_map = std::unordered_map<int, draw_line_ref>;
+
+            struct draw_circle_ref : public basic_ref
+            {
+                int view_id;
+                void set(double x, double y, double r);
+                void set_pen(pen_ref);
+            };
+            using draw_circle_ref_map = std::unordered_map<int, draw_circle_ref>;
+
+            struct draw_image_ref : public basic_ref
+            {
+                int view_id;
+                void set(double x, double y, double w, double h);
+            };
+
+            using draw_image_ref_map = std::unordered_map<int, draw_image_ref>;
+
             struct draw_ref : public widget_ref
             {
                 std::string mouse_released_callback;
@@ -129,9 +152,9 @@ namespace fire
                 std::string mouse_dragged_callback;
 
                 void clear();
-                void line(double x1, double y1, double x2, double y2);
-                void circle(double x, double y, double r);
-                void image(const image_ref& i, double x, double y, double w, double h);
+                draw_line_ref line(double x1, double y1, double x2, double y2);
+                draw_circle_ref circle(double x, double y, double r);
+                draw_image_ref image(const image_ref& i, double x, double y, double w, double h);
 
                 const std::string& get_mouse_released_callback() const { return mouse_released_callback;}
                 const std::string& get_mouse_pressed_callback() const { return mouse_pressed_callback;}
@@ -151,8 +174,10 @@ namespace fire
 
                 void handle(const std::string& t,  const util::value& event);
 
-                draw_view* get_view();
                 pen_ref pen;
+                draw_line_ref_map lines;
+                draw_circle_ref_map circles;
+                draw_image_ref_map images;
             };
             using draw_ref_map = std::unordered_map<int, draw_ref>;
 

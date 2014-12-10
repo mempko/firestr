@@ -286,6 +286,17 @@ namespace fire
                     .set("show", &widget_ref::show)
                     .set("hide", &widget_ref::hide);
 
+                SLB::Class<draw_line_ref>{"draw_line", &manager}
+                    .set("set", &draw_line_ref::set)
+                    .set("set_pen", &draw_line_ref::set_pen);
+
+                SLB::Class<draw_circle_ref>{"draw_circle", &manager}
+                    .set("set", &draw_circle_ref::set)
+                    .set("set_pen", &draw_circle_ref::set_pen);
+
+                SLB::Class<draw_image_ref>{"draw_image", &manager}
+                    .set("set", &draw_image_ref::set);
+
                 SLB::Class<draw_ref>{"draw", &manager}
                     .set("mouse_moved_callback", &draw_ref::get_mouse_moved_callback)
                     .set("mouse_pressed_callback", &draw_ref::get_mouse_pressed_callback)

@@ -137,6 +137,7 @@ namespace fire
                 {"set_image", "button:set_image(image) -- sets an image for the button"},
                 {"set_text", "widget:set_text(text) -- sets the widget's text"},
                 {"set_name", "widget:set_name(text) -- sets the widget's name turning on remote events"},
+                {"set_pen", "shape:set_pen(pen) -- sets the pen of the drawn shape"},
                 {"show", "widget:show() -- shows the widget"},
                 {"size", "file:size() -- returns the size of the file"},
                 {"start", "timer:start() -- starts the timer"},

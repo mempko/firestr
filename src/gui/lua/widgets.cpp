@@ -414,33 +414,97 @@ namespace fire
             {
                 INVARIANT(api);
                 INVARIANT(api->front);
+
                 api->front->pen_set_width(id, w);
             }
 
-            void draw_ref::line(double x1, double y1, double x2, double y2)
+            void draw_line_ref::set(double x1, double y1, double x2, double y2)
             {
                 INVARIANT(api);
                 INVARIANT(api->front);
 
-                api->front->draw_line(id, pen.id, x1, y1, x2, y2);
+                api->front->draw_line_set(view_id, id, x1, y1, x2, y2);
             }
 
-            void draw_ref::circle(double x, double y, double r)
+            void draw_line_ref::set_pen(pen_ref pen)
             {
                 INVARIANT(api);
                 INVARIANT(api->front);
 
-                api->front->draw_circle(id, pen.id, x, y, r);
+                api->front->draw_line_set_pen(view_id, id, pen.id);
             }
 
-            void draw_ref::image(const image_ref& i, double x, double y, double w, double h)
+            void draw_circle_ref::set(double x, double y, double r)
             {
                 INVARIANT(api);
                 INVARIANT(api->front);
 
-                if(!i.good()) return;
+                api->front->draw_circle_set(view_id, id, x, y, r);
+            }
 
-                api->front->draw_image(id, i.id, x, y, w, h);
+            void draw_circle_ref::set_pen(pen_ref pen)
+            {
+                INVARIANT(api);
+                INVARIANT(api->front);
+
+                api->front->draw_circle_set_pen(view_id, id, pen.id);
+            }
+
+            void draw_image_ref::set(double x, double y, double w, double h)
+            {
+                if(!api) return;
+
+                CHECK(api->front);
+                api->front->draw_image_set(view_id, id, x, y, w, h);
+            }
+
+            draw_line_ref draw_ref::line(double x1, double y1, double x2, double y2)
+            {
+                INVARIANT(api);
+                INVARIANT(api->front);
+
+                draw_line_ref ref;
+                ref.view_id = id;
+                ref.id = api->new_id();
+                ref.api = api;
+                lines[id] = ref;
+
+                api->front->draw_line(id, ref.id, pen.id, x1, y1, x2, y2);
+                return ref;
+            }
+
+            draw_circle_ref draw_ref::circle(double x, double y, double r)
+            {
+                INVARIANT(api);
+                INVARIANT(api->front);
+
+                draw_circle_ref ref;
+                ref.view_id = id;
+                ref.id = api->new_id();
+                ref.api = api;
+                circles[id] = ref;
+
+                api->front->draw_circle(id, ref.id, pen.id, x, y, r);
+                return ref;
+            }
+
+            draw_image_ref draw_ref::image(const image_ref& i, double x, double y, double w, double h)
+            {
+                INVARIANT(api);
+                INVARIANT(api->front);
+
+                draw_image_ref ref;
+                ref.api = nullptr; //api being null is used to indicate bad image ref
+
+                if(!i.good()) return ref;
+
+                ref.view_id = id;
+                ref.id = api->new_id();
+                ref.api = api;
+                images[id] = ref;
+
+                api->front->draw_image(id, ref.id, i.id, x, y, w, h);
+                return ref;
             }
 
             void draw_ref::clear()

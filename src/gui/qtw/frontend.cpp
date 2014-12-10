@@ -84,6 +84,20 @@ namespace fire
                 setRenderHint(QPainter::Antialiasing);
             }
 
+            void draw_view::add_go(api::ref_id id, QGraphicsItem* o)
+            {
+                REQUIRE(o);
+                _graphics[id] = o;
+            }
+
+            QGraphicsItem* draw_view::get_go(api::ref_id id) const
+            {
+                auto i = _graphics.find(id);
+                if(i == _graphics.end()) return nullptr;
+
+                return i->second;
+            }
+
             void draw_view::mousePressEvent(QMouseEvent* e)
             {
                 if(!e) return;
@@ -520,7 +534,7 @@ namespace fire
                 widgets[id] = w;
             }
 
-            void qt_frontend::draw_line(api::ref_id id, api::ref_id pen_id, double x1, double y1, double x2, double y2)
+            void qt_frontend::draw_line(api::ref_id id, api::ref_id line_id, api::ref_id pen_id, double x1, double y1, double x2, double y2)
             {
                 auto w = get_widget<draw_view>(id, widgets);
                 if(!w) return;
@@ -531,10 +545,11 @@ namespace fire
 
                 auto sp1 = w->mapToScene(x1,y1);
                 auto sp2 = w->mapToScene(x2,y2);
-                w->scene()->addLine(sp1.x(), sp1.y(), sp2.x(), sp2.y(), p->second);
+                auto o = w->scene()->addLine(sp1.x(), sp1.y(), sp2.x(), sp2.y(), p->second);
+                w->add_go(line_id, o);
             }
 
-            void qt_frontend::draw_circle(api::ref_id id, api::ref_id pen_id, double x, double y, double r)
+            void qt_frontend::draw_circle(api::ref_id id, api::ref_id circle_id, api::ref_id pen_id, double x, double y, double r)
             {
                 auto w = get_widget<draw_view>(id, widgets);
                 if(!w) return; 
@@ -547,10 +562,28 @@ namespace fire
                 auto spr = w->mapToScene(x+r,y+r);
                 auto rx = std::fabs(spr.x() - sp.x());
                 auto ry = std::fabs(spr.y() - sp.y());
-                w->scene()->addEllipse(sp.x()-rx, sp.y()-ry, 2*rx, 2*ry, p->second);
+                auto o = w->scene()->addEllipse(sp.x()-rx, sp.y()-ry, 2*rx, 2*ry, p->second);
+                w->add_go(circle_id, o);
             }
 
-            void qt_frontend::draw_image(api::ref_id id, api::ref_id image_id, double x, double y, double w, double h)
+            void transform_image(draw_view& v, QGraphicsPixmapItem* p, double ow, double oh, double x, double y, double w, double h)
+            {
+                REQUIRE(p);
+                REQUIRE_GREATER(ow, 0);
+                REQUIRE_GREATER(oh, 0);
+
+                auto o = v.mapToScene(x,y);
+                double sx = w / ow;
+                double sy = h / oh;
+
+                p->setTransformationMode(Qt::SmoothTransformation);
+                QTransform t;
+                t.translate(o.x(), o.y());
+                t.scale(sx, sy);
+                p->setTransform(t);
+            }
+
+            void qt_frontend::draw_image(api::ref_id id, api::ref_id image_ref_id, api::ref_id image_id, double x, double y, double w, double h)
             {
                 auto v = get_widget<draw_view>(id, widgets);
                 if(!v) return; 
@@ -560,20 +593,10 @@ namespace fire
                 if(!image) return;
 
                 auto item = v->scene()->addPixmap(QPixmap::fromImage(*image));
-
                 CHECK(item);
-                CHECK_GREATER(image->width(), 0);
-                CHECK_GREATER(image->height(), 0);
 
-                auto o = v->mapToScene(x,y);
-                double sx = w / image->width();
-                double sy = h / image->height();
-
-                item->setTransformationMode(Qt::SmoothTransformation);
-                QTransform t;
-                t.translate(o.x(), o.y());
-                t.scale(sx, sy);
-                item->setTransform(t);
+                transform_image(*v, item, image->width(), image->height(), x, y, w, h);
+                v->add_go(image_ref_id, item);
             }
 
             void qt_frontend::draw_clear(api::ref_id id)
@@ -583,6 +606,80 @@ namespace fire
                 CHECK(w->scene());
 
                 w->scene()->clear();
+            }
+
+            void qt_frontend::draw_line_set(api::ref_id id, api::ref_id line, double x1, double y1, double x2, double y2)
+            {
+                auto w = get_widget<draw_view>(id, widgets);
+                if(!w) return; 
+                CHECK(w->scene());
+
+                auto o = dynamic_cast<QGraphicsLineItem*>(w->get_go(line));
+                if(!o) return;
+
+                auto sp1 = w->mapToScene(x1,y1);
+                auto sp2 = w->mapToScene(x2,y2);
+                o->setLine(sp1.x(), sp1.y(), sp2.x(), sp2.y());
+            }
+
+            void qt_frontend::draw_line_set_pen(api::ref_id id, api::ref_id line, api::ref_id pen_id)
+            {
+                auto w = get_widget<draw_view>(id, widgets);
+                if(!w) return; 
+                CHECK(w->scene());
+
+                auto o = dynamic_cast<QGraphicsLineItem*>(w->get_go(line));
+                if(!o) return;
+
+                auto p = pens.find(pen_id);
+                if(p == pens.end()) return;
+
+                o->setPen(p->second);
+            }
+
+            void qt_frontend::draw_circle_set(api::ref_id id, api::ref_id circle, double x, double y, double r)
+            {
+                auto w = get_widget<draw_view>(id, widgets);
+                if(!w) return; 
+                CHECK(w->scene());
+
+                auto o = dynamic_cast<QGraphicsEllipseItem*>(w->get_go(circle));
+                if(!o) return;
+
+                auto sp = w->mapToScene(x,y);
+                auto spr = w->mapToScene(x+r,y+r);
+                auto rx = std::fabs(spr.x() - sp.x());
+                auto ry = std::fabs(spr.y() - sp.y());
+                o->setRect(sp.x()-rx, sp.y()-ry, 2*rx, 2*ry);
+            }
+
+            void qt_frontend::draw_circle_set_pen(api::ref_id id, api::ref_id circle, api::ref_id pen_id)
+            {
+                auto w = get_widget<draw_view>(id, widgets);
+                if(!w) return; 
+                CHECK(w->scene());
+
+                auto o = dynamic_cast<QGraphicsEllipseItem*>(w->get_go(circle));
+                if(!o) return;
+
+                auto p = pens.find(pen_id);
+                if(p == pens.end()) return;
+
+                o->setPen(p->second);
+            }
+
+            void qt_frontend::draw_image_set(api::ref_id id, api::ref_id image, double x, double y, double w, double h)
+            {
+                auto v = get_widget<draw_view>(id, widgets);
+                if(!v) return; 
+                CHECK(v->scene());
+
+                auto o = dynamic_cast<QGraphicsPixmapItem*>(v->get_go(image));
+                if(!o) return;
+
+                auto pm = o->pixmap();
+                
+                transform_image(*v, o, pm.width(), pm.height(), x, y, w, h);
             }
 
             void qt_frontend::add_timer(api::ref_id id, int msec)

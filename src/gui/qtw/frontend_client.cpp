@@ -111,10 +111,21 @@ namespace fire
 
                 //draw
                 F_CON(add_draw(api::ref_id, int, int));
-                F_CON(draw_line(api::ref_id, api::ref_id, double, double, double, double));
-                F_CON(draw_circle(api::ref_id, api::ref_id, double, double, double));
-                F_CON(draw_image(api::ref_id, api::ref_id, double, double, double, double));
+                F_CON(draw_line(api::ref_id, api::ref_id, api::ref_id, double, double, double, double));
+                F_CON(draw_circle(api::ref_id, api::ref_id, api::ref_id, double, double, double));
+                F_CON(draw_image(api::ref_id, api::ref_id, api::ref_id, double, double, double, double));
                 F_CON(draw_clear(api::ref_id));
+
+                //draw_line
+                F_CON(draw_line_set(api::ref_id, api::ref_id, double, double, double, double));
+                F_CON(draw_line_set_pen(api::ref_id, api::ref_id, api::ref_id));
+
+                //draw_circle
+                F_CON(draw_circle_set(api::ref_id, api::ref_id, double, double, double));
+                F_CON(draw_circle_set_pen(api::ref_id, api::ref_id, api::ref_id));
+
+                //draw_image
+                F_CON(draw_image_set(api::ref_id, api::ref_id, double, double, double, double));
 
                 //timer
                 F_CON(add_timer(api::ref_id, int));
@@ -409,28 +420,61 @@ namespace fire
                 emit got_add_draw(id, width, height);
             }
 
-            void qt_frontend_client::draw_line(api::ref_id id, api::ref_id pen_id, double x1, double y1, double x2, double y2)
+            void qt_frontend_client::draw_line(api::ref_id id, api::ref_id line_id, api::ref_id pen, double x1, double y1, double x2, double y2)
             {
                 if(_done) return;
-                emit got_draw_line(id, pen_id, x1, y1, x2, y2);
+                emit got_draw_line(id, line_id, pen, x1, y1, x2, y2);
             }
 
-            void qt_frontend_client::draw_circle(api::ref_id id, api::ref_id pen_id, double x, double y, double r)
+            void qt_frontend_client::draw_circle(api::ref_id id, api::ref_id circle_id, api::ref_id pen, double x, double y, double r)
             {
                 if(_done) return;
-                emit got_draw_circle(id, pen_id, x, y, r);
+                emit got_draw_circle(id, circle_id, pen, x, y, r);
             }
 
-            void qt_frontend_client::draw_image(api::ref_id id, api::ref_id image_id, double x, double y, double w, double h)
+            void qt_frontend_client::draw_image(api::ref_id id, api::ref_id image_ref_id, api::ref_id image_id, double x, double y, double w, double h)
             {
                 if(_done) return;
-                emit got_draw_image(id, image_id, x, y, w, h);
+                emit got_draw_image(id, image_ref_id, image_id, x, y, w, h);
             }
 
             void qt_frontend_client::draw_clear(api::ref_id id)
             {
                 if(_done) return;
                 emit got_draw_clear(id);
+            }
+
+            void qt_frontend_client::draw_line_set(api::ref_id id, api::ref_id line, double x1, double y1, double x2, double y2)
+            {
+                if(_done) return;
+                emit got_draw_line_set(id, line, x1, y1, x2, y2);
+
+            }
+            void qt_frontend_client::draw_line_set_pen(api::ref_id id, api::ref_id line, api::ref_id pen)
+            {
+                if(_done) return;
+                emit got_draw_line_set_pen(id, line, pen);
+
+            }
+
+            void qt_frontend_client::draw_circle_set(api::ref_id id, api::ref_id circle, double x, double y, double r)
+            {
+                if(_done) return;
+                emit got_draw_circle_set(id, circle, x, y, r);
+
+            }
+
+            void qt_frontend_client::draw_circle_set_pen(api::ref_id id, api::ref_id circle, api::ref_id pen)
+            {
+                if(_done) return;
+                emit got_draw_circle_set_pen(id, circle, pen);
+
+            }
+
+            void qt_frontend_client::draw_image_set(api::ref_id id, api::ref_id image, double x, double y, double w, double h)
+            {
+                if(_done) return;
+                emit got_draw_image_set(id, image, x, y, w, h);
             }
 
             //timer
@@ -838,22 +882,22 @@ namespace fire
                 _f->add_draw(id, width, height);
             }
 
-            void qt_frontend_client::do_draw_line(api::ref_id id, api::ref_id pen_id, double x1, double y1, double x2, double y2)
+            void qt_frontend_client::do_draw_line(api::ref_id id, api::ref_id line_id, api::ref_id pen, double x1, double y1, double x2, double y2)
             {
                 INVARIANT(_f);
-                _f->draw_line(id, pen_id, x1, y1, x2, y2);
+                _f->draw_line(id, line_id, pen, x1, y1, x2, y2);
             }
 
-            void qt_frontend_client::do_draw_circle(api::ref_id id, api::ref_id pen_id, double x, double y, double r)
+            void qt_frontend_client::do_draw_circle(api::ref_id id, api::ref_id circle_id, api::ref_id pen, double x, double y, double r)
             {
                 INVARIANT(_f);
-                _f->draw_circle(id, pen_id, x, y, r);
+                _f->draw_circle(id, circle_id, pen, x, y, r);
             }
 
-            void qt_frontend_client::do_draw_image(api::ref_id id, api::ref_id image_id, double x, double y, double w, double h)
+            void qt_frontend_client::do_draw_image(api::ref_id id, api::ref_id image_ref_id, api::ref_id image_id, double x, double y, double w, double h)
             {
                 INVARIANT(_f);
-                _f->draw_image(id, image_id, x, y, w, h);
+                _f->draw_image(id, image_ref_id, image_id, x, y, w, h);
             }
 
             void qt_frontend_client::do_draw_clear(api::ref_id id)
@@ -862,6 +906,35 @@ namespace fire
                 _f->draw_clear(id);
             }
 
+            void qt_frontend_client::do_draw_line_set(api::ref_id id, api::ref_id line, double x1, double y1, double x2, double y2)
+            {
+                INVARIANT(_f);
+                _f->draw_line_set(id, line, x1, y1, x2, y2);
+            }
+
+            void qt_frontend_client::do_draw_line_set_pen(api::ref_id id, api::ref_id line, api::ref_id pen)
+            {
+                INVARIANT(_f);
+                _f->draw_line_set_pen(id, line, pen);
+            }
+
+            void qt_frontend_client::do_draw_circle_set(api::ref_id id, api::ref_id circle, double x, double y, double r)
+            {
+                INVARIANT(_f);
+                _f->draw_circle_set(id, circle, x, y, r);
+            }
+
+            void qt_frontend_client::do_draw_circle_set_pen(api::ref_id id, api::ref_id circle, api::ref_id pen)
+            {
+                INVARIANT(_f);
+                _f->draw_circle_set_pen(id, circle, pen);
+            }
+
+            void qt_frontend_client::do_draw_image_set(api::ref_id id, api::ref_id image, double x, double y, double w, double h)
+            {
+                INVARIANT(_f);
+                _f->draw_image_set(id, image, x, y, w, h);
+            }
 
             //timer
             void qt_frontend_client::do_add_timer(api::ref_id id, int msec)
