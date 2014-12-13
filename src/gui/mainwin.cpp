@@ -155,6 +155,7 @@ namespace fire
         void main_window::dropEvent(QDropEvent* e)
         {
             REQUIRE(e);
+            INVARIANT(_start_contacts);
             const auto* md = e->mimeData();
             if(!md) return;
             if(!md->hasUrls()) return;
@@ -170,7 +171,11 @@ namespace fire
 #else
                     auto cf = convert(local);
 #endif
-                    add_contact_gui(_user_service, cf, this);
+                    if(gui::add_contact_gui(_user_service, cf, this))
+                    {
+                        _start_contacts->update(_user_service->user().contacts());
+                        _start_contacts->update_status(true);
+                    }
                 }
                 else if(local.endsWith(".fab"))
                 {
@@ -590,7 +595,13 @@ namespace fire
         void main_window::add_contact()
         {
             INVARIANT(_user_service);
-            gui::add_contact_gui(_user_service, this);
+            INVARIANT(_start_contacts);
+
+            if(gui::add_contact_gui(_user_service, this))
+            {
+                _start_contacts->update(_user_service->user().contacts());
+                _start_contacts->update_status(true);
+            }
         }
 
         void main_window::show_contact_list()

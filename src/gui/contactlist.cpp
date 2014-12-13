@@ -848,7 +848,7 @@ namespace fire
             return added;
         }
 
-        void add_contact_gui(us::user_service_ptr s, QWidget* p)
+        bool add_contact_gui(us::user_service_ptr s, QWidget* p)
         {
             REQUIRE(s);
             REQUIRE(p);
@@ -858,7 +858,7 @@ namespace fire
             auto file = QFileDialog::getOpenFileName(p,
                     p->tr("Open Invite File"), home.c_str(), p->tr("Invite File (*.finvite)"));
 
-            if(file.isEmpty()) { return;}
+            if(file.isEmpty()) { return false;}
 
 #ifdef _WIN64
             auto cf = convert16(file);
@@ -866,7 +866,7 @@ namespace fire
             auto cf = convert(file);
 #endif
 
-            add_contact_gui(s, cf, p);
+            return add_contact_gui(s, cf, p);
         }
 
     }
