@@ -233,7 +233,7 @@ namespace fire
         bool add_contact_gui(user::user_service_ptr, const std::string&, QWidget*);
 #endif
 
-        void add_contact_gui(user::user_service_ptr, QWidget*);
+        bool add_contact_gui(user::user_service_ptr, QWidget*);
         void create_contact_file(user::user_service_ptr, QWidget* parent);
     }
 }
