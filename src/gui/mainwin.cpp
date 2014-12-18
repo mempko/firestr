@@ -1094,10 +1094,9 @@ namespace fire
             sw->name(name.c_str());
             auto tab_index = _conversations->addTab(sw, name.c_str());
 
-
             //switch to new tab if initiated by user
             if(s->initiated_by_user()) 
-                _conversations->setCurrentIndex(_conversations->count()-1);
+                _conversations->setCurrentIndex(tab_index);
             else
             {
                 _conversations->setTabTextColor(tab_index, QColor{"red"});
@@ -1149,7 +1148,7 @@ namespace fire
             INVARIANT(_conversations);
 
             auto t = find_conversation(_conversations, e.conversation_id);
-            if(!_focus || !e.visible) alert_tab(t);
+            if(should_alert(t)) alert_tab(t);
         }
 
         void main_window::not_part_of_clique_event(const s::event::not_part_of_clique& e)
