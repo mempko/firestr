@@ -105,6 +105,14 @@ namespace fire
                 F_CON(list_size(api::ref_id, size_t_promise_ptr));
                 F_CON(list_clear(api::ref_id));
 
+                //dropdown
+                F_CON(add_dropdown(api::ref_id));
+                F_CON(dropdown_size(api::ref_id, size_t_promise_ptr));
+                F_CON(dropdown_add_item(api::ref_id, const std::string&));
+                F_CON(dropdown_get_item(api::ref_id, int, string_promise_ptr));
+                F_CON(dropdown_get_selected(api::ref_id, int_promise_ptr));
+                F_CON(dropdown_clear(api::ref_id));
+
                 //pen
                 F_CON(add_pen(api::ref_id, const std::string&, int));
                 F_CON(pen_set_width(api::ref_id, int));
@@ -400,6 +408,60 @@ namespace fire
                 emit got_list_clear(id);
             }
 
+            void qt_frontend_client::add_dropdown(api::ref_id id)
+            {
+                if(_done) return;
+                emit got_add_dropdown(id);
+            }
+
+            size_t qt_frontend_client::dropdown_size(api::ref_id id)
+            {
+                if(_done) return 0;
+
+                auto p = std::make_shared<std::promise<size_t>>();
+                auto f = p->get_future();
+
+                emit got_dropdown_size(id, p);
+
+                return get_until(f, 0);
+            }
+
+            void qt_frontend_client::dropdown_add_item(api::ref_id id, const std::string& e)
+            {
+                if(_done) return;
+                emit got_dropdown_add_item(id, e);
+            }
+
+            std::string qt_frontend_client::dropdown_get_item(api::ref_id id, int index)
+            {
+                if(_done) return "";
+
+                auto p = std::make_shared<std::promise<std::string>>();
+                auto f = p->get_future();
+
+                emit got_dropdown_get_item(id, index, p);
+
+                return get_until(f, "");
+            }
+
+            int qt_frontend_client::dropdown_get_selected(api::ref_id id)
+            {
+                if(_done) return 0;
+
+                auto p = std::make_shared<std::promise<int>>();
+                auto f = p->get_future();
+
+                emit got_dropdown_get_selected(id, p);
+
+                return get_until(f, 0);
+            }
+
+            void qt_frontend_client::dropdown_clear(api::ref_id id)
+            {
+                if(_done) return;
+                emit got_dropdown_clear(id);
+            }
+
             //pen
             void qt_frontend_client::add_pen(api::ref_id id, const std::string& color, int width)
             {
@@ -448,8 +510,8 @@ namespace fire
             {
                 if(_done) return;
                 emit got_draw_line_set(id, line, x1, y1, x2, y2);
-
             }
+
             void qt_frontend_client::draw_line_set_pen(api::ref_id id, api::ref_id line, api::ref_id pen)
             {
                 if(_done) return;
@@ -713,6 +775,7 @@ namespace fire
 
             void qt_frontend_client::do_is_widget_enabled(api::ref_id id, bool_promise_ptr p)
             {
+                REQUIRE(p);
                 INVARIANT(_f);
                 p->set_value(_f->is_widget_enabled(id));
             }
@@ -725,6 +788,7 @@ namespace fire
 
             void qt_frontend_client::do_is_widget_visible(api::ref_id id, bool_promise_ptr p)
             {
+                REQUIRE(p);
                 INVARIANT(_f);
                 p->set_value(_f->is_widget_visible(id));
             }
@@ -758,6 +822,7 @@ namespace fire
 
             void qt_frontend_client::do_button_get_text(api::ref_id id, string_promise_ptr p)
             {
+                REQUIRE(p);
                 INVARIANT(_f);
                 p->set_value(_f->button_get_text(id));
             }
@@ -783,6 +848,7 @@ namespace fire
 
             void qt_frontend_client::do_label_get_text(api::ref_id id, string_promise_ptr p)
             {
+                REQUIRE(p);
                 INVARIANT(_f);
                 p->set_value(_f->label_get_text(id));
             }
@@ -802,6 +868,7 @@ namespace fire
 
             void qt_frontend_client::do_edit_get_text(api::ref_id id, string_promise_ptr p)
             {
+                REQUIRE(p);
                 INVARIANT(_f);
                 p->set_value(_f->edit_get_text(id));
             }
@@ -821,6 +888,7 @@ namespace fire
 
             void qt_frontend_client::do_text_edit_get_text(api::ref_id id, string_promise_ptr p)
             {
+                REQUIRE(p);
                 INVARIANT(_f);
                 p->set_value(_f->text_edit_get_text(id));
             }
@@ -858,8 +926,48 @@ namespace fire
 
             void qt_frontend_client::do_list_size(api::ref_id id, size_t_promise_ptr p)
             {
+                REQUIRE(p);
                 INVARIANT(_f);
                 p->set_value(_f->list_size(id));
+            }
+
+            void qt_frontend_client::do_add_dropdown(api::ref_id id)
+            {
+                INVARIANT(_f);
+                _f->add_dropdown(id);
+            }
+
+            void qt_frontend_client::do_dropdown_size(api::ref_id id, size_t_promise_ptr p)
+            {
+                REQUIRE(p);
+                INVARIANT(_f);
+                p->set_value(_f->dropdown_size(id));
+            }
+
+            void qt_frontend_client::do_dropdown_add_item(api::ref_id id, const std::string& e)
+            {
+                INVARIANT(_f);
+                _f->dropdown_add_item(id, e);
+            }
+
+            void qt_frontend_client::do_dropdown_get_item(api::ref_id id, int index, string_promise_ptr p)
+            {
+                REQUIRE(p);
+                INVARIANT(_f);
+                p->set_value(_f->dropdown_get_item(id, index));
+            }
+
+            void qt_frontend_client::do_dropdown_get_selected(api::ref_id id, int_promise_ptr p)
+            {
+                REQUIRE(p);
+                INVARIANT(_f);
+                p->set_value(_f->dropdown_get_selected(id));
+            }
+
+            void qt_frontend_client::do_dropdown_clear(api::ref_id id)
+            {
+                INVARIANT(_f);
+                _f->dropdown_clear(id);
             }
 
             //pen
@@ -963,6 +1071,7 @@ namespace fire
 
             void qt_frontend_client::do_timer_running(api::ref_id id, bool_promise_ptr p)
             {
+                REQUIRE(p);
                 INVARIANT(_f);
                 p->set_value(_f->timer_running(id));
             }
@@ -970,18 +1079,21 @@ namespace fire
             //image
             void qt_frontend_client::do_add_image(api::ref_id id, const util::bytes& d, bool_promise_ptr p)
             {
+                REQUIRE(p);
                 INVARIANT(_f);
                 p->set_value(_f->add_image(id, d));
             }
 
             void qt_frontend_client::do_image_width(api::ref_id id, int_promise_ptr p)
             {
+                REQUIRE(p);
                 INVARIANT(_f);
                 p->set_value(_f->image_width(id));
             }
 
             void qt_frontend_client::do_image_height(api::ref_id id, int_promise_ptr p)
             {
+                REQUIRE(p);
                 INVARIANT(_f);
                 p->set_value(_f->image_height(id));
             }
@@ -1035,24 +1147,28 @@ namespace fire
             //file
             void qt_frontend_client::do_save_file(const std::string& name, const std::string& data, bool_promise_ptr p)
             {
+                REQUIRE(p);
                 INVARIANT(_f);
                 p->set_value(_f->save_file(name, data));
             }
 
             void qt_frontend_client::do_save_bin_file(const std::string& name, const util::bytes& data, bool_promise_ptr p)
             {
+                REQUIRE(p);
                 INVARIANT(_f);
                 p->set_value(_f->save_bin_file(name, data));
             }
 
             void qt_frontend_client::do_open_file(file_data_promise_ptr p)
             {
+                REQUIRE(p);
                 INVARIANT(_f);
                 p->set_value(_f->open_file());
             }
 
             void qt_frontend_client::do_open_bin_file(bin_file_data_promise_ptr p)
             {
+                REQUIRE(p);
                 INVARIANT(_f);
                 p->set_value(_f->open_bin_file());
             }
@@ -1079,6 +1195,7 @@ namespace fire
 
             void qt_frontend_client::do_visible(bool_promise_ptr p)
             {
+                REQUIRE(p);
                 INVARIANT(_f);
                 p->set_value(_f->visible());
             }

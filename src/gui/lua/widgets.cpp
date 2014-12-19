@@ -248,6 +248,62 @@ namespace fire
                 api->front->list_clear(id);
             }
 
+            void dropdown_ref::add(const std::string& e)
+            {
+                INVARIANT(api);
+                INVARIANT(api->front);
+
+                api->front->dropdown_add_item(id, e);
+            }
+
+            std::string dropdown_ref::get(int i) const
+            {
+                INVARIANT(api);
+                INVARIANT(api->front);
+
+                return api->front->dropdown_get_item(id, i);
+            }
+
+            int dropdown_ref::selected() const
+            {
+                INVARIANT(api);
+                INVARIANT(api->front);
+
+                return api->front->dropdown_get_selected(id);
+            }
+
+            size_t dropdown_ref::size() const
+            {
+                INVARIANT(api);
+                INVARIANT(api->front);
+
+                return api->front->dropdown_size(id);
+            }
+
+
+            void dropdown_ref::set_callback(const std::string& c)
+            {
+                INVARIANT(api);
+
+                auto rp = api->dropdown_refs.find(id);
+                if(rp == api->dropdown_refs.end()) return;
+
+                rp->second.callback = c;
+                callback = c;
+            }
+
+            void dropdown_ref::handle(const std::string& t,  const util::value& event)
+            {
+                INVARIANT(api);
+                auto rp = api->dropdown_refs.find(id);
+                if(rp == api->dropdown_refs.end()) return;
+
+                const auto& cb =  rp->second.callback;
+                if(cb.empty()) return;
+
+                api->state->call(cb, event.as_int());
+            }
+
             void grid_ref::place(const widget_ref& wr, int r, int c)
             {
                 INVARIANT(api);

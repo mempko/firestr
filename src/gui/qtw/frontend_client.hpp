@@ -109,6 +109,14 @@ namespace fire
                     virtual size_t list_size(api::ref_id);
                     virtual void list_clear(api::ref_id);
 
+                    //dropdown
+                    virtual void add_dropdown(api::ref_id);
+                    virtual size_t dropdown_size(api::ref_id);
+                    virtual void dropdown_add_item(api::ref_id, const std::string&);
+                    virtual std::string dropdown_get_item(api::ref_id, int index);
+                    virtual int dropdown_get_selected(api::ref_id);
+                    virtual void dropdown_clear(api::ref_id);
+
                     //pen
                     virtual void add_pen(api::ref_id id, const std::string& color, int width);
                     virtual void pen_set_width(api::ref_id id, int width);
@@ -218,6 +226,14 @@ namespace fire
                     void got_list_clear(api::ref_id);
                     void got_list_size(api::ref_id, size_t_promise_ptr);
 
+                    //dropdown
+                    void got_add_dropdown(api::ref_id);
+                    void got_dropdown_size(api::ref_id, size_t_promise_ptr);
+                    void got_dropdown_add_item(api::ref_id, const std::string&);
+                    void got_dropdown_get_item(api::ref_id, int index, string_promise_ptr);
+                    void got_dropdown_get_selected(api::ref_id, int_promise_ptr);
+                    void got_dropdown_clear(api::ref_id);
+
                     //pen
                     void got_add_pen(api::ref_id id, const std::string& color, int width);
                     void got_pen_set_width(api::ref_id id, int width);
@@ -323,6 +339,14 @@ namespace fire
                     void do_list_remove(api::ref_id list_id, api::ref_id widget_id);
                     void do_list_clear(api::ref_id);
                     void do_list_size(api::ref_id, size_t_promise_ptr);
+
+                    //dropdown
+                    void do_add_dropdown(api::ref_id);
+                    void do_dropdown_size(api::ref_id, size_t_promise_ptr);
+                    void do_dropdown_add_item(api::ref_id, const std::string&);
+                    void do_dropdown_get_item(api::ref_id, int index, string_promise_ptr);
+                    void do_dropdown_get_selected(api::ref_id, int_promise_ptr);
+                    void do_dropdown_clear(api::ref_id);
 
                     //pen
                     void do_add_pen(api::ref_id id, const std::string& color, int width);

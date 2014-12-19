@@ -65,6 +65,7 @@ namespace fire
                             api::frontend*);
 
                 public:
+                    virtual void dropdown_selected(api::ref_id, int item);
                     virtual void button_clicked(api::ref_id);
                     virtual void edit_edited(api::ref_id id);
                     virtual void edit_finished(api::ref_id id);
@@ -112,6 +113,7 @@ namespace fire
                     edit_ref_map edit_refs;
                     text_edit_ref_map text_edit_refs;
                     list_ref_map list_refs;
+                    dropdown_ref_map dropdown_refs;
                     grid_ref_map grid_refs;
                     draw_ref_map draw_refs;
                     timer_ref_map timer_refs;
@@ -139,6 +141,7 @@ namespace fire
                     void print(const std::string& a);
                     void alert();
                     button_ref make_button(const std::string& title);
+                    dropdown_ref make_dropdown();
                     label_ref make_label(const std::string& text);
                     edit_ref make_edit(const std::string& text);
                     text_edit_ref make_text_edit(const std::string& text);

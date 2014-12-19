@@ -128,6 +128,7 @@ namespace fire
                     .set("print", &lua_api::print)
                     .set("alert", &lua_api::alert)
                     .set("button", &lua_api::make_button)
+                    .set("dropdown", &lua_api::make_dropdown)
                     .set("label", &lua_api::make_label)
                     .set("edit", &lua_api::make_edit)
                     .set("text_edit", &lua_api::make_text_edit)
@@ -279,6 +280,21 @@ namespace fire
                     .set("remove", &list_ref::remove)
                     .set("size", &list_ref::size)
                     .set("clear", &list_ref::clear)
+                    .set("enabled", &widget_ref::enabled)
+                    .set("enable", &widget_ref::enable)
+                    .set("disable", &widget_ref::disable)
+                    .set("visible", &widget_ref::visible)
+                    .set("show", &widget_ref::show)
+                    .set("hide", &widget_ref::hide);
+
+                SLB::Class<dropdown_ref>{"dropdown", &manager}
+                    .set("add", &dropdown_ref::add)
+                    .set("get", &dropdown_ref::get)
+                    .set("size", &dropdown_ref::size)
+                    .set("selected", &dropdown_ref::selected)
+                    .set("callback", &dropdown_ref::get_callback)
+                    .set("when_selected", &dropdown_ref::set_callback)
+                    .set("set_name", &observable_ref::set_name)
                     .set("enabled", &widget_ref::enabled)
                     .set("enable", &widget_ref::enable)
                     .set("disable", &widget_ref::disable)
@@ -984,6 +1000,27 @@ namespace fire
                 return ref;
             }
 
+            dropdown_ref lua_api::make_dropdown()
+            {
+                INVARIANT(front);
+
+                //create dropdown reference
+                dropdown_ref ref;
+                ref.id = new_id();
+                ref.api = this;
+
+                //add ref and widget to maps
+                dropdown_refs[ref.id] = ref;
+
+                front->add_dropdown(ref.id);
+
+                ENSURE_FALSE(ref.id == 0);
+                ENSURE(ref.callback.empty());
+                ENSURE(ref.api);
+                return ref;
+            }
+
+
             pen_ref lua_api::make_pen(const std::string& color, int width)
             {
                 INVARIANT(front);
@@ -1262,6 +1299,36 @@ namespace fire
 
                 send_simple_event(name, "b");
                 run(callback);
+            }
+
+            void lua_api::dropdown_selected(api::ref_id id, int item)
+            try
+            {
+                INVARIANT(state);
+
+                std::string callback;
+                std::string name;
+                {
+                    auto rp = dropdown_refs.find(id);
+                    if(rp == dropdown_refs.end()) return;
+
+                    callback = rp->second.callback;
+                    name = rp->second.get_name();
+                }
+                if(callback.empty()) return;
+
+                send_simple_event(name, "d");
+                state->call(callback, item);
+            }
+            catch(SLB::CallException& e)
+            {
+                std::stringstream s;
+                s << "error in dropdown: " << e.what();
+                report_error(e.what(), e.errorLine);
+            }
+            catch(...)
+            {
+                report_error("error in dropdown: unknown");
             }
         }
     }

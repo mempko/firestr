@@ -49,6 +49,7 @@ namespace fire
             {
                 const std::string RUN_CODE = "r_c";
                 const std::string BUTTON_CLICKED = "b_c";
+                const std::string DROPDOWN_SELECTED = "n_s";
                 const std::string EDIT_EDITED = "e_e";
                 const std::string EDIT_FINISHED = "e_f";
                 const std::string TEXT_EDIT_EDITED = "t_e";
@@ -78,6 +79,18 @@ namespace fire
                 f_serialize
                 {
                     f_s(id);
+                }
+            };
+
+            f_message(dropdown_selected_msg)
+            {
+                ref_id id;
+                int item;
+                f_message_init(dropdown_selected_msg, DROPDOWN_SELECTED);
+                f_serialize
+                {
+                    f_s(id);
+                    f_s(item);
                 }
             };
 
@@ -253,6 +266,14 @@ namespace fire
                             _api->button_clicked(b.id);
                         });
 
+                handle(DROPDOWN_SELECTED, [&](const m::message& m)
+                        {
+                            if(!m::is_local(m)) return;
+                            dropdown_selected_msg d;
+                            d.from_message(m);
+                            _api->dropdown_selected(d.id, d.item);
+                        });
+
                 handle(EDIT_EDITED, [&](const m::message& m)
                         {
                             if(!m::is_local(m)) return;
@@ -365,6 +386,15 @@ namespace fire
                 INVARIANT(mail());
                 button_clicked_msg m;
                 m.id = id;
+                mail()->push_inbox(m.to_message());
+            }
+
+            void backend_client::dropdown_selected(ref_id id, int item)
+            {
+                INVARIANT(mail());
+                dropdown_selected_msg m;
+                m.id = id;
+                m.item = item;
                 mail()->push_inbox(m.to_message());
             }
 

@@ -51,6 +51,7 @@ namespace fire
 
                 public:
                     virtual void button_clicked(api::ref_id);
+                    virtual void dropdown_selected(api::ref_id, int item);
                     virtual void edit_edited(api::ref_id);
                     virtual void edit_finished(api::ref_id);
                     virtual void text_edit_edited(api::ref_id);

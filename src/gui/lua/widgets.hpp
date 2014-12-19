@@ -111,6 +111,21 @@ namespace fire
             };
             using list_ref_map = std::unordered_map<int, list_ref>;
 
+            struct dropdown_ref : public widget_ref
+            {
+                std::string callback;
+
+                void add(const std::string&); 
+                std::string get(int) const; 
+                int selected() const; 
+                size_t size() const;
+
+                const std::string& get_callback() const { return callback;}
+                void set_callback(const std::string&);  
+                void handle(const std::string& t,  const util::value& event);
+            };
+            using dropdown_ref_map = std::unordered_map<int, dropdown_ref>;
+
             //decided to call layouts canvases
             struct grid_ref : public widget_ref
             {

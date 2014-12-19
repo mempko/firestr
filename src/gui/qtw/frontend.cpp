@@ -496,6 +496,72 @@ namespace fire
                                  //to place the widget somewhere else
             }
 
+            void qt_frontend::add_dropdown(api::ref_id id)
+            {
+                INVARIANT(canvas);
+
+                //create dropdown widget
+                auto c = new QComboBox{canvas};
+
+                //map dropdown to C++ callback
+                auto mapper = new QSignalMapper{canvas};
+                mapper->setMapping(c, id);
+                connect(c, SIGNAL(activated(int)), mapper, SLOT(map()));
+                connect(mapper, SIGNAL(mapped(int)), this, SLOT(dropdown_selected(int)));
+
+                widgets[id] = c;
+            }
+
+            size_t qt_frontend::dropdown_size(api::ref_id id)
+            {
+                auto d = get_widget<QComboBox>(id, widgets);
+                if(!d) return 0;
+
+                return d->count();
+            }
+
+            void qt_frontend::dropdown_add_item(api::ref_id id, const std::string& e)
+            {
+                auto d = get_widget<QComboBox>(id, widgets);
+                if(!d) return;
+
+                d->addItem(e.c_str());
+            }
+
+            std::string qt_frontend::dropdown_get_item(api::ref_id id, int index)
+            {
+                auto d = get_widget<QComboBox>(id, widgets);
+                if(!d) return "";
+
+                return convert(d->itemText(index));
+            }
+
+            int qt_frontend::dropdown_get_selected(api::ref_id id)
+            {
+                auto d = get_widget<QComboBox>(id, widgets);
+                if(!d) return 0;
+
+                return d->currentIndex();
+            }
+
+            void qt_frontend::dropdown_clear(api::ref_id id)
+            {
+                auto d = get_widget<QComboBox>(id, widgets);
+                if(!d) return;
+
+                return d->clear();
+            }
+
+            void qt_frontend::dropdown_selected(int id)
+            {
+                INVARIANT(back);
+                auto d = get_widget<QComboBox>(id, widgets);
+                if(!d) return;
+
+                auto item = d->currentIndex();
+                back->dropdown_selected(id, item);
+            }
+
             void qt_frontend::add_pen(api::ref_id id, const std::string& color, int width)
             try
             {
