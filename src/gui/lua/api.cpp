@@ -291,6 +291,7 @@ namespace fire
                     .set("add", &dropdown_ref::add)
                     .set("get", &dropdown_ref::get)
                     .set("size", &dropdown_ref::size)
+                    .set("clear", &dropdown_ref::clear)
                     .set("selected", &dropdown_ref::selected)
                     .set("callback", &dropdown_ref::get_callback)
                     .set("when_selected", &dropdown_ref::set_callback)
