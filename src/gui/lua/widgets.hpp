@@ -119,6 +119,7 @@ namespace fire
                 std::string get(int) const; 
                 int selected() const; 
                 size_t size() const;
+                void clear() const;
 
                 const std::string& get_callback() const { return callback;}
                 void set_callback(const std::string&);  

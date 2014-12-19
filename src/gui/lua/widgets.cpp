@@ -280,6 +280,14 @@ namespace fire
                 return api->front->dropdown_size(id);
             }
 
+            void dropdown_ref::clear() const
+            {
+                INVARIANT(api);
+                INVARIANT(api->front);
+
+                api->front->dropdown_clear(id);
+            }
+
 
             void dropdown_ref::set_callback(const std::string& c)
             {
