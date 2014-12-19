@@ -143,6 +143,14 @@ namespace fire
                     virtual size_t list_size(api::ref_id);
                     virtual void list_clear(api::ref_id);
 
+                    //dropdown
+                    virtual void add_dropdown(api::ref_id);
+                    virtual size_t dropdown_size(api::ref_id);
+                    virtual void dropdown_add_item(api::ref_id, const std::string&);
+                    virtual std::string dropdown_get_item(api::ref_id, int index);
+                    virtual int dropdown_get_selected(api::ref_id);
+                    virtual void dropdown_clear(api::ref_id);
+
                     //pen
                     virtual void add_pen(api::ref_id id, const std::string& color, int width);
                     virtual void pen_set_width(api::ref_id id, int width);
@@ -210,6 +218,7 @@ namespace fire
 
                 public slots:
                     void button_clicked(int id);
+                    void dropdown_selected(int id);
                     void edit_edited(int id);
                     void edit_finished(int id);
                     void text_edit_edited(int id);

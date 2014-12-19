@@ -97,6 +97,14 @@ namespace fire
                 virtual size_t list_size(ref_id) = 0;
                 virtual void list_clear(ref_id) = 0;
 
+                //dropdown
+                virtual void add_dropdown(ref_id) = 0;
+                virtual size_t dropdown_size(ref_id) = 0;
+                virtual void dropdown_add_item(ref_id, const std::string&) = 0;
+                virtual std::string dropdown_get_item(ref_id, int index) = 0;
+                virtual int dropdown_get_selected(ref_id) = 0;
+                virtual void dropdown_clear(ref_id) = 0;
+
                 //pen
                 virtual void add_pen(ref_id, const std::string& color, int width) = 0;
                 virtual void pen_set_width(ref_id, int width) = 0;
@@ -167,6 +175,7 @@ namespace fire
             struct backend
             {
                 virtual void button_clicked(ref_id) = 0;
+                virtual void dropdown_selected(ref_id, int item) = 0;
                 virtual void edit_edited(ref_id) = 0;
                 virtual void edit_finished(ref_id) = 0;
                 virtual void text_edit_edited(ref_id) = 0;
