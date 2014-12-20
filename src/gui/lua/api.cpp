@@ -216,6 +216,7 @@ namespace fire
                 SLB::Class<grid_ref>{"grid", &manager}
                     .set("place", &grid_ref::place)
                     .set("place_across", &grid_ref::place_across)
+                    .set("set_style", &widget_ref::set_style)
                     .set("enabled", &widget_ref::enabled)
                     .set("enable", &widget_ref::enable)
                     .set("disable", &widget_ref::disable)
@@ -230,6 +231,7 @@ namespace fire
                     .set("callback", &button_ref::get_callback)
                     .set("when_clicked", &button_ref::set_callback)
                     .set("set_name", &observable_ref::set_name)
+                    .set("set_style", &widget_ref::set_style)
                     .set("enabled", &widget_ref::enabled)
                     .set("enable", &widget_ref::enable)
                     .set("disable", &widget_ref::disable)
@@ -240,6 +242,7 @@ namespace fire
                 SLB::Class<label_ref>{"label", &manager}
                     .set("text", &label_ref::get_text)
                     .set("set_text", &label_ref::set_text)
+                    .set("set_style", &widget_ref::set_style)
                     .set("enabled", &widget_ref::enabled)
                     .set("enable", &widget_ref::enable)
                     .set("disable", &widget_ref::disable)
@@ -255,6 +258,7 @@ namespace fire
                     .set("finished_callback", &edit_ref::get_finished_callback)
                     .set("when_finished", &edit_ref::set_finished_callback)
                     .set("set_name", &observable_ref::set_name)
+                    .set("set_style", &widget_ref::set_style)
                     .set("enabled", &widget_ref::enabled)
                     .set("enable", &widget_ref::enable)
                     .set("disable", &widget_ref::disable)
@@ -268,6 +272,7 @@ namespace fire
                     .set("edited_callback", &text_edit_ref::get_edited_callback)
                     .set("when_edited", &text_edit_ref::set_edited_callback)
                     .set("set_name", &observable_ref::set_name)
+                    .set("set_style", &widget_ref::set_style)
                     .set("enabled", &widget_ref::enabled)
                     .set("enable", &widget_ref::enable)
                     .set("disable", &widget_ref::disable)
@@ -280,6 +285,7 @@ namespace fire
                     .set("remove", &list_ref::remove)
                     .set("size", &list_ref::size)
                     .set("clear", &list_ref::clear)
+                    .set("set_style", &widget_ref::set_style)
                     .set("enabled", &widget_ref::enabled)
                     .set("enable", &widget_ref::enable)
                     .set("disable", &widget_ref::disable)
@@ -296,6 +302,7 @@ namespace fire
                     .set("callback", &dropdown_ref::get_callback)
                     .set("when_selected", &dropdown_ref::set_callback)
                     .set("set_name", &observable_ref::set_name)
+                    .set("set_style", &widget_ref::set_style)
                     .set("enabled", &widget_ref::enabled)
                     .set("enable", &widget_ref::enable)
                     .set("disable", &widget_ref::disable)
@@ -324,6 +331,7 @@ namespace fire
                     .set("when_mouse_released", &draw_ref::set_mouse_released_callback)
                     .set("when_mouse_dragged", &draw_ref::set_mouse_dragged_callback)
                     .set("set_name", &observable_ref::set_name)
+                    .set("set_style", &widget_ref::set_style)
                     .set("enabled", &widget_ref::enabled)
                     .set("enable", &widget_ref::enable)
                     .set("disable", &widget_ref::disable)
@@ -338,6 +346,7 @@ namespace fire
                     .set("get_pen", &draw_ref::get_pen);
 
                 SLB::Class<image_ref>{"image_ref", &manager}
+                    .set("set_style", &widget_ref::set_style)
                     .set("enabled", &image_ref::enabled)
                     .set("enable", &image_ref::enable)
                     .set("disable", &image_ref::disable)

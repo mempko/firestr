@@ -86,6 +86,7 @@ namespace fire
                 bool visible(); 
                 void show();
                 void hide();
+                void set_style(const std::string&);
             };
 
             class script_message;

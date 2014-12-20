@@ -119,6 +119,14 @@ namespace fire
                 api->front->widget_visible(id, false);
             }
 
+            void widget_ref::set_style(const std::string& s)
+            {
+                INVARIANT(api);
+                INVARIANT(api->front);
+
+                api->front->widget_set_style(id, s);
+            }
+
             std::string app_ref::get_id() const
             {
                 return app_id;
