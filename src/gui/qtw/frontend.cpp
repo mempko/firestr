@@ -194,6 +194,14 @@ namespace fire
                 return w ? w->isVisible() : false;
             }
 
+            void qt_frontend::widget_set_style(api::ref_id id, const std::string& s)
+            {
+                auto w = get_widget<QWidget>(id, widgets);
+                if(!w) return;
+
+                w->setStyleSheet(s.c_str());
+            }
+
             void qt_frontend::place_across(api::ref_id id, int r, int c, int row_span, int col_span)
             {
                 INVARIANT(layout);

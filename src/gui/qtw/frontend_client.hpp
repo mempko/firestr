@@ -75,6 +75,7 @@ namespace fire
                     virtual bool is_widget_enabled(api::ref_id);
                     virtual void widget_visible(api::ref_id, bool);
                     virtual bool is_widget_visible(api::ref_id);
+                    virtual void widget_set_style(api::ref_id, const std::string&);
 
                     //grid
                     virtual void add_grid(api::ref_id);
@@ -193,6 +194,7 @@ namespace fire
                     bool got_is_widget_enabled(api::ref_id, bool_promise_ptr);
                     void got_widget_visible(api::ref_id, bool);
                     bool got_is_widget_visible(api::ref_id, bool_promise_ptr);
+                    void got_widget_set_style(api::ref_id, const std::string&);
 
                     //grid
                     void got_add_grid(api::ref_id);
@@ -308,6 +310,7 @@ namespace fire
                     void do_is_widget_enabled(api::ref_id, bool_promise_ptr);
                     void do_widget_visible(api::ref_id, bool);
                     void do_is_widget_visible(api::ref_id, bool_promise_ptr);
+                    void do_widget_set_style(api::ref_id, const std::string&);
 
                     //grid
                     void do_add_grid(api::ref_id);

@@ -71,6 +71,7 @@ namespace fire
                 F_CON(is_widget_enabled(api::ref_id, bool_promise_ptr));
                 F_CON(widget_visible(api::ref_id, bool));
                 F_CON(is_widget_visible(api::ref_id, bool_promise_ptr));
+                F_CON(widget_set_style(api::ref_id, const std::string&));
 
                 //grid
                 F_CON(add_grid(api::ref_id));
@@ -210,7 +211,6 @@ namespace fire
             {
                 if(_done) return;
                 emit got_place_across(id, r, c, row_span, col_span);
-
             }
 
             void qt_frontend_client::widget_enable(api::ref_id id, bool b)
@@ -228,6 +228,12 @@ namespace fire
                 emit got_is_widget_enabled(id, p);
 
                 return get_until(f, false);
+            }
+
+            void qt_frontend_client::widget_set_style(api::ref_id id, const std::string& s)
+            {
+                if(_done) return;
+                emit got_widget_set_style(id, s);
             }
 
             void qt_frontend_client::widget_visible(api::ref_id id, bool b)
@@ -799,6 +805,12 @@ namespace fire
                 REQUIRE(p);
                 INVARIANT(_f);
                 p->set_value(_f->is_widget_visible(id));
+            }
+
+            void qt_frontend_client::do_widget_set_style(api::ref_id id, const std::string& s)
+            {
+                INVARIANT(_f);
+                _f->widget_set_style(id, s);
             }
 
             //grid

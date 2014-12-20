@@ -140,6 +140,7 @@ namespace fire
                 {"set_text", "widget:set_text(text) -- sets the widget's text"},
                 {"set_name", "widget:set_name(text) -- sets the widget's name turning on remote events"},
                 {"set_pen", "shape:set_pen(pen) -- sets the pen of the drawn shape"},
+                {"set_style", "widget:set_style(style) -- sets the style of the widget. It is a Qt style sheet."},
                 {"show", "widget:show() -- shows the widget"},
                 {"size", "widget:size() -- returns the size of the widget"},
                 {"start", "timer:start() -- starts the timer"},

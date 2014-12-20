@@ -63,6 +63,7 @@ namespace fire
                 virtual bool is_widget_enabled(ref_id) = 0;
                 virtual void widget_visible(ref_id, bool) = 0;
                 virtual bool is_widget_visible(ref_id) = 0;
+                virtual void widget_set_style(ref_id, const std::string&) = 0;
 
                 //grid
                 virtual void add_grid(ref_id) = 0;
