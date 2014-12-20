@@ -75,6 +75,20 @@ The text_edit object must be placed on the canvas using the [place](reference.md
     t = app:text_edit("type many things here")
     app:place(t, 0, 0)
 
+app:dropdown
+-----
+
+    dropdown() : dropdown
+
+Creates a [dropdown](reference.md#dropdown-object). 
+The dropdown must be placed on the canvas using the [place](reference.md#appplace) function.
+
+    d = app:dropdown()
+    d:add("option 1")
+    d:add("option 2")
+
+    app:place(d, 0, 0)
+
 app:list
 -----
 
@@ -595,6 +609,15 @@ on all instances.
 So if one user clicked on the button, then the "foo" function will be called for each user
 in a conversation.
 
+button:set_style
+-----
+
+    set_style(style:string) : nil
+
+Sets the style of the widget. You can use [Qt Style Sheets](http://doc.qt.io/qt-5/stylesheet.html).
+
+    my_button:set_style("background-color: 'green'")
+
 button:enabled
 -----
 
@@ -672,6 +695,15 @@ label:set_text
 Sets the text the label will display.
 
     my_label:set_text("Showing stuff, things")
+
+label:set_style
+-----
+
+    set_style(style:string) : nil
+
+Sets the style of the widget. You can use [Qt Style Sheets](http://doc.qt.io/qt-5/stylesheet.html).
+
+    my_label:set_style("background-color: 'green'")
 
 label:enabled
 -----
@@ -828,6 +860,16 @@ on all instances.
 So if one user chnages the text int the edit box, then the "foo" function will be called for each user
 in a conversation.
 
+edit:set_style
+-----
+
+    set_style(style:string) : nil
+
+Sets the style of the widget. You can use [Qt Style Sheets](http://doc.qt.io/qt-5/stylesheet.html).
+
+    my_edit:set_style("background-color: 'green'")
+
+
 edit:enabled
 -----
 
@@ -955,6 +997,15 @@ on all instances.
 So if one user chnages the text int the text_edit box, then the "foo" function will be called for each user
 in a conversation.
 
+text_edit:set_style
+-----
+
+    set_style(style:string) : nil
+
+Sets the style of the widget. You can use [Qt Style Sheets](http://doc.qt.io/qt-5/stylesheet.html).
+
+    my_text_edit:set_style("background-color: 'green'")
+
 text_edit:enabled
 -----
 
@@ -1054,6 +1105,14 @@ Removes all widgets from the list.
 
     my_list:clear()
 
+list:set_style
+-----
+
+    set_style(style:string) : nil
+
+Sets the style of the widget. You can use [Qt Style Sheets](http://doc.qt.io/qt-5/stylesheet.html).
+
+    my_list:set_style("background-color: 'green'")
 
 list:enabled
 -----
@@ -1108,6 +1167,174 @@ list:hide
 Hides the list.
 
     my_list:hide()
+
+dropdown object
+=====
+
+You can put options in a dropdown which can be selected. 
+Use [app:dropdown](reference.md#appdropdown) to create a dropdown.
+
+dropdown:add
+-----
+
+    add(option:string) : nil
+
+Adds an options to the dropdown.
+
+    my_dropdown:add("option 1")
+    my_dropdown:add("option 2")
+
+dropdown:get
+-----
+
+    get(index:int) : string
+
+Returns the option at the index specified, or an empty string.
+
+    text = my_dropdown:get(0)
+
+dropdown:selected
+-----
+
+    selected() : int
+
+Returns the index of the option that is selected
+
+    index = my_dropdown:selected()
+
+dropdown:size
+-----
+
+    size() : int
+
+Returns count of all options in the dropdown.
+
+    s = my_dropdown:size()
+
+dropdown:clear
+-----
+
+    clear() : nil
+
+Removes all the options from the dropdown.
+
+    my_dropdown:clear()
+
+dropdown:callback
+-----
+
+    callback() : string
+
+Returns the callback that will run when an option is selected from the dropdown. Use [when_clicked](reference.md#dropdownwhen_selected) 
+to set the callback that will be executed.
+
+    callback = my_dropdown:callback()
+
+dropdown:when_selected
+-----
+
+    when_clicked(code:string) : nil
+
+Sets the callback that will execute when an item from the dropdown is selected.
+
+The callback must be of the form:
+
+    callback(item_index:int)
+
+An example is:
+
+    my_dropdown:when_selected("foo")
+
+    function foo(index)
+        local text = my_dropdown:selected(index)
+        app:print("selected: "..text)
+    end
+
+dropdown:set_name
+-----
+
+    set_name(name:string) : nil
+
+When you give a name to a widget, it has a life that is shared across all instances.
+All events in one instance are propagated automatically to the others.
+
+For the case of a dropdown, if a dropdown option is selected on one instance, it will be selected
+on all instances.
+
+    my_dropdown:set_name("some unique name")
+    my_dropdown:when_selected("foo")
+
+    function foo(index)
+        --called on all instances
+    end
+
+So if one user selects an option in the dropdown, then the "foo" function will be called for each user
+in a conversation.
+
+dropdown:set_style
+-----
+
+    set_style(style:string) : nil
+
+Sets the style of the widget. You can use [Qt Style Sheets](http://doc.qt.io/qt-5/stylesheet.html).
+
+    my_dropdown:set_style("background-color: 'green'")
+
+
+dropdown:enabled
+-----
+
+    enabled() : bool
+
+Returns true if the dropdown is enabled.
+
+    en = my_dropdown:enabled()
+
+dropdown:enable
+-----
+
+    enable() : nil
+
+Enables the dropdown.
+
+    my_dropdown:enable()
+
+dropdown:disable
+-----
+
+    disable() : nil
+
+Disables the dropdown.
+
+    my_dropdown:disable()
+
+dropdown:visible
+-----
+
+    visible() : bool
+
+Returns true if the dropdown is visible
+
+    en = my_dropdown:visible()
+
+dropdown:show
+-----
+
+    show() : nil
+
+Makes the dropdown visible.
+
+    my_dropdown:show()
+
+dropdown:hide
+-----
+
+    hide() : nil
+
+Hides the dropdown.
+
+    my_dropdown:hide()
+
 
 grid object
 =====
@@ -1394,6 +1621,15 @@ draw:get_pen
 Returns the pen used by the draw functions.
 
     p = my_draw:get_pen()
+
+draw:set_style
+-----
+
+    set_style(style:string) : nil
+
+Sets the style of the widget. You can use [Qt Style Sheets](http://doc.qt.io/qt-5/stylesheet.html).
+
+    my_draw:set_style("background-color: 'green'")
 
 
 draw:enabled
