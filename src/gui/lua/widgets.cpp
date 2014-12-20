@@ -303,13 +303,19 @@ namespace fire
             void dropdown_ref::handle(const std::string& t,  const util::value& event)
             {
                 INVARIANT(api);
+                INVARIANT(api->front);
+
                 auto rp = api->dropdown_refs.find(id);
                 if(rp == api->dropdown_refs.end()) return;
 
                 const auto& cb =  rp->second.callback;
+
                 if(cb.empty()) return;
 
-                api->state->call(cb, event.as_int());
+                auto index = event.as_int();
+
+                api->front->dropdown_select(id, index);
+                api->state->call(cb, index);
             }
 
             void grid_ref::place(const widget_ref& wr, int r, int c)

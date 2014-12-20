@@ -111,6 +111,7 @@ namespace fire
                 F_CON(dropdown_add_item(api::ref_id, const std::string&));
                 F_CON(dropdown_get_item(api::ref_id, int, string_promise_ptr));
                 F_CON(dropdown_get_selected(api::ref_id, int_promise_ptr));
+                F_CON(dropdown_select(api::ref_id, int));
                 F_CON(dropdown_clear(api::ref_id));
 
                 //pen
@@ -454,6 +455,13 @@ namespace fire
                 emit got_dropdown_get_selected(id, p);
 
                 return get_until(f, 0);
+            }
+
+            void qt_frontend_client::dropdown_select(api::ref_id id, int index)
+            {
+                if(_done) return;
+
+                emit got_dropdown_select(id, index);
             }
 
             void qt_frontend_client::dropdown_clear(api::ref_id id)
@@ -962,6 +970,12 @@ namespace fire
                 REQUIRE(p);
                 INVARIANT(_f);
                 p->set_value(_f->dropdown_get_selected(id));
+            }
+
+            void qt_frontend_client::do_dropdown_select(api::ref_id id, int index)
+            {
+                INVARIANT(_f);
+                _f->dropdown_select(id, index);
             }
 
             void qt_frontend_client::do_dropdown_clear(api::ref_id id)

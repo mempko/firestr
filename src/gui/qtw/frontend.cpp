@@ -552,6 +552,14 @@ namespace fire
                 return d->clear();
             }
 
+            void qt_frontend::dropdown_select(api::ref_id id, int index)
+            {
+                auto d = get_widget<QComboBox>(id, widgets);
+                if(!d) return;
+
+                d->setCurrentIndex(index);
+            }
+
             void qt_frontend::dropdown_selected(int id)
             {
                 INVARIANT(back);

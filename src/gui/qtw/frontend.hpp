@@ -149,6 +149,7 @@ namespace fire
                     virtual void dropdown_add_item(api::ref_id, const std::string&);
                     virtual std::string dropdown_get_item(api::ref_id, int index);
                     virtual int dropdown_get_selected(api::ref_id);
+                    virtual void dropdown_select(api::ref_id, int);
                     virtual void dropdown_clear(api::ref_id);
 
                     //pen

@@ -115,6 +115,7 @@ namespace fire
                     virtual void dropdown_add_item(api::ref_id, const std::string&);
                     virtual std::string dropdown_get_item(api::ref_id, int index);
                     virtual int dropdown_get_selected(api::ref_id);
+                    virtual void dropdown_select(api::ref_id, int);
                     virtual void dropdown_clear(api::ref_id);
 
                     //pen
@@ -232,6 +233,7 @@ namespace fire
                     void got_dropdown_add_item(api::ref_id, const std::string&);
                     void got_dropdown_get_item(api::ref_id, int index, string_promise_ptr);
                     void got_dropdown_get_selected(api::ref_id, int_promise_ptr);
+                    void got_dropdown_select(api::ref_id, int);
                     void got_dropdown_clear(api::ref_id);
 
                     //pen
@@ -346,6 +348,7 @@ namespace fire
                     void do_dropdown_add_item(api::ref_id, const std::string&);
                     void do_dropdown_get_item(api::ref_id, int index, string_promise_ptr);
                     void do_dropdown_get_selected(api::ref_id, int_promise_ptr);
+                    void do_dropdown_select(api::ref_id, int);
                     void do_dropdown_clear(api::ref_id);
 
                     //pen
