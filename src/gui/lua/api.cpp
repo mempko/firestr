@@ -813,6 +813,7 @@ namespace fire
             {
                 //linear search though sets
                 if(auto o = get_obs(button_refs, id)) return o;
+                else if(auto o = get_obs(dropdown_refs, id)) return o;
                 else if(auto o = get_obs(label_refs, id)) return o;
                 else if(auto o = get_obs(edit_refs, id)) return o;
                 else if(auto o = get_obs(text_edit_refs, id)) return o;
@@ -1318,7 +1319,8 @@ namespace fire
                 }
                 if(callback.empty()) return;
 
-                send_simple_event(name, "d");
+                event_message em{name, "s", item, this};
+                send(em);
                 state->call(callback, item);
             }
             catch(SLB::CallException& e)
