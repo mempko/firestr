@@ -128,12 +128,6 @@ void update_address(
     {
         if(i.tcp_ep != ep) { i.tcp_ep = ep; updated = true; }
     }
-
-    if(updated)
-    {
-        LOG << "updated " << i.id << " " << i.ext.ip << ":" << i.ext.port << " prot: " << ep.protocol << std::endl;
-    }
-
 }
 
 void register_user(
@@ -165,7 +159,7 @@ void register_user(
         (is_udp ? udp_ep : tcp_ep) = ep;
         user_info i = {r.id(), local, ext, r.response_service_address(), tcp_ep, udp_ep};
         m[i.id] = i;
-        LOG << "registered " << i.id << " " << i.ext.ip << ":" << i.ext.port << " prot: " << ep.protocol << std::endl;
+        LOG << "registered " << i.id << std::endl;
     }
 
     sec.create_channel(address, r.pub_key());
@@ -183,8 +177,6 @@ void send_response(
 
     auto address = n::make_address_str(u.tcp_ep); 
     m.meta.to = {address, u.response_service_address};
-
-    LOG << "sending reply to " << address << std::endl;
 
     //encrypt using public key
     auto data = u::encode(m);
@@ -217,8 +209,6 @@ void find_user(
     if(con.is_disconnected(n::make_address_str(f.tcp_ep))) return;
     if(con.is_disconnected(n::make_address_str(i.tcp_ep))) return;
 
-    LOG << "found match " << f.id << " " << f.ext.ip << ":" << f.ext.port << " <==> " <<  i.id << " " << i.ext.ip << ":" << i.ext.port << std::endl;
-
     //send response to both clients
     ms::greet_find_response fr{true, i.id, i.local,  i.ext};
     send_response(con, sec, fr, f);
@@ -240,8 +230,6 @@ void send_pub_key(
 
     auto address = n::make_address_str(ep); 
     m.meta.to = {address, req.response_service_address()};
-
-    LOG << "sending pub key to " << address << std::endl;
 
     //send plaintext
     auto data = u::encode(m);
