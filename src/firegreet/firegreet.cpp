@@ -45,6 +45,7 @@
 #include "util/thread.hpp"
 #include "util/bytes.hpp"
 #include "util/compress.hpp"
+#include "util/uuid.hpp"
 #include "util/dbc.hpp"
 #include "util/log.hpp"
 
@@ -159,7 +160,7 @@ void register_user(
         (is_udp ? udp_ep : tcp_ep) = ep;
         user_info i = {r.id(), local, ext, r.response_service_address(), tcp_ep, udp_ep};
         m[i.id] = i;
-        LOG << "registered " << i.id << std::endl;
+        LOG << "registered " << u::uuid() << std::endl;
     }
 
     sec.create_channel(address, r.pub_key());
