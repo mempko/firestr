@@ -111,23 +111,21 @@ void update_address(
         const n::endpoint& ep,
         bool is_udp)
 {
-    bool updated = false;
-
-    if(i.local != local) { i.local = local; updated = true; }
+    if(i.local != local) i.local = local;
 
     if(i.ext != ext)
     {
-        if(is_udp) { i.ext = ext; updated = true; }
-        else if(i.udp_ep.protocol.empty()) { i.ext = ext; updated = true; }
+        if(is_udp) i.ext = ext; 
+        else if(i.udp_ep.protocol.empty())  i.ext = ext; 
     }
 
     if(is_udp)
     {
-        if(i.udp_ep != ep) { i.udp_ep = ep; updated = true; }
+        if(i.udp_ep != ep) i.udp_ep = ep;
     }
     else 
     {
-        if(i.tcp_ep != ep) { i.tcp_ep = ep; updated = true; }
+        if(i.tcp_ep != ep) i.tcp_ep = ep;
     }
 }
 
