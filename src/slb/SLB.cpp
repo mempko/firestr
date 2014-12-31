@@ -561,7 +561,7 @@ const char *ErrorHandler::SE_shortSource()
 }
 int ErrorHandler::SE_currentLine()
 {
-  if (_lua_state) {_currentLine = _debug.currentline; return _currentLine;};
+  if (_lua_state) return _debug.currentline;
   return -1;
 }
 int ErrorHandler::SE_numberOfUpvalues()
@@ -591,16 +591,21 @@ void ErrorHandler::process(lua_State *L)
   assert("Invalid state" && _lua_state != 0);
   const char *error = lua_tostring(_lua_state, -1);
   begin(error);
+
+  bool set = false;
   for ( int level = 0; lua_getstack(_lua_state, level, &_debug ); level++)
   {
-    if (lua_getinfo(L, "Slnu", &_debug) )
-    {
-      stackElement(level);
-    }
-    else
-    {
-      assert("[ERROR using Lua DEBUG INTERFACE]" && false);
-    }
+      if (lua_getinfo(L, "Slnu", &_debug) )
+      {
+          //set current line to top of stack
+          if(!set && _debug.currentline > 0) {_currentLine = _debug.currentline; set = true;}
+
+          stackElement(level);
+      }
+      else
+      {
+          assert("[ERROR using Lua DEBUG INTERFACE]" && false);
+      }
   }
   const char *msg = end();
   lua_pushstring(_lua_state, msg);
