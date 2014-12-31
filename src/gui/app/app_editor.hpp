@@ -138,7 +138,7 @@ namespace fire
                     fire::message::mailbox_ptr mail();
 
                 public slots:
-                    bool run_script();                                        
+                    void run_script();                                        
                     void send_script(bool send_data = true);
                     void send_script_to(const std::string& id);
                     void ask_for_script();
@@ -162,7 +162,6 @@ namespace fire
                     void init_data();
                     void set_app_name();
                     void update_app_code();
-                    void update_error(lua::error_info e);
                     void update_status_to_errors();
                     void update_status_to_no_errors();
                     void update_status_to_typing();
@@ -175,6 +174,7 @@ namespace fire
                     void got_init(const fire::message::message&);
 
                 private slots:
+                    void update_error(const std::string& e);
                     void emit_got_code(const fire::message::message&);
                     void emit_got_init(const fire::message::message&);
 

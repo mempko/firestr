@@ -846,7 +846,7 @@ namespace fire
                 _sender->send(_from_id, init.to_message());
             }
 
-            bool app_editor::run_script()
+            void app_editor::run_script()
             {
                 INVARIANT(_script);
                 INVARIANT(_conversation);
@@ -861,41 +861,42 @@ namespace fire
 
                 //get the code
                 auto code = gui::convert(_script->toPlainText());
-                if(code.empty()) return true;
 
-                //run the code
+                //reset ui
+                update_status_to_no_errors();
                 _back->reset();
                 _front->reset();
-                _back->run(code);
-                update_error(_api->get_error());
-                bool has_no_errors = _api->get_error().line == -1;
-                if(has_no_errors) update_status_to_no_errors();
-                else update_status_to_errors();
+
+                //run the code
+                if(!code.empty()) _back->run(code);
 
                 //update ui
                 init_data();
-
-                return has_no_errors;
             }
             
-            void app_editor::update_error(l::error_info e)
+            void app_editor::update_error(const std::string& msg)
             {
                 INVARIANT(_script);
+                INVARIANT(_api);
+
+                auto e = _api->get_error();
 
                 QList<QTextEdit::ExtraSelection> extras;
                 if(e.line != -1)
                 {
                     int line = e.line - 2;
-                    if(line < 0) line = 0;
-                    QTextEdit::ExtraSelection h;
-                    auto c = _script->textCursor();
-                    c.movePosition(QTextCursor::Start);
-                    c.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, line); 
-                    h.cursor = c;
-                    h.format.setProperty(QTextFormat::FullWidthSelection, true);
-                    QBrush b{QColor{255, 0, 0, 50}};
-                    h.format.setBackground(b);
-                    extras << h;
+                    if(line >= 0) 
+                    {
+                        QTextEdit::ExtraSelection h;
+                        auto c = _script->textCursor();
+                        c.movePosition(QTextCursor::Start);
+                        c.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, line); 
+                        h.cursor = c;
+                        h.format.setProperty(QTextFormat::FullWidthSelection, true);
+                        QBrush b{QColor{255, 0, 0, 50}};
+                        h.format.setBackground(b);
+                        extras << h;
+                    }
                     update_status_to_errors();
                 }
                 _script->setExtraSelections( extras );
@@ -971,6 +972,7 @@ namespace fire
             void app_editor::update_status_to_no_errors()
             {
                 INVARIANT(_status);
+                _script->setExtraSelections(QList<QTextEdit::ExtraSelection>{});
                 make_thumbs_up(*_status);
             }
 
@@ -1007,8 +1009,6 @@ namespace fire
                 INVARIANT(_api);
 
                 init_update();
-
-                update_error(_api->get_error());
 
                 auto code = gui::convert(_script->toPlainText());
                 int pos = _script->textCursor().position();
