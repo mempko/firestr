@@ -459,7 +459,6 @@ namespace fire
 
                 if(!error.message.empty())
                     report_error(error.message, error.line);
-
             }
 
             //API implementation 
