@@ -83,6 +83,7 @@ namespace fire
             const int MAIN_Y = 80;
             const int MAIN_W = 480;
             const int MAIN_H = 640;
+            const int ALERT_DURATION = 3000; //3 sec
         }
 
         main_window::main_window(const main_window_context& c) :
@@ -1006,7 +1007,7 @@ namespace fire
         {
             INVARIANT(_conversations);
             _conversations->setTabTextColor(tab_index, QColor{"red"});
-            QApplication::alert(this);
+            QApplication::alert(this, ALERT_DURATION);
         }
 
         void main_window::show_alert(QWidget* a)
@@ -1098,10 +1099,7 @@ namespace fire
             if(s->initiated_by_user()) 
                 _conversations->setCurrentIndex(tab_index);
             else
-            {
-                _conversations->setTabTextColor(tab_index, QColor{"red"});
-                QApplication::alert(this);
-            }
+                alert_tab(tab_index);
 
             ENSURE(_conversations->isVisible());
         }
