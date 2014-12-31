@@ -362,15 +362,37 @@ namespace fire
                 INVARIANT(_app_service);
                 INVARIANT(_mail);
 
+                //add status bar
+                _status = new QLabel;
+                l->addWidget(_status, 0, 0, 1, 2);
+
+                //save button
+                auto save = new QPushButton;
+                make_save(*save);
+                save->setToolTip(tr("Save"));
+                l->addWidget(save, 0, 2);
+                connect(save, SIGNAL(clicked()), this, SLOT(save_app()));
+
+                //export button
+                auto expt = new QPushButton;
+                make_export(*expt);
+                l->addWidget(expt, 0, 3);
+                expt->setToolTip(tr("Export to File"));
+                connect(expt, SIGNAL(clicked()), this, SLOT(export_app()));
+
+
+                //add application canvas and print area
                 _canvas = new QWidget;
                 _canvas_layout = new QGridLayout;
                 _canvas->setLayout(_canvas_layout);
                 _output = new list;
-                l->addWidget(_canvas, 0, 0, 1, 4);
-                l->addWidget(_output, 1, 0, 1, 4);
+                l->addWidget(_canvas, 1, 0, 1, 4);
+                l->addWidget(_output, 2, 0, 1, 4);
 
                 auto front = std::make_shared<qtw::qt_frontend>(_canvas, _canvas_layout, _output);
                 _front = std::make_shared<qtw::qt_frontend_client>(front);
+                connect(_front.get(), SIGNAL(got_report_error(const std::string&)), this, SLOT(update_error(const std::string&)));
+
                 _api = std::make_shared<l::lua_api>(
                         _app, 
                         _sender, 
@@ -392,26 +414,7 @@ namespace fire
                 _started = _app->code().empty() ? start_state::GET_CODE : start_state::DONE_START;
                 _script->setPlainText(_app->code().c_str());
                 connect(_script, SIGNAL(keyPressed(QKeyEvent*)), this, SLOT(text_typed(QKeyEvent*)));
-                l->addWidget(_script, 2, 0, 1, 4);
-
-                //add status bar
-                _status = new QLabel;
-                l->addWidget(_status, 3, 0, 1, 2);
-
-                //save button
-                auto save = new QPushButton;
-                make_save(*save);
-                save->setToolTip(tr("Save"));
-                l->addWidget(save, 3, 2);
-                connect(save, SIGNAL(clicked()), this, SLOT(save_app()));
-
-                //export button
-                auto expt = new QPushButton;
-                make_export(*expt);
-                l->addWidget(expt, 3, 3);
-                expt->setToolTip(tr("Export to File"));
-                connect(expt, SIGNAL(clicked()), this, SLOT(export_app()));
-
+                l->addWidget(_script, 3, 0, 2, 4);
 
                 setMinimumHeight(layout()->sizeHint().height() + PADDING);
 
