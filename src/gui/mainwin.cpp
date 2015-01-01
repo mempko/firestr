@@ -53,6 +53,7 @@
 #include "util/log.hpp"
 #include "util/mencode.hpp"
 #include "util/time.hpp"
+#include "util/version.hpp"
 
 #include <sstream>
 #include <stdexcept>
@@ -728,14 +729,21 @@ namespace fire
 
         void main_window::about()
         {
-            QMessageBox::about(this, tr("Firestr 0.4"),
-                    tr("<p><b>Fire★</b> is a simple distributed communication and computation "
+            auto version = u::version_string();
+
+            std::stringstream ls;
+            ls << "Fire★ " << version;
+
+            std::stringstream ss;
+            ss << "<p><b>Fire★</b> is a simple distributed communication and computation "
                         "platform. Write, clone, modify, and send people programs which "
                         "communicate with each other automatically, in a distributed way.</p>"
                         "<p>This is not the web, but it is on the internet.<br> "
                         "This is not a chat program, but a way for programs to chat.<br> "
                         "This is not just a way to share code, but a way to share running software.</p> "
-                        "<p>This program is created by <b>Maxim Noah Khailo</b> and is licensed as GPLv3</p>"));
+                        "<p>This program is created by <b>Maxim Noah Khailo</b> and is licensed as GPLv3</p><br>";
+            ss << "<br> <b>Version</b>: " << version << "<br>";
+            QMessageBox::about(this, ls.str().c_str(), ss.str().c_str());
         }
 
         void main_window::init_handlers()
