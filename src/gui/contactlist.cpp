@@ -35,6 +35,7 @@
 #include "util/dbc.hpp"
 #include "util/env.hpp"
 #include "util/log.hpp"
+#include "util/version.hpp"
 
 #include <QtWidgets>
 #include <QGridLayout>
