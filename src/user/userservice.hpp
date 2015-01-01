@@ -52,6 +52,14 @@ namespace fire
             enum state { OFFLINE, CONNECTING, CONNECTED} state;
             user_info_ptr contact;
             size_t last_ping;
+            int client_version;
+            int protocol_version;
+        };
+
+        struct contact_version
+        {
+            int protocol;
+            int client;
         };
 
         struct contact_file
@@ -108,6 +116,8 @@ namespace fire
             public:
                 user_info_ptr by_id(const std::string& id) const;
                 bool contact_available(const std::string& id) const;
+                int  protocol_version(const std::string& id) const;
+                contact_version check_contact_version(const std::string& id) const;
 
             protected:
                 void received_ping(const message::message& m);
@@ -122,6 +132,7 @@ namespace fire
                 void add_greeter(const std::string& host, network::port_type port, const std::string& pub_key);
                 void update_address(const std::string& address);
                 void update_contact_address(const std::string& id, const std::string& ip, network::port_type port);
+                void update_contact_version( const std::string& id, int protocol_version, int client_version);
                 void find_contact_with_greeter(user_info_ptr c, const std::string& greeter);
 
             private:

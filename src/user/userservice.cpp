@@ -38,6 +38,7 @@
 #include "util/dbc.hpp"
 #include "util/log.hpp"
 #include "util/serialize.hpp"
+#include "util/version.hpp"
 
 #include <stdexcept>
 #include <ctime>
@@ -104,12 +105,28 @@ namespace fire
         {
             u::bytes public_secret;
             int send_back;
+            int pv; //protocol version
+            int cv; //client version
 
             f_message_init(ping_request, PING_REQUEST);
-            f_serialize
+
+            f_serialize_in
             {
                 f_s(send_back);
                 f_s(public_secret);
+                if(f_has("pv")) f_s(pv);
+                else pv = 0;
+
+                if(f_has("cv")) f_s(cv);
+                else cv = 4;
+            }
+
+            f_serialize_out
+            {
+                f_s(send_back);
+                f_s(public_secret);
+                f_s(pv);
+                f_s(cv);
             }
         };
 
@@ -200,7 +217,7 @@ namespace fire
         {
             u::mutex_scoped_lock l(_ping_mutex);
             REQUIRE(u);
-            contact_data cd  = {contact_data::OFFLINE, u, PING_THRESH};
+            contact_data cd = {contact_data::OFFLINE, u, PING_THRESH, 0, 0};
             _contacts[u->id()] = cd; 
 
             REQUIRE(_contacts[u->id()].contact == u);
@@ -386,6 +403,9 @@ namespace fire
 
             auto c = by_id(r.from_id);
             if(!c) return;
+
+            //update contact protocol and client version
+            update_contact_version(c->id(), r.pv, r.cv);
 
             //we are already connected to this contact
             //send ping and return
@@ -770,6 +790,8 @@ namespace fire
             a.from_id =_user->info().id(); 
             a.public_secret = s.shared_secret.public_value(),
             a.send_back = send_back;
+            a.pv = u::PROTOCOL_VERSION;
+            a.cv = u::CLIENT_VERSION;
 
             //we need to force using PK encryption here because of DH timing
             //to setup the shared key
@@ -790,6 +812,22 @@ namespace fire
             LOG << "sending connection request to " << c->name() << " (" << c->id() << ", " << c->address() << ")" << std::endl;
             _encrypted_channels->create_channel(c->address(), c->key());
             send_ping_request(c->address(), send_back);
+        }
+
+        void user_service::update_contact_version(
+                const std::string& id, 
+                int protocol_version, 
+                int client_version)
+        {
+            if(protocol_version < 0 || client_version < 0) return;
+
+            u::mutex_scoped_lock l(_ping_mutex);
+            auto c = by_id(id);
+            if(!c) return;
+
+            auto& cd = _contacts[c->id()];
+            cd.protocol_version = protocol_version;
+            cd.client_version = client_version;
         }
 
         bool user_service::contact_connecting(const std::string& id)
@@ -826,6 +864,23 @@ namespace fire
             ENSURE(cd.state == contact_data::CONNECTED);
             return true;
 
+        }
+
+
+        contact_version user_service::check_contact_version(const std::string& id) const
+        {
+            u::mutex_scoped_lock l(_ping_mutex);
+            auto c = by_id(id);
+            if(!c) return contact_version{0, 0};
+
+            auto ci = _contacts.find(c->id());
+            ENSURE(ci != _contacts.end());
+
+            auto& cd = ci->second;
+
+            ENSURE_GREATER_EQUAL(cd.protocol_version, 0);
+            ENSURE_GREATER_EQUAL(cd.client_version, 0);
+            return contact_version{cd.protocol_version, cd.client_version};
         }
 
         void user_service::fire_contact_connected_event(const std::string& id)
