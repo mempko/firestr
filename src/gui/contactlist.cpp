@@ -70,12 +70,50 @@ namespace fire
 
         std::string user_text(
                 us::user_info_ptr c, 
-                bool online)
+                bool online,
+                const us::contact_version& version)
         {
             REQUIRE(c);
             std::stringstream ss;
-            ss << "<font color='" << (online ? "green" : "red") << "'>" << c->name() << "</font>";
+            std::string color = "red";
+            if(online)
+            {
+                color = "green";
+                if(version.client != u::CLIENT_VERSION)
+                    color = "blue";
+
+                if(version.protocol != u::PROTOCOL_VERSION)
+                    color = "purple";
+            }
+            ss << "<font color='" << color << "'>" << c->name() << "</font>";
             return ss.str();
+        }
+
+        std::string user_tooltip(
+                us::user_info_ptr c, 
+                bool online,
+                const us::contact_version& version)
+        {
+            REQUIRE(c);
+            std::string text = "offline";
+            if(online)
+            {
+                text = "online ";
+
+                if(version.client < u::CLIENT_VERSION)
+                    text = "older client ";
+                else if(version.client > u::CLIENT_VERSION)
+                    text = "newer client ";
+
+                if(version.protocol != u::PROTOCOL_VERSION)
+                    text = "incompatible protocol ";
+
+                std::stringstream ss;
+                ss << "(" << version.protocol << "." << version.client << ")";
+                text += ss.str();
+            }
+
+            return text;
         }
 
         user_info::user_info(
@@ -94,8 +132,10 @@ namespace fire
             setLayout(layout);
 
             bool online = is_online(p, _service);
-            _user_text = new QLabel{user_text(p, online).c_str()};
-            _user_text->setToolTip(p->address().c_str());
+            auto version = s->check_contact_version(p->id());
+            
+            _user_text = new QLabel{user_text(p, online, version).c_str()};
+            _user_text->setToolTip(user_tooltip(p, online, version).c_str());
 
             if(compact)
             {
@@ -122,7 +162,9 @@ namespace fire
             INVARIANT(_user_text);
 
             bool online = is_online(_contact, _service);
-            _user_text->setText(user_text(_contact, online).c_str());
+            auto version = _service->check_contact_version(_contact->id());
+            _user_text->setText(user_text(_contact, online, version).c_str());
+            _user_text->setToolTip(user_tooltip(_contact, online, version).c_str());
 
             if(_action && update_action) _action->setVisible(online);
         }
@@ -134,7 +176,9 @@ namespace fire
             INVARIANT(_user_text);
 
             bool online = is_online(_contact, _service , !f(*_contact));
-            _user_text->setText(user_text(_contact, online).c_str());
+            auto version = _service->check_contact_version(_contact->id());
+            _user_text->setText(user_text(_contact, online, version).c_str());
+            _user_text->setToolTip(user_tooltip(_contact, online, version).c_str());
 
             if(_action && update_action) _action->setVisible(online);
         }
