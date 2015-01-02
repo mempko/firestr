@@ -414,9 +414,14 @@ namespace fire
                 REQUIRE_FALSE(s.empty());
                 INVARIANT(state);
 
-                return 
-                    state->safeDoString(s.c_str(), "app") ? 
-                    error_info{-1, ""} : error_info{state->getLastErrorLine(), state->getLastError()};
+                if (state->safeDoString(s.c_str(), "app"))
+                    return error_info{ -1, "" };
+
+                error_info r;
+                r.line = state->getLastErrorLine();
+                r.message = state->getLastError();
+
+                return r;                   
             }
             catch(std::exception& e)
             {
@@ -456,7 +461,6 @@ namespace fire
                 _error.message.clear();
 
                 auto error = execute(code);
-
                 if(!error.message.empty())
                     report_error(error.message, error.line);
             }
