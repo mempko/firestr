@@ -43,7 +43,8 @@ namespace fire
 
         value::value() : _v{} {}
         value::value(bool v) : _v{v} {}
-        value::value(int v) : _v{v} {}
+        value::value(int v) : _v{static_cast<int64_t>(v)} {}
+        value::value(int64_t v) : _v{v} {}
         value::value(size_t v) : _v{v} {}
         value::value(double v) : _v{v} {}
         value::value(const std::string& v) : _v{to_bytes(v)} {}
@@ -53,7 +54,8 @@ namespace fire
         value::value(const value& o) : _v{o._v} {}
 
         value::operator bool() const { return as_bool();}
-        value::operator int() const { return as_int();}
+        value::operator int() const { return static_cast<int>(as_int());}
+        value::operator int64_t() const { return as_int();}
         value::operator size_t() const { return as_size();}
         value::operator double() const { return as_double();}
         value::operator std::string() const { return as_string();}
@@ -62,7 +64,8 @@ namespace fire
         value::operator array() const { return as_array();}
 
         value& value::operator=(bool v) { _v = v; return *this;}
-        value& value::operator=(int v) { _v = v; return *this;}
+        value& value::operator=(int v) { _v = static_cast<int64_t>(v); return *this;}
+        value& value::operator=(int64_t v) { _v = v; return *this;}
         value& value::operator=(size_t v) { _v = v; return *this;}
         value& value::operator=(double v) { _v = v; return *this;}
         value& value::operator=(const std::string& v) { _v = to_bytes(v); return *this;}
@@ -86,10 +89,10 @@ namespace fire
             throw std::runtime_error("value is not an boolean");
         }
 
-        int value::as_int() const 
+        int64_t value::as_int() const 
         try
         { 
-            return boost::any_cast<int>(_v); 
+            return boost::any_cast<int64_t>(_v); 
         }
         catch (...)
         {
@@ -177,7 +180,7 @@ namespace fire
         }
                 
         bool value::is_bool() const { return _v.type() == typeid(bool);}
-        bool value::is_int() const { return _v.type() == typeid(int);}
+        bool value::is_int() const { return _v.type() == typeid(int64_t);}
         bool value::is_size() const { return _v.type() == typeid(size_t);}
         bool value::is_double() const { return _v.type() == typeid(double);}
         bool value::is_bytes() const { return _v.type() == typeid(bytes);}
@@ -265,7 +268,7 @@ namespace fire
         }
 
         void encode(std::ostream& o, bool v) { o << ( v ? 'T' : 'F'); }
-        void encode(std::ostream& o, int v) { enc(o, 'i', ';', v); }
+        void encode(std::ostream& o, int64_t v) { enc(o, 'i', ';', v); }
         void encode(std::ostream& o, size_t v) { enc(o, 's', ';', v); }
         void encode(std::ostream& o, double v) { enc(o, 'r', ';', v); }
 
@@ -394,9 +397,9 @@ namespace fire
             return r;
         }
 
-        int decode_int(std::istream& i) 
+        int64_t decode_int(std::istream& i) 
         { 
-            return dec<int>(i, "int", 'i', ';'); 
+            return dec<int64_t>(i, "int", 'i', ';'); 
         }
 
         size_t decode_size(std::istream& i)

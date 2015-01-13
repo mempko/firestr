@@ -517,13 +517,15 @@ namespace fire
                 {
                     //extract key
                     std::string key;
-                    int ik = -1;
-                    if(lua_isnumber(L, -2)) ik = lua_tonumber(L, -2); 
+                    int64_t ik = -1;
+                    if(lua_isinteger(L, -2)) ik = lua_tointeger(L, -2); 
+                    else if(lua_isnumber(L, -2)) ik = lua_tonumber(L, -2); 
                     else key = lua_tostring(L, -2);
 
                     //extract value
                     u::value v;
-                    if(lua_isnumber(L, -1)) v = lua_tonumber(L, -1);
+                    if(lua_isinteger(L, -1)) v = static_cast<int64_t>(lua_tointeger(L, -1));
+                    else if(lua_isnumber(L, -1)) v = lua_tonumber(L, -1);
                     else if(lua_isstring(L, -1)) v = std::string{lua_tostring(L, -1)};
                     else if(lua_istable(L, -1)) v = to_dict(L, lua_gettop(L));
                     else 
@@ -623,9 +625,11 @@ namespace fire
 
                 u::value v;
                 if(lua_istable(L, param)) v = to_dict(L, param);
+                else if(lua_isinteger(L, param)) v = static_cast<int64_t>(lua_tointeger(L, param));
                 else if(lua_isnumber(L, param)) v = lua_tonumber(L, param);
                 else if(lua_isstring(L, param)) v = std::string{lua_tostring(L, param)};
-                else if(lua_isboolean(L, param)) v = lua_toboolean(L, param) ? 1 : 0;
+                else if(lua_isboolean(L, param)) v = lua_toboolean(L, param) != 0;
+                else v = false;
                 return v;
             }
 
