@@ -518,8 +518,8 @@ namespace fire
                     //extract key
                     std::string key;
                     int64_t ik = -1;
-                    if(lua_isinteger(L, -2)) ik = lua_tointeger(L, -2); 
-                    else if(lua_isnumber(L, -2)) ik = lua_tonumber(L, -2); 
+                    if(lua_isinteger(L, -2)) ik = lua_tointeger(L, -2);
+                    else if(lua_isnumber(L, -2)) ik = lua_tonumber(L, -2);
                     else key = lua_tostring(L, -2);
 
                     //extract value
@@ -550,7 +550,7 @@ namespace fire
 
                         //lua arrays start with 1
                         if(ik != 0) ik --;
-                        if(ik >= static_cast<int>(a->size())) a->resize(ik + 1);
+                        if(ik >= static_cast<int64_t>(a->size())) a->resize(ik + 1);
 
                         (*a)[ik] = v;
                     }
@@ -567,6 +567,8 @@ namespace fire
             {
                 REQUIRE(L);
 
+                if(v.is_int())
+                    lua_pushinteger(L, v.as_int());
                 if(v.is_double())
                     lua_pushnumber(L, v.as_double());
                 else if(v.is_bytes())
@@ -584,7 +586,7 @@ namespace fire
                 int i = 1;
                 for(const auto& v : a)
                 {
-                    lua_pushnumber(L, i);
+                    lua_pushinteger(L, i);
                     push_value(L, v);
                     lua_settable(L, table);
                     i++;
