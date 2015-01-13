@@ -1688,6 +1688,8 @@ namespace SLB {
           {"tostring", luaB_tostring},
           {"type", luaB_type},
           {"xpcall", luaB_xpcall},
+          {"_G", NULL},
+          {"_VERSION", NULL},
           {NULL, NULL}
       };
 
@@ -1716,8 +1718,9 @@ namespace SLB {
           //{LUA_IOLIBNAME, luaopen_io},
           //{LUA_OSLIBNAME, luaopen_os},
           {LUA_STRLIBNAME, luaopen_string},
-          {LUA_BITLIBNAME, luaopen_bit32},
+          //{LUA_BITLIBNAME, luaopen_bit32}, //bitlib deprecated
           {LUA_MATHLIBNAME, luaopen_math},
+          {LUA_UTF8LIBNAME, luaopen_utf8},
           //{LUA_DBLIBNAME, luaopen_debug},
           {NULL, NULL}
       };

@@ -32,7 +32,9 @@ include_directories(.)
 include_directories(..)
 include_directories(lua)
 
-file(GLOB src *.cpp *.c)
+add_definitions(-DMAKE_LIB=1)
+
+file(GLOB src *.cpp lua/*.c)
 
 add_library(fire_slb STATIC
     ${src})

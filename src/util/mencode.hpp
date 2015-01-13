@@ -57,6 +57,7 @@ namespace fire
                 value();
                 value(bool v);
                 value(int v);
+                value(int64_t v);
                 value(size_t v);
                 value(double v);
                 value(const std::string& v);
@@ -68,6 +69,7 @@ namespace fire
             public:
                 operator bool() const;
                 operator int() const;
+                operator int64_t() const;
                 operator size_t() const;
                 operator double() const;
                 operator std::string() const;
@@ -78,6 +80,7 @@ namespace fire
             public:
                 value& operator=(bool v);
                 value& operator=(int v);
+                value& operator=(int64_t v);
                 value& operator=(size_t v);
                 value& operator=(double v);
                 value& operator=(const std::string& v);
@@ -88,7 +91,7 @@ namespace fire
 
             public:
                 bool as_bool() const;
-                int as_int() const;
+                int64_t as_int() const;
                 size_t as_size() const;
                 double as_double() const;
                 std::string as_string() const;
