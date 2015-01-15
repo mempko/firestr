@@ -105,8 +105,10 @@ namespace fire
                 else if(version.client > u::CLIENT_VERSION)
                     text = "newer client ";
 
-                if(version.protocol != u::PROTOCOL_VERSION)
-                    text = "incompatible protocol ";
+                if(version.protocol < u::PROTOCOL_VERSION)
+                    text = "older protocol ";
+                if(version.protocol > u::PROTOCOL_VERSION)
+                    text = "newer protocol ";
 
                 std::stringstream ss;
                 ss << "(" << version.protocol << "." << version.client << ")";
