@@ -5,8 +5,8 @@ Maintainer: Maxim Khailo (Firestr Creator) <firestr.dev@gmail.com>
 Build-Depends: debhelper (>= 8.0.0), cmake, qtbase5-dev, libbotan1.10-dev, libboost-system-dev, libboost-program-options-dev, libboost-filesystem-dev, libboost-regex-dev, libboost-thread-dev, cdbs
 Standards-Version: 3.9.4
 Homepage: http://www.firestr.com
-#Vcs-Git: git://git.debian.org/collab-maint/firestr.git
-#Vcs-Browser: http://git.debian.org/?p=collab-maint/firestr.git;a=summary
+Vcs-Git: git://github.com/mempko/firestr.git
+Vcs-Browser: http://github.com/mempko/firestr
 
 Package: firestr
 Architecture: any

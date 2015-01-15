@@ -1,3 +1,9 @@
+firestr (0.5) trusty; urgency=low
+
+  * Lua 5.3.0
+
+ -- mempko <mempko@mempko-g780>  Mon, 13 Jan 2015 11:10:17 -0500
+
 firestr (0.4) trusty; urgency=low
 
   * New smaller messages
