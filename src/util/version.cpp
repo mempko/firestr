@@ -38,7 +38,7 @@ namespace fire
     namespace util
     {
         const int PROTOCOL_VERSION = 0;
-        const int CLIENT_VERSION = 4;
+        const int CLIENT_VERSION = 5;
 
         std::string version_string()
         {
