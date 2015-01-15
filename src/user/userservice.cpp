@@ -66,8 +66,8 @@ namespace fire
             const std::string INTRODUCTION = "contact_intro";
             const std::string PING = "!";
             const size_t PING_THREAD_SLEEP = 500; //half a second
-            const size_t PING_TICKS = 6; //3 seconds
-            const size_t PING_THRESH = 10*PING_TICKS; 
+            const size_t PING_TICKS = 12; //6 seconds
+            const size_t PING_THRESH = 5*PING_TICKS; 
             const size_t RECONNECT_TICKS = 30; //send reconnect every minute
             const size_t RECONNECT_THREAD_SLEEP = 2000; //two seconds
             const char CONNECTED = 'c';
@@ -746,14 +746,16 @@ namespace fire
             if(_contacts.count(id) == 0) return;
 
             auto& p  = _contacts[id];
-            if(!p.contact || (p.state == contact_data::OFFLINE && !force)) return;
-            if(!by_id(p.contact->id()))
+            auto& c = p.contact;
+
+            if(!c || (p.state == contact_data::OFFLINE && !force)) return;
+            CHECK(c);
+
+            if(!by_id(c->id()))
             {
-                p.contact.reset();
+                c.reset();
                 return;
             }
-            auto c = p.contact;
-            CHECK(c);
 
             ping r = {c->address(), _user->info().id(), s};
             mail()->push_outbox(convert(r));
