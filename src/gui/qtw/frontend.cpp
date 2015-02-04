@@ -540,6 +540,7 @@ namespace fire
             {
                 auto d = get_widget<QComboBox>(id, widgets);
                 if(!d) return "";
+                if(index < 0 || index >= d->count()) return "";
 
                 return convert(d->itemText(index));
             }
@@ -564,6 +565,7 @@ namespace fire
             {
                 auto d = get_widget<QComboBox>(id, widgets);
                 if(!d) return;
+                if(index >= d->count()) return;
 
                 d->setCurrentIndex(index);
             }
