@@ -61,7 +61,7 @@ namespace fire
                 bool _auto_scroll;
                 QWidget* _root;
                 QVBoxLayout* _layout; 
-                bool _just_added = false;
+                short _just_added = 0;
         };
     }
 }
