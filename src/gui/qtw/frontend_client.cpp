@@ -780,18 +780,21 @@ namespace fire
             void qt_frontend_client::do_place(api::ref_id id, int r, int c)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->place(id, r, c);
             }
 
             void qt_frontend_client::do_place_across(api::ref_id id, int r, int c, int row_span, int col_span)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->place_across(id, r, c, row_span, col_span);
             }
 
             void qt_frontend_client::do_widget_enable(api::ref_id id, bool b)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->widget_enable(id, b);
             }
 
@@ -799,6 +802,7 @@ namespace fire
             {
                 REQUIRE(p);
                 INVARIANT(_f);
+                if(_done) { p->set_value(false); return; }
                 p->set_value(_f->is_widget_enabled(id));
             }
 
@@ -812,12 +816,14 @@ namespace fire
             {
                 REQUIRE(p);
                 INVARIANT(_f);
+                if(_done) { p->set_value(false); return; }
                 p->set_value(_f->is_widget_visible(id));
             }
 
             void qt_frontend_client::do_widget_set_style(api::ref_id id, const std::string& s)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->widget_set_style(id, s);
             }
 
@@ -825,26 +831,29 @@ namespace fire
             void qt_frontend_client::do_add_grid(api::ref_id id)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->add_grid(id);
             }
 
             void qt_frontend_client::do_grid_place(api::ref_id grid_id, api::ref_id widget_id, int r, int c)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->grid_place(grid_id, widget_id, r, c);
             }
 
             void qt_frontend_client::do_grid_place_across(api::ref_id grid_id, api::ref_id widget_id, int r, int c, int row_span, int col_span)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->grid_place_across(grid_id, widget_id, r, c, row_span, col_span);
             }
-
 
             //button
             void qt_frontend_client::do_add_button(api::ref_id id, const std::string& t)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->add_button(id, t);
             }
 
@@ -852,18 +861,21 @@ namespace fire
             {
                 REQUIRE(p);
                 INVARIANT(_f);
+                if(_done) { p->set_value(""); return; }
                 p->set_value(_f->button_get_text(id));
             }
 
             void qt_frontend_client::do_button_set_text(api::ref_id id, const std::string& t)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->button_set_text(id, t);
             }
 
             void qt_frontend_client::do_button_set_image(api::ref_id id, api::ref_id image_id)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->button_set_image(id, image_id);
             }
 
@@ -871,6 +883,7 @@ namespace fire
             void qt_frontend_client::do_add_label(api::ref_id id, const std::string& t)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->add_label(id, t);
             }
 
@@ -878,12 +891,14 @@ namespace fire
             {
                 REQUIRE(p);
                 INVARIANT(_f);
+                if(_done) { p->set_value(""); return; }
                 p->set_value(_f->label_get_text(id));
             }
 
             void qt_frontend_client::do_label_set_text(api::ref_id id, const std::string& t)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->label_set_text(id, t);
             }
 
@@ -891,6 +906,7 @@ namespace fire
             void qt_frontend_client::do_add_edit(api::ref_id id, const std::string& t)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->add_edit(id, t);
             }
 
@@ -898,12 +914,14 @@ namespace fire
             {
                 REQUIRE(p);
                 INVARIANT(_f);
+                if(_done) { p->set_value(""); return; }
                 p->set_value(_f->edit_get_text(id));
             }
 
             void qt_frontend_client::do_edit_set_text(api::ref_id id, const std::string& t)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->edit_set_text(id, t);
             }
 
@@ -911,6 +929,7 @@ namespace fire
             void qt_frontend_client::do_add_text_edit(api::ref_id id, const std::string& t)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->add_text_edit(id, t);
             }
 
@@ -918,12 +937,14 @@ namespace fire
             {
                 REQUIRE(p);
                 INVARIANT(_f);
+                if(_done) { p->set_value(""); return; }
                 p->set_value(_f->text_edit_get_text(id));
             }
 
             void qt_frontend_client::do_text_edit_set_text(api::ref_id id, const std::string& t)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->text_edit_set_text(id, t);
             }
 
@@ -931,24 +952,28 @@ namespace fire
             void qt_frontend_client::do_add_list(api::ref_id id)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->add_list(id);
             }
 
             void qt_frontend_client::do_list_add(api::ref_id list_id, api::ref_id widget_id)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->list_add(list_id, widget_id);
             }
 
             void qt_frontend_client::do_list_remove(api::ref_id list_id, api::ref_id widget_id)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->list_remove(list_id, widget_id);
             }
 
             void qt_frontend_client::do_list_clear(api::ref_id id)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->list_clear(id);
             }
 
@@ -956,12 +981,14 @@ namespace fire
             {
                 REQUIRE(p);
                 INVARIANT(_f);
+                if(_done) { p->set_value(0); return; }
                 p->set_value(_f->list_size(id));
             }
 
             void qt_frontend_client::do_add_dropdown(api::ref_id id)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->add_dropdown(id);
             }
 
@@ -969,12 +996,14 @@ namespace fire
             {
                 REQUIRE(p);
                 INVARIANT(_f);
+                if(_done) { p->set_value(0); return; }
                 p->set_value(_f->dropdown_size(id));
             }
 
             void qt_frontend_client::do_dropdown_add_item(api::ref_id id, const std::string& e)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->dropdown_add_item(id, e);
             }
 
@@ -982,6 +1011,7 @@ namespace fire
             {
                 REQUIRE(p);
                 INVARIANT(_f);
+                if(_done) { p->set_value(""); return; }
                 p->set_value(_f->dropdown_get_item(id, index));
             }
 
@@ -989,18 +1019,21 @@ namespace fire
             {
                 REQUIRE(p);
                 INVARIANT(_f);
+                if(_done) { p->set_value(0); return; }
                 p->set_value(_f->dropdown_get_selected(id));
             }
 
             void qt_frontend_client::do_dropdown_select(api::ref_id id, int index)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->dropdown_select(id, index);
             }
 
             void qt_frontend_client::do_dropdown_clear(api::ref_id id)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->dropdown_clear(id);
             }
 
@@ -1008,12 +1041,14 @@ namespace fire
             void qt_frontend_client::do_add_pen(api::ref_id id, const std::string& color, int width)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->add_pen(id, color, width);
             }
 
             void qt_frontend_client::do_pen_set_width(api::ref_id id, int width)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->pen_set_width(id, width);
             }
 
@@ -1021,60 +1056,70 @@ namespace fire
             void qt_frontend_client::do_add_draw(api::ref_id id, int width, int height)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->add_draw(id, width, height);
             }
 
             void qt_frontend_client::do_draw_line(api::ref_id id, api::ref_id line_id, api::ref_id pen, double x1, double y1, double x2, double y2)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->draw_line(id, line_id, pen, x1, y1, x2, y2);
             }
 
             void qt_frontend_client::do_draw_circle(api::ref_id id, api::ref_id circle_id, api::ref_id pen, double x, double y, double r)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->draw_circle(id, circle_id, pen, x, y, r);
             }
 
             void qt_frontend_client::do_draw_image(api::ref_id id, api::ref_id image_ref_id, api::ref_id image_id, double x, double y, double w, double h)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->draw_image(id, image_ref_id, image_id, x, y, w, h);
             }
 
             void qt_frontend_client::do_draw_clear(api::ref_id id)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->draw_clear(id);
             }
 
             void qt_frontend_client::do_draw_line_set(api::ref_id id, api::ref_id line, double x1, double y1, double x2, double y2)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->draw_line_set(id, line, x1, y1, x2, y2);
             }
 
             void qt_frontend_client::do_draw_line_set_pen(api::ref_id id, api::ref_id line, api::ref_id pen)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->draw_line_set_pen(id, line, pen);
             }
 
             void qt_frontend_client::do_draw_circle_set(api::ref_id id, api::ref_id circle, double x, double y, double r)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->draw_circle_set(id, circle, x, y, r);
             }
 
             void qt_frontend_client::do_draw_circle_set_pen(api::ref_id id, api::ref_id circle, api::ref_id pen)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->draw_circle_set_pen(id, circle, pen);
             }
 
             void qt_frontend_client::do_draw_image_set(api::ref_id id, api::ref_id image, double x, double y, double w, double h)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->draw_image_set(id, image, x, y, w, h);
             }
 
@@ -1082,24 +1127,28 @@ namespace fire
             void qt_frontend_client::do_add_timer(api::ref_id id, int msec)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->add_timer(id, msec);
             }
 
             void qt_frontend_client::do_timer_stop(api::ref_id id)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->timer_stop(id);
             }
 
             void qt_frontend_client::do_timer_start(api::ref_id id)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->timer_start(id);
             }
 
             void qt_frontend_client::do_timer_set_interval(api::ref_id id, int msec)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->timer_set_interval(id, msec);
             }
 
@@ -1107,6 +1156,7 @@ namespace fire
             {
                 REQUIRE(p);
                 INVARIANT(_f);
+                if(_done) { p->set_value(false); return; }
                 p->set_value(_f->timer_running(id));
             }
 
@@ -1115,6 +1165,7 @@ namespace fire
             {
                 REQUIRE(p);
                 INVARIANT(_f);
+                if(_done) { p->set_value(false); return; }
                 p->set_value(_f->add_image(id, d));
             }
 
@@ -1122,6 +1173,7 @@ namespace fire
             {
                 REQUIRE(p);
                 INVARIANT(_f);
+                if(_done) { p->set_value(0); return; }
                 p->set_value(_f->image_width(id));
             }
 
@@ -1129,6 +1181,7 @@ namespace fire
             {
                 REQUIRE(p);
                 INVARIANT(_f);
+                if(_done) { p->set_value(0); return; }
                 p->set_value(_f->image_height(id));
             }
 
@@ -1136,18 +1189,21 @@ namespace fire
             void qt_frontend_client::do_add_mic(api::ref_id id, const std::string& codec)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->add_mic(id, codec);
             }
 
             void qt_frontend_client::do_mic_start(api::ref_id id)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->mic_start(id);
             }
 
             void qt_frontend_client::do_mic_stop(api::ref_id id)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->mic_stop(id);
             }
 
@@ -1156,24 +1212,28 @@ namespace fire
             void qt_frontend_client::do_add_speaker(api::ref_id id, const std::string& codec)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->add_speaker(id, codec);
             }
 
             void qt_frontend_client::do_speaker_mute(api::ref_id id)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->speaker_mute(id);
             }
 
             void qt_frontend_client::do_speaker_unmute(api::ref_id id)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->speaker_unmute(id);
             }
 
             void qt_frontend_client::do_speaker_play(api::ref_id id, const util::bytes& b)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->speaker_play(id, b);
             }
 
@@ -1183,6 +1243,7 @@ namespace fire
             {
                 REQUIRE(p);
                 INVARIANT(_f);
+                if(_done) { p->set_value(false); return; }
                 p->set_value(_f->save_file(name, data));
             }
 
@@ -1190,6 +1251,7 @@ namespace fire
             {
                 REQUIRE(p);
                 INVARIANT(_f);
+                if(_done) { p->set_value(false); return; }
                 p->set_value(_f->save_bin_file(name, data));
             }
 
@@ -1197,6 +1259,7 @@ namespace fire
             {
                 REQUIRE(p);
                 INVARIANT(_f);
+                if(_done) { p->set_value(api::file_data{}); return; }
                 p->set_value(_f->open_file());
             }
 
@@ -1204,6 +1267,7 @@ namespace fire
             {
                 REQUIRE(p);
                 INVARIANT(_f);
+                if(_done) { p->set_value(api::bin_file_data{}); return; }
                 p->set_value(_f->open_bin_file());
             }
 
@@ -1211,6 +1275,7 @@ namespace fire
             void qt_frontend_client::do_print(const std::string& t)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->print(t);
             }
 
@@ -1218,12 +1283,14 @@ namespace fire
             void qt_frontend_client::do_height(int h)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->height(h);
             }
 
             void qt_frontend_client::do_grow()
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->grow();
             }
 
@@ -1231,12 +1298,14 @@ namespace fire
             {
                 REQUIRE(p);
                 INVARIANT(_f);
+                if(_done) { p->set_value(false); return; }
                 p->set_value(_f->visible());
             }
 
             void qt_frontend_client::do_alert()
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->alert();
             }
 
@@ -1244,12 +1313,14 @@ namespace fire
             void qt_frontend_client::do_report_error(const std::string& e)
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->report_error(e);
             }
 
             void qt_frontend_client::do_reset()
             {
                 INVARIANT(_f);
+                if(_done) return;
                 _f->reset();
             }
         }
