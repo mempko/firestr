@@ -66,7 +66,8 @@ namespace fire
         void delete_layout_item(QLayoutItem* l, bool del_widget)
         {
             REQUIRE(l);
-            if(del_widget && l->widget()) delete l->widget();
+            if(del_widget && l->widget()) 
+                delete l->widget();
             delete l;
         }
 

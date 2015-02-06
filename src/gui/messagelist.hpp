@@ -37,6 +37,7 @@
 #include "gui/list.hpp"
 #include "gui/message.hpp"
 #include "gui/app/app_service.hpp"
+#include "gui/app/app_reaper.hpp"
 #include "conversation/conversation_service.hpp"
 #include "messages/new_app.hpp"
 
@@ -51,6 +52,7 @@ namespace fire
             public:
                 message_list(
                         app::app_service_ptr,
+                        app::app_reaper_ptr,
                         conversation::conversation_service_ptr,
                         conversation::conversation_ptr);
 
@@ -76,6 +78,7 @@ namespace fire
                 conversation::conversation_service_ptr _conversation_service;
                 conversation::conversation_ptr _conversation;
                 app::app_service_ptr _app_service;
+                app::app_reaper_ptr _app_reaper;
                 app_map _apps;
         };
     }

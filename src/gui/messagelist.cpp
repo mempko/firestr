@@ -55,13 +55,16 @@ namespace fire
     {
         message_list::message_list(
                 a::app_service_ptr app_service,
+                a::app_reaper_ptr app_reaper,
                 s::conversation_service_ptr conversation_s,
                 s::conversation_ptr conversation) :
             _conversation_service{conversation_s},
             _conversation{conversation},
-            _app_service{app_service}
+            _app_service{app_service},
+            _app_reaper{app_reaper}
         {
             REQUIRE(app_service);
+            REQUIRE(app_reaper);
             REQUIRE(conversation_s);
             REQUIRE(conversation);
 
@@ -72,6 +75,7 @@ namespace fire
             INVARIANT(_conversation_service);
             INVARIANT(_conversation);
             INVARIANT(_app_service);
+            INVARIANT(_app_reaper);
         }
 
         void message_list::add(message* m)
@@ -108,6 +112,7 @@ namespace fire
             INVARIANT(_conversation_service);
             INVARIANT(_conversation);
             INVARIANT(_app_service);
+            INVARIANT(_app_reaper);
 
             a::app_ptr app;
             s::app_metadatum m;
@@ -134,7 +139,10 @@ namespace fire
                 {
                     app = _app_service->create_new_app();
                     app->launched_local(false);
-                    auto c = new a::app_editor{n.from_id(), n.id(), _app_service, _conversation_service, _conversation, app};
+                    auto c = new a::app_editor{
+                        n.from_id(), n.id(), 
+                            _app_service, _app_reaper, 
+                            _conversation_service, _conversation, app};
                     CHECK(c->mail());
 
                     post->add(c->mail());
@@ -148,7 +156,10 @@ namespace fire
                     app = _app_service->create_app(u::decode<m::message>(n.data()));
                     if(app->id().empty()) return false;
 
-                    auto c = new a::script_app{n.from_id(), n.id(), app, _app_service, _conversation_service, _conversation};
+                    auto c = new a::script_app{
+                        n.from_id(), n.id(), app, 
+                            _app_service, _app_reaper, 
+                            _conversation_service, _conversation};
                     CHECK(c->mail());
 
                     m.id = app->id();
@@ -180,6 +191,7 @@ namespace fire
         void message_list::add_app_editor(const std::string& id)
         {
             INVARIANT(_app_service)
+            INVARIANT(_app_reaper)
             INVARIANT(_conversation);
             INVARIANT(_conversation_service);
 
@@ -190,13 +202,14 @@ namespace fire
             CHECK(app);
 
             //create app editor
-            auto t = new a::app_editor{_app_service, _conversation_service, _conversation, app};
+            auto t = new a::app_editor{_app_service, _app_reaper, _conversation_service, _conversation, app};
             add(t, nullptr, ""); 
         }
 
         void message_list::add_script_app(const std::string& id)
         {
             INVARIANT(_app_service)
+            INVARIANT(_app_reaper)
             INVARIANT(_conversation);
             INVARIANT(_conversation_service);
 
@@ -205,7 +218,7 @@ namespace fire
             if(!a) return;
 
             //create script app
-            auto t = new a::script_app{a, _app_service, _conversation_service, _conversation};
+            auto t = new a::script_app{a, _app_service, _app_reaper, _conversation_service, _conversation};
             add(t, a, id);
         }
 

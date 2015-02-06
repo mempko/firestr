@@ -220,7 +220,7 @@ namespace fire
                 }
             };
 
-            backend_client::backend_client(lua_api* api, m::mailbox_ptr m) : 
+            backend_client::backend_client(lua_api_ptr api, m::mailbox_ptr m) : 
                 s::service{m},
                 _api{api} 
             {
@@ -353,7 +353,7 @@ namespace fire
 
                 INVARIANT(_api);
 
-                script_message sm{m, _api};
+                script_message sm{m, _api.get()};
                 _api->message_received(sm);
             }
 
@@ -362,7 +362,7 @@ namespace fire
                 REQUIRE_EQUAL(m.meta.type, EVENT_MESSAGE);
                 INVARIANT(_api);
 
-                event_message em{m, _api};
+                event_message em{m, _api.get()};
                 _api->event_received(em);
             }
 

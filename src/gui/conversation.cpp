@@ -60,15 +60,18 @@ namespace fire
         conversation_widget::conversation_widget(
                 s::conversation_service_ptr conversation_service,
                 s::conversation_ptr conversation,
-                a::app_service_ptr app_service) :
-            _messages{new message_list{app_service, conversation_service, conversation}},
+                a::app_service_ptr app_service,
+                a::app_reaper_ptr app_reaper) :
+            _messages{new message_list{app_service, app_reaper, conversation_service, conversation}},
             _conversation{conversation},
             _conversation_service{conversation_service},
-            _app_service{app_service}
+            _app_service{app_service},
+            _app_reaper{app_reaper}
         {
             REQUIRE(conversation_service);
             REQUIRE(conversation);
             REQUIRE(app_service);
+            REQUIRE(app_reaper);
 
             init_handlers();
 
@@ -123,6 +126,7 @@ namespace fire
             INVARIANT(_messages);
             INVARIANT(_layout);
             INVARIANT(_app_service);
+            INVARIANT(_app_reaper);
             INVARIANT(_mail_service);
         }
 

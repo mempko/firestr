@@ -187,6 +187,11 @@ namespace fire
                     _done = true;
                     _c.notify_all();
                 }
+                
+                virtual bool is_done() const
+                {
+                    return _done;
+                }
 
             private:
                 std::deque<t> _q;

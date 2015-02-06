@@ -44,7 +44,7 @@ namespace fire
             struct backend_client : public api::backend, public service::service
             {
                 public:
-                    backend_client(lua_api*, fire::message::mailbox_ptr);
+                    backend_client(lua_api_ptr, fire::message::mailbox_ptr);
                     
                 public:
                     void run(const std::string& code);
@@ -70,7 +70,7 @@ namespace fire
                     void received_event_message(const fire::message::message& m);
 
                 private:
-                    lua_api* _api = nullptr;
+                    lua_api_ptr _api;
             };
 
             using backend_client_ptr = std::shared_ptr<backend_client>;

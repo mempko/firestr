@@ -36,6 +36,7 @@
 #include "gui/contactlist.hpp"
 #include "gui/conversation.hpp"
 #include "gui/app/app_service.hpp"
+#include "gui/app/app_reaper.hpp"
 #include "gui/mail_service.hpp"
 #include "message/postoffice.hpp"
 #include "user/userservice.hpp"
@@ -192,6 +193,7 @@ namespace fire
                 user::user_service_ptr _user_service;
                 conversation::conversation_service_ptr _conversation_service;
                 app::app_service_ptr _app_service;
+                app::app_reaper_ptr _app_reaper;
                 main_window_context _context;
                 bool _focus = true;
                 service::service_map _service_map;

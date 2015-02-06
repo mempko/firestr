@@ -37,6 +37,7 @@
 #include "gui/contactselect.hpp"
 #include "gui/mail_service.hpp"
 #include "gui/app/app_service.hpp"
+#include "gui/app/app_reaper.hpp"
 #include "conversation/conversation.hpp"
 #include "conversation/conversation_service.hpp"
 #include "service/service.hpp"
@@ -57,7 +58,8 @@ namespace fire
                 conversation_widget(
                         conversation::conversation_service_ptr, 
                         conversation::conversation_ptr,
-                        app::app_service_ptr);
+                        app::app_service_ptr,
+                        app::app_reaper_ptr);
                 ~conversation_widget();
 
             public:
@@ -105,6 +107,7 @@ namespace fire
                 conversation::conversation_ptr _conversation;
                 conversation::conversation_service_ptr _conversation_service;
                 app::app_service_ptr _app_service;
+                app::app_reaper_ptr _app_reaper;
         };
 
     }

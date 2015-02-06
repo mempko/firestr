@@ -59,6 +59,7 @@ namespace fire
             script_app::script_app(
                     app_ptr app, 
                     app_service_ptr as,
+                    app_reaper_ptr ar,
                     s::conversation_service_ptr conversation_s,
                     s::conversation_ptr conversation) :
                 generic_app{},
@@ -67,12 +68,14 @@ namespace fire
                 _conversation_service{conversation_s},
                 _conversation{conversation},
                 _app{app},
-                _app_service{as}
+                _app_service{as},
+                _app_reaper{ar}
             {
                 REQUIRE(conversation_s);
                 REQUIRE(conversation);
                 REQUIRE(app);
                 REQUIRE(as);
+                REQUIRE(ar);
 
                 init();
 
@@ -81,13 +84,16 @@ namespace fire
                 INVARIANT(_conversation);
                 INVARIANT(_app);
                 INVARIANT(_app_service);
+                INVARIANT(_app_reaper);
                 INVARIANT_FALSE(_id.empty());
             }
 
             script_app::script_app(
                     const std::string& from_id, 
                     const std::string& id, 
-                    app_ptr app, app_service_ptr as, 
+                    app_ptr app, 
+                    app_service_ptr as, 
+                    app_reaper_ptr ar, 
                     s::conversation_service_ptr conversation_s,
                     s::conversation_ptr conversation) :
                 generic_app{},
@@ -96,12 +102,14 @@ namespace fire
                 _conversation_service{conversation_s},
                 _conversation{conversation},
                 _app{app},
-                _app_service{as}
+                _app_service{as},
+                _app_reaper{ar}
             {
                 REQUIRE(conversation_s);
                 REQUIRE(conversation);
                 REQUIRE(app);
                 REQUIRE(as);
+                REQUIRE(ar);
                 REQUIRE_FALSE(id.empty());
 
                 init();
@@ -111,6 +119,7 @@ namespace fire
                 INVARIANT(_conversation);
                 INVARIANT(_app);
                 INVARIANT(_app_service);
+                INVARIANT(_app_reaper);
                 INVARIANT_FALSE(_id.empty());
             }
 
@@ -118,10 +127,14 @@ namespace fire
             {
                 INVARIANT(_app);
                 INVARIANT(_back);
+                INVARIANT(_app_reaper);
                 LOG << "closing app " << _app->name() << "(" << _app->id() << ")" << std::endl;
-                _front->stop();
-                _back->stop();
-                LOG << "closed app " << _app->name() << "(" << _app->id() << ")" << std::endl;
+                closed_app c;
+                c.name = _app->name();
+                c.id = _app->id();
+                c.front = _front;
+                c.back = _back;
+                _app_reaper->reap(c);
             }
 
             void script_app::setup_decorations()
@@ -187,7 +200,7 @@ namespace fire
                         _front.get());
                 _api->who_started_id = _from_id;
 
-                _back = std::make_shared<l::backend_client>(_api.get(), _mail); 
+                _back = std::make_shared<l::backend_client>(_api, _mail); 
 
                 //assign backend to frontend
                 _front->set_backend(_back.get());

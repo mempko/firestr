@@ -34,6 +34,7 @@
 
 #include "gui/app/app.hpp"
 #include "gui/app/app_service.hpp"
+#include "gui/app/app_reaper.hpp"
 #include "gui/app/generic_app.hpp"
 #include "gui/list.hpp"
 #include "gui/lua/api.hpp"
@@ -68,6 +69,7 @@ namespace fire
                     script_app(
                             app_ptr, 
                             app_service_ptr, 
+                            app_reaper_ptr, 
                             conversation::conversation_service_ptr, 
                             conversation::conversation_ptr);
                     script_app(
@@ -75,6 +77,7 @@ namespace fire
                             const std::string& id, 
                             app_ptr, 
                             app_service_ptr, 
+                            app_reaper_ptr, 
                             conversation::conversation_service_ptr, 
                             conversation::conversation_ptr);
                     ~script_app();
@@ -104,6 +107,7 @@ namespace fire
 
                     app_ptr _app;
                     app_service_ptr _app_service;
+                    app_reaper_ptr _app_reaper;
 
                 private:
                     qtw::qt_frontend_client_ptr _front;
