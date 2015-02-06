@@ -65,6 +65,7 @@ namespace fire
 
                 public:
                     void set_backend(api::backend*);
+                    void set_parent(QWidget* parent);
                     void stop();
 
                 public:

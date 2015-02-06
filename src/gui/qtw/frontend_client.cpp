@@ -190,6 +190,8 @@ namespace fire
 
             void qt_frontend_client::stop()
             {
+                INVARIANT(_f);
+                _f->reset();
                 _done = true;
             }
 
@@ -198,6 +200,13 @@ namespace fire
                 REQUIRE(b);
                 INVARIANT(_f);
                 _f->set_backend(b);
+            }
+
+            void qt_frontend_client::set_parent(QWidget* p)
+            {
+                REQUIRE(p);
+                INVARIANT(_f);
+                _f->set_parent(p);
             }
 
             //all widgets
@@ -758,7 +767,6 @@ namespace fire
                 if(_done) return;
                 emit got_report_error(e);
             }
-
 
             void qt_frontend_client::reset()
             {

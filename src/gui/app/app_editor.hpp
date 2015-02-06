@@ -43,6 +43,7 @@
 #include "gui/qtw/frontend.hpp"
 #include "gui/qtw/frontend_client.hpp"
 #include "gui/app/app_service.hpp"
+#include "gui/app/app_reaper.hpp"
 #include "util/crstring.hpp"
 
 #include <QObject>
@@ -120,6 +121,7 @@ namespace fire
                 public:
                     app_editor(
                             app_service_ptr, 
+                            app_reaper_ptr, 
                             conversation::conversation_service_ptr, 
                             conversation::conversation_ptr, 
                             app_ptr a = nullptr);
@@ -127,6 +129,7 @@ namespace fire
                             const std::string& from_id, 
                             const std::string& id, 
                             app_service_ptr, 
+                            app_reaper_ptr, 
                             conversation::conversation_service_ptr, 
                             conversation::conversation_ptr, 
                             app_ptr a = nullptr);
@@ -185,6 +188,7 @@ namespace fire
                     std::string _from_id;
                     std::string _id;
                     app_service_ptr _app_service;
+                    app_reaper_ptr _app_reaper;
                     conversation::conversation_service_ptr _conversation_service;
                     conversation::conversation_ptr _conversation;
                     fire::message::mailbox_ptr _mail;

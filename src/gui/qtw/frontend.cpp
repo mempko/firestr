@@ -145,15 +145,37 @@ namespace fire
                 ENSURE(layout)
             }
 
+            void delete_timers(timer_map& timers)
+            {
+                for(auto& t : timers)
+                {
+                    if(t.second == nullptr) continue;
+
+                    t.second->stop();
+                    delete t.second;
+                    t.second = nullptr;
+                }
+                timers.clear();
+            }
+
             qt_frontend::~qt_frontend()
             {
-                reset();
+                delete_timers(timers);
             }
 
             void qt_frontend::set_backend(api::backend* b)
             {
                 REQUIRE(b);
                 back = b;
+            }
+
+            void qt_frontend::set_parent(QWidget* parent)
+            {
+                REQUIRE(parent);
+                INVARIANT(canvas);
+
+                canvas->setParent(parent);
+                if(output) output->setParent(parent);
             }
 
             void qt_frontend::place(api::ref_id id, int r, int c)
@@ -1059,19 +1081,6 @@ namespace fire
             {
                 if(!output) return;
                 output->add(new QLabel{m.c_str()});
-            }
-
-            void delete_timers(timer_map& timers)
-            {
-                for(auto& t : timers)
-                {
-                    if(t.second == nullptr) continue;
-
-                    t.second->stop();
-                    delete t.second;
-                    t.second = nullptr;
-                }
-                timers.clear();
             }
 
             void qt_frontend::height(int h)

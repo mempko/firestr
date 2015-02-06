@@ -230,6 +230,7 @@ namespace fire
 
             app_editor::app_editor(
                     app_service_ptr app_service, 
+                    app_reaper_ptr app_reaper, 
                     s::conversation_service_ptr conversation_s, 
                     s::conversation_ptr conversation, 
                     app_ptr app) :
@@ -237,6 +238,7 @@ namespace fire
                 _from_id{conversation->user_service()->user().info().id()},
                 _id{u::uuid()},
                 _app_service{app_service},
+                _app_reaper{app_reaper},
                 _conversation_service{conversation_s},
                 _conversation{conversation},
                 _code{conversation->user_service()->user().info().id()},
@@ -244,6 +246,7 @@ namespace fire
                 _run_state{READY}
             {
                 REQUIRE(app_service);
+                REQUIRE(app_reaper);
                 REQUIRE(conversation_s);
                 REQUIRE(conversation);
                 REQUIRE(app);
@@ -255,12 +258,14 @@ namespace fire
                 ENSURE(_conversation_service);
                 ENSURE(_conversation);
                 ENSURE(_app_service);
+                ENSURE(_app_reaper);
             }
 
             app_editor::app_editor(
                     const std::string& from_id, 
                     const std::string& id, 
                     app_service_ptr app_service, 
+                    app_reaper_ptr app_reaper, 
                     s::conversation_service_ptr conversation_s, 
                     s::conversation_ptr conversation,
                     app_ptr app) :
@@ -268,6 +273,7 @@ namespace fire
                 _from_id{from_id},
                 _id{id},
                 _app_service{app_service},
+                _app_reaper{app_reaper},
                 _conversation_service{conversation_s},
                 _conversation{conversation},
                 _code{conversation->user_service()->user().info().id()},
@@ -276,6 +282,7 @@ namespace fire
                 
             {
                 REQUIRE(app_service);
+                REQUIRE(app_reaper);
                 REQUIRE(conversation_s);
                 REQUIRE(conversation);
                 REQUIRE(app);
@@ -287,14 +294,24 @@ namespace fire
                 ENSURE(_conversation_service);
                 ENSURE(_conversation);
                 ENSURE(_app_service);
+                ENSURE(_app_reaper);
             }
 
             app_editor::~app_editor()
             {
                 INVARIANT(_conversation);
+                INVARIANT(_front);
                 INVARIANT(_back);
-                _front->stop();
-                _back->stop();
+                INVARIANT(_app);
+                INVARIANT(_app_reaper);
+
+                LOG << "closing app " << _app->name() << "(" << _app->id() << ")" << std::endl;
+                closed_app c;
+                c.name = _app->name();
+                c.id = _app->id();
+                c.front = _front;
+                c.back = _back;
+                _app_reaper->reap(c);
             }
 
             void app_editor::init()
@@ -305,6 +322,7 @@ namespace fire
                 INVARIANT(_conversation);
                 INVARIANT(_conversation->user_service());
                 INVARIANT(_app_service);
+                INVARIANT(_app_reaper);
                 INVARIANT(_app);
 
                 set_title("App Editor");
@@ -400,7 +418,7 @@ namespace fire
                         _conversation_service, 
                         _front.get());
 
-                _back = std::make_shared<l::backend_client>(_api.get(), _mail); 
+                _back = std::make_shared<l::backend_client>(_api, _mail); 
 
                 _front->set_backend(_back.get());
 

@@ -581,6 +581,7 @@ namespace fire
             _master->add(_conversation_service->mail());
 
             _app_service = std::make_shared<a::app_service>(_user_service, _mail);
+            _app_reaper = std::make_shared<a::app_reaper>(this);
 
             ENSURE(_user_service);
             ENSURE(_conversation_service);
@@ -1091,7 +1092,7 @@ namespace fire
             auto s = _conversation_service->conversation_by_id(id);
             if(!s) return;
 
-            auto sw = new conversation_widget{_conversation_service, s, _app_service};
+            auto sw = new conversation_widget{_conversation_service, s, _app_service, _app_reaper};
 
             std::string name = convert(NEW_CONVERSATION_NAME);
 
