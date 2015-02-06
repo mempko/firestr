@@ -94,8 +94,6 @@ namespace fire
                 private:
                     void setup_decorations();
                     void init();
-                    void received_script_message(const fire::message::message&);
-                    void received_event_message(const fire::message::message&);
 
                 private:
                     std::string _from_id;
