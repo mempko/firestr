@@ -312,7 +312,7 @@ namespace fire
 
                 if(cb.empty()) return;
 
-                auto index = event.as_int();
+                int index = event.as_int();
 
                 api->front->dropdown_select(id, index);
                 api->state->call(cb, index);
