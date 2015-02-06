@@ -236,38 +236,6 @@ namespace fire
                 return _mail;
             }
 
-            void script_app::received_script_message(const m::message& m)
-            {
-                REQUIRE_EQUAL(m.meta.type, l::SCRIPT_MESSAGE);
-
-                INVARIANT(_conversation);
-                INVARIANT(_api);
-
-                bool local = m.meta.extra.has("local_app_id");
-                auto id = m.meta.extra["from_id"].as_string();
-
-                if(!local && !_conversation->user_service()->by_id(id)) 
-                    return;
-
-                l::script_message sm{m, _api.get()};
-                _api->message_received(sm);
-            }
-
-            void script_app::received_event_message(const m::message& m)
-            {
-                REQUIRE_EQUAL(m.meta.type, l::EVENT_MESSAGE);
-                INVARIANT(_conversation);
-                INVARIANT(_api);
-
-                auto id = m.meta.extra["from_id"].as_string();
-
-                if(!_conversation->user_service()->by_id(id)) 
-                    return;
-
-                l::event_message em{m, _api.get()};
-                _api->event_received(em);
-            }
-
             void script_app::clone_app()
             {
                 INVARIANT(_app_service);
