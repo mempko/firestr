@@ -80,6 +80,8 @@ namespace fire
 
             private slots:
                 void about();
+                void add_locator();
+                void send_invite();
                 void create_invite();
                 void add_contact();
                 void show_contact_list();
@@ -155,6 +157,7 @@ namespace fire
                 QAction *_about_action = nullptr;
 
                 QMenu *_contact_menu = nullptr;
+                QAction *_send_invite_action = nullptr;
                 QAction *_create_invite_action = nullptr;
                 QAction *_add_contact_action = nullptr;
                 QAction *_contact_list_action = nullptr;

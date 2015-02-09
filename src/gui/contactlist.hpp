@@ -127,6 +127,8 @@ namespace fire
                 user::user_service_ptr _service;
         };
 
+       std::string add_new_greeter(user::user_service_ptr service, QWidget* parent);
+
         class intro_info : public QWidget
         {
             Q_OBJECT
@@ -234,6 +236,7 @@ namespace fire
 #endif
 
         bool add_contact_gui(user::user_service_ptr, QWidget*);
+        void send_contact_file(user::user_service_ptr, QWidget* parent);
         void create_contact_file(user::user_service_ptr, QWidget* parent);
     }
 }

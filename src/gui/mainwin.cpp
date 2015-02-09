@@ -233,15 +233,36 @@ namespace fire
             if(ok && !r.isEmpty()) name = convert(r);
             else return {};
 
-            std::string pass = "";
-            auto p = QInputDialog::getText(
-                    0, 
-                    qApp->tr("Create Password"),
-                    qApp->tr("Password"),
-                    QLineEdit::Password, pass.c_str(), &ok);
+            bool pass_done = false;
 
-            if(ok && !p.isEmpty()) pass = convert(p);
-            else return {};
+            std::string pass = "";
+            do 
+            {
+                auto p = QInputDialog::getText(
+                        0, 
+                        qApp->tr("Create Password"),
+                        qApp->tr("Choose a Password"),
+                        QLineEdit::Password, pass.c_str(), &ok);
+
+                if(ok && !p.isEmpty()) pass = convert(p);
+                else return {};
+
+                std::string pass2 = "";
+                auto p2 = QInputDialog::getText(
+                        0, 
+                        qApp->tr("Verify Password"),
+                        qApp->tr("Type Password Again"),
+                        QLineEdit::Password, pass2.c_str(), &ok);
+
+                if(ok && !p2.isEmpty()) pass2 = convert(p2);
+                else return {};
+
+                pass_done = pass == pass2;
+
+                if(!pass_done)
+                    QMessageBox::warning(0, qApp->tr("Try Again"), qApp->tr("The passwords did not match, try again."));
+
+            } while(!pass_done);
 
             auto key = std::make_shared<sc::private_key>(pass);
             auto user = std::make_shared<us::local_user>(name, key);
@@ -325,26 +346,55 @@ namespace fire
 
             if(_user_service->user().contacts().empty())
             {
-                auto intro = new QLabel(
+                auto step1 = new QLabel(
                         tr(
-                        "<b>Welcome!</b><br><br>"
-                        "Add a new contact now.<br>"
-                        "You need to create an invite file,<br>"
-                        "and give it to another.<br>"
-                        "Once you both add each other,<br>"
-                        "you are connected!"
+                        "<h2>1. Add a Locator</h2>"
+                        "There is no central authority managing accounts.<br>"
+                        "A Locator helps create peer-to-peer connections.<br>"
+                        "A free Locator service is provided by mempko.com<br>"
+                        "You can also use a different Locator if you wish.<br>"
                         ));
-                auto ac = new QPushButton(tr("connect with someone"));
+                auto step1b = new QPushButton(tr("Add a Locator"));
 
-                auto intro2 = new QLabel(tr("Once connected, start a conversation"));
-                auto add_conversation = new QPushButton(tr("start conversation"));
-                l->addWidget(intro);
-                l->addWidget(ac);
-                l->addWidget(intro2);
-                l->addWidget(add_conversation);
+                auto step2 = new QLabel(
+                        tr(
+                        "<h2>2. Send an Invite file</h2>"
+                        "Since there is no central authority managing your <br>"
+                        "contacts, You must give your invite file to someone <br>"
+                        "and get theirs to connect with them.<br>"
+                        "You must also also use the same Locator.<br>"
+                        ));
+                auto step2b = new QPushButton(tr("Send invite"));
+                auto step3 = new QLabel(
+                        tr(
+                        "<h2>3. Add a Contact</h2>"
+                        "Once you have someone's invite file, you can add <br>"
+                        "them as a contact.<br>"
+                        ));
+                auto step3b = new QPushButton(tr("Add contact"));
 
-                connect(ac, SIGNAL(clicked()), this, SLOT(show_contact_list()));
-                connect(add_conversation, SIGNAL(clicked()), this, SLOT(create_conversation()));
+                auto step4 = new QLabel(
+                        tr(
+                        "<h2>4. Start a Conversation</h2>"
+                        "Once you are connected with someone, <br>"
+                        "You can start a conversation with them.<br>"
+                        ));
+
+                auto step4b = new QPushButton(tr("start conversation"));
+
+                l->addWidget(step1);
+                l->addWidget(step1b);
+                l->addWidget(step2);
+                l->addWidget(step2b);
+                l->addWidget(step3);
+                l->addWidget(step3b);
+                l->addWidget(step4);
+                l->addWidget(step4b);
+
+                connect(step1b, SIGNAL(clicked()), this, SLOT(add_locator()));
+                connect(step2b, SIGNAL(clicked()), this, SLOT(send_invite()));
+                connect(step3b, SIGNAL(clicked()), this, SLOT(show_contact_list()));
+                connect(step4b, SIGNAL(clicked()), this, SLOT(create_conversation()));
             }
             else
             {
@@ -405,6 +455,7 @@ namespace fire
             REQUIRE(_about_action);
             REQUIRE(_close_action);
             REQUIRE(_create_invite_action);
+            REQUIRE(_send_invite_action);
             REQUIRE(_add_contact_action);
             REQUIRE(_contact_list_action);
             REQUIRE(_chat_app_action);
@@ -418,6 +469,7 @@ namespace fire
             _main_menu->addAction(_close_action);
 
             _contact_menu = new QMenu{tr("&Contacts"), this};
+            _contact_menu->addAction(_send_invite_action);
             _contact_menu->addAction(_create_invite_action);
             _contact_menu->addAction(_add_contact_action);
             _contact_menu->addAction(_contact_list_action);
@@ -508,6 +560,9 @@ namespace fire
             _close_action = new QAction{tr("&Exit"), this};
             connect(_close_action, SIGNAL(triggered()), this, SLOT(close()));
 
+            _send_invite_action = new QAction{tr("&Send Invite"), this};
+            connect(_send_invite_action, SIGNAL(triggered()), this, SLOT(send_invite()));
+
             _create_invite_action = new QAction{tr("&Save Invite"), this};
             connect(_create_invite_action, SIGNAL(triggered()), this, SLOT(create_invite()));
 
@@ -544,6 +599,7 @@ namespace fire
             ENSURE(_about_action);
             ENSURE(_close_action);
             ENSURE(_create_invite_action);
+            ENSURE(_send_invite_action);
             ENSURE(_contact_list_action);
             ENSURE(_create_conversation_action);
             ENSURE(_rename_conversation_action);
@@ -587,6 +643,18 @@ namespace fire
             ENSURE(_conversation_service);
             ENSURE(_encrypted_channels);
             ENSURE(_app_service);
+        }
+
+        void main_window::add_locator()
+        {
+            INVARIANT(_user_service);
+            add_new_greeter(_user_service, this);
+        }
+
+        void main_window::send_invite()
+        {
+            INVARIANT(_user_service);
+            send_contact_file(_user_service, this);
         }
 
         void main_window::create_invite()

@@ -40,6 +40,7 @@
 #include <QtWidgets>
 #include <QGridLayout>
 #include <QLabel>
+#include <QDesktopServices>
 
 #include <cstdlib>
 #include <sstream>
@@ -55,7 +56,8 @@ namespace fire
         namespace
         {
             const size_t TIMER_SLEEP = 5000;//in milliseconds
-            const char* GREETER_TIP = "A greeter helps connect you with your contacts.\nTry adding 'mempko.com:8080' and ask them to do the same.";
+            const char* GREETER_TIP = "A locator helps connect you with your contacts.\nTry adding 'mempko.com:8080' and ask them to do the same.";
+            const std::string DEFAULT_GREETER = "mempko.com:8080";
         }
 
         bool is_online(
@@ -210,13 +212,13 @@ namespace fire
             auto* greeters_layout = new QGridLayout{greeters_tab};
             if(_service->user().greeters().empty())
             {
-                tabs->addTab(greeters_tab, tr("greeters"));
+                tabs->addTab(greeters_tab, tr("locators"));
                 tabs->addTab(contacts_tab, tr("contacts"));
             }
             else
             {
                 tabs->addTab(contacts_tab, tr("contacts"));
-                tabs->addTab(greeters_tab, tr("greeters"));
+                tabs->addTab(greeters_tab, tr("locators"));
             }
 
             tabs->addTab(intro_tab, tr("introductions"));
@@ -467,24 +469,27 @@ namespace fire
             add(new greeter_info{_service, s});
         }
 
-        void greeter_list::add_greeter()
-        {
+       std::string add_new_greeter(us::user_service_ptr service, QWidget* parent)
+       {
+           REQUIRE(service);
+           REQUIRE(parent);
+
             bool ok = false;
             bool error = false;
-            std::string address = "mempko.com:8080";
+            std::string address = DEFAULT_GREETER;
 
             do
             {
                 try
                 {
                     QString r = QInputDialog::getText(
-                            0, 
-                            (error ? tr("Error, try again") : tr("Add New Greeter")),
-                            tr("Greeter Address"),
+                            parent, 
+                            (error ? parent->tr("Error, try again") : parent->tr("Add New Locator")),
+                            parent->tr("Locator Address"),
                             QLineEdit::Normal, address.c_str(), &ok);
 
                     if(ok && !r.isEmpty()) address = convert(r);
-                    else return;
+                    else return "";
 
                     error = false;
                 }
@@ -498,9 +503,16 @@ namespace fire
             //append port if not specified
             if(address.find(":") == std::string::npos) address.append(":7070");
 
-            auto host_port = n::parse_host_port(address);
+            service->add_greeter(address);
+            return address;
+       }
 
-            _service->add_greeter(address);
+        void greeter_list::add_greeter()
+        {
+            auto address = add_new_greeter(_service, this);
+            if(address.empty()) return;
+
+            auto host_port = n::parse_host_port(address);
             us::greet_server ts{host_port.first, host_port.second, ""};
             add_greeter(ts);
         }
@@ -532,7 +544,7 @@ namespace fire
 
             std::stringstream msg;
             msg << "Are you sure you want to remove `" << _address << "'?";
-            auto a = QMessageBox::warning(this, tr("Remove Greeter?"), msg.str().c_str(), QMessageBox::Yes | QMessageBox::No);
+            auto a = QMessageBox::warning(this, tr("Remove Locator?"), msg.str().c_str(), QMessageBox::Yes | QMessageBox::No);
             if(a != QMessageBox::Yes) return;
 
             _service->remove_greeter(_address);
@@ -806,6 +818,72 @@ namespace fire
             close();
         }
 
+        std::pair<std::string, bool> pick_greater(us::user_service_ptr s, QWidget* w)
+        {
+            auto total_greeters = s->user().greeters().size();
+            std::string greeter;
+            if(total_greeters == 1) greeter = greet_address(s->user().greeters().front());
+            else if(total_greeters > 1)
+            {
+                QStringList gs;
+                for(const auto& g : s->user().greeters())
+                    gs << greet_address(g).c_str();
+
+                bool ok;
+                auto g = QInputDialog::getItem(w, w->tr("Suggested Locator"),
+                        w->tr("Choose a Locator:"), gs, 0, false, &ok);
+                if (ok && !g.isEmpty())
+                    greeter = convert(g);
+                else return std::make_pair("", false);
+            }
+
+            return std::make_pair(greeter, true);
+        }
+
+        void send_contact_file(us::user_service_ptr s, QWidget* w)
+        {
+            REQUIRE(s);
+            REQUIRE(w);
+
+            const auto name = s->user().info().name();
+
+            //have user select contact file 
+            auto home = s->home();
+            std::string file = home + "/" + name + ".finvite";
+
+            //user chooses greeter
+            
+            auto greeter = pick_greater(s, w);
+            if(!greeter.second) return;
+
+            //save contact file
+            us::contact_file cf{ s->user().info(), greeter.first};
+            us::save_contact_file(file, cf);
+
+            //pick email
+            bool ok = false;
+            std::string email = "";
+            auto e = QInputDialog::getText(
+                    w, 
+                    w->tr("Email"),
+                    w->tr("Email To"),
+                    QLineEdit::Normal, email.c_str(), &ok);
+            if(ok && !e.isEmpty()) email = convert(e);
+            else return; 
+
+            std::stringstream url;
+
+            url << "mailto:" << email << "?subject=" << name << " Wants to connect with Fire★" 
+                << "&attachment=" << file 
+                << "&body=" << name << " wants to connect with you using Fire★. \n\n" 
+                                    << "Attached is an invite file. \n"
+                                    << "Add them and send them yours to connect.\n\n"
+                                    << "You can download Fire★ at http://firestr.com\n";
+
+            QDesktopServices::openUrl(QUrl(url.str().c_str()));
+
+        }
+
         void create_contact_file(us::user_service_ptr s, QWidget* w)
         {
             REQUIRE(s);
@@ -821,25 +899,11 @@ namespace fire
             if(file.isEmpty())
                 return;
 
-            //user chooses greeter
-            auto total_greeters = s->user().greeters().size();
-            std::string greeter;
-            if(total_greeters == 1) greeter = greet_address(s->user().greeters().front());
-            else if(total_greeters > 1)
-            {
-                QStringList gs;
-                for(const auto& g : s->user().greeters())
-                    gs << greet_address(g).c_str();
-
-                bool ok;
-                auto g = QInputDialog::getItem(w, w->tr("Suggested Greeter"),
-                        w->tr("Choose a greeter:"), gs, 0, false, &ok);
-                if (ok && !g.isEmpty())
-                    greeter = convert(g);
-            }
+            auto greeter = pick_greater(s, w);
+            if(!greeter.second) return;
 
             //save contact file
-            us::contact_file cf{ s->user().info(), greeter};
+            us::contact_file cf{ s->user().info(), greeter.first};
             us::save_contact_file(convert(file), cf);
         }
 
