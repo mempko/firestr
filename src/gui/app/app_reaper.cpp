@@ -88,7 +88,6 @@ namespace fire
             {
                 REQUIRE(_hidden);
                 if(!_closed.is_done()) stop();
-                delete _hidden;
             }
 
             void app_reaper::reap(closed_app& app)
