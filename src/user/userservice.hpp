@@ -74,6 +74,7 @@ namespace fire
         bool load_contact_file(const std::string& file, contact_file& cf);
 #endif
         bool save_contact_file(const std::string& file, const contact_file& cf);
+        void out_contact_file(std::ostream& o, const contact_file& cf);
 
         struct register_with_greeters {};
 

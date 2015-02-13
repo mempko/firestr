@@ -41,6 +41,8 @@
 #include <QGridLayout>
 #include <QLabel>
 #include <QDesktopServices>
+#include <QByteArray>
+#include <QDir>
 
 #include <cstdlib>
 #include <sstream>
@@ -840,6 +842,106 @@ namespace fire
             return std::make_pair(greeter, true);
         }
 
+        std::string eml_text(
+                us::user_service_ptr us, 
+                const std::string& greeter, 
+                const std::string& to)
+        {
+            REQUIRE(us);
+
+            const auto name = us->user().info().name();
+            const auto finvite = name + ".finvite";
+
+            std::stringstream s;
+            s << "Mine-Version: 1.0" << std::endl;
+            s << "Content-Type: multipart/mixed; boundary=\"=-QMLvUZDw9vjcdP10mjxn\"" << std::endl;
+            s << "To: " << to << std::endl;
+            s << "Subject: " << name << " wants to connect with Fire★" << std::endl << std::endl << std::endl;
+            s << "--=-QMLvUZDw9vjcdP10mjxn" << std::endl;
+            s << "Content-Type: text/plain" << std::endl;
+            s << "Content-Transfer-Encoding: 7bit" << std::endl;
+            s << std::endl;
+            s << name << " wants to connect with you using Fire★. \n\n" 
+              << "Attached is an invite file. \n"
+              << "Add them and send them yours to connect.\n\n"
+              << "You can download Fire★ at http://firestr.com\n";
+            s << std::endl << std::endl;
+
+            s << "--=-QMLvUZDw9vjcdP10mjxn" << std::endl;
+            s << "Content-Disposition: attachment; filename=\"" << finvite << "\"" << std::endl;
+            s << "Content-Type: text/plain; name=\"" << finvite << "\"; charset=\"UTF-8\"" << std::endl;
+            s << "Content-Transfer-Encoding: base64" << std::endl;
+            s << std::endl;
+
+            std::stringstream o;
+            us::contact_file cf{us->user().info(), greeter};
+            us::out_contact_file(o, cf);
+
+            QByteArray b{o.str().c_str()};
+            s << b.toBase64().data() << std::endl << std::endl;
+            s << "--=-QMLvUZDw9vjcdP10mjxn" << std::endl;
+
+            return s.str();
+        }
+
+        std::string create_eml_file(
+                us::user_service_ptr us, 
+                const std::string& greeter, 
+                const std::string& to)
+        {
+            REQUIRE(us);
+
+            const auto name = us->user().info().name();
+
+            const auto temp = convert(QDir::tempPath());
+            std::string eml_file = temp + "/" + std::string(QByteArray{to.c_str()}.toBase64().data()) + ".eml";
+            std::ofstream eml{eml_file.c_str()};
+            if(!eml) return "";
+
+            eml << eml_text(us, greeter, to);
+
+            return eml_file;
+        }
+
+        std::string ask_for_receiver_email(QWidget* w)
+        {
+            REQUIRE(w);
+
+            bool ok = false;
+            std::string to = "";
+            auto e = QInputDialog::getText(
+                    w, 
+                    w->tr("Email"),
+                    w->tr("Email To"),
+                    QLineEdit::Normal, to.c_str(), &ok);
+            if(ok && !e.isEmpty()) to = convert(e);
+
+            return to;
+        }
+
+#ifdef _WIN64
+        void send_contact_file(us::user_service_ptr s, QWidget* w)
+        {
+            REQUIRE(s);
+            REQUIRE(w);
+
+            //user chooses greeter
+            auto greeter = pick_greater(s, w);
+            if(!greeter.second) return;
+
+            //pick email
+            auto to = ask_for_receiver_email(w);
+            if(to.empty()) return;
+
+            auto eml = create_eml_file(s, greeter.first, to);
+            if(eml.empty()) return;
+
+            std::stringstream ss;
+            ss << "file://" << eml;
+            QDesktopServices::openUrl(QUrl(ss.str().c_str()));
+        }
+#else
+
         void send_contact_file(us::user_service_ptr s, QWidget* w)
         {
             REQUIRE(s);
@@ -852,7 +954,6 @@ namespace fire
             std::string file = home + "/" + name + ".finvite";
 
             //user chooses greeter
-            
             auto greeter = pick_greater(s, w);
             if(!greeter.second) return;
 
@@ -861,28 +962,23 @@ namespace fire
             us::save_contact_file(file, cf);
 
             //pick email
-            bool ok = false;
-            std::string email = "";
-            auto e = QInputDialog::getText(
-                    w, 
-                    w->tr("Email"),
-                    w->tr("Email To"),
-                    QLineEdit::Normal, email.c_str(), &ok);
-            if(ok && !e.isEmpty()) email = convert(e);
-            else return; 
+            auto to = ask_for_receiver_email(w);
+            if(to.empty()) return;
 
             std::stringstream url;
 
-            url << "mailto:" << email << "?subject=" << name << " Wants to connect with Fire★" 
-                << "&attachment=" << file 
-                << "&body=" << name << " wants to connect with you using Fire★. \n\n" 
+            url << "mailto:" << to << "?subject=" << name << " Wants to connect with Fire★" 
+                << "&attach=\"" << file  << "\""
+                << "&body=\"" << name << " wants to connect with you using Fire★. \n\n" 
                                     << "Attached is an invite file. \n"
                                     << "Add them and send them yours to connect.\n\n"
-                                    << "You can download Fire★ at http://firestr.com\n";
+                                    << "You can download Fire★ at http://firestr.com\n\"";
 
             QDesktopServices::openUrl(QUrl(url.str().c_str()));
 
         }
+#endif
+
 
         void create_contact_file(us::user_service_ptr s, QWidget* w)
         {

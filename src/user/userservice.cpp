@@ -961,14 +961,19 @@ namespace fire
             return false;
         }
 
+        void out_contact_file(std::ostream& o, const contact_file& cf)
+        {
+            o << cf.contact;
+            o << u::value{cf.greeter};
+        }
+
         bool save_contact_file(const std::string& file, const contact_file& cf)
         try
         {
             std::ofstream o(file.c_str(), std::fstream::out | std::fstream::binary);
             if(!o.good()) return false;
 
-            o << cf.contact;
-            o << u::value{cf.greeter};
+            out_contact_file(o, cf);
 
             return true;
         }
