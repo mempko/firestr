@@ -950,8 +950,8 @@ namespace fire
             const auto name = s->user().info().name();
 
             //have user select contact file 
-            auto home = s->home();
-            std::string file = home + "/" + name + ".finvite";
+            const auto temp = convert(QDir::tempPath());
+            std::string file = temp + "/" + name + ".finvite";
 
             //user chooses greeter
             auto greeter = pick_greater(s, w);
@@ -967,12 +967,12 @@ namespace fire
 
             std::stringstream url;
 
-            url << "mailto:" << to << "?subject=" << name << " Wants to connect with Fire★" 
-                << "&attach=\"" << file  << "\""
-                << "&body=\"" << name << " wants to connect with you using Fire★. \n\n" 
+            url << "mailto:" << to << "?subject=" << name << " wants to connect with Fire★" 
+                << "&attachment=" << file  
+                << "&body=" << name << " wants to connect with you using Fire★. \n\n" 
                                     << "Attached is an invite file. \n"
                                     << "Add them and send them yours to connect.\n\n"
-                                    << "You can download Fire★ at http://firestr.com\n\"";
+                                    << "You can download Fire★ at http://firestr.com\n";
 
             QDesktopServices::openUrl(QUrl(url.str().c_str()));
 
