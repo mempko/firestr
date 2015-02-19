@@ -1,3 +1,9 @@
+firestr (0.6) trusty; urgency=low
+
+  * User friendly GUI based on identity strings
+
+ -- mempko <mempko@mempko-g780>  Thu, 19 Feb 2015 02:08:01 -0500
+
 firestr (0.5) trusty; urgency=low
 
   * Lua 5.3.0
