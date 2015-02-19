@@ -264,7 +264,7 @@ namespace fire
                 user::user_service_ptr _s;
                 QComboBox* _greeters = nullptr;
                 std::string _greeter;
-                QTextEdit* _iden;
+                QLabel* _iden;
         };
 
         bool add_contact_gui(user::user_service_ptr, const std::string&, QWidget*);

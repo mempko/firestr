@@ -43,6 +43,7 @@
 #include <QDesktopServices>
 #include <QByteArray>
 #include <QDir>
+#include <QClipboard>
 
 #include <cstdlib>
 #include <sstream>
@@ -898,7 +899,7 @@ namespace fire
             setLayout(layout);
 
             auto label = new QLabel{tr("Paste Identity Here")};
-            _iden = new QTextEdit{};
+            _iden = new QTextEdit;
 
             _add = new QPushButton;
             make_add_contact(*_add);
@@ -994,10 +995,12 @@ namespace fire
             }
 
             auto l2 = new QLabel{tr("Give This Identity to Others")};
-            _iden = new QTextEdit{};
-            _iden->setReadOnly(true);
+            _iden = new QLabel;
+            _iden->setWordWrap(true);
+            _iden->setStyleSheet("color: 'grey';");
 
-            auto l3 = new QLabel{tr("Copied to Clipboard")};
+            auto l3 = new QLabel{tr("It is Copied to the Clipboard")};
+            l3->setStyleSheet("color: 'red';");
 
             auto ok = new QPushButton;
             make_ok(*ok);
@@ -1025,8 +1028,11 @@ namespace fire
             auto iden = us::create_identity(i);
 
             _iden->setText(iden.c_str());
-            _iden->selectAll();
-            _iden->copy();
+
+            auto clip = QApplication::clipboard();
+            CHECK(clip);
+
+            clip->setText(iden.c_str());
         }
 
         void show_identity_dialog::greeter_selected(int index)
