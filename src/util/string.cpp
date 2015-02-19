@@ -29,48 +29,52 @@
  * also delete it here.
  */
 
-#ifndef FIRESTR_UTIL_STRING_H
-#define FIRESTR_UTIL_STRING_H
+#include "util/string.hpp"
 
-#include <string>
-#include <vector>
-#include <set>
-
-#include <boost/algorithm/string.hpp>
-#include <boost/tokenizer.hpp>
-
-#include "util/dbc.hpp"
+#include <QByteArray>
 
 namespace fire
 {
     namespace util
     {
-        inline void trim(std::string& t) { boost::algorithm::trim(t);}
+        /**
+         * Creates a base 64 string with width of 64 characters
+         */
+        std::string to_base_64(const std::string& s)
+        {
+            QByteArray b{s.c_str()};
+            std::string bs = b.toBase64().data();
 
-        template <class container>
-            container split(
-                    const std::string& s, 
-                    const std::string& delimiters)
+            size_t stride = 64;
+            size_t st = 0;
+            std::stringstream r;
+            while(st < bs.size())
             {
-                container result;
-                boost::char_separator<char> d{delimiters.c_str()};
-                boost::tokenizer<boost::char_separator<char>> tokens{s, d};
-                for(auto t : tokens)
-                {
-                    trim(t);
-                    if(!t.empty()) result.insert(result.end(), t);
-                }
-                ENSURE_FALSE(result.empty());
-                return result;
+                r << bs.substr(st, std::min(stride, bs.size() - st)) << std::endl;
+                st += stride;
             }
 
-        using string_vect = std::vector<std::string>;
-        using string_set = std::set<std::string>;
+            return r.str();
+        }
 
-        std::string to_base_64(const std::string& s);
-        std::string from_base_64(const std::string& s);
+        bool good_char(char c)
+        {
+            return c != '\n' && c != '\r' && c !=' ' && c != '\t'; 
+        }
+
+        /**
+         * Parses a base 64 string ignoring new line and space characters
+         */
+        std::string from_base_64(const std::string& s)
+        {
+            std::stringstream ss;
+            for(auto c : s)
+                if(good_char(c)) 
+                    ss << c;
+
+            QByteArray bs{ss.str().c_str()};
+            auto ra = QByteArray::fromBase64(bs); 
+            return ra.data();
+        }
     }
-
 }
-
-#endif

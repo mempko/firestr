@@ -81,8 +81,8 @@ namespace fire
             private slots:
                 void about();
                 void add_locator();
-                void send_invite();
-                void create_invite();
+                void email_invite();
+                void show_identity();
                 void add_contact();
                 void show_contact_list();
                 void make_chat_app();
@@ -101,6 +101,10 @@ namespace fire
                 void show_debug_window();
                 void remove_alert(QWidget*);
                 void focus_changed(QWidget* old, QWidget* now);
+                void open_website();
+                void open_docs();
+                void open_api();
+                void show_welcome_screen();
 
             private:
                 void setup_post();
@@ -114,8 +118,8 @@ namespace fire
                 void save_state();
                 void restore_state();
                 void setup_timers();
-                void create_start_screen();
-                void attach_start_screen();
+                void create_contacts_screen();
+                void create_welcome_screen(bool force);
                 void create_alert_screen();
                 void show_alert(QWidget*);
                 bool should_alert(int tab_index);
@@ -157,8 +161,8 @@ namespace fire
                 QAction *_about_action = nullptr;
 
                 QMenu *_contact_menu = nullptr;
-                QAction *_send_invite_action = nullptr;
-                QAction *_create_invite_action = nullptr;
+                QAction *_email_invite_action = nullptr;
+                QAction *_show_identity_action = nullptr;
                 QAction *_add_contact_action = nullptr;
                 QAction *_contact_list_action = nullptr;
 
@@ -172,14 +176,21 @@ namespace fire
                 QAction *_app_editor_action = nullptr;
                 QAction *_install_app_action = nullptr;
 
+                QMenu *_help_menu = nullptr;
+                QAction *_show_getting_started_action = nullptr;
+                QAction *_open_website_action = nullptr;
+                QAction *_open_docs_action = nullptr;
+                QAction *_open_api_action = nullptr;
+
                 QMenu *_debug_menu = nullptr;
                 QAction *_debug_window_action = nullptr;
 
                 MainTabs* _conversations = nullptr;
-                QWidget* _start_screen = nullptr;
-                bool _start_screen_attached = false;
+                QWidget* _contacts_screen = nullptr;
 
-                contact_list* _start_contacts;
+                QWidget* _welcome_screen = nullptr;
+
+                contact_list* _start_contacts = nullptr;
 
                 QWidget* _alert_screen = nullptr;
                 list* _alerts = nullptr;

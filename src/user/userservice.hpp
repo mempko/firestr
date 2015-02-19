@@ -62,19 +62,14 @@ namespace fire
             int client;
         };
 
-        struct contact_file
+        struct identity
         {
             user_info contact;
             std::string greeter;
         };
 
-#ifdef _WIN64
-        bool load_contact_file(const unsigned short* file, contact_file& cf);
-#else
-        bool load_contact_file(const std::string& file, contact_file& cf);
-#endif
-        bool save_contact_file(const std::string& file, const contact_file& cf);
-        void out_contact_file(std::ostream& o, const contact_file& cf);
+        bool parse_identity(const std::string& iden64, identity& cf);
+        std::string create_identity(const identity& cf);
 
         struct register_with_greeters {};
 
@@ -104,7 +99,7 @@ namespace fire
                 network::port_type in_port() const;
 
             public:
-                bool confirm_contact(const contact_file&);
+                bool confirm_contact(const identity&);
                 void remove_contact(const std::string& id);
 
                 void add_greeter(const std::string& address);
