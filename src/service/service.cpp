@@ -56,6 +56,8 @@ namespace fire
                 if(!s->_mail->pop_inbox(m, true))
                     continue;
 
+                if(s->_done) continue;
+
                 if(!s->_sm.handle(m)) 
                 {
                     LOG << "error, no handler found for`" << m.meta.type << "' in " 
