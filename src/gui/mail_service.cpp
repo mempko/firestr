@@ -64,6 +64,7 @@ namespace fire
             if(_done) return;
             _done = true;
             _mail->done();
+            wait();
         }
 
         void mail_service::run()
@@ -76,7 +77,8 @@ namespace fire
                 m::message m;
                 if(!_mail->pop_inbox(m, true))
                     continue;
-
+                if(_done) continue;
+                
                 emit got_mail(m);
             }
             catch(std::exception& e)
