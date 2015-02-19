@@ -931,19 +931,11 @@ namespace fire
             send_event(n.to_message());
         }
 
-#ifdef _WIN64
-        bool load_contact_file(const unsigned short* file, contact_file& cf)
+        bool parse_identity(const std::string& iden64, identity& cf)
         try
         {
-            std::ifstream in(file, std::fstream::in | std::fstream::binary);
-#else
-        bool load_contact_file(const std::string& file, contact_file& cf)
-        try
-        {
-            std::ifstream in(file.c_str(), std::fstream::in | std::fstream::binary);
-#endif
-            if(!in.good()) 
-                return false;
+            auto iden = u::from_base_64(iden64);
+            std::stringstream in{iden};
 
             user_info u;
             in >> u;
@@ -957,33 +949,19 @@ namespace fire
         } 
         catch(std::exception& e)
         {
-            LOG << "error loading contact file `" << file << "'. " << e.what() << std::endl;
+            LOG << "error parsing identity `" << iden64 << "'. " << e.what() << std::endl;
             return false;
         }
 
-        void out_contact_file(std::ostream& o, const contact_file& cf)
+        std::string create_identity(const identity& cf)
         {
+            std::stringstream o;
             o << cf.contact;
             o << u::value{cf.greeter};
+            return u::to_base_64(o.str());
         }
 
-        bool save_contact_file(const std::string& file, const contact_file& cf)
-        try
-        {
-            std::ofstream o(file.c_str(), std::fstream::out | std::fstream::binary);
-            if(!o.good()) return false;
-
-            out_contact_file(o, cf);
-
-            return true;
-        }
-        catch(std::exception& e)
-        {
-            LOG << "error saving contact file `" << file << "'. " << e.what() << std::endl;
-            return false;
-        }
-
-        bool user_service::confirm_contact(const contact_file& cf)
+        bool user_service::confirm_contact(const identity& cf)
         {
             u::mutex_scoped_lock l(_mutex);
             INVARIANT(_user);

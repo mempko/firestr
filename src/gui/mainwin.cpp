@@ -60,6 +60,7 @@
 
 #include <QtWidgets>
 #include <QSignalMapper>
+#include <QDesktopServices>
 
 namespace m = fire::message;
 namespace ms = fire::messages;
@@ -79,6 +80,10 @@ namespace fire
         {
             const std::string NEW_APP_S = "<new app>";
             const std::string GUI_MAIL = "gui";
+            const std::string WEB_URL = "http://firestr.com";
+            const std::string DOC_URL = "http://fire.readthedocs.org/en/latest/";
+            const std::string DOC_API_URL = "http://fire.readthedocs.org/en/latest/api/reference/";
+
             const QString NEW_CONVERSATION_NAME = "new"; 
             const int MAIN_X = 80;
             const int MAIN_Y = 80;
@@ -97,8 +102,8 @@ namespace fire
             setup_post();
             setup_services();
             create_actions();
-            create_main();
             create_menus();
+            create_main();
             restore_state();
             setup_timers();
 
@@ -137,11 +142,10 @@ namespace fire
             QMainWindow::closeEvent(event);
         }
 
-        bool has_finvite_or_app(const QList<QUrl>& urls)
+        bool has_app(const QList<QUrl>& urls)
         {
             for(const auto& url : urls)
-                if(url.toLocalFile().endsWith(".finvite") ||
-                   url.toLocalFile().endsWith(".fab"))
+                if(url.toLocalFile().endsWith(".fab"))
                     return true;
             return false;
         }
@@ -151,7 +155,7 @@ namespace fire
             REQUIRE(e);
             auto md = e->mimeData();
             if(!md) return;
-            if(has_finvite_or_app(md->urls())) e->acceptProposedAction();
+            if(has_app(md->urls())) e->acceptProposedAction();
         }
 
         void main_window::dropEvent(QDropEvent* e)
@@ -166,24 +170,8 @@ namespace fire
             for(const auto& url : urls)
             {
                 auto local = url.toLocalFile();
-                if(local.endsWith(".finvite"))
-                {
-#ifdef _WIN64
-                    auto cf = convert16(local);
-#else
-                    auto cf = convert(local);
-#endif
-                    if(gui::add_contact_gui(_user_service, cf, this))
-                    {
-                        _start_contacts->update(_user_service->user().contacts());
-                        _start_contacts->update_status(true);
-                    }
-                }
-                else if(local.endsWith(".fab"))
-                {
+                if(local.endsWith(".fab"))
                     install_app(convert(local));
-                }
-
             }
         }
 
@@ -315,119 +303,141 @@ namespace fire
             //create the conversations widget
             _conversations = new MainTabs;
             _layout->addWidget(_conversations);
-            _conversations->hide();
             connect(_conversations, SIGNAL(currentChanged(int)), this, SLOT(tab_changed(int)));
             connect(qApp, SIGNAL(focusChanged(QWidget*,QWidget*)), this, SLOT(focus_changed(QWidget*,QWidget*)));
 
             create_alert_screen();
-            create_start_screen();
-            _layout->addWidget(_start_screen, Qt::AlignCenter);
+            create_welcome_screen(false); //don't force
+            create_contacts_screen();
 
             std::string title = "Fire★ - " + _user_service->user().info().name();
             //setup base
             setWindowTitle(tr(title.c_str()));
             setCentralWidget(_root);
 
+            tab_changed(-1);
+
             ENSURE(_root);
             ENSURE(_layout);
             ENSURE(_conversations);
-            ENSURE(_start_screen);
+            ENSURE(_contacts_screen);
         }
 
-        void main_window::create_start_screen()
+        void main_window::create_welcome_screen(bool force)
+        {
+            // don't create welcome screen if there is a contact
+            if(!force && !_user_service->user().contacts().empty())
+                return;
+
+            _welcome_screen = new QWidget;
+            auto l = new QVBoxLayout;
+            _welcome_screen->setLayout(l);
+
+            auto step1 = new QLabel(
+                    tr(
+                        "<h2>1. Add a Locator</h2>"
+                        "Fire★ is a peer-to-peer communication platform.<br>"
+                        "All communication happens directly with your contacts.<br>"
+                        "A Locator helps create peer-to-peer connections.<br>"
+                        "A free Locator service is provided by mempko.com<br>"
+                        "You can also use different Locators if you wish.<br>"
+                      ));
+            auto step1b = new QPushButton(tr("Add a Locator"));
+
+            auto step2 = new QLabel(
+                    tr(
+                        "<h2>2. Email Your Identity</h2>"
+                        "There is no central authority managing your contacts.<br>"
+                        "You must give your identity to others and get theirs yourself.<br>"
+                        "You can email it, print it, or send a pigeon.<br>"
+                      ));
+            auto step2ba = new QPushButton(tr("Email Identity"));
+            auto step2bb = new QPushButton(tr("Show Identity"));
+            auto step3 = new QLabel(
+                    tr(
+                        "<h2>3. Add a Contact</h2>"
+                        "Once you have someone's identity, you can add <br>"
+                        "them as a contact by copy and pasting it.<br>"
+                      ));
+            auto step3b = new QPushButton(tr("Add contact"));
+
+            auto step4 = new QLabel(
+                    tr(
+                        "<h2>4. Start a Conversation</h2>"
+                        "When you are connected with someone, <br>"
+                        "you can start a conversation with them.<br>"
+                      ));
+
+            auto step4b = new QPushButton(tr("Start Conversation"));
+
+            l->addWidget(step1);
+            l->addWidget(step1b);
+            l->addWidget(step2);
+
+            auto bw = new QWidget;
+            auto bl = new QHBoxLayout{bw};
+            bl->addWidget(step2ba);
+            bl->addWidget(step2bb);
+            l->addWidget(bw);
+
+            l->addWidget(step3);
+            l->addWidget(step3b);
+            l->addWidget(step4);
+            l->addWidget(step4b);
+
+            connect(step1b, SIGNAL(clicked()), this, SLOT(add_locator()));
+            connect(step2ba, SIGNAL(clicked()), this, SLOT(email_invite()));
+            connect(step2bb, SIGNAL(clicked()), this, SLOT(show_identity()));
+            connect(step3b, SIGNAL(clicked()), this, SLOT(add_contact()));
+            connect(step4b, SIGNAL(clicked()), this, SLOT(create_conversation()));
+
+            _conversations->addTab(_welcome_screen, "Getting Started");
+
+            ENSURE(_welcome_screen);
+        }
+
+        void main_window::create_contacts_screen()
         {
             REQUIRE(_layout);
             REQUIRE(_user_service);
-            REQUIRE_FALSE(_start_screen);
+            REQUIRE_FALSE(_contacts_screen);
 
-            _start_screen = new QWidget;
+            _contacts_screen = new QWidget;
             auto l = new QVBoxLayout;
-            _start_screen->setLayout(l);
+            _contacts_screen->setLayout(l);
 
-            if(_user_service->user().contacts().empty())
-            {
-                auto step1 = new QLabel(
-                        tr(
-                        "<h2>1. Add a Locator</h2>"
-                        "There is no central authority managing accounts.<br>"
-                        "A Locator helps create peer-to-peer connections.<br>"
-                        "A free Locator service is provided by mempko.com<br>"
-                        "You can also use a different Locator if you wish.<br>"
-                        ));
-                auto step1b = new QPushButton(tr("Add a Locator"));
+            _start_contacts = new contact_list{_user_service, _user_service->user().contacts(), 
+                [&](us::user_info_ptr u) {
+                    REQUIRE(u);
 
-                auto step2 = new QLabel(
-                        tr(
-                        "<h2>2. Send an Invite file</h2>"
-                        "Since there is no central authority managing your <br>"
-                        "contacts, You must give your invite file to someone <br>"
-                        "and get theirs to connect with them.<br>"
-                        "You must also also use the same Locator.<br>"
-                        ));
-                auto step2b = new QPushButton(tr("Send invite"));
-                auto step3 = new QLabel(
-                        tr(
-                        "<h2>3. Add a Contact</h2>"
-                        "Once you have someone's invite file, you can add <br>"
-                        "them as a contact.<br>"
-                        ));
-                auto step3b = new QPushButton(tr("Add contact"));
+                    auto con = new QPushButton;
+                    std::stringstream ss;
+                    ss << "New converesation with `" << u->name() << "'";
+                    con->setToolTip(ss.str().c_str());
+                    make_new_conversation_small(*con);
 
-                auto step4 = new QLabel(
-                        tr(
-                        "<h2>4. Start a Conversation</h2>"
-                        "Once you are connected with someone, <br>"
-                        "You can start a conversation with them.<br>"
-                        ));
+                    auto mapper = new QSignalMapper{this};
+                    mapper->setMapping(con, QString(u->id().c_str()));
+                    connect(con, SIGNAL(clicked()), mapper, SLOT(map()));
+                    connect(mapper, SIGNAL(mapped(QString)), this, SLOT(create_conversation(QString)));
 
-                auto step4b = new QPushButton(tr("start conversation"));
+                    return new user_info{u, _user_service, true, con};
+                }
+            };
 
-                l->addWidget(step1);
-                l->addWidget(step1b);
-                l->addWidget(step2);
-                l->addWidget(step2b);
-                l->addWidget(step3);
-                l->addWidget(step3b);
-                l->addWidget(step4);
-                l->addWidget(step4b);
+            _start_contacts->update_status(true);
 
-                connect(step1b, SIGNAL(clicked()), this, SLOT(add_locator()));
-                connect(step2b, SIGNAL(clicked()), this, SLOT(send_invite()));
-                connect(step3b, SIGNAL(clicked()), this, SLOT(show_contact_list()));
-                connect(step4b, SIGNAL(clicked()), this, SLOT(create_conversation()));
-            }
-            else
-            {
-                _start_contacts = new contact_list{_user_service, _user_service->user().contacts(), 
-                    [&](us::user_info_ptr u) {
-                        REQUIRE(u);
+            auto add_conversation = new QPushButton;
+            make_new_conversation(*add_conversation);
+            add_conversation->setToolTip(tr("Create a new conversation"));
+            l->addWidget(_start_contacts);
+            l->addWidget(add_conversation);
+            connect(add_conversation, SIGNAL(clicked()), this, SLOT(create_conversation()));
 
-                        auto con = new QPushButton;
-                        std::stringstream ss;
-                        ss << "New converesation with `" << u->name() << "'";
-                        con->setToolTip(ss.str().c_str());
-                        make_new_conversation_small(*con);
-
-                        auto mapper = new QSignalMapper{this};
-                        mapper->setMapping(con, QString(u->id().c_str()));
-                        connect(con, SIGNAL(clicked()), mapper, SLOT(map()));
-                        connect(mapper, SIGNAL(mapped(QString)), this, SLOT(create_conversation(QString)));
-
-                        return new user_info{u, _user_service, true, con};
-                    }
-                };
-                _start_contacts->update_status(true);
-
-                auto add_conversation = new QPushButton;
-                make_new_conversation(*add_conversation);
-                add_conversation->setToolTip(tr("Create a new conversation"));
-                l->addWidget(_start_contacts);
-                l->addWidget(add_conversation);
-                connect(add_conversation, SIGNAL(clicked()), this, SLOT(create_conversation()));
-            }
             l->setContentsMargins(20,10,20,10);
 
-            ENSURE(_start_screen);
+            _conversations->addTab(_contacts_screen, "Contacts");
+            ENSURE(_contacts_screen);
         }
 
         void main_window::create_alert_screen()
@@ -451,16 +461,22 @@ namespace fire
             REQUIRE_FALSE(_main_menu);
             REQUIRE_FALSE(_app_menu);
             REQUIRE_FALSE(_contact_menu);
+            REQUIRE_FALSE(_help_menu);
             REQUIRE_FALSE(_debug_menu);
             REQUIRE(_about_action);
             REQUIRE(_close_action);
-            REQUIRE(_create_invite_action);
-            REQUIRE(_send_invite_action);
+            REQUIRE(_show_identity_action);
+            REQUIRE(_email_invite_action);
             REQUIRE(_add_contact_action);
             REQUIRE(_contact_list_action);
             REQUIRE(_chat_app_action);
             REQUIRE(_app_editor_action);
             REQUIRE(_create_conversation_action);
+            REQUIRE(_install_app_action);
+            REQUIRE(_show_getting_started_action);
+            REQUIRE(_open_docs_action);
+            REQUIRE(_open_api_action);
+            REQUIRE(_open_website_action);
 
             _main_menu = new QMenu{tr("&Main"), this};
             _main_menu->addAction(_about_action);
@@ -469,8 +485,8 @@ namespace fire
             _main_menu->addAction(_close_action);
 
             _contact_menu = new QMenu{tr("&Contacts"), this};
-            _contact_menu->addAction(_send_invite_action);
-            _contact_menu->addAction(_create_invite_action);
+            _contact_menu->addAction(_email_invite_action);
+            _contact_menu->addAction(_show_identity_action);
             _contact_menu->addAction(_add_contact_action);
             _contact_menu->addAction(_contact_list_action);
 
@@ -488,14 +504,19 @@ namespace fire
                 _debug_menu->addAction(_debug_window_action);
             }
 
+            _help_menu = new QMenu{tr("&Help"), this};
+            _help_menu->addAction(_open_website_action);
+            _help_menu->addAction(_open_docs_action);
+            _help_menu->addAction(_open_api_action);
+            _help_menu->addAction(_show_getting_started_action);
+
             menuBar()->addMenu(_main_menu);
             menuBar()->addMenu(_contact_menu);
             menuBar()->addMenu(_conversation_menu);
             menuBar()->addMenu(_app_menu);
             if(_debug_menu) menuBar()->addMenu(_debug_menu);
+            menuBar()->addMenu(_help_menu);
             menuBar()->setHidden(false);
-
-            tab_changed(-1);
 
             ENSURE(_main_menu);
             ENSURE(_contact_menu);
@@ -560,16 +581,16 @@ namespace fire
             _close_action = new QAction{tr("&Exit"), this};
             connect(_close_action, SIGNAL(triggered()), this, SLOT(close()));
 
-            _send_invite_action = new QAction{tr("&Send Invite"), this};
-            connect(_send_invite_action, SIGNAL(triggered()), this, SLOT(send_invite()));
+            _email_invite_action = new QAction{tr("&Email Identity"), this};
+            connect(_email_invite_action, SIGNAL(triggered()), this, SLOT(email_invite()));
 
-            _create_invite_action = new QAction{tr("&Save Invite"), this};
-            connect(_create_invite_action, SIGNAL(triggered()), this, SLOT(create_invite()));
+            _show_identity_action = new QAction{tr("&Show Identity"), this};
+            connect(_show_identity_action, SIGNAL(triggered()), this, SLOT(show_identity()));
 
             _add_contact_action = new QAction{tr("&Add Contact"), this};
             connect(_add_contact_action, SIGNAL(triggered()), this, SLOT(add_contact()));
 
-            _contact_list_action = new QAction{tr("&Contacts..."), this};
+            _contact_list_action = new QAction{tr("&Manage Contacts..."), this};
             connect(_contact_list_action, SIGNAL(triggered()), this, SLOT(show_contact_list()));
 
             _chat_app_action = new QAction{tr("&Chat"), this};
@@ -580,6 +601,7 @@ namespace fire
 
             _install_app_action = new QAction{tr("&Install App"), this};
             connect(_install_app_action, SIGNAL(triggered()), this, SLOT(install_app()));
+
 
             _create_conversation_action = new QAction{tr("&Create"), this};
             connect(_create_conversation_action, SIGNAL(triggered()), this, SLOT(create_conversation()));
@@ -596,10 +618,22 @@ namespace fire
                 connect(_debug_window_action, SIGNAL(triggered()), this, SLOT(show_debug_window()));
             }
 
+            _open_website_action = new QAction{tr("&Website"), this};
+            connect(_open_website_action, SIGNAL(triggered()), this, SLOT(open_website()));
+
+            _open_docs_action = new QAction{tr("&Documentation"), this};
+            connect(_open_docs_action, SIGNAL(triggered()), this, SLOT(open_docs()));
+
+            _open_api_action = new QAction{tr("&API Reference"), this};
+            connect(_open_api_action, SIGNAL(triggered()), this, SLOT(open_api()));
+
+            _show_getting_started_action = new QAction{tr("&Show Getting Started Tab"), this};
+            connect(_show_getting_started_action, SIGNAL(triggered()), this, SLOT(show_welcome_screen()));
+
             ENSURE(_about_action);
             ENSURE(_close_action);
-            ENSURE(_create_invite_action);
-            ENSURE(_send_invite_action);
+            ENSURE(_show_identity_action);
+            ENSURE(_email_invite_action);
             ENSURE(_contact_list_action);
             ENSURE(_create_conversation_action);
             ENSURE(_rename_conversation_action);
@@ -607,6 +641,10 @@ namespace fire
             ENSURE(_chat_app_action);
             ENSURE(_app_editor_action);
             ENSURE(_install_app_action);
+            ENSURE(_open_docs_action);
+            ENSURE(_open_api_action);
+            ENSURE(_open_website_action);
+            ENSURE(_show_getting_started_action);
             ENSURE(!_context.debug || _debug_window_action);
         }
 
@@ -651,16 +689,16 @@ namespace fire
             add_new_greeter(_user_service, this);
         }
 
-        void main_window::send_invite()
+        void main_window::email_invite()
         {
             INVARIANT(_user_service);
-            send_contact_file(_user_service, this);
+            email_identity(_user_service, this);
         }
 
-        void main_window::create_invite()
+        void main_window::show_identity()
         {
             INVARIANT(_user_service);
-            create_contact_file(_user_service, this);
+            gui::show_identity_gui(_user_service, this);
         }
 
         void main_window::add_contact()
@@ -971,7 +1009,6 @@ namespace fire
             INVARIANT(_quit_conversation_action);
             INVARIANT(_conversations);
             INVARIANT(_app_menu);
-            INVARIANT(_conversations);
 
             _alert_tab_index = _conversations->indexOf(_alert_screen);
 
@@ -1051,21 +1088,6 @@ namespace fire
             _conversation_service->quit_conversation(s->id());
         }
 
-        void main_window::attach_start_screen()
-        {
-            INVARIANT(_start_screen);
-            INVARIANT(_conversations);
-
-            if(_start_screen_attached) return;
-
-            _conversations->addTab(_start_screen, "start");
-            _conversations->show();
-            _start_screen_attached = true;
-
-            ENSURE(_start_screen_attached);
-            ENSURE(_conversations->isVisible());
-        }
-
         std::string formatted_timestamp()
         {
             std::stringstream s;
@@ -1095,11 +1117,10 @@ namespace fire
 
             if(!_alert_screen->isVisible())
             {
-                attach_start_screen();
                 CHECK(_conversations->isVisible());
 
                 _alert_screen->show();
-                _alert_tab_index = _conversations->addTab(_alert_screen, tr("alert"));
+                _alert_tab_index = _conversations->addTab(_alert_screen, tr("Alert"));
             }
 
             CHECK_RANGE(_alert_tab_index, 0, _conversations->count());
@@ -1149,13 +1170,32 @@ namespace fire
                 _focus = false;
         }
 
+        void main_window::open_website()
+        {
+            QDesktopServices::openUrl(QUrl(WEB_URL.c_str()));
+        }
+        
+        void main_window::open_docs()
+        {
+            QDesktopServices::openUrl(QUrl(DOC_URL.c_str()));
+        }
+
+        void main_window::open_api()
+        {
+            QDesktopServices::openUrl(QUrl(DOC_API_URL.c_str()));
+        }
+
+        void main_window::show_welcome_screen()
+        {
+            if(_welcome_screen) return;
+            create_welcome_screen(true);
+        }
+
         void main_window::new_conversation_event(const std::string& id)
         {
             INVARIANT(_app_service);
             INVARIANT(_conversation_service);
             INVARIANT(_conversations);
-
-            attach_start_screen();
 
             auto s = _conversation_service->conversation_by_id(id);
             if(!s) return;

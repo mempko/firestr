@@ -214,6 +214,24 @@ namespace fire
             b.setStyleSheet("border: 0px; color: 'green';");
         }
 
+        void make_cancel(QPushButton& b)
+        {
+            REQUIRE(GUI_SETUP_CALLED);
+
+            make_big_centered(b);
+            b.setText("\xe2\x9d\x8c"); //\u274C
+            b.setStyleSheet("border: 0px; color: 'red';");
+        }
+
+        void make_ok(QPushButton& b)
+        {
+            REQUIRE(GUI_SETUP_CALLED);
+
+            make_big_centered(b);
+            b.setText("\xe2\x9c\x93"); //\u2713
+            b.setStyleSheet("border: 0px; color: 'green';");
+        }
+
         void make_add_to_list(QPushButton& b)
         {
             REQUIRE(GUI_SETUP_CALLED);

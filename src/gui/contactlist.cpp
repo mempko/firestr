@@ -324,19 +324,6 @@ namespace fire
         }
 
 
-#ifdef _WIN64
-        bool contact_list_dialog::new_contact(const unsigned short* file)
-        {
-#else
-        bool contact_list_dialog::new_contact(const std::string& file)
-        {
-            REQUIRE_FALSE(file.empty());
-#endif        
-            INVARIANT(_service);
-
-            return add_contact_gui(_service, file, this);
-        }
-
         void contact_list_dialog::new_contact()
         {
             INVARIANT(_service);
@@ -675,7 +662,15 @@ namespace fire
             _message_2 = new QLineEdit;
             _message_label_1 = new QLabel;
             _message_label_2 = new QLabel;
-            _introduce = new QPushButton{tr("introduce")};
+            _introduce = new QPushButton;
+            make_introduce(*_introduce);
+            _introduce->setToolTip(tr("Introduce"));
+            _introduce->setEnabled(false);
+            _introduce->setStyleSheet("border: 0px; color: 'grey';");
+
+            _cancel = new QPushButton;
+            _cancel->setToolTip(tr("Cancel"));
+            make_cancel(*_cancel);
 
             auto lw = new QWidget;
             auto ll = new QVBoxLayout{lw};
@@ -699,11 +694,18 @@ namespace fire
             hl->addWidget(rw);
 
             layout->addWidget(hw);
-            layout->addWidget(_introduce);
+
+            auto bw = new QWidget;
+            auto bl = new QHBoxLayout{bw};
+            bl->addWidget(_cancel);
+            bl->addWidget(_introduce);
+
+            layout->addWidget(bw);
 
             connect(_contact_1, SIGNAL(activated(int)), this, SLOT(contact_1_selected(int)));
             connect(_contact_2, SIGNAL(activated(int)), this, SLOT(contact_2_selected(int)));
             connect(_introduce, SIGNAL(clicked()), this, SLOT(introduce()));
+            connect(_cancel, SIGNAL(clicked()), this, SLOT(cancel()));
 
             setWindowTitle(tr(title.c_str()));
 
@@ -714,6 +716,8 @@ namespace fire
             INVARIANT(_contact_2);
             INVARIANT(_message_1);
             INVARIANT(_message_2);
+            INVARIANT(_introduce);
+            INVARIANT(_cancel);
         }
 
         void update_message_widgets(
@@ -753,10 +757,15 @@ namespace fire
 
             bool same = false;
             _introduce->setEnabled(false);
+            _introduce->setStyleSheet("border: 0px; color: 'grey';");
             if(c1 && c2)
             {
                 same = c1->id() == c2->id();
-                if(!same) _introduce->setEnabled(true);
+                if(!same) 
+                {
+                    _introduce->setEnabled(true);
+                    _introduce->setStyleSheet("border: 0px; color: 'green';");
+                }
             }
 
             update_message_widgets(same, c1, _message_label_1, _message_1);
@@ -817,19 +826,35 @@ namespace fire
 
             _user_service->send_introduction(c1->id(), i1);
             _user_service->send_introduction(c2->id(), i2);
-            close();
+            accept();
+        }
+
+        void introduce_dialog::cancel()
+        {
+            reject();
+        }
+
+        QStringList greeter_list(us::user_service_ptr s)
+        {
+            REQUIRE(s);
+
+            QStringList gs;
+            for(const auto& g : s->user().greeters())
+                gs << greet_address(g).c_str();
+            return gs;
         }
 
         std::pair<std::string, bool> pick_greater(us::user_service_ptr s, QWidget* w)
         {
+            REQUIRE(s);
+            REQUIRE(w);
+
             auto total_greeters = s->user().greeters().size();
             std::string greeter;
             if(total_greeters == 1) greeter = greet_address(s->user().greeters().front());
             else if(total_greeters > 1)
             {
-                QStringList gs;
-                for(const auto& g : s->user().greeters())
-                    gs << greet_address(g).c_str();
+                auto gs = greeter_list(s);
 
                 bool ok;
                 auto g = QInputDialog::getItem(w, w->tr("Suggested Locator"),
@@ -842,198 +867,216 @@ namespace fire
             return std::make_pair(greeter, true);
         }
 
-        std::string eml_text(
-                us::user_service_ptr us, 
-                const std::string& greeter, 
-                const std::string& to)
-        {
-            REQUIRE(us);
-
-            const auto name = us->user().info().name();
-            const auto finvite = name + ".finvite";
-
-            std::stringstream s;
-            s << "Mine-Version: 1.0" << std::endl;
-            s << "Content-Type: multipart/mixed; boundary=\"=-QMLvUZDw9vjcdP10mjxn\"" << std::endl;
-            s << "To: " << to << std::endl;
-            s << "Subject: " << name << " wants to connect with Fire★" << std::endl << std::endl << std::endl;
-            s << "--=-QMLvUZDw9vjcdP10mjxn" << std::endl;
-            s << "Content-Type: text/plain" << std::endl;
-            s << "Content-Transfer-Encoding: 7bit" << std::endl;
-            s << std::endl;
-            s << name << " wants to connect with you using Fire★. \n\n" 
-              << "Attached is an invite file. \n"
-              << "Add them and send them yours to connect.\n\n"
-              << "You can download Fire★ at http://firestr.com\n";
-            s << std::endl << std::endl;
-
-            s << "--=-QMLvUZDw9vjcdP10mjxn" << std::endl;
-            s << "Content-Disposition: attachment; filename=\"" << finvite << "\"" << std::endl;
-            s << "Content-Type: text/plain; name=\"" << finvite << "\"; charset=\"UTF-8\"" << std::endl;
-            s << "Content-Transfer-Encoding: base64" << std::endl;
-            s << std::endl;
-
-            std::stringstream o;
-            us::contact_file cf{us->user().info(), greeter};
-            us::out_contact_file(o, cf);
-
-            QByteArray b{o.str().c_str()};
-            s << b.toBase64().data() << std::endl << std::endl;
-            s << "--=-QMLvUZDw9vjcdP10mjxn" << std::endl;
-
-            return s.str();
-        }
-
-        std::string create_eml_file(
-                us::user_service_ptr us, 
-                const std::string& greeter, 
-                const std::string& to)
-        {
-            REQUIRE(us);
-
-            const auto name = us->user().info().name();
-
-            const auto temp = convert(QDir::tempPath());
-            std::string eml_file = temp + "/" + std::string(QByteArray{to.c_str()}.toBase64().data()) + ".eml";
-            std::ofstream eml{eml_file.c_str()};
-            if(!eml) return "";
-
-            eml << eml_text(us, greeter, to);
-
-            return eml_file;
-        }
-
-        std::string ask_for_receiver_email(QWidget* w)
-        {
-            REQUIRE(w);
-
-            bool ok = false;
-            std::string to = "";
-            auto e = QInputDialog::getText(
-                    w, 
-                    w->tr("Email"),
-                    w->tr("Email To"),
-                    QLineEdit::Normal, to.c_str(), &ok);
-            if(ok && !e.isEmpty()) to = convert(e);
-
-            return to;
-        }
-
-#ifdef _WIN64
-        void send_contact_file(us::user_service_ptr s, QWidget* w)
-        {
-            REQUIRE(s);
-            REQUIRE(w);
-
-            //user chooses greeter
-            auto greeter = pick_greater(s, w);
-            if(!greeter.second) return;
-
-            //pick email
-            auto to = ask_for_receiver_email(w);
-            if(to.empty()) return;
-
-            auto eml = create_eml_file(s, greeter.first, to);
-            if(eml.empty()) return;
-
-            std::stringstream ss;
-            ss << "file://" << eml;
-            QDesktopServices::openUrl(QUrl(ss.str().c_str()));
-        }
-#else
-
-        void send_contact_file(us::user_service_ptr s, QWidget* w)
+        void email_identity(us::user_service_ptr s, QWidget* w)
         {
             REQUIRE(s);
             REQUIRE(w);
 
             const auto name = s->user().info().name();
 
-            //have user select contact file 
-            const auto temp = convert(QDir::tempPath());
-            std::string file = temp + "/" + name + ".finvite";
-
             //user chooses greeter
             auto greeter = pick_greater(s, w);
             if(!greeter.second) return;
 
-            //save contact file
-            us::contact_file cf{ s->user().info(), greeter.first};
-            us::save_contact_file(file, cf);
-
-            //pick email
-            auto to = ask_for_receiver_email(w);
-            if(to.empty()) return;
-
             std::stringstream url;
 
-            url << "mailto:" << to << "?subject=" << name << " wants to connect with Fire★" 
-                << "&attachment=" << file  
+            url << "mailto:" << "?subject=" << name << " wants to connect with Fire★" 
                 << "&body=" << name << " wants to connect with you using Fire★. \n\n" 
-                                    << "Attached is an invite file. \n"
-                                    << "Add them and send them yours to connect.\n\n"
-                                    << "You can download Fire★ at http://firestr.com\n";
+                                    << "You can download Fire★ at http://firestr.com\n\n"
+                                    << "Copy and Paste the identity below into Fire★ and give them yours.\n\n";
+
+            us::identity iden{ s->user().info(), greeter.first};
+            url << us::create_identity(iden) << std::endl;
 
             QDesktopServices::openUrl(QUrl(url.str().c_str()));
 
         }
-#endif
 
-
-        void create_contact_file(us::user_service_ptr s, QWidget* w)
+        add_contact_dialog::add_contact_dialog(QTabWidget* parent) : QDialog{parent}
         {
-            REQUIRE(s);
-            REQUIRE(w);
+            auto layout = new QVBoxLayout{this};
+            setLayout(layout);
 
-            //have user select contact file 
-            auto home = u::get_home_dir();
-            std::string default_file = home + "/" + s->user().info().name() + ".finvite";
-            auto file = QFileDialog::getSaveFileName(w, w->tr("Save File"),
-                    default_file.c_str(),
-                    w->tr("Invite File (*.finvite)"));
+            auto label = new QLabel{tr("Paste Identity Here")};
+            _iden = new QTextEdit{};
 
-            if(file.isEmpty())
-                return;
+            _add = new QPushButton;
+            make_add_contact(*_add);
+            _add->setEnabled(false);
+            _add->setStyleSheet("border: 0px; color: 'grey';");
+            _add->setToolTip(tr("Add Contact"));
 
-            auto greeter = pick_greater(s, w);
-            if(!greeter.second) return;
+            _cancel = new QPushButton;
+            _cancel->setToolTip(tr("Cancel"));
+            make_cancel(*_cancel);
 
-            //save contact file
-            us::contact_file cf{ s->user().info(), greeter.first};
-            us::save_contact_file(convert(file), cf);
+            layout->addWidget(label);
+            layout->addWidget(_iden);
+
+            auto bw = new QWidget;
+            auto bl = new QHBoxLayout{bw};
+            bl->addWidget(_cancel);
+            bl->addWidget(_add);
+            layout->addWidget(bw);
+
+            connect(_iden, SIGNAL(textChanged()), this, SLOT(text_updated()));
+            connect(_add, SIGNAL(clicked()), this, SLOT(add()));
+            connect(_cancel, SIGNAL(clicked()), this, SLOT(cancel()));
+
+            setWindowTitle(tr("Add Contact"));
+
+            INVARIANT(_add);
+            INVARIANT(_cancel);
+            INVARIANT(_iden);
         }
 
-#ifdef _WIN64
-        bool add_contact_gui(us::user_service_ptr us, const unsigned short* file, QWidget* p)
+        void add_contact_dialog::add()
         {
-#else
-        bool add_contact_gui(us::user_service_ptr us, const std::string& file, QWidget* p)
+            accept();
+        }
+
+        void add_contact_dialog::cancel()
         {
-            REQUIRE_FALSE(file.empty());
-#endif    
+            reject();
+        }
+
+        void add_contact_dialog::text_updated()
+        { 
+            INVARIANT(_add);
+            INVARIANT(_iden);
+
+            us::identity i;
+            auto iden64 = iden();
+            auto good = us::parse_identity(iden64, i);
+
+            if(good) 
+            {
+                _add->setEnabled(true);
+                _add->setStyleSheet("border: 0px; color: 'green';");
+                _iden->setStyleSheet("QTextEdit { background-color: rgb(128, 255, 128) }");
+            }
+            else 
+            {
+                _add->setEnabled(false);
+                _add->setStyleSheet("border: 0px; color: 'grey';");
+                if(_iden->toPlainText().isEmpty()) 
+                    _iden->setStyleSheet("QTextEdit { background-color: rgb(255, 255, 255) }");
+                else 
+                    _iden->setStyleSheet("QTextEdit { background-color: rgb(255, 128, 128) }");
+            }
+        }
+
+        std::string add_contact_dialog::iden() const
+        {
+            INVARIANT(_iden);
+            return convert(_iden->toPlainText());
+        }
+
+        show_identity_dialog::show_identity_dialog(user::user_service_ptr s, QWidget* parent) :
+            QDialog{parent}, _s{s}
+        {
+            REQUIRE(s);
+
+            auto layout = new QVBoxLayout{this};
+            setLayout(layout);
+
+            auto gs = greeter_list(_s);
+            if(!gs.isEmpty()) _greeter = convert(gs.front());
+
+            if(gs.size() > 1)
+            {
+                auto l1 = new QLabel{tr("Select a Locator")};
+                _greeters = new QComboBox;
+                _greeters->addItems(gs);
+                layout->addWidget(l1);
+                layout->addWidget(_greeters);
+                connect(_greeters, SIGNAL(activated(int)), this, SLOT(greeter_selected(int)));
+            }
+
+            auto l2 = new QLabel{tr("Give This Identity to Others")};
+            _iden = new QTextEdit{};
+            _iden->setReadOnly(true);
+
+            auto l3 = new QLabel{tr("Copied to Clipboard")};
+
+            auto ok = new QPushButton;
+            make_ok(*ok);
+
+            layout->addWidget(l2);
+            layout->addWidget(_iden);
+            layout->addWidget(l3);
+            layout->addWidget(ok);
+
+            connect(ok, SIGNAL(clicked()), this, SLOT(ok()));
+
+            setWindowTitle(tr("Your Identity"));
+            update_identity();
+
+            INVARIANT(_iden);
+            INVARIANT(_s);
+        }
+
+        void show_identity_dialog::update_identity()
+        {
+            INVARIANT(_s);
+            INVARIANT(_iden);
+
+            us::identity i{ _s->user().info(), _greeter};
+            auto iden = us::create_identity(i);
+
+            _iden->setText(iden.c_str());
+            _iden->selectAll();
+            _iden->copy();
+        }
+
+        void show_identity_dialog::greeter_selected(int index)
+        {
+            INVARIANT(_greeters);
+
+            _greeter = convert(_greeters->itemText(index));
+            update_identity();
+        }
+
+        void show_identity_dialog::ok()
+        {
+            accept();
+        }
+
+        void show_identity_gui(user::user_service_ptr s, QWidget* p)
+        {
+            REQUIRE(s);
+            REQUIRE(p);
+
+            show_identity_dialog d{s, p};
+            d.exec();
+        }
+
+        bool add_contact_gui(us::user_service_ptr us, const std::string& iden, QWidget* p)
+        {
+            REQUIRE_FALSE(iden.empty());
             REQUIRE(us);
 
             //load contact file
-            us::contact_file cf;
+            us::identity i;
 
             bool added = false;
 
-            if(us::load_contact_file(file, cf)) 
+            if(us::parse_identity(iden, i)) 
             {
                 //add greeter
-                if(!cf.greeter.empty())
+                if(!i.greeter.empty())
                 {
                     bool found = false;
                     for(const auto& s : us->user().greeters())
                     {
                         auto a = greet_address(s);
-                        if(a == cf.greeter) {found = true; break;}
+                        if(a == i.greeter) {found = true; break;}
                     }
-                    if(found) cf.greeter = "";
+                    if(found) i.greeter = "";
                 }
 
                 //add contact
-                added = us->confirm_contact(cf);
+                added = us->confirm_contact(i);
             }
 
             if(p)
@@ -1041,13 +1084,12 @@ namespace fire
                 std::stringstream ss;
                 if(added)
                 {
-                    ss << "`" << cf.contact.name() << "' has been added";
+                    ss << "`" << i.contact.name() << "' has been added";
                     QMessageBox::information(p, p->tr("Contact Added"), ss.str().c_str());
                 }
                 else
                 {
-                    ss << "There is something wrong with the invite file." << std::endl;
-                    ss << "Could not understand `" << file << "'" << std::endl;
+                    ss << "There is something wrong with the identity." << std::endl;
                     QMessageBox::critical(p, p->tr("Error Adding Contact"), ss.str().c_str());
                 }
             }
@@ -1061,19 +1103,13 @@ namespace fire
             REQUIRE(p);
 
             //get file name to load
-            auto home = u::get_home_dir();
-            auto file = QFileDialog::getOpenFileName(p,
-                    p->tr("Open Invite File"), home.c_str(), p->tr("Invite File (*.finvite)"));
+            add_contact_dialog ac;
+            ac.exec();
+            
+            if(ac.result() == QDialog::Rejected) return false;
 
-            if(file.isEmpty()) { return false;}
-
-#ifdef _WIN64
-            auto cf = convert16(file);
-#else
-            auto cf = convert(file);
-#endif
-
-            return add_contact_gui(s, cf, p);
+            auto iden = ac.iden();
+            return add_contact_gui(s, iden, p);
         }
 
     }

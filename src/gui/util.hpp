@@ -61,6 +61,8 @@ namespace fire
         void make_export(QPushButton&);
         void make_add_contact_small(QPushButton&);
         void make_add_contact(QPushButton&);
+        void make_cancel(QPushButton&);
+        void make_ok(QPushButton&);
         void make_add_to_list(QPushButton&);
         void make_introduce(QPushButton&);
         void make_new_conversation(QPushButton&);

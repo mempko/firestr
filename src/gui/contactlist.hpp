@@ -44,6 +44,7 @@
 #include <QDialog>
 #include <QPushButton>
 #include <QLabel>
+#include <QTextEdit>
 
 namespace fire
 {
@@ -174,11 +175,6 @@ namespace fire
 
             public:
                 void save_state();
-#ifdef _WIN64
-                bool new_contact(const unsigned short*);
-#else
-                bool new_contact(const std::string&);
-#endif
 
             public slots:
                 void new_contact();
@@ -210,6 +206,7 @@ namespace fire
                         QWidget* parent = nullptr);
             public slots:
                 void introduce();
+                void cancel();
                 void contact_1_selected(int);
                 void contact_2_selected(int);
 
@@ -227,17 +224,54 @@ namespace fire
                 QLineEdit* _message_1;
                 QLineEdit* _message_2;
                 QPushButton* _introduce;
+                QPushButton* _cancel;
         };
 
-#ifdef _WIN64
-        bool add_contact_gui(user::user_service_ptr, const unsigned short*, QWidget*);
-#else
-        bool add_contact_gui(user::user_service_ptr, const std::string&, QWidget*);
-#endif
+        class add_contact_dialog : public QDialog
+        {
+            Q_OBJECT
+            public:
+                add_contact_dialog(QTabWidget* parent = nullptr);
 
+            public slots:
+                void add();
+                void cancel();
+                void text_updated();
+
+            public:
+                std::string iden() const;
+
+            protected:
+                QTextEdit* _iden;
+                QPushButton* _add;
+                QPushButton* _cancel;
+        };
+
+        class show_identity_dialog : public QDialog
+        {
+            Q_OBJECT
+            public:
+                show_identity_dialog(user::user_service_ptr, QWidget* parent = nullptr);
+
+            public slots:
+                void greeter_selected(int);
+                void ok();
+
+            protected:
+                void update_identity();
+
+            protected:
+                user::user_service_ptr _s;
+                QComboBox* _greeters = nullptr;
+                std::string _greeter;
+                QTextEdit* _iden;
+        };
+
+        bool add_contact_gui(user::user_service_ptr, const std::string&, QWidget*);
+
+        void show_identity_gui(user::user_service_ptr, QWidget*);
         bool add_contact_gui(user::user_service_ptr, QWidget*);
-        void send_contact_file(user::user_service_ptr, QWidget* parent);
-        void create_contact_file(user::user_service_ptr, QWidget* parent);
+        void email_identity(user::user_service_ptr, QWidget* parent);
     }
 }
 
