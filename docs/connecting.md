@@ -3,7 +3,7 @@ Connecting to People
 
 There are two primary ways to connect to others. You can either
 
-  1. Add them as a contact using an their identity.
+  1. Add them as a contact using their identity.
   2. Another person introduces you to them.
 
 1. Adding a Locator
