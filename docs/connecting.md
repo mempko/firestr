@@ -10,7 +10,7 @@ There are two primary ways to connect to others. You can either
 ============
 
 To connect to people across the internet you need to first add a **locator**. 
-Click on **Contacts** in the **Contacts** menu. This will open up the **Contacts** dialog.
+Click on **Manage Contacts** in the **Contacts** menu. This will open up the **Contacts** dialog.
 Then go to the **Locator** tab and click on the **green** add button. 
 
 You can use the free public locator **mempko.com:8080** which is provided for your convenience.
@@ -34,11 +34,11 @@ Using Identities
 Everyone has an identity and you can connect with others by giving them your identity and
 getting theirs.
 
-You can email your identity to someone using the **Contacts**. Click on **Email Identity** 
+You can email your identity to someone using the **Contacts** menu. Click on **Email Identity** 
 which will open your mail client with a ready to send email.
 
-To add someone as your contact, click on the **Contacts** menu. Paste their identity into
-the edit bock and click on the **green** add button.
+To add someone as your contact, click on the **Contacts** menu and select **Add Contact**. 
+Paste their identity and click on the **green** add button.
 
 Once both of you have added each other, Fire★ should automatically connect you within a
 couple seconds. It will use the Locator to find the person you just added.
@@ -47,7 +47,7 @@ Introducing People
 -----------
 
 Fire★ has a mechanism where you can introduce a person to another in your contact list. 
-To introduce someone, click on **Contacts** in the **Contacts** menu. This will bring up 
+To introduce someone, click on **Manage Contacts** in the **Contacts** menu. This will bring up 
 a dialog. Click on **Introductions** tab and click the **green** introduction button at the bottom.
 
 If you receive an introduction you can add that person by clicking on the **green** add button
@@ -62,7 +62,7 @@ helps Fire★ locate your contacts across the internet when they change location
 A Public Locator
 ------------
 
-A free public locator is a locator that is run by someone or an organization for free. 
+A public locator is a locator that is run by someone or an organization for free. 
 Mempko.com provides a public locator for your convenience. 
 
   * mempko.com:8080
