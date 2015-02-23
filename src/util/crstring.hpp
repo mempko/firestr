@@ -40,7 +40,7 @@ namespace fire
 {
     namespace util 
     {
-        enum merge_result { NO_CHANGE, UPDATED, MERGED};
+        enum merge_result { NO_CHANGE, UPDATED, MERGED, CONFLICT};
 
         /**
          * Implements a concurrent string which uses a version vector and three way merge
