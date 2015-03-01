@@ -422,6 +422,44 @@ instance of the same App from a different contact
     function bar(m)
     end
 
+app:when_joined
+-----
+
+    when_joined(callback:string) : nil
+
+Sets the callback called when a contact joins the conversation after the app runs. 
+The callback must be of the following form.
+
+    function callback(contact)
+    end
+
+The callback receives a [contact](reference.md#contact-object) who joined the conversation
+
+    app:when_joined("joined")
+
+    function joined(c)
+        local name = c:name()
+    end
+
+app:when_quit
+-----
+
+    when_quit(callback:string) : nil
+
+Sets the callback called when a contact quits the conversation. 
+The callback must be of the following form.
+
+    function callback(contact)
+    end
+
+The callback receives a [contact](reference.md#contact-object) who quit the conversation
+
+    app:when_quit("quit")
+
+    function quit(c)
+        local name = c:name()
+    end
+
 app:send
 -----
 
