@@ -58,6 +58,7 @@ namespace fire
             {
                 const size_t PADDING = 100;
                 const std::string MESSAGE = "m";
+                const std::string JOINED = "j";
             }
 
             f_message(text_message)
@@ -87,10 +88,16 @@ namespace fire
                 }
             };
 
-            QWidget* make_message_widget(const std::string& name, const std::string& text)
+            f_message(joined_message)
+            {
+                f_message_init(joined_message, JOINED);
+                f_serialize_empty;
+            };
+
+            QWidget* make_message_widget(const std::string& color, const std::string& name, const std::string& text)
             {
                 std::stringstream s;
-                s << "<font color='gray'>" << u::hour_min_sec() << "</font> <b>" << name << "</b>: " << text;
+                s << "<font color='gray'>" << u::hour_min_sec() << "</font> <b><font color='" << color << "'>" << name << "</font></b>: " << text;
                 return new QLabel{s.str().c_str()};
             }
 
@@ -172,9 +179,31 @@ namespace fire
                 _mail_service = new mail_service{_mail, this};
                 _mail_service->start();
 
+                //join the chat
+                join();
+
                 INVARIANT(_conversation);
                 INVARIANT(_mail);
                 INVARIANT(_sender);
+            }
+
+            void chat_app::send_all(const m::message& m)
+            {
+                for(auto c : _conversation->contacts().list())
+                {
+                    CHECK(c);
+                    _sender->send(c->id(), m); 
+                }
+            }
+
+            void chat_app::join()
+            {
+                INVARIANT(_sender);
+                INVARIANT(_conversation);
+                INVARIANT(_conversation->user_service());
+
+                joined_message jm;
+                send_all(jm.to_message());
             }
 
             const std::string& chat_app::id() const
@@ -210,7 +239,7 @@ namespace fire
                 //update gui
                 _message->clear();
                 auto self = _conversation->user_service()->user().info().name();
-                _messages->add(make_message_widget(self, text));
+                _messages->add(make_message_widget("blue", self, text));
 
                 //send the message 
                 _clock++;
@@ -219,16 +248,8 @@ namespace fire
                 tm.text = text;
                 tm.clock = _clock;
 
-                bool sent = false;
-                for(auto c : _conversation->contacts().list())
-                {
-                    CHECK(c);
-                    if(!_conversation->user_service()->contact_available(c->id())) continue;
-                    _sender->send(c->id(), tm.to_message()); 
-                    sent = true;
-                }
-
-                if(!sent) _messages->add(make_message_widget("app", "nobody here..."));
+                send_all(tm.to_message());
+                if(_conversation->contacts().list().empty()) _messages->add(make_message_widget("red", "notice", "nobody here..."));
             }
 
             void chat_app::check_mail(m::message m) 
@@ -258,11 +279,17 @@ namespace fire
                         _clock += t.clock;
                     }
 
-                    _messages->add(make_message_widget(c->name(), t.text));
+                    _messages->add(make_message_widget("black", c->name(), t.text));
                     _messages->verticalScrollBar()->scroll(0, _messages->verticalScrollBar()->maximum());
 
                     _conversation_service->fire_conversation_alert(_conversation->id(), visible());
                     alerted();
+                }
+                else if(m.meta.type == JOINED)
+                {
+                    joined_message t;
+                    t.from_message(m);
+                    contact_joined(t.from_id);
                 }
                 else
                 {
@@ -276,6 +303,35 @@ namespace fire
             catch(...)
             {
                 LOG << "chat_app: unexpected error in check_mail." << std::endl;
+            }
+
+            void chat_app::contact_joined(const std::string& id)
+            {
+                REQUIRE_FALSE(id.empty());
+                INVARIANT(_messages);
+                INVARIANT(_conversation);
+
+                LOG << id << "joined chat" << std::endl;
+                auto c = _conversation->contacts().by_id(id);
+                if(!c) return;
+
+                std::stringstream s;
+                s << c->name() << " joined";
+                _messages->add(make_message_widget("red", "notice", s.str()));
+            }
+
+            void chat_app::contact_quit(const std::string& id)
+            {
+                REQUIRE_FALSE(id.empty());
+                INVARIANT(_messages);
+                INVARIANT(_conversation);
+
+                auto c = _conversation->user_service()->by_id(id);
+                if(!c) return;
+
+                std::stringstream s;
+                s << c->name() << " quit";
+                _messages->add(make_message_widget("red", "notice", s.str()));
             }
         }
     }

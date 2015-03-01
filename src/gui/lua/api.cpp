@@ -159,6 +159,8 @@ namespace fire
                     .set("when_local_message_received", &lua_api::set_local_message_callback)
                     .set("when_message", &lua_api::set_message_callback_by_type)
                     .set("when_local_message", &lua_api::set_local_message_callback_by_type)
+                    .set("when_joined", &lua_api::set_contact_joined_callback)
+                    .set("when_quit", &lua_api::set_contact_quit_callback)
                     .set("send", &lua_api::send_all)
                     .set("send_to", &lua_api::send_to)
                     .set("send_local", &lua_api::send_local)
@@ -555,6 +557,68 @@ namespace fire
                 report_error("error in event recieved: unknown", state->getLastErrorLine());
             }
 
+            void lua_api::contact_quit(const std::string& quit_id)
+            try
+            {
+                INVARIANT(state);
+                INVARIANT(conversation);
+
+                auto c = conversation->user_service()->by_id(quit_id);
+                if(!c) return;
+
+                contact_ref r;
+                r.id = 0;
+                r.user_id = c->id();
+                r.api = this;
+
+                CHECK_EQUAL(r.api, this);
+                CHECK_FALSE(r.user_id.empty());
+
+                if(contact_quit_callback.empty()) return;
+                state->call(contact_quit_callback, r);
+            }
+            catch(SLB::CallException& e)
+            {
+                std::stringstream s;
+                s << "error in contact_quit: " << e.what();
+                report_error(s.str(), e.errorLine);
+            }
+            catch(...)
+            {
+                report_error("error in contact_quit: unknown", state->getLastErrorLine());
+            }
+
+            void lua_api::contact_joined(const std::string& joined_id)
+            try
+            {
+                INVARIANT(state);
+                INVARIANT(conversation);
+
+                auto c = conversation->user_service()->by_id(joined_id);
+                if(!c) return;
+
+                contact_ref r;
+                r.id = 0;
+                r.user_id = c->id();
+                r.api = this;
+
+                CHECK_EQUAL(r.api, this);
+                CHECK_FALSE(r.user_id.empty());
+
+                if(contact_joined_callback.empty()) return;
+                state->call(contact_joined_callback, r);
+            }
+            catch(SLB::CallException& e)
+            {
+                std::stringstream s;
+                s << "error in contact_joined: " << e.what();
+                report_error(s.str(), e.errorLine);
+            }
+            catch(...)
+            {
+                report_error("error in contact_joined: unknown", state->getLastErrorLine());
+            }
+
             void lua_api::set_message_callback(const std::string& a)
             {
                 message_callback = a;
@@ -575,20 +639,19 @@ namespace fire
                 local_message_callbacks[t] = a;
             }
 
-            script_message lua_api::make_message()
+            void lua_api::set_contact_quit_callback(const std::string& a)
             {
-                return {this};
+                contact_quit_callback = a;
             }
 
-            void lua_api::send_to_helper(us::user_info_ptr c, const script_message& m)
+            void lua_api::set_contact_joined_callback(const std::string& a)
             {
-                REQUIRE(c);
-                INVARIANT(conversation);
-                if( !conversation->user_service()->contact_available(c->id()) || 
-                    !conversation->contacts().has(c->id()))
-                    return;
+                contact_joined_callback = a;
+            }
 
-                sender->send(c->id(), m); 
+            script_message lua_api::make_message()
+            {
+                return script_message{this};
             }
 
             void lua_api::send_all(const script_message& m)
@@ -598,7 +661,7 @@ namespace fire
                 for(auto c : conversation->contacts().list())
                 {
                     CHECK(c);
-                    send_to_helper(c, m);
+                    sender->send(c->id(), m);
                 }
             }
 
@@ -609,9 +672,6 @@ namespace fire
                 for(auto c : conversation->contacts().list())
                 {
                     CHECK(c);
-                    if(!conversation->user_service()->contact_available(c->id()) || 
-                       !conversation->contacts().has(c->id()))
-                        continue;
                     sender->send(c->id(), m);
                 }
             }
@@ -631,7 +691,7 @@ namespace fire
 
                 auto c = conversation->contacts().by_id(cr.user_id);
                 if(!c) return;
-                send_to_helper(c, m);
+                sender->send(c->id(), m);
             }
 
             size_t lua_api::total_contacts() const

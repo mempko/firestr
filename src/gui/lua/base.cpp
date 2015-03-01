@@ -155,7 +155,7 @@ namespace fire
                     return api->conversation->user_service()->user().info().name();
 
                 //otherwise find user
-                auto c = api->conversation->contacts().by_id(user_id);
+                auto c = api->conversation->user_service()->by_id(user_id);
                 if(!c) return "";
 
                 return c->name();

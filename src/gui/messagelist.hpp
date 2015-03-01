@@ -38,6 +38,7 @@
 #include "gui/message.hpp"
 #include "gui/app/app_service.hpp"
 #include "gui/app/app_reaper.hpp"
+#include "gui/app/generic_app.hpp"
 #include "conversation/conversation_service.hpp"
 #include "messages/new_app.hpp"
 
@@ -45,7 +46,16 @@ namespace fire
 {
     namespace gui
     {
-        using app_map = std::unordered_map<std::string, app::app_ptr>; 
+        //joins and app with the generic_app widget.
+        //app here may be null but widget should not be.
+        struct app_pair
+        {
+            app::app_ptr app;
+            app::generic_app* widget;
+        };
+
+        using app_map = std::unordered_map<std::string, app_pair>; 
+
         class message_list : public list
         {
             Q_OBJECT
@@ -68,11 +78,11 @@ namespace fire
 
             public slots:
                 bool add_new_app(const messages::new_app&); 
-                void add(message*);
+                void add(app::generic_app*);
                 void add(QWidget*);
 
             private:
-                void add(fire::gui::message*, app::app_ptr, const std::string& id);
+                void add(app::generic_app*, app::app_ptr, const std::string& id);
 
             private:
                 conversation::conversation_service_ptr _conversation_service;

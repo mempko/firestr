@@ -166,6 +166,8 @@ namespace fire
                 {"when_mouse_moved", "draw:when_mouse_moved(callback) -- will call the callback when the mouse is moved"},
                 {"when_mouse_pressed", "draw:when_mouse_pressed(callback) -- will call the callback when a mouse button is pressed"},
                 {"when_mouse_released", "draw:when_mouse_released(callback) -- will call the callback when a mouse button is released"},
+                {"when_joined", "app:when_joined(callback) -- will call the callback when a contact joins the conversation"},
+                {"when_quit", "app:when_quit(callback) -- will call the callback when a contact quits the conversation"},
                 {"when_triggered", "timer:when_triggered(callback) -- will call the callback when the timer fires"},
                 {"who_started", "app:who_started() -- returns the contact who started the app"},
                 {"width", "image:height() -- returns the height of the image"},
@@ -570,6 +572,14 @@ namespace fire
                 _data_key->setFocus(Qt::OtherFocusReason);
 
                 data_updated();
+            }
+
+            void app_editor::contact_quit(const std::string& id)
+            {
+                REQUIRE_FALSE(id.empty());
+                INVARIANT(_back);
+
+                _back->contact_quit(id);
             }
 
             void app_editor::data_updated()
@@ -1305,6 +1315,7 @@ namespace fire
                 QString k{_key.c_str()};
                 emit key_was_clicked(k);
             }
+
         }
     }
 }

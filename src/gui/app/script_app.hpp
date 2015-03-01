@@ -83,6 +83,9 @@ namespace fire
                     ~script_app();
 
                 public:
+                    virtual void contact_quit(const std::string& id);
+
+                public:
                     const std::string& id() const;
                     const std::string& type() const;
                     fire::message::mailbox_ptr mail();

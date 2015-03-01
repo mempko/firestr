@@ -92,6 +92,7 @@ namespace fire
                 void received_contact_disconnected(const fire::message::message&);
                 void sync_apps();
                 void got_req_app_message(const messages::request_app&);
+                void notify_apps_contact_quit(const std::string& id);
 
             private:
                 mail_service* _mail_service;

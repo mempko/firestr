@@ -218,6 +218,14 @@ namespace fire
                 INVARIANT(_sender);
             }
 
+            void script_app::contact_quit(const std::string& id)
+            {
+                REQUIRE_FALSE(id.empty());
+                INVARIANT(_back);
+
+                _back->contact_quit(id);
+            }
+
             const std::string& script_app::id() const
             {
                 ENSURE_FALSE(_id.empty());

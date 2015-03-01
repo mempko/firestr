@@ -59,8 +59,16 @@ namespace fire
                 const std::string DRAW_MOUSE_RELEASED = "d_r";
                 const std::string DRAW_MOUSE_DRAGGED = "d_d";
                 const std::string DRAW_MOUSE_MOVED = "d_m";
+                const std::string CONTACT_QUIT = "c_q";
+                const std::string CONTACT_JOINED = "c_j";
                 const std::string RESET_BACKEND = "r_b";
             }
+
+            f_message(contact_joined_msg)
+            {
+                f_message_init(contact_joined_msg, CONTACT_JOINED);
+                f_serialize_empty;
+            };
 
             f_message(run_code_msg)
             {
@@ -212,12 +220,21 @@ namespace fire
                 }
             };
 
+            f_message(contact_quit_msg)
+            {
+                std::string id;
+
+                f_message_init(contact_quit_msg, CONTACT_QUIT);
+                f_serialize
+                {
+                    f_s(id);
+                }
+            };
+
             f_message(reset_msg)
             {
                 f_message_init(reset_msg, RESET_BACKEND);
-                f_serialize
-                {
-                }
+                f_serialize_empty;
             };
 
             backend_client::backend_client(lua_api_ptr api, m::mailbox_ptr m) : 
@@ -239,6 +256,8 @@ namespace fire
                 using std::bind;
                 using namespace std::placeholders;
 
+                handle(CONTACT_JOINED, 
+                        bind(&backend_client::received_contact_joined, this, _1));
                 handle(SCRIPT_MESSAGE, 
                         bind(&backend_client::received_script_message, this, _1));
                 handle(EVENT_MESSAGE,
@@ -250,6 +269,7 @@ namespace fire
                             run_code_msg b;
                             b.from_message(m);
                             _api->run(b.code);
+                            send_contact_joined();
                         });
 
                 handle(RESET_BACKEND, [&](const m::message& m)
@@ -345,6 +365,41 @@ namespace fire
                             e.from_message(m);
                             _api->draw_mouse_moved(e.id, e.x, e.y);
                         });
+
+                handle(CONTACT_QUIT, [&](const m::message& m)
+                        {
+                            if(!m::is_local(m)) return;
+                            contact_quit_msg e;
+                            e.from_message(m);
+                            _api->contact_quit(e.id);
+                        });
+            }
+            
+            void backend_client::send_contact_joined()
+            {
+                INVARIANT(_api);
+                INVARIANT(_api->sender);
+                INVARIANT(_api->conversation);
+
+                contact_joined_msg j;
+                auto m = j.to_message();
+                for(auto c : _api->conversation->contacts().list())
+                {
+                    CHECK(c);
+                    _api->sender->send(c->id(), m);
+                }
+            }
+
+            void backend_client::received_contact_joined(const m::message& m)
+            {
+                REQUIRE_EQUAL(m.meta.type, CONTACT_JOINED);
+                INVARIANT(_api);
+                m::expect_remote(m);
+                m::expect_symmetric(m);
+
+                contact_joined_msg j;
+                j.from_message(m);
+                _api->contact_joined(j.from_id);
             }
 
             void backend_client::received_script_message(const m::message& m)
@@ -481,6 +536,15 @@ namespace fire
                 m.y = y;
                 mail()->push_inbox(m.to_message());
             }
+
+            void backend_client::contact_quit(const std::string& id)
+            {
+                INVARIANT(mail());
+                contact_quit_msg m;
+                m.id = id;
+                mail()->push_inbox(m.to_message());
+            }
+
         }
     }
 }

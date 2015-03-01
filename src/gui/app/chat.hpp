@@ -69,6 +69,9 @@ namespace fire
                     ~chat_app();
 
                 public:
+                    virtual void contact_quit(const std::string& id);
+
+                public:
                     const std::string& id() const;
                     const std::string& type() const;
                     fire::message::mailbox_ptr mail();
@@ -77,8 +80,12 @@ namespace fire
                     void send_message();
                     void check_mail(fire::message::message);
 
+
                 private:
                     void init();
+                    void send_all(const fire::message::message&);
+                    void join();
+                    void contact_joined(const std::string& id);
 
                 private:
                     std::string _id;
