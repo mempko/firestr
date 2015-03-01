@@ -61,11 +61,14 @@ namespace fire
                     virtual void draw_mouse_released(api::ref_id, int button, int x, int y);
                     virtual void draw_mouse_dragged(api::ref_id, int button, int x, int y);
                     virtual void draw_mouse_moved(api::ref_id, int x, int y);
+                    virtual void contact_quit(const std::string& id);
 
                     virtual void reset();
 
                 private:
                     void init_handlers();
+                    void send_contact_joined();
+                    void received_contact_joined(const fire::message::message& m);
                     void received_script_message(const fire::message::message& m);
                     void received_event_message(const fire::message::message& m);
 

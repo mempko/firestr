@@ -49,6 +49,8 @@ namespace fire
                 public:
                     generic_app();
 
+                    virtual void contact_quit(const std::string& id) = 0;
+
                 protected:
                     void set_title(const std::string&);
                     void set_main(QWidget*);

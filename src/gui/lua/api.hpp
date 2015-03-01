@@ -94,6 +94,8 @@ namespace fire
                     conversation::conversation_service_ptr conversation_service;
                     messages::sender_ptr sender;
 
+                    std::string contact_quit_callback;
+                    std::string contact_joined_callback;
                     std::string message_callback;
                     std::string local_message_callback;
                     callback_map message_callbacks;
@@ -106,7 +108,9 @@ namespace fire
                     void reset_refs();
                     void message_received(const script_message&);
                     void event_received(const event_message&);
-                    void send_to_helper(user::user_info_ptr, const script_message&); 
+
+                    virtual void contact_quit(const std::string& id);
+                    void contact_joined(const std::string& id);
 
                     button_ref_map button_refs;
                     label_ref_map label_refs;
@@ -176,6 +180,9 @@ namespace fire
                     void set_local_message_callback_by_type(
                             const std::string& t, 
                             const std::string& a);
+
+                    void set_contact_quit_callback(const std::string& a);
+                    void set_contact_joined_callback(const std::string& a);
 
                     script_message make_message();
                     void send(const event_message&);

@@ -279,6 +279,7 @@ namespace fire
             if(!c) return;
 
             update_contacts();
+            notify_apps_contact_quit(r.contact_id);
             _conversation_service->fire_conversation_alert(_conversation->id(), false);
         }
 
@@ -325,8 +326,18 @@ namespace fire
 
             _conversation->remove_contact(r.id);
             update_contacts();
+            notify_apps_contact_quit(r.id);
         }
 
+        void conversation_widget::notify_apps_contact_quit(const std::string& id)
+        {
+            INVARIANT(_messages);
+            for(auto p : _messages->apps()) 
+            {
+                CHECK(p.second.widget);
+                p.second.widget->contact_quit(id);
+            }
+        }
 
         void conversation_widget::check_mail(m::message m)
         try
@@ -366,7 +377,9 @@ namespace fire
             {
                 auto ap = _messages->apps().find(ad.address);
                 if(ap == _messages->apps().end()) return;
-                m::message app_message = *ap->second;
+
+                CHECK(ap->second.app);
+                m::message app_message = *ap->second.app;
                 encoded_app = u::encode(app_message);
             }
 

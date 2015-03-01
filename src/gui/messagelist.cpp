@@ -78,7 +78,7 @@ namespace fire
             INVARIANT(_app_reaper);
         }
 
-        void message_list::add(message* m)
+        void message_list::add(app::generic_app* m)
         {
             REQUIRE(m);
             INVARIANT(_layout);
@@ -122,11 +122,13 @@ namespace fire
             if(_conversation->has_app(m.address)) return false;
             if(m.type.empty() || m.address.empty()) return false;
 
+            a::generic_app* c = nullptr;
+
             if(n.type() == a::CHAT)
             {
                 if(auto post = _conversation->parent_post().lock())
                 {
-                    auto c = new a::chat_app{n.id(), _conversation_service, _conversation};
+                    c = new a::chat_app{n.id(), _conversation_service, _conversation};
                     CHECK(c->mail());
 
                     post->add(c->mail());
@@ -139,7 +141,7 @@ namespace fire
                 {
                     app = _app_service->create_new_app();
                     app->launched_local(false);
-                    auto c = new a::app_editor{
+                    c = new a::app_editor{
                         n.from_id(), n.id(), 
                             _app_service, _app_reaper, 
                             _conversation_service, _conversation, app};
@@ -156,7 +158,7 @@ namespace fire
                     app = _app_service->create_app(u::decode<m::message>(n.data()));
                     if(app->id().empty()) return false;
 
-                    auto c = new a::script_app{
+                    c = new a::script_app{
                         n.from_id(), n.id(), app, 
                             _app_service, _app_reaper, 
                             _conversation_service, _conversation};
@@ -174,7 +176,11 @@ namespace fire
             }
 
             _conversation->add_app(m);
-            if(app) _apps[m.address] = app;
+
+            CHECK(c);
+            app_pair p{app, c};
+            _apps[m.address] = p;
+
             return true;
         }
 
@@ -222,7 +228,7 @@ namespace fire
             add(t, a, id);
         }
 
-        void message_list::add(fg::message* t, a::app_ptr app, const std::string& id)
+        void message_list::add(a::generic_app* t, a::app_ptr app, const std::string& id)
         {
             REQUIRE(t);
             REQUIRE(_conversation);
@@ -243,10 +249,12 @@ namespace fire
                 u::bytes encoded_app;
                 if(app)
                 {
-                    _apps[t->mail()->address()] = app;
                     m::message app_message = *app;
                     encoded_app = u::encode(app_message);
                 }
+
+                app_pair p{app, t};
+                _apps[t->mail()->address()] = p;
 
                 ms::new_app n{t->id(), t->type(), encoded_app}; 
                 _conversation->send(n);
