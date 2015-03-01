@@ -52,14 +52,24 @@ namespace fire
 
             using closed_queue = util::queue<closed_app>;
 
-            class app_reaper
+            class app_reaper : QObject
             {
+                Q_OBJECT
                 public:
                     app_reaper(QWidget* parent);
                     ~app_reaper();
 
                     void reap(closed_app&);
                     void stop();
+                public:
+                    void emit_cleanup(closed_app);
+
+                signals:
+                    void got_cleanup(closed_app);
+
+                private slots:
+                    void do_cleanup(closed_app);
+
                 private:
                     
                     friend void reap_thread(app_reaper*);
