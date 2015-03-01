@@ -54,10 +54,8 @@ namespace fire
                     LOG << "reaping app " << app.name << "(" << app.id << ")" << std::endl;
                     app.back->stop();
 
-                    //cleanup widgets
-                    CHECK(app.hidden);
-                    app.hidden->setParent(nullptr);
-                    delete app.hidden;
+                    r->emit_cleanup(app);
+
                     LOG << "reaped app " << app.name << "(" << app.id << ")" << std::endl;
                 }
                 catch(std::exception& e)
@@ -77,6 +75,9 @@ namespace fire
             app_reaper::app_reaper(QWidget* parent)
             {
                 REQUIRE(parent);
+                qRegisterMetaType<closed_app>("closed_app");
+                connect(this, SIGNAL(got_cleanup(closed_app)), this, SLOT(do_cleanup(closed_app)));
+
                 _hidden = new QWidget{parent};
                 _hidden->setHidden(true);
                 _thread.reset(new std::thread{reap_thread, this});
@@ -103,6 +104,18 @@ namespace fire
                 _closed.push(app);
 
                 ENSURE(app.hidden);
+            }
+
+            void app_reaper::emit_cleanup(closed_app c)
+            {
+                emit got_cleanup(c);
+            }
+
+            void app_reaper::do_cleanup(closed_app app)
+            {
+                //cleanup widgets
+                REQUIRE(app.hidden);
+                delete app.hidden;
             }
 
             void app_reaper::stop()
