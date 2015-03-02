@@ -324,6 +324,9 @@ namespace fire
             us::event::contact_disconnected r;
             r.from_message(m);
 
+            auto c = _conversation->contacts().by_id(r.id);
+            if(!c) return;
+
             _conversation->remove_contact(r.id);
             update_contacts();
             notify_apps_contact_quit(r.id);
