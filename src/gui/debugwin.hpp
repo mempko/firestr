@@ -121,8 +121,11 @@ namespace fire
                 std::streampos _log_last_file_pos = 0;
                 fire::message::post_office_ptr _post;
                 user::user_service_ptr _user_service;
-                const network::udp_stats& _udp_stats;
                 conversation::conversation_service_ptr _conversation_service;
+
+                //stats
+                const network::udp_stats& _udp_stats;
+                network::udp_stats _prev_udp_stats;
         };
     }
 }
