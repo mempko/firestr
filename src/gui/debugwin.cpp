@@ -57,6 +57,7 @@ namespace fire
         namespace 
         {
             const std::size_t UPDATE_GRAPH = 500;
+            const double GRAPH_UPDATES_PER_SECOND = 1000.0 / UPDATE_GRAPH;
             const std::size_t UPDATE_LOG = 1000;
             const std::size_t UPDATE_MAILBOXES = 5000;
             const std::size_t GRAPH_WIDTH = 500;
@@ -177,8 +178,8 @@ namespace fire
             QDialog{parent},
             _post{p},
             _user_service{us},
-            _udp_stats(udps),
-            _conversation_service{ss}
+            _conversation_service{ss},
+            _udp_stats(udps)
         {
             REQUIRE(p);
             REQUIRE(us);
@@ -278,10 +279,20 @@ namespace fire
             INVARIANT(_udp_stat_text);
             std::stringstream s;
 
-            s << " sent: " << _udp_stats.bytes_sent / 1024
-              << "kb recv: " << _udp_stats.bytes_recv / 1024
-              << "kb dropped: " << _udp_stats.dropped;
+            double bytes_sent_per_second = 
+                (_udp_stats.bytes_sent - _prev_udp_stats.bytes_sent) * GRAPH_UPDATES_PER_SECOND;
+
+            double bytes_recv_per_second = 
+                (_udp_stats.bytes_recv - _prev_udp_stats.bytes_recv) * GRAPH_UPDATES_PER_SECOND;
+
+            double dropped_per_second = 
+                (_udp_stats.dropped - _prev_udp_stats.dropped) * GRAPH_UPDATES_PER_SECOND;
+
+            s << " sent: " << (_udp_stats.bytes_sent / 1024) << "kb (" << (bytes_sent_per_second / 1024) << "/s)" 
+              << " recv: " << (_udp_stats.bytes_recv / 1024) << " kb (" << (bytes_recv_per_second / 1024) << "/s)"
+              << " dropped: " << _udp_stats.dropped << " (" << dropped_per_second << "/s)";
             _udp_stat_text->setText(s.str().c_str());
+            _prev_udp_stats = _udp_stats;
         }
 
         void debug_win::update_log()
