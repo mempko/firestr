@@ -42,13 +42,17 @@ namespace fire
     {
         namespace
         {
-            const double THREAD_SLEEP = 20; //in milliseconds 
+            const double MIN_THREAD_SLEEP = 1; //in milliseconds 
+            const double SLEEP_STEP = 5; //in milliseconds 
+            const double MAX_THREAD_SLEEP = 51; //in milliseconds 
         }
 
         void send_thread(post_office* o)
         try
         {
             REQUIRE(o);
+
+            double thread_sleep = MIN_THREAD_SLEEP;
             while(!o->_done)
             try
             {
@@ -72,7 +76,12 @@ namespace fire
                     sent = true;
                 }
 
-                if(!sent) util::sleep_thread(THREAD_SLEEP);
+                if(!sent) 
+                {
+                    util::sleep_thread(thread_sleep);
+                    thread_sleep = std::min(MAX_THREAD_SLEEP, thread_sleep + SLEEP_STEP);
+                }
+                else thread_sleep = MIN_THREAD_SLEEP;
             }
             catch(std::exception& e)
             {

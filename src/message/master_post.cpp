@@ -47,8 +47,10 @@ namespace fire
 
         namespace
         {
-            const double THREAD_SLEEP = 20; //in milliseconds 
-            const double QUIT_SLEEP = 500; //in milliseconds 
+            const double MIN_THREAD_SLEEP = 1; //in milliseconds 
+            const double MAX_THREAD_SLEEP = 51; //in milliseconds 
+            const double SLEEP_STEP = 5;
+            const double QUIT_SLEEP = 500;
             const size_t POOL_SIZE = 30; //small pool size for now
         }
 
@@ -71,6 +73,8 @@ namespace fire
             REQUIRE(o);
             REQUIRE(o->_encrypted_channels);
 
+            double thread_sleep = MIN_THREAD_SLEEP;
+
             n::endpoint ep;
             while(!o->_done)
             try
@@ -79,9 +83,12 @@ namespace fire
                 u::bytes data;
                 if(!o->_connections.receive(ep, data))
                 {
-                    u::sleep_thread(THREAD_SLEEP);
+                    u::sleep_thread(thread_sleep);
+                    thread_sleep = std::min(MAX_THREAD_SLEEP, thread_sleep + SLEEP_STEP);
                     continue;
                 }
+                thread_sleep = MIN_THREAD_SLEEP;
+
                 if(o->_outside_stats.on) o->_outside_stats.in_push_count++;
 
                 //construct address as conversation id and decrypt message
@@ -175,19 +182,13 @@ namespace fire
 
             std::string last_address;
 
-            bool sent = false;
-
-            while(!o->_done || sent)
+            while(!o->_done)
             try
             {
-                sent = false;
-
                 //get message from queue
                 message m;
                 if(!o->_out.pop(m, true))
                     continue;
-
-                sent = true;
 
                 REQUIRE_GREATER_EQUAL(m.meta.from.size(), 1);
                 REQUIRE_GREATER_EQUAL(m.meta.to.size(), 1);
@@ -209,7 +210,6 @@ namespace fire
                 o->_connections.send(outside_queue_address, data, m.meta.robust);
 
                 if(o->_outside_stats.on) o->_outside_stats.out_pop_count++;
-                if(o->_done) u::sleep_thread(QUIT_SLEEP);
             }
             catch(std::exception& e)
             {
@@ -219,6 +219,7 @@ namespace fire
             {
                 LOG << "error sending message to " << last_address << ": unknown error." << std::endl;
             }
+            u::sleep_thread(QUIT_SLEEP);
         }
         catch(...)
         {
