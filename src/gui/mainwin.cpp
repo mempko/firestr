@@ -114,6 +114,8 @@ namespace fire
         main_window::~main_window()
         {
             INVARIANT(_mail_service);
+            INVARIANT(_app_reaper);
+            _app_reaper->stop();
             _mail_service->done();
         }
 
