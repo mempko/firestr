@@ -93,6 +93,8 @@ namespace fire
 
             void app_reaper::reap(closed_app& app)
             {
+                if(_closed.is_done()) return;
+
                 //stop frontend
                 app.front->stop();
 
