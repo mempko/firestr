@@ -930,7 +930,7 @@ namespace fire
                 _script->setExtraSelections( extras );
             }
 
-            void app_editor::set_app_name()
+            bool app_editor::set_app_name()
             {
                 INVARIANT(_app);
                 if(_app->name().empty())
@@ -945,10 +945,11 @@ namespace fire
                             QLineEdit::Normal, name.c_str(), &ok);
 
                     if(ok && !r.isEmpty()) name = gui::convert(r);
-                    else return;
+                    else return false;
 
                     _app->name(name);
                 }
+                return true;
             }
 
             void app_editor::update_app_code()
@@ -965,7 +966,8 @@ namespace fire
                 INVARIANT(_conversation);
                 INVARIANT(_app_service);
                 INVARIANT(_app);
-                set_app_name();
+                if(!set_app_name()) return;
+
                 update_app_code();
 
                 _app_service->save_app(*_app);

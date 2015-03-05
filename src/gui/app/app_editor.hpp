@@ -166,7 +166,7 @@ namespace fire
                     void init_data_tab(QGridLayout*);
                     bool prepare_script_message(text_script& tm, bool send_data);
                     void init_data();
-                    void set_app_name();
+                    bool set_app_name();
                     void update_app_code();
                     void update_status_to_errors();
                     void update_status_to_no_errors();
