@@ -39,6 +39,13 @@ namespace fire
 {
     namespace util
     {
+        namespace 
+        {
+            const std::string INT_TYPE = "int";
+            const std::string SIZE_TYPE = "size";
+            const std::string REAL_TYPE = "real";
+        }
+
         using boost::lexical_cast;
 
         value::value() : _v{} {}
@@ -345,26 +352,29 @@ namespace fire
             throw std::runtime_error{e.str()}; 
         }
 
-        std::string get_until(std::istream& i, char e)
+        struct work_space
         {
             std::string s;
-            s.reserve(64);
+            bytes b;
+        };
+
+        void get_until(std::istream& i, char e, work_space& w)
+        {
+            w.s.clear();
 
             int c = i.get();
             while(c != e && i.good())
             {
-                s.push_back(c);
+                w.s.push_back(c);
                 c = i.get();
             }
 
             check(i);
             CHECK_EQUAL(c, e);
-
-            return s;
         }
 
         template<typename t>
-            t dec(std::istream& i, const std::string& type, char b, char e)
+            t dec(std::istream& i, const std::string& type, char b, char e, work_space& w)
             {
                 int c = i.get();
                 if(!i.good()) return t{};
@@ -376,8 +386,8 @@ namespace fire
                     throw std::runtime_error{e.str()}; 
                 }
 
-                std::string sv = get_until(i, e);
-                return lexical_cast<t>(sv);
+                get_until(i, e, w);
+                return lexical_cast<t>(w.s);
             }
 
         bool decode_bool(std::istream& i) 
@@ -397,19 +407,19 @@ namespace fire
             return r;
         }
 
-        int64_t decode_int(std::istream& i) 
+        int64_t decode_int(std::istream& i, work_space& w) 
         { 
-            return dec<int64_t>(i, "int", 'i', ';'); 
+            return dec<int64_t>(i, INT_TYPE, 'i', ';', w); 
         }
 
-        size_t decode_size(std::istream& i)
+        size_t decode_size(std::istream& i, work_space& w)
         {
-            return dec<size_t>(i, "size", 's', ';');
+            return dec<size_t>(i, SIZE_TYPE, 's', ';', w);
         }
 
-        double decode_double(std::istream& i)
+        double decode_double(std::istream& i, work_space& w)
         {
-            return dec<double>(i, "real", 'r', ';');
+            return dec<double>(i, REAL_TYPE, 'r', ';', w);
         }
 
         void decode_empty(std::istream& i)
@@ -427,11 +437,12 @@ namespace fire
             return;
         }
 
-        bytes decode_bytes(std::istream& i)
+        void decode_bytes(std::istream& i, work_space& w)
         {
-            bytes b;
-            int c = i.get();
-            if(!i.good()) return b;
+            w.b.clear();
+
+            int c = i.peek();
+            if(!i.good()) return;
 
             if(c < '0' || c > '9')
             {
@@ -440,21 +451,38 @@ namespace fire
                 throw std::runtime_error{e.str()}; 
             }
 
-            std::string ss;
-            ss.push_back(c);
-            ss.append(get_until(i, ':'));
-            size_t size = lexical_cast<size_t>(ss);
-            if(size == 0) return b;
+            get_until(i, ':', w);
+            size_t size = lexical_cast<size_t>(w.s);
+            if(size == 0) return;
 
-            b.resize(size);
-            i.read(&b[0], size);
-
-            return b;
+            w.b.resize(size);
+            i.read(&w.b[0], size);
         }
 
-        dict decode_dict(std::istream& i);
-        array decode_array(std::istream& i);
-        value decode_value(std::istream& i)
+        void decode_key(std::istream& i, work_space& w)
+        {
+            int c = i.peek();
+            if(!i.good()) return;
+
+            if(c < '0' || c > '9')
+            {
+                std::stringstream e;
+                e << "expected byte key at byte " << i.tellg() << " but got `" << char(c) << "'";
+                throw std::runtime_error{e.str()}; 
+            }
+
+            get_until(i, ':', w);
+            size_t size = lexical_cast<size_t>(w.s);
+            if(size == 0) return;
+
+            w.s.clear();
+            w.s.resize(size);
+            i.read(&w.s[0], size);
+        }
+
+        dict decode_dict(std::istream& i, work_space& w);
+        array decode_array(std::istream& i, work_space& w);
+        value decode_value(std::istream& i, work_space& w)
         {
             value v;
 
@@ -462,13 +490,17 @@ namespace fire
             if(!i.good()) return v;
 
             if(c == 'F' || c == 'T') v = decode_bool(i);
-            else if(c == 'i') v = decode_int(i);
-            else if(c == 's') v = decode_size(i);
-            else if(c == 'r') v = decode_double(i);
-            else if(c == 'd') v = decode_dict(i);
-            else if(c == 'a') v = decode_array(i);
+            else if(c == 'i') v = decode_int(i, w);
+            else if(c == 's') v = decode_size(i, w);
+            else if(c == 'r') v = decode_double(i, w);
+            else if(c == 'd') v = decode_dict(i, w);
+            else if(c == 'a') v = decode_array(i, w);
             else if(c == 'n') decode_empty(i);
-            else if(c >= '0' && c <= '9') v = decode_bytes(i);
+            else if(c >= '0' && c <= '9') 
+            {
+                decode_bytes(i, w);
+                v = w.b;
+            }
             else 
             {
                 std::stringstream e;
@@ -478,7 +510,7 @@ namespace fire
             return v;
         }
 
-        dict decode_dict(std::istream& i)
+        dict decode_dict(std::istream& i, work_space& w)
         {
             dict d;
             int c = i.get();
@@ -493,10 +525,13 @@ namespace fire
 
             c = i.peek();
 
+            std::string k;
             while(c != ';' && i.good())
             {
-                std::string key = to_str(decode_bytes(i));
-                d[key] = decode_value(i);
+                decode_key(i, w);
+                k = w.s;
+                d[k] = decode_value(i, w);
+
                 c = i.peek();
             }
             c = i.get();
@@ -506,7 +541,7 @@ namespace fire
             return d;
         }
 
-        array decode_array(std::istream& i)
+        array decode_array(std::istream& i, work_space& w)
         {
             array a;
             int c = i.get();
@@ -523,7 +558,7 @@ namespace fire
 
             while(c != ';' && i.good())
             {
-                a.add(decode_value(i));
+                a.add(decode_value(i, w));
                 c = i.peek();
             }
 
@@ -536,19 +571,22 @@ namespace fire
 
         std::istream& operator>>(std::istream& i, dict& v)
         {
-            v = decode_dict(i);
+            work_space w;
+            v = decode_dict(i, w);
             return i;
         }
 
         std::istream& operator>>(std::istream& i, array& v)
         {
-            v = decode_array(i);
+            work_space w;
+            v = decode_array(i, w);
             return i;
         }
         
         std::istream& operator>>(std::istream& i, value& v)
         {
-            v = decode_value(i);
+            work_space w;
+            v = decode_value(i, w);
             return i;
         }
     }
@@ -565,7 +603,8 @@ namespace std
     std::istream& operator>>(std::istream& i, fire::util::bytes& v)
     {
         if(!i.good()) {v.clear(); return i;}
-        auto vv = fire::util::decode_value(i);
+        fire::util::work_space w;
+        auto vv = fire::util::decode_value(i, w);
         if(vv.is_bytes()) v = vv.as_bytes();
         else v.clear();
         return i;
