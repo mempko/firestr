@@ -73,6 +73,13 @@ namespace fire
             const size_t MAX_MESSAGE_SIZE = MAX_CHUNKS * UDP_CHuNK_SIZE;
         }
 
+        std::size_t hash_endpoint(const std::string& address, port_type port)
+        {
+            const auto ha = std::hash<std::string>()(address);
+            const auto hp = std::hash<port_type>()(port);
+            return ha ^ (hp << 1);
+        }
+
         udp_queue_ptr create_udp_queue(const asio_params& p)
         {
             return udp_queue_ptr{new udp_queue{p}};
@@ -106,20 +113,9 @@ namespace fire
             _writing = false;
         }
 
-        working_udp_chunks* find_wm(const std::string& addr, sequence_type sequence, working_udp_messages& w)
+        working_udp_chunks* init_working(hash_type addr_hash, working_udp_messages& w, const udp_chunk& c)
         {
-            auto i = w.find(addr);
-            if(i == w.end()) return nullptr;
-
-            auto mi = i->second.find(sequence);
-            if(mi == i->second.end()) return nullptr;
-
-            return &mi->second;
-        }
-
-        working_udp_chunks* init_working(const std::string& addr, working_udp_messages& w, const udp_chunk& c)
-        {
-            auto& wms = w[addr];
+            auto& wms = w[addr_hash];
             auto& wm = wms[c.sequence];
             if(!wm.chunks.empty()) return &wm;
             if(c.total_chunks == 0) return nullptr;
@@ -149,24 +145,24 @@ namespace fire
             if(robust) wm.in_flight++;
         }
 
-        void sent_chunk(const std::string& addr, const udp_chunk& c, working_udp_messages& w)
+        void sent_chunk(hash_type addr_hash, const udp_chunk& c, working_udp_messages& w)
         {
             REQUIRE(c.type != udp_chunk::ack);
             REQUIRE_FALSE(c.resent);
 
-            auto wmp = init_working(addr, w, c);
+            auto wmp = init_working(addr_hash, w, c);
             if(!wmp) return;
             sent_chunk(*wmp, c);
         }
 
-        void validate_chunk(const std::string& addr, const udp_chunk& c, working_udp_messages& w)
+        void validate_chunk(hash_type addr_hash, const udp_chunk& c, working_udp_messages& w)
         {
             REQUIRE(c.type == udp_chunk::ack);
 
             auto chunk_n = c.chunk;
             auto sequence_n = c.sequence;
 
-            auto& wms = w[addr];
+            auto& wms = w[addr_hash];
             auto wmi = wms.find(sequence_n);
             if(wmi == wms.end()) return;
 
@@ -247,8 +243,8 @@ namespace fire
             auto p = _out_queue_map.insert(std::make_pair(c.sequence, _out_queues.end()));
             if(p.second)
             {
-                auto addr = make_address_str({ UDP, c.host, c.port});
-				queue_ring_item ri = { addr, chunk_queue(), c.sequence, ERASE_COUNT };
+                auto addr_hash = hash_endpoint(c.host, c.port);
+				queue_ring_item ri = { addr_hash, chunk_queue(), c.sequence, ERASE_COUNT };
                 auto i = _out_queues.insert(_out_queues.end(), ri);
                 p.first->second = i;
             }
@@ -335,7 +331,7 @@ namespace fire
             _sequence++;
 
             working_udp_chunks* wmp = nullptr;
-            auto addr = make_address_str({ UDP, host, port});
+            auto addr_hash = hash_endpoint(host, port);
             while(s < b.size())
             {
                 size_t size = e - s;
@@ -353,7 +349,7 @@ namespace fire
                 std::copy(b.begin() + s, b.begin() + e, c.data.begin());
 
                 //add to working
-                if(!wmp) wmp = init_working(addr, _out_working, c);
+                if(!wmp) wmp = init_working(addr_hash, _out_working, c);
                 if(!wmp) break;
                 remember_chunk(*wmp, c);
 
@@ -581,21 +577,19 @@ namespace fire
             bool got = _out_queue.pop(chunk);
             CHECK(got);
 
-            u::bytes_ptr out_buffer{new u::bytes};
-            encode_udp_wire(*out_buffer, chunk);
-            _stats.bytes_sent += out_buffer->size();
+            encode_udp_wire(_out_buffer, chunk);
+            _stats.bytes_sent += _out_buffer.size();
 
             //async send chunk
             udp::endpoint ep(address::from_string(chunk.host), chunk.port);
-            _socket->async_send_to(ba::buffer(out_buffer->data(), out_buffer->size()), ep,
-                    boost::bind(&udp_connection::handle_write, this, out_buffer,
-                        ba::placeholders::error));
+            _socket->async_send_to(ba::buffer(_out_buffer.data(), _out_buffer.size()), ep,
+                    boost::bind(&udp_connection::handle_write, this, ba::placeholders::error));
 
             //ignore acks or resends
             if(!chunk.resent && chunk.type != udp_chunk::ack)
             {
-                auto addr = make_address_str({ UDP, chunk.host, chunk.port});
-                sent_chunk(addr, chunk, _out_working);
+                auto addr_hash = hash_endpoint(chunk.host, chunk.port);
+                sent_chunk(addr_hash, chunk, _out_working);
             }
 
             //queue next message
@@ -606,10 +600,9 @@ namespace fire
             _io.post(boost::bind(&udp_connection::do_send, this));
         }
 
-        void udp_connection::handle_write(u::bytes_ptr buff, const boost::system::error_code& error)
+        void udp_connection::handle_write(const boost::system::error_code& error)
         {
             _error = error;
-            if(error) LOG << "error sending chunk, " << _out_queue.size() << " remaining..." << std::endl;
         }
 
         void udp_connection::bind(port_type port)
@@ -636,11 +629,11 @@ namespace fire
                         boost::asio::placeholders::bytes_transferred));
         }
 
-        bool insert_chunk(const std::string& addr, const udp_chunk& c, working_udp_messages& w, u::bytes& complete_message)
+        bool insert_chunk(hash_type addr_hash, const udp_chunk& c, working_udp_messages& w, u::bytes& complete_message)
         {
             REQUIRE(c.type == udp_chunk::msg || c.type == udp_chunk::qmsg);
 
-            auto& wms = w[addr];
+            auto& wms = w[addr_hash];
             auto& wm = wms[c.sequence];
             if(wm.chunks.empty())
             {
@@ -697,8 +690,8 @@ namespace fire
 
             //get bytes
             CHECK_LESS_EQUAL(transferred, _in_buffer.size());
-            u::bytes data(transferred);
-            std::copy(_in_buffer.begin(), _in_buffer.begin() + transferred, data.begin());
+            _work_buffer.resize(transferred);
+            std::copy(_in_buffer.begin(), _in_buffer.begin() + transferred, _work_buffer.begin());
 
             _stats.bytes_recv += transferred;
 
@@ -706,8 +699,8 @@ namespace fire
             udp_chunk chunk;
             chunk.valid = false;
 
-            if(data.size() >= HEADER_SIZE) 
-                chunk = decode_udp_wire(data);
+            if(_work_buffer.size() >= HEADER_SIZE) 
+                chunk = decode_udp_wire(_work_buffer);
 
             if(chunk.valid)
             {
@@ -716,7 +709,7 @@ namespace fire
 
                 if(chunk.type != udp_chunk::ack)
                 { 
-                    bool robust = chunk.type == udp_chunk::msg;
+                    const bool robust = chunk.type == udp_chunk::msg;
                     if(robust)
                     {
                         udp_chunk ack;
@@ -733,17 +726,17 @@ namespace fire
                     }
 
                     //insert chunk to message buffer
-                    bool inserted = insert_chunk(make_address_str(ep), chunk, _in_working, data);
+                    bool inserted = insert_chunk(hash_endpoint(ep.address, ep.port), chunk, _in_working, _work_buffer);
                     //chunk is no longer valid after insert_chunk call because a move is done.
 
                     if(inserted)
                     {
-                        endpoint_message em{ep, data, robust};
+                        endpoint_message em{ep, _work_buffer, robust};
                         _in_queue.emplace_push(em);
                     }
 
                 }
-                else validate_chunk(make_address_str(ep), chunk, _out_working);
+                else validate_chunk(hash_endpoint(ep.address, ep.port), chunk, _out_working);
 
                 _io.post(boost::bind(&udp_connection::do_send, this));
             }
@@ -864,7 +857,7 @@ namespace fire
             INVARIANT(_io);
             CHECK(_con);
 
-            auto address = resolve(m.ep);
+            const auto& address = resolve(m.ep);
             if(address != m.ep.address)
             {
                 endpoint_message cm = m;

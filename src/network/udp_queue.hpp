@@ -86,15 +86,16 @@ namespace fire
         };
 
         //working set for both incoming and outgoing messages
+        using hash_type = std::size_t;
         using working_udp_sequences = std::unordered_map<sequence_type, working_udp_chunks>;
-        using working_udp_messages = std::unordered_map<std::string, working_udp_sequences>;
+        using working_udp_messages = std::unordered_map<hash_type, working_udp_sequences>;
         using resolve_map = std::unordered_map<std::string, std::string>;
 
         //outgoing chunks are send round robin in the chunk_queue_ring
         //the chunk_queue_map links to the chunk queue for that address
         struct queue_ring_item
         {
-            std::string addr;
+            hash_type address_hash;
             chunk_queue queue;
             sequence_type sequence;
             size_t erase_count;
@@ -122,7 +123,7 @@ namespace fire
             public:
                 void bind(port_type port);
                 void do_send();
-                void handle_write(util::bytes_ptr, const boost::system::error_code& error);
+                void handle_write(const boost::system::error_code& error);
                 void handle_read(const boost::system::error_code& error, size_t transferred);
                 void close();
                 void start_read();
@@ -142,7 +143,9 @@ namespace fire
 
             private:
                 //reading
+                util::bytes _work_buffer;
                 util::bytes _in_buffer;
+                util::bytes _out_buffer;
                 boost::asio::ip::udp::endpoint _in_endpoint;
                 working_udp_messages _in_working;
                 working_udp_messages _out_working;
