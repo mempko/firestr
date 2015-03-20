@@ -3,16 +3,27 @@
 
 [![Documentation Status](https://readthedocs.org/projects/fire/badge/?version=latest)](https://readthedocs.org/projects/fire/?badge=latest)
 
-Fire★ is a simple distributed, decentralized communication 
-and computation platform.
+**The Grass Computing Platform**
 
-You don't send a message to someone, you send software, which 
-can have rich content. All programs are wired up together automatically
-providing distributed communication, either through text, images, videos, 
-or games.
+Fire★ is a platform for creating and sharing P2P software.
+This is not cloud software, but grass software.
+You can touch it and shape it.
 
-The source code to all applications is available immediately to 
-instantly clone and modify. 
+Fire★ provides a built in application editor where you can program in 
+real time with others. Apps are written in the Lua programming language
+using an API designed for writing P2P applications. 
+
+Sharing an application with another is as simple as using it in a conversation. 
+They can install it on their system with one click and use it in their own conversations.
+Any program you get you can open in the application editor to modify and share.
+
+The hard part of setting up a P2P connection (NAT transversal, UDP hole punching, etc)
+is done for you so you can concentrate on building applications that work together
+without a central server. 
+
+All communication is encrypted between peers to provide a safe environment and 
+no communication is routed through a server.
+
 
 WARNING
 ===================================================================
@@ -25,9 +36,8 @@ If you are a security expert, please contribute.
 Organization
 ===================================================================
 
-This is the reference implementation of the protocol. It uses QT for
-the GUI and a custom message back-end. Currently the applications
-are written in Lua, but other bindings will be provided in the future. 
+Fire★ is written using C++11 and requires a fairly modern compiler.
+It should with the latest gcc, clang, and visual studio. 
 
 The main directory is src. Each subdirectory is a library and
 the main application is in src/firestr
