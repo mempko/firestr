@@ -123,6 +123,7 @@ namespace fire
                 void create_alert_screen();
                 void show_alert(QWidget*);
                 bool should_alert(int tab_index);
+                void app_alert();
                 void alert_tab(int tab_index);
                 void install_app(const std::string& file);
 
@@ -195,6 +196,7 @@ namespace fire
                 QWidget* _alert_screen = nullptr;
                 list* _alerts = nullptr;
                 int _alert_tab_index;
+                int _contacts_tab_index = -1;
 
                 QWidget* _root = nullptr;
                 QVBoxLayout* _layout = nullptr;
