@@ -438,7 +438,7 @@ namespace fire
 
             l->setContentsMargins(20,10,20,10);
 
-            _conversations->addTab(_contacts_screen, "Contacts");
+            _contacts_tab_index = _conversations->addTab(_contacts_screen, "Contacts");
             ENSURE(_contacts_screen);
         }
 
@@ -1025,7 +1025,7 @@ namespace fire
             _quit_conversation_action->setEnabled(enabled);
             _app_menu->setEnabled(enabled);
 
-            if(i != -1 && (i == _alert_tab_index || enabled))
+            if(i != -1 && (i == _alert_tab_index || i == _contacts_tab_index || enabled))
                 _conversations->setTabTextColor(i, QColor{"black"});
         }
         
@@ -1104,11 +1104,16 @@ namespace fire
             return (tab_index != -1 && tab_index != ct) || !_focus;
         }
 
+        void main_window::app_alert()
+        {
+            QApplication::alert(this, ALERT_DURATION);
+        }
+
         void main_window::alert_tab(int tab_index)
         {
             INVARIANT(_conversations);
             _conversations->setTabTextColor(tab_index, QColor{"red"});
-            QApplication::alert(this, ALERT_DURATION);
+            app_alert();
         }
 
         void main_window::show_alert(QWidget* a)
@@ -1339,24 +1344,11 @@ namespace fire
             _start_contacts->update(_user_service->user().contacts());
             _start_contacts->update_status(true);
 
-            //get user
-            auto c = _user_service->user().contacts().by_id(r.id);
-            if(!c) return;
-
-            //setup alert widget
-            std::stringstream s;
-            s << "<b>" << c->name() << "</b> is <font color='green'>online</font>";
-
-            auto w = new QWidget;
-            auto l = new QHBoxLayout;
-            w->setLayout(l);
-
-            auto t = new QLabel{tr(s.str().c_str())};
-            l->addWidget(t);
-
-            //display alert
-            show_alert(w);
+            //broadcast to conversations
             _conversation_service->broadcast_message(r.to_message());
+
+            if(should_alert(_contacts_tab_index)) 
+                alert_tab(_contacts_tab_index);
         }
 
         void main_window::contact_disconnected_event(const us::event::contact_disconnected& r)
@@ -1368,19 +1360,11 @@ namespace fire
             _start_contacts->update(_user_service->user().contacts());
             _start_contacts->update_status(true);
 
-            //setup alert widget
-            std::stringstream s;
-            s << "<b>" << r.name << "</b> has <font color='red'>disconnected</font>";
-
-            auto w = new QWidget;
-            auto l = new QHBoxLayout;
-            w->setLayout(l);
-            auto t = new QLabel{tr(s.str().c_str())};
-            l->addWidget(t);
-
-            //display alert
-            show_alert(w);
+            //broadcast to conversations
             _conversation_service->broadcast_message(r.to_message());
+
+            if(should_alert(_contacts_tab_index)) 
+                alert_tab(_contacts_tab_index);
         }
 
         void main_window::new_intro_event(const user::event::new_introduction& i)
