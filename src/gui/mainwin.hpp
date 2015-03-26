@@ -45,21 +45,31 @@
 #include "security/security_library.hpp"
 #include "util/dbc.hpp"
 
+#include <QPropertyAnimation>
+
 namespace fire
 {
     namespace gui
     {
         user::local_user_ptr setup_user(const std::string& home);
 
+        using tab_animation_list = std::vector<QPropertyAnimation*>;
+
         class MainTabs : public QTabWidget
         {
             Q_OBJECT
+            Q_PROPERTY(QColor tabColor READ tabColor WRITE setTabColor);
+
             public:
-                void setTabTextColor(int i, const QColor& c) 
-                { 
-                    INVARIANT(tabBar());
-                    tabBar()->setTabTextColor(i, c);
-                }
+
+                void alertTab(int i);
+                void clearAlert(int i);
+
+                QColor tabColor();
+                void setTabColor(const QColor& c);
+            private:
+
+                tab_animation_list _as;
         };
 
         struct main_window_context
