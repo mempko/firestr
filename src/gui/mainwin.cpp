@@ -92,6 +92,54 @@ namespace fire
             const int ALERT_DURATION = 3000; //3 sec
         }
 
+        void MainTabs::alertTab(int i)
+        {
+            REQUIRE_GREATER_EQUAL(i, 0);
+
+            if(i >= static_cast<int>(_as.size()))
+                _as.resize(i+1, nullptr);
+
+            if(!_as[i])
+            {
+                _as.resize(i+1, nullptr);
+
+                auto a = new QPropertyAnimation{this, "tabColor"};
+                a->setDuration(600);
+                a->setKeyValueAt(0, QColor{255, 0, 0, i});
+                a->setKeyValueAt(0.50, QColor{255, 255, 255, i});
+                a->setKeyValueAt(1.0, QColor{254, 0, 0, i});
+                a->start();
+                _as[i] = a;
+            }
+
+            CHECK(_as[i]);
+            _as[i]->start();
+        }
+
+        void MainTabs::clearAlert(int i)
+        {
+            INVARIANT(tabBar());
+
+            if(i < static_cast<int>(_as.size()) && _as[i])
+                _as[i]->stop();
+
+            tabBar()->setTabTextColor(i, QColor{"black"});
+        }
+
+        QColor MainTabs::tabColor() 
+        {
+            return QColor{"black"};
+        }
+
+        void MainTabs::setTabColor(const QColor& c) 
+        { 
+            INVARIANT(tabBar());
+
+            int i = c.alpha();
+            QColor act{c.red(), c.green(), c.blue()};
+            tabBar()->setTabTextColor(i, act);
+        }
+
         main_window::main_window(const main_window_context& c) :
             _context(c)
         {
@@ -1026,7 +1074,7 @@ namespace fire
             _app_menu->setEnabled(enabled);
 
             if(i != -1 && (i == _alert_tab_index || i == _contacts_tab_index || enabled))
-                _conversations->setTabTextColor(i, QColor{"black"});
+                _conversations->clearAlert(i);
         }
         
         void main_window::create_conversation()
@@ -1112,7 +1160,7 @@ namespace fire
         void main_window::alert_tab(int tab_index)
         {
             INVARIANT(_conversations);
-            _conversations->setTabTextColor(tab_index, QColor{"red"});
+            _conversations->alertTab(tab_index);
             app_alert();
         }
 
