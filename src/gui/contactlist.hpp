@@ -57,7 +57,6 @@ namespace fire
                 user_info(
                         user::user_info_ptr, 
                         user::user_service_ptr,
-                        bool compact = true,
                         QPushButton* action = nullptr);
 
             public slots:
