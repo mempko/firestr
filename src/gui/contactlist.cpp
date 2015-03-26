@@ -126,7 +126,6 @@ namespace fire
         user_info::user_info(
                 us::user_info_ptr p, 
                 us::user_service_ptr s,
-                bool compact,
                 QPushButton* action) :
             _contact{p},
             _service{s},
@@ -144,18 +143,8 @@ namespace fire
             _user_text = new QLabel{user_text(p, online, version).c_str()};
             _user_text->setToolTip(user_tooltip(p, online, version).c_str());
 
-            if(compact)
-            {
-                layout->addWidget(_user_text, 0,0);
-                if(_action) layout->addWidget(_action, 0,1);
-            }
-            else
-            {
-                layout->addWidget( new QLabel{tr("Name:")}, 0,0);
-                layout->addWidget( new QLabel{tr(p->name().c_str())}, 0,1);
-                layout->addWidget( new QLabel{tr("Address:")}, 1,0);
-                layout->addWidget( new QLabel{tr(p->address().c_str())}, 1,1);
-            }
+            layout->addWidget(_user_text, 0,0);
+            if(_action) layout->addWidget(_action, 0,1);
 
             layout->setContentsMargins(2,2,2,2);
             ENSURE(_contact);
@@ -313,7 +302,7 @@ namespace fire
                 connect(rm, SIGNAL(clicked()), mapper, SLOT(map()));
                 connect(mapper, SIGNAL(mapped(QString)), this, SLOT(remove(QString)));
 
-                _list->add(new user_info{u, _service, true, rm});
+                _list->add(new user_info{u, _service, rm});
             }
 
             _prev_contacts = _service->user().contacts().size();

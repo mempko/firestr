@@ -109,6 +109,7 @@ namespace fire
                 a->setKeyValueAt(0.50, QColor{255, 255, 255, i});
                 a->setKeyValueAt(1.0, QColor{254, 0, 0, i});
                 a->start();
+                
                 _as[i] = a;
             }
 
@@ -471,7 +472,7 @@ namespace fire
                     connect(con, SIGNAL(clicked()), mapper, SLOT(map()));
                     connect(mapper, SIGNAL(mapped(QString)), this, SLOT(create_conversation(QString)));
 
-                    return new user_info{u, _user_service, true, con};
+                    return new user_info{u, _user_service, con};
                 }
             };
 
