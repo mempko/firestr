@@ -82,11 +82,14 @@ namespace fire
             void generic_app::alerted()
             {
                 INVARIANT(_title);
+                set_alert();
+
                 if(_visible) return;
 
                 std::stringstream s;
                 s << "<font color='red'>" << _title_text << "</font>";
                 _title->setText(s.str().c_str());
+
             }
 
             void generic_app::toggle_visible()
@@ -117,6 +120,11 @@ namespace fire
                 }
             }
 
+            void generic_app::set_alert_style(const std::string& s)
+            {
+                INVARIANT(_main);
+                _main->setStyleSheet(s.c_str());
+            }
         }
     }
 }

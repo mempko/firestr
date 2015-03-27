@@ -80,6 +80,7 @@ namespace fire
                 void add_contact();
                 void update_contacts();
                 void update_contact_select();
+                void clear_alerts();
 
             private:
                 void init_handlers();

@@ -409,6 +409,12 @@ namespace fire
             INVARIANT(_messages);
             _messages->add_script_app(id);
         }
+
+        void conversation_widget::clear_alerts()
+        {
+            INVARIANT(_messages);
+            _messages->clear_alerts();
+        }
     }
 }
 

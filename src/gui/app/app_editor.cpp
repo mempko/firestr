@@ -342,16 +342,16 @@ namespace fire
                 set_main(tabs);
 
                 //code tab
-                auto code_tab = new QWidget{this};
-                auto code_layout = new QGridLayout{code_tab};
-                tabs->addTab(code_tab, tr("code"));
+                _code_tab = new QWidget{this};
+                auto code_layout = new QGridLayout{_code_tab};
+                tabs->addTab(_code_tab, tr("code"));
 
                 init_code_tab(code_layout);
 
                 //data tab
-                auto data_tab = new QWidget{this};
-                auto data_layout = new QGridLayout{data_tab};
-                tabs->addTab(data_tab, tr("data"));
+                _data_tab = new QWidget{this};
+                auto data_layout = new QGridLayout{_data_tab};
+                tabs->addTab(_data_tab, tr("data"));
 
                 init_data_tab(data_layout);
 
@@ -370,6 +370,8 @@ namespace fire
                 INVARIANT(_canvas_layout);
                 INVARIANT(_output);
                 INVARIANT(_status);
+                INVARIANT(_code_tab);
+                INVARIANT(_data_tab);
             }
 
             void app_editor::init_code_tab(QGridLayout* l)
@@ -1178,6 +1180,14 @@ namespace fire
 
                 send_script_to(c->id());
             }
+
+            bool app_editor::visible() const
+            {
+                INVARIANT(_code_tab);
+                INVARIANT(_data_tab);
+                return !_code_tab->visibleRegion().isEmpty() || !_data_tab->visibleRegion().isEmpty();
+            }
+
 
             lua_highlighter::lua_highlighter(QTextDocument* parent) :
                 QSyntaxHighlighter{parent}

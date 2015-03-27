@@ -1074,6 +1074,8 @@ namespace fire
             _quit_conversation_action->setEnabled(enabled);
             _app_menu->setEnabled(enabled);
 
+            if(s) s->clear_alerts();
+
             if(i != -1 && (i == _alert_tab_index || i == _contacts_tab_index || enabled))
                 _conversations->clear_alert(i);
         }

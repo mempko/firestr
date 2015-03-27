@@ -137,6 +137,7 @@ namespace fire
 
                 public:
                     virtual void contact_quit(const std::string& id);
+                    bool visible() const;
 
                 public:
                     const std::string& id() const;
@@ -208,6 +209,8 @@ namespace fire
                     QLabel* _status;
                     QGridLayout* _canvas_layout;
                     list* _output;
+                    QWidget* _code_tab = nullptr;
+                    QWidget* _data_tab = nullptr;
 
                     //data tab
                     QLineEdit* _data_key;

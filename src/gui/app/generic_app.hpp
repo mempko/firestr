@@ -52,6 +52,9 @@ namespace fire
                     virtual void contact_quit(const std::string& id) = 0;
 
                 protected:
+                    virtual void set_alert_style(const std::string& s);
+
+                protected:
                     void set_title(const std::string&);
                     void set_main(QWidget*);
                     void alerted();
