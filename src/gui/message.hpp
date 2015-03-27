@@ -43,6 +43,7 @@ namespace fire
         class message : public QScrollArea
         {
             Q_OBJECT
+            Q_PROPERTY(QColor alert_color READ alert_color WRITE set_alert_color);
             public:
                 message();
                 virtual ~message();
@@ -51,11 +52,18 @@ namespace fire
                 virtual const std::string& id() const = 0;
                 virtual const std::string& type() const = 0;
                 virtual fire::message::mailbox_ptr mail() = 0;
+                virtual bool visible() const;
 
             public:
-                bool visible() const;
+                void clear_alert();
+                void set_alert();
+
+                QColor alert_color() const;
+                void set_alert_color(const QColor& c);
 
             protected:
+                virtual void set_alert_style(const std::string& s) {}
+
                 const QWidget* root() const;
                 QWidget* root() ;
 
@@ -65,6 +73,8 @@ namespace fire
             private:
                 QWidget* _root;
                 QGridLayout* _layout;
+                QColor _alert_color;
+                bool _alert_set = false;
         };
     }
 

@@ -378,5 +378,19 @@ namespace fire
             ENSURE(GUI_SETUP_CALLED);
         }
 
+        std::string color_to_stylesheet(const QColor c)
+        {
+            std::stringstream s;
+            s << "color: rgba(" << c.red() << "," << c.green() << ","<< c.blue() << ","<<c.alpha() << ");";
+            return s.str();
+        }
+
+        std::string background_color_to_stylesheet(const QColor c)
+        {
+            std::stringstream s;
+            s << "background-color: rgba(" << c.red() << "," << c.green() << ","<< c.blue() << ","<<c.alpha() << ");";
+            return s.str();
+        }
+
     }
 }

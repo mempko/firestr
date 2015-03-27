@@ -69,6 +69,7 @@ namespace fire
             REQUIRE(conversation);
 
             auto_scroll(true);
+            QObject::connect(verticalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(clear_alerts()));
 
             INVARIANT(_root);
             INVARIANT(_layout);
@@ -264,6 +265,26 @@ namespace fire
         const app_map& message_list::apps() const
         {
             return _apps;
+        }
+
+        void message_list::clear_alerts()
+        {
+            INVARIANT(_layout);
+
+            std::cerr << "clearing" << std::endl;
+            for(int i = 0; i < _layout->count(); i++)
+            {
+                auto itm = _layout->itemAt(i);
+                auto w  = itm->widget();
+                CHECK(w);
+
+                auto mw = dynamic_cast<gui::message*>(w);
+                if(!mw) continue;
+
+                std::cerr << "\t " << i << std::endl;
+
+                mw->clear_alert();
+            }
         }
     }
 }

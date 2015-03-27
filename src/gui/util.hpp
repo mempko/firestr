@@ -81,6 +81,9 @@ namespace fire
             class app_service;
         }
         bool install_app_gui(app::app& a, app::app_service& s, QWidget* w);
+
+        std::string color_to_stylesheet(const QColor c);
+        std::string background_color_to_stylesheet(const QColor c);
     }
 }
 

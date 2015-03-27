@@ -190,13 +190,6 @@ namespace fire
             return _text_color;
         }
 
-        std::string color_to_stylesheet(const QColor c)
-        {
-            std::stringstream s;
-            s << "color: rgba(" << c.red() << "," << c.green() << ","<< c.blue() << ","<<c.alpha() << ");";
-            return s.str();
-        }
-
         void user_info::set_text_color(const QColor& c)
         {
             INVARIANT(_user_text);

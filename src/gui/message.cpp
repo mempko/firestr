@@ -32,12 +32,21 @@
 #include <QtWidgets>
 
 #include "gui/message.hpp"
+#include "gui/util.hpp"
 #include "util/dbc.hpp"
+
+#include <QPropertyAnimation>
 
 namespace fire
 {
     namespace gui
     {
+        namespace
+        {
+            const QColor MID_ALERT{128, 50, 50, 20};
+            const QColor END_ALERT{128, 50, 50,0};
+        }
+
         message::message()
         {
             //setup root
@@ -47,6 +56,8 @@ namespace fire
             //setup layout
             _layout = new QGridLayout{_root};
             _layout->setSizeConstraint(QLayout::SetMinAndMaxSize);
+
+            _alert_color = END_ALERT;
 
             //setup base
             setWidgetResizable(true);
@@ -94,5 +105,43 @@ namespace fire
             INVARIANT(_root);
             return !_root->visibleRegion().isEmpty();
         }
+
+        void message::set_alert() 
+        {
+            if(visible()) return;
+
+            _alert_set = true;
+            set_alert_color(MID_ALERT);
+        }
+
+        QColor message::alert_color() const
+        {
+            return _alert_color;
+        }
+
+        void message::clear_alert()
+        {
+            if(!visible()) return;
+            if(!_alert_set) return;
+
+            auto a = new QPropertyAnimation{this, "alert_color"};
+            a->setDuration(600);
+            a->setKeyValueAt(0.0, MID_ALERT);
+            a->setKeyValueAt(1.0, END_ALERT);
+            a->start(QAbstractAnimation::DeleteWhenStopped);
+
+            _alert_set = false;
+        }
+
+        void message::set_alert_color(const QColor& c)
+        {
+            INVARIANT(_root);
+            _alert_color = c;
+            if(c.alpha() <= 1)
+                set_alert_style("");
+            else 
+                set_alert_style(background_color_to_stylesheet(c).c_str());
+        }
+
     }
 }

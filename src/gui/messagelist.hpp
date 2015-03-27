@@ -80,6 +80,7 @@ namespace fire
                 bool add_new_app(const messages::new_app&); 
                 void add(app::generic_app*);
                 void add(QWidget*);
+                void clear_alerts();
 
             private:
                 void add(app::generic_app*, app::app_ptr, const std::string& id);
