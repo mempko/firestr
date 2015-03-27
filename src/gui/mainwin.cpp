@@ -92,7 +92,7 @@ namespace fire
             const int ALERT_DURATION = 3000; //3 sec
         }
 
-        void MainTabs::alertTab(int i)
+        void MainTabs::alert_tab(int i)
         {
             REQUIRE_GREATER_EQUAL(i, 0);
 
@@ -103,7 +103,7 @@ namespace fire
             {
                 _as.resize(i+1, nullptr);
 
-                auto a = new QPropertyAnimation{this, "tabColor"};
+                auto a = new QPropertyAnimation{this, "tab_color"};
                 a->setDuration(600);
                 a->setKeyValueAt(0, QColor{255, 0, 0, i});
                 a->setKeyValueAt(0.50, QColor{255, 255, 255, i});
@@ -117,7 +117,7 @@ namespace fire
             _as[i]->start();
         }
 
-        void MainTabs::clearAlert(int i)
+        void MainTabs::clear_alert(int i)
         {
             INVARIANT(tabBar());
 
@@ -127,12 +127,12 @@ namespace fire
             tabBar()->setTabTextColor(i, QColor{"black"});
         }
 
-        QColor MainTabs::tabColor() 
+        QColor MainTabs::tab_color() 
         {
             return QColor{"black"};
         }
 
-        void MainTabs::setTabColor(const QColor& c) 
+        void MainTabs::set_tab_color(const QColor& c) 
         { 
             INVARIANT(tabBar());
 
@@ -1075,7 +1075,7 @@ namespace fire
             _app_menu->setEnabled(enabled);
 
             if(i != -1 && (i == _alert_tab_index || i == _contacts_tab_index || enabled))
-                _conversations->clearAlert(i);
+                _conversations->clear_alert(i);
         }
         
         void main_window::create_conversation()
@@ -1161,7 +1161,7 @@ namespace fire
         void main_window::alert_tab(int tab_index)
         {
             INVARIANT(_conversations);
-            _conversations->alertTab(tab_index);
+            _conversations->alert_tab(tab_index);
             app_alert();
         }
 

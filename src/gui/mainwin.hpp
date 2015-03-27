@@ -58,15 +58,15 @@ namespace fire
         class MainTabs : public QTabWidget
         {
             Q_OBJECT
-            Q_PROPERTY(QColor tabColor READ tabColor WRITE setTabColor);
+            Q_PROPERTY(QColor tab_color READ tab_color WRITE set_tab_color);
 
             public:
 
-                void alertTab(int i);
-                void clearAlert(int i);
+                void alert_tab(int i);
+                void clear_alert(int i);
 
-                QColor tabColor();
-                void setTabColor(const QColor& c);
+                QColor tab_color();
+                void set_tab_color(const QColor& c);
             private:
 
                 tab_animation_list _as;
