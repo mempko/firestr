@@ -53,11 +53,20 @@ namespace fire
         class user_info : public QWidget
         {
             Q_OBJECT
+            Q_PROPERTY(QColor text_color READ text_color WRITE set_text_color);
             public:
                 user_info(
                         user::user_info_ptr, 
                         user::user_service_ptr,
                         QPushButton* action = nullptr);
+            public:
+
+                void set_text_color_to(const QColor&);
+                QColor text_color() const;
+                void set_text_color(const QColor&);
+                void set_removed();
+                void set_added();
+                bool is_removed() const;
 
             public slots:
                 void update(bool update_action = false);
@@ -68,11 +77,13 @@ namespace fire
                 user::user_service_ptr _service;
                 QPushButton* _action;
                 QLabel* _user_text;
+                QColor _text_color;
+                bool _removed = false;
         };
-        using user_info_ptrs = std::vector<user_info*>;
 
 
         using make_user_info = std::function<user_info*(user::user_info_ptr)>;
+        using user_info_map = std::unordered_map<std::string, user_info*>;
 
         class contact_list : public list
         {
@@ -88,10 +99,13 @@ namespace fire
                 void update_status(std::function<bool(user::user_info&)> f, bool update_action = false);
 
             protected:
+                void remove_contact(const std::string& id);
+
+            protected:
                 user::user_service_ptr _service;
                 user::contact_list _contacts;
-                user_info_ptrs _contact_widgets;
                 make_user_info _mk;
+                user_info_map _um;
         };
 
         class greeter_info : public QWidget
@@ -163,6 +177,7 @@ namespace fire
                 user::user_service_ptr _service;
         };
 
+        using user_info_ptrs = std::vector<user_info*>;
         class contact_list_dialog : public QDialog
         {
             Q_OBJECT
@@ -189,6 +204,7 @@ namespace fire
 
             protected:
                 list* _list;
+                user_info_ptrs _ui;
                 user::user_service_ptr _service;
                 greeter_list* _greeters;
 

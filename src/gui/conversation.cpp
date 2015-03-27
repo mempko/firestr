@@ -188,6 +188,7 @@ namespace fire
             INVARIANT(_conversation);
 
             _contact_list->update(_conversation->contacts());
+            _contact_list->update_status(true);
             update_contact_select();
         }
 
