@@ -44,6 +44,7 @@
 #include <QByteArray>
 #include <QDir>
 #include <QClipboard>
+#include <QPropertyAnimation>
 
 #include <cstdlib>
 #include <sstream>
@@ -73,15 +74,16 @@ namespace fire
             return !force_offline && s->contact_available(c->id());
         }
 
-        std::string user_text(
+        QColor user_color(
                 us::user_info_ptr c, 
                 bool online,
+                bool removed,
                 const us::contact_version& version)
         {
             REQUIRE(c);
             std::stringstream ss;
-            std::string color = "red";
-            if(online)
+            std::string color = removed ? "grey" : "red";
+            if(!removed && online)
             {
                 color = "green";
                 if(version.client != u::CLIENT_VERSION)
@@ -90,18 +92,19 @@ namespace fire
                 if(version.protocol != u::PROTOCOL_VERSION)
                     color = "purple";
             }
-            ss << "<font color='" << color << "'>" << c->name() << "</font>";
-            return ss.str();
+
+            return QColor{color.c_str()};
         }
 
         std::string user_tooltip(
                 us::user_info_ptr c, 
                 bool online,
+                bool removed,
                 const us::contact_version& version)
         {
             REQUIRE(c);
-            std::string text = "offline";
-            if(online)
+            std::string text = removed ? "not here" : "offline";
+            if(!removed && online)
             {
                 text = "online ";
 
@@ -140,15 +143,66 @@ namespace fire
             bool online = is_online(p, _service);
             auto version = s->check_contact_version(p->id());
             
-            _user_text = new QLabel{user_text(p, online, version).c_str()};
-            _user_text->setToolTip(user_tooltip(p, online, version).c_str());
+            _user_text = new QLabel{p->name().c_str()};
+            _user_text->setToolTip(user_tooltip(p, online, _removed, version).c_str());
+            _text_color = QColor{0, 0, 0, 0};
 
             layout->addWidget(_user_text, 0,0);
             if(_action) layout->addWidget(_action, 0,1);
 
             layout->setContentsMargins(2,2,2,2);
+
+            set_text_color_to(user_color(_contact, online, _removed, version));
+
             ENSURE(_contact);
             ENSURE(_user_text);
+        }
+
+        void user_info::set_text_color_to(const QColor& c)
+        {
+            if(c == _text_color) return;
+
+            auto a = new QPropertyAnimation{this, "text_color"};
+            a->setDuration(600);
+            a->setKeyValueAt(0, _text_color);
+            a->setKeyValueAt(0.50, QColor{255, 255, 255});
+            a->setKeyValueAt(1.0, c);
+            a->start(QAbstractAnimation::DeleteWhenStopped);
+        }
+
+        void user_info::set_removed()
+        {
+            _removed = true;
+        }
+
+        void user_info::set_added()
+        {
+            _removed = false;
+        }
+
+        bool user_info::is_removed() const
+        {
+            return _removed;
+        }
+
+        QColor user_info::text_color() const
+        {
+            return _text_color;
+        }
+
+        std::string color_to_stylesheet(const QColor c)
+        {
+            std::stringstream s;
+            s << "color: rgba(" << c.red() << "," << c.green() << ","<< c.blue() << ","<<c.alpha() << ");";
+            return s.str();
+        }
+
+        void user_info::set_text_color(const QColor& c)
+        {
+            INVARIANT(_user_text);
+
+            _text_color = c;
+            _user_text->setStyleSheet(color_to_stylesheet(c).c_str());
         }
 
         void user_info::update(bool update_action)
@@ -159,10 +213,13 @@ namespace fire
 
             bool online = is_online(_contact, _service);
             auto version = _service->check_contact_version(_contact->id());
-            _user_text->setText(user_text(_contact, online, version).c_str());
-            _user_text->setToolTip(user_tooltip(_contact, online, version).c_str());
 
-            if(_action && update_action) _action->setVisible(online);
+            _user_text->setText(_contact->name().c_str());
+            _user_text->setToolTip(user_tooltip(_contact, online, _removed, version).c_str());
+            set_text_color_to(user_color(_contact, online, _removed, version));
+
+            if(_action && update_action) _action->setVisible(!_removed && online);
+
         }
 
         void user_info::update(std::function<bool(us::user_info&)> f, bool update_action)
@@ -173,10 +230,11 @@ namespace fire
 
             bool online = is_online(_contact, _service , !f(*_contact));
             auto version = _service->check_contact_version(_contact->id());
-            _user_text->setText(user_text(_contact, online, version).c_str());
-            _user_text->setToolTip(user_tooltip(_contact, online, version).c_str());
+            _user_text->setText(_contact->name().c_str());
+            _user_text->setToolTip(user_tooltip(_contact, online, _removed, version).c_str());
+            set_text_color_to(user_color(_contact, online, _removed, version));
 
-            if(_action && update_action) _action->setVisible(online);
+            if(_action && update_action) _action->setVisible(!_removed && online);
         }
 
         contact_list_dialog::contact_list_dialog(
@@ -289,6 +347,7 @@ namespace fire
             INVARIANT(_service);
 
             _list->clear();
+            _ui.clear();
 
             for(auto u : _service->user().contacts().list())
             {
@@ -302,7 +361,9 @@ namespace fire
                 connect(rm, SIGNAL(clicked()), mapper, SLOT(map()));
                 connect(mapper, SIGNAL(mapped(QString)), this, SLOT(remove(QString)));
 
-                _list->add(new user_info{u, _service, rm});
+                auto ui = new user_info{u, _service, rm};
+                _list->add(ui);
+                _ui.push_back(ui);
             }
 
             _prev_contacts = _service->user().contacts().size();
@@ -324,7 +385,17 @@ namespace fire
         {
             size_t contacts = _service->user().contacts().size();
             if(contacts == _prev_contacts) 
+            {
+                for(auto ui : _ui)
+                {
+                    CHECK(ui);
+                    //don't update action here because we want to be able to 
+                    //delete contacts even when they are offline
+                    ui->update(false); 
+                                              
+                }
                 return;
+            }
 
             update_contacts();
             _prev_contacts = contacts;
@@ -393,43 +464,77 @@ namespace fire
         {
             REQUIRE(u);
             INVARIANT(_service);
-            if(_contacts.by_id(u->id())) return;
+
+            _contacts.add(u);
+
+            //check if in cache
+            auto i = _um.find(u->id());
+            if(i != _um.end()) 
+            {
+                CHECK(i->second);
+                i->second->set_added();
+                return;
+            }
 
             auto ui = _mk(u);
             add(ui);
-            _contacts.add(u);
-            _contact_widgets.push_back(ui);
+            _um[u->id()] = ui;
         }
+
+        void contact_list::remove_contact(const std::string& id)
+        {
+            auto i = _um.find(id);
+            CHECK(i != _um.end());
+            CHECK(i->second);
+            i->second->set_removed();
+
+            //might have been removed already
+            auto c = _contacts.by_id(id);
+            if(c) _contacts.remove(c);
+        }
+
+
+        using ids_to_remove = std::vector<std::string>;
 
         void contact_list::update(const us::contact_list& contacts)
         {
-            clear();
-            _contact_widgets.clear();
-            _contacts.clear();
+            //add new contacts
             for(auto c : contacts.list())
             {
                 CHECK(c);
                 add_contact(c);
             }
 
-            ENSURE_LESS_EQUAL(_contacts.size(), contacts.size());
+            //remove ones not in list
+            ids_to_remove ids;
+            for(auto& p : _um)
+            {
+                auto c = contacts.by_id(p.first);
+                if(c) continue;
+                ids.push_back(p.first);
+            }
+
+            for(const auto& id : ids) remove_contact(id);
+
+            ENSURE_GREATER_EQUAL(_contacts.size(), contacts.size());
+            ENSURE_LESS_EQUAL(_contacts.size(), _um.size());
         }
 
         void contact_list::update_status(bool update_action)
         {
-            for(auto p : _contact_widgets)
+            for(auto& p : _um)
             {
-                CHECK(p);
-                p->update(update_action);
+                CHECK(p.second);
+                p.second->update(update_action);
             }
         }
 
         void contact_list::update_status(std::function<bool(us::user_info&)> f, bool update_action)
         {
-            for(auto p : _contact_widgets)
+            for(auto& p : _um)
             {
-                CHECK(p);
-                p->update(f);
+                CHECK(p.second);
+                p.second->update(f);
             }
         }
 
