@@ -381,7 +381,7 @@ namespace fire
                 return;
 
             _welcome_screen = new QWidget;
-            auto l = new QVBoxLayout;
+            auto l = new QGridLayout;
             _welcome_screen->setLayout(l);
 
             auto step1 = new QLabel(
@@ -422,37 +422,28 @@ namespace fire
             auto step4b = new QPushButton(tr("Start Conversation"));
 
             //step 1
-            auto s1 = new QWidget;
-            auto s1l = new QHBoxLayout{s1};
-            s1l->addWidget(step1);
-            s1l->addWidget(step1b);
-            l->addWidget(s1);
+            l->addWidget(step1, 0, 0);
+            l->addWidget(step1b, 0, 1, 1, 2);
 
             //step2
-            auto s2 = new QWidget;
-            auto s2l = new QHBoxLayout{s2};
-            s2l->addWidget(step2);
+            l->addWidget(step2, 1, 0);
 
             auto bw = new QWidget;
-            auto bl = new QVBoxLayout{bw};
+            auto bl = new QHBoxLayout{bw};
             bl->addWidget(step2ba);
             bl->addWidget(step2bb);
 
-            s2l->addWidget(bw);
-            l->addWidget(s2);
+            //l->addWidget(bw, 1, 1);
+            l->addWidget(step2ba, 1, 1);
+            l->addWidget(step2bb, 1, 2);
 
             //step3
-            auto s3 = new QWidget;
-            auto s3l = new QHBoxLayout{s3};
-            s3l->addWidget(step3);
-            s3l->addWidget(step3b);
-            l->addWidget(s3);
+            l->addWidget(step3, 2, 0);
+            l->addWidget(step3b, 2, 1, 1, 2);
 
             //step 4
-            auto s4 = new QWidget;
-            auto s4l = new QHBoxLayout{s4};
-            s4l->addWidget(step4);
-            s4l->addWidget(step4b);
+            l->addWidget(step4, 3, 0);
+            l->addWidget(step4b, 3, 1, 1, 2);
 
             connect(step1b, SIGNAL(clicked()), this, SLOT(add_locator()));
             connect(step2ba, SIGNAL(clicked()), this, SLOT(email_invite()));
