@@ -393,7 +393,7 @@ namespace fire
                         "A free Locator service is provided by mempko.com<br>"
                         "You can also use different Locators if you wish.<br>"
                       ));
-            auto step1b = new QPushButton(tr("Add a Locator"));
+            auto step1b = new QPushButton(tr("Add Locator"));
 
             auto step2 = new QLabel(
                     tr(
@@ -421,20 +421,38 @@ namespace fire
 
             auto step4b = new QPushButton(tr("Start Conversation"));
 
-            l->addWidget(step1);
-            l->addWidget(step1b);
-            l->addWidget(step2);
+            //step 1
+            auto s1 = new QWidget;
+            auto s1l = new QHBoxLayout{s1};
+            s1l->addWidget(step1);
+            s1l->addWidget(step1b);
+            l->addWidget(s1);
+
+            //step2
+            auto s2 = new QWidget;
+            auto s2l = new QHBoxLayout{s2};
+            s2l->addWidget(step2);
 
             auto bw = new QWidget;
-            auto bl = new QHBoxLayout{bw};
+            auto bl = new QVBoxLayout{bw};
             bl->addWidget(step2ba);
             bl->addWidget(step2bb);
-            l->addWidget(bw);
 
-            l->addWidget(step3);
-            l->addWidget(step3b);
-            l->addWidget(step4);
-            l->addWidget(step4b);
+            s2l->addWidget(bw);
+            l->addWidget(s2);
+
+            //step3
+            auto s3 = new QWidget;
+            auto s3l = new QHBoxLayout{s3};
+            s3l->addWidget(step3);
+            s3l->addWidget(step3b);
+            l->addWidget(s3);
+
+            //step 4
+            auto s4 = new QWidget;
+            auto s4l = new QHBoxLayout{s4};
+            s4l->addWidget(step4);
+            s4l->addWidget(step4b);
 
             connect(step1b, SIGNAL(clicked()), this, SLOT(add_locator()));
             connect(step2ba, SIGNAL(clicked()), this, SLOT(email_invite()));
