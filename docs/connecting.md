@@ -1,10 +1,10 @@
 Connecting to People
 ================
 
-There are two primary ways to connect to others. You can either
+There are two steps to connect to others. 
 
-  1. Add them as a contact using their identity.
-  2. Another person introduces you to them.
+  1. Add a locator to help you connect with others.
+  2. Share your identity with people you want to connect with.
 
 1. Adding a Locator
 ============
@@ -16,7 +16,8 @@ Then go to the **Locator** tab and click on the **green** add button.
 You can use the free public locator **mempko.com:8080** which is provided for your convenience.
 
 The locator is a signaling service that helps Fire★ find your peers across the internet and helps 
-initiate the peer-to-peer connections.
+initiate the peer-to-peer connections. None of your communication with someone is routed through 
+a locator.
 
 If you are using static IPs, you do not need to use a locator.
 
@@ -52,6 +53,8 @@ a dialog. Click on **Introductions** tab and click the **green** introduction bu
 
 If you receive an introduction you can add that person by clicking on the **green** add button
 to the right of the introduction.
+
+Both people have to be online to be able to introduce them to each other.
 
 More About Locators
 ============
