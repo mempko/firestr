@@ -20,7 +20,9 @@ Windows
 
   * You should be asked to input a username and password
 
-  * Congratulations! You're running Fire★!
+  * The username and password is never sent to a server.
+
+  * Congratulations you're running Fire★!
 
 OS X
 ----
@@ -29,13 +31,15 @@ OS X
 
   * Open `firestr_0.6.dmg`
 
-  * Drag the Fire★!icon into `Applications`
+  * Drag the Fire★ icon into `Applications`
 
-  * Launch Fire★!from like any other app
+  * Launch Fire★ from like any other app
 
   * You should be asked to input a username and password
 
-  * Congratulations! You're running Fire★!
+  * The username and password is never sent to a server.
+
+  * Congratulations you're running Fire★!
 
 Ubuntu
 ------
@@ -44,17 +48,19 @@ Ubuntu
 
   * Open `firestr_0.6_amd64.deb` with Ubuntu Software Center (the default option)
 
-  * Type `firestr` in the terminal
+  * Type `nohup firestr&` in the terminal
 
   * You should be asked to input a username and password
 
-  * Congratulations! You're running Fire★!
+  * The username and password is never sent to a server.
+
+  * Congratulations you're running Fire★!
 
 
 Other Platforms
 ---------------
 
-At the moment, Fire★ only provides official builds for Ubuntu, Windows, and Mac (although if you'd like to maintain a Fire★ build for the platform of your choice, please feel free to [get in touch](quickstart#support).  However, you can compile from [source](https://github.com/mempko/firestr).  At the moment, we recommend gcc/g++ over clang for compilation.
+At the moment, Fire★ only provides official builds for Ubuntu, Windows, and Mac (although if you'd like to maintain a Fire★ build for the platform of your choice, please feel free to [get in touch](quickstart#support).  However, you can compile from [source](https://github.com/mempko/firestr).
 
 After Installation
 ------------------
