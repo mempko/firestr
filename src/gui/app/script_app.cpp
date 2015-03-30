@@ -153,7 +153,7 @@ namespace fire
                 if(exists) 
                 {
                     _clone->setToolTip(tr("update app"));
-                    _clone->setStyleSheet("border: 0px; color: 'black';");
+                    _clone->setStyleSheet("border: 0px; color: 'grey';");
                 }
                 else
                 {
