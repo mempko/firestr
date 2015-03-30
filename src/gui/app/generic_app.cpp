@@ -43,7 +43,7 @@ namespace fire
         {
             namespace
             {
-                const size_t PADDING = 20;
+                const size_t PADDING = 45;
             }
 
             generic_app::generic_app() : message{}
@@ -87,7 +87,7 @@ namespace fire
                 if(_visible) return;
 
                 std::stringstream s;
-                s << "<font color='red'>" << _title_text << "</font>";
+                s << "<font color='red'>" << _title_text << " ...</font>";
                 _title->setText(s.str().c_str());
 
             }
@@ -96,26 +96,41 @@ namespace fire
             {
                 REQUIRE(_main);
                 INVARIANT(_show_hide);
+                INVARIANT(root());
+                INVARIANT(layout());
 
                 if(_visible)
                 {
+                    {
+                        std::stringstream s;
+                        s << "<font color='grey'>" << _title_text << " ...</font>";
+                        _title->setText(s.str().c_str());
+                    }
+
                     make_maximize(*_show_hide);
+
+                    //remove min/max constraint so that the widget can be resized to a tiny size
+                    layout()->setSizeConstraint(QLayout::SetDefaultConstraint);
+
                     _show_hide->setToolTip(tr("show app"));
                     _visible = false;
-                    _min_height = root()->minimumHeight();
-                    _max_height = root()->maximumHeight();
-                    root()->setMinimumHeight(PADDING);
-                    root()->setMaximumHeight(PADDING);
+                    _min_height = minimumHeight();
+                    _max_height = maximumHeight();
                     _main->hide();
+                    setMinimumHeight(PADDING);
+                    setMaximumHeight(PADDING);
                 } 
                 else
                 {
                     _title->setText(_title_text.c_str());
+
+                    //enable min/max constraint so that the widget can be to original size
+                    layout()->setSizeConstraint(QLayout::SetMinAndMaxSize);
                     make_minimize(*_show_hide);
                     _show_hide->setToolTip(tr("hide app"));
                     _visible = true;
-                    root()->setMinimumHeight(_min_height);
-                    root()->setMaximumHeight(_max_height);
+                    setMinimumHeight(_min_height);
+                    setMaximumHeight(_max_height);
                     _main->show();
                 }
             }
