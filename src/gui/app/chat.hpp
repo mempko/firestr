@@ -45,6 +45,7 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QComboBox>
+#include <QTextEdit>
 
 #include <string>
 
@@ -86,6 +87,7 @@ namespace fire
                     void send_all(const fire::message::message&);
                     void join();
                     void contact_joined(const std::string& id);
+                    void add_text(const QString& q);
 
                 private:
                     std::string _id;
@@ -98,7 +100,8 @@ namespace fire
 
                     QWidget* _main;
                     QGridLayout* _main_layout;
-                    gui::list* _messages;
+                    QTextEdit* _messages;
+                    QString _text;
                     QLineEdit* _message;
                     QPushButton* _send;
             };
