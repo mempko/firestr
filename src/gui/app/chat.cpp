@@ -56,7 +56,7 @@ namespace fire
 
             namespace
             {
-                const size_t PADDING = 100;
+                const size_t PADDING = 200;
                 const std::string MESSAGE = "m";
                 const std::string JOINED = "j";
             }
@@ -94,11 +94,11 @@ namespace fire
                 f_serialize_empty;
             };
 
-            QWidget* make_message_widget(const std::string& color, const std::string& name, const std::string& text)
+            QString make_message_str(const std::string& color, const std::string& name, const std::string& text)
             {
                 std::stringstream s;
-                s << "<font color='gray'>" << u::hour_min_sec() << "</font> <b><font color='" << color << "'>" << name << "</font></b>: " << text;
-                return new QLabel{s.str().c_str()};
+                s << "<font color='gray'>" << u::hour_min_sec() << "</font> <b><font color='" << color << "'>" << name << "</font></b>: " << text << "<br/>";
+                return s.str().c_str();
             }
 
             chat_app::chat_app(
@@ -156,8 +156,10 @@ namespace fire
                 set_main(_main);
 
                 //message list
-                _messages = new list;
-                _messages->auto_scroll(true);
+                _messages = new QTextEdit;
+                _messages->setReadOnly(true);
+                _messages->setWordWrapMode(QTextOption::WordWrap);
+                _messages->setUndoRedoEnabled(false);
                 _main_layout->addWidget(_messages, 0, 0, 1, 2);
 
                 //text edit
@@ -224,6 +226,15 @@ namespace fire
                 return _mail;
             }
 
+            void chat_app::add_text(const QString& q)
+            {
+                INVARIANT(_messages);
+                _text.append(q);
+                _messages->setHtml(_text);
+                _messages->verticalScrollBar()->setValue(_messages->verticalScrollBar()->maximum());
+            }
+
+
             void chat_app::send_message()
             {
                 INVARIANT(_message);
@@ -239,7 +250,7 @@ namespace fire
                 //update gui
                 _message->clear();
                 auto self = _conversation->user_service()->user().info().name();
-                _messages->add(make_message_widget("blue", self, text));
+                add_text(make_message_str("blue", self, text));
 
                 //send the message 
                 _clock++;
@@ -249,7 +260,7 @@ namespace fire
                 tm.clock = _clock;
 
                 send_all(tm.to_message());
-                if(_conversation->contacts().list().empty()) _messages->add(make_message_widget("red", "notice", "nobody here..."));
+                if(_conversation->contacts().list().empty()) add_text(make_message_str("red", "notice", "nobody here..."));
             }
 
             void chat_app::check_mail(m::message m) 
@@ -279,8 +290,7 @@ namespace fire
                         _clock += t.clock;
                     }
 
-                    _messages->add(make_message_widget("black", c->name(), t.text));
-                    _messages->verticalScrollBar()->scroll(0, _messages->verticalScrollBar()->maximum());
+                    add_text(make_message_str("black", c->name(), t.text));
 
                     _conversation_service->fire_conversation_alert(_conversation->id(), visible());
                     alerted();
@@ -317,7 +327,7 @@ namespace fire
 
                 std::stringstream s;
                 s << c->name() << " joined";
-                _messages->add(make_message_widget("red", "notice", s.str()));
+                add_text(make_message_str("red", "notice", s.str()));
             }
 
             void chat_app::contact_quit(const std::string& id)
@@ -331,7 +341,7 @@ namespace fire
 
                 std::stringstream s;
                 s << c->name() << " quit";
-                _messages->add(make_message_widget("red", "notice", s.str()));
+                add_text(make_message_str("red", "notice", s.str()));
             }
         }
     }
