@@ -271,7 +271,6 @@ namespace fire
         {
             INVARIANT(_layout);
 
-            std::cerr << "clearing" << std::endl;
             for(int i = 0; i < _layout->count(); i++)
             {
                 auto itm = _layout->itemAt(i);
@@ -280,8 +279,6 @@ namespace fire
 
                 auto mw = dynamic_cast<gui::message*>(w);
                 if(!mw) continue;
-
-                std::cerr << "\t " << i << std::endl;
 
                 mw->clear_alert();
             }
