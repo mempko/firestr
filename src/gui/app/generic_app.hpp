@@ -46,10 +46,16 @@ namespace fire
             class generic_app : public message
             {
                 Q_OBJECT
+                Q_PROPERTY(int app_min_height READ app_min_height WRITE set_app_min_height);
                 public:
                     generic_app();
 
                     virtual void contact_quit(const std::string& id) = 0;
+
+                public:
+                    void animate_min_height_to(int);
+                    int app_min_height() const;
+                    void set_app_min_height(int);
 
                 protected:
                     virtual void set_alert_style(const std::string& s);

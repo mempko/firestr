@@ -35,6 +35,8 @@
 #include "gui/util.hpp"
 #include "util/dbc.hpp"
 
+#include <QPropertyAnimation>
+
 namespace fire
 {
     namespace gui
@@ -92,6 +94,35 @@ namespace fire
 
             }
 
+            void generic_app::animate_min_height_to(int h)
+            {
+                auto a = new QPropertyAnimation{this, "app_min_height"};
+
+                a->setDuration(500);
+                a->setKeyValueAt(0.0, app_min_height());
+                a->setKeyValueAt(1.0, h);
+                a->setEasingCurve(QEasingCurve::OutExpo);
+                a->start(QAbstractAnimation::DeleteWhenStopped);
+            }
+
+            int generic_app::app_min_height() const
+            {
+                return minimumHeight();
+            }
+
+            void generic_app::set_app_min_height(int h)
+            {
+                setMinimumHeight(h);
+
+                if(_visible && h >= static_cast<int>(_min_height) - 1)
+                {
+                    //enable min/max constraint so that the widget can be to original size
+                    layout()->setSizeConstraint(QLayout::SetMinAndMaxSize);
+                    setMaximumHeight(_max_height);
+                    _main->show();
+                }
+            }
+
             void generic_app::toggle_visible()
             {
                 REQUIRE(_main);
@@ -117,21 +148,17 @@ namespace fire
                     _min_height = minimumHeight();
                     _max_height = maximumHeight();
                     _main->hide();
-                    setMinimumHeight(PADDING);
+                    animate_min_height_to(PADDING);
                     setMaximumHeight(PADDING);
                 } 
                 else
                 {
                     _title->setText(_title_text.c_str());
 
-                    //enable min/max constraint so that the widget can be to original size
-                    layout()->setSizeConstraint(QLayout::SetMinAndMaxSize);
                     make_minimize(*_show_hide);
                     _show_hide->setToolTip(tr("hide app"));
                     _visible = true;
-                    setMinimumHeight(_min_height);
-                    setMaximumHeight(_max_height);
-                    _main->show();
+                    animate_min_height_to(_min_height);
                 }
             }
 
