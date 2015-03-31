@@ -45,7 +45,8 @@ namespace fire
         {
             namespace
             {
-                const size_t PADDING = 45;
+                const size_t PADDING = 30;
+                const size_t TEXT_PADDING = 2;
             }
 
             generic_app::generic_app() : message{}
@@ -53,7 +54,8 @@ namespace fire
                 REQUIRE_FALSE(_title);
                 REQUIRE_FALSE(_show_hide);
 
-                _title = new QLabel{};
+                _title = new QLabel;
+                _title->setMinimumHeight(_title->font().pointSize()*TEXT_PADDING);
 
                 _show_hide = new QPushButton;
                 make_minimize(*_show_hide);
