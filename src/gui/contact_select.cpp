@@ -29,7 +29,7 @@
  * also delete it here.
  */
 
-#include "gui/contactselect.hpp"
+#include "gui/contact_select.hpp"
 #include "gui/util.hpp"
 
 #include "util/log.hpp"

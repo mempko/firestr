@@ -28,7 +28,7 @@
  * this exception statement from all source files in the program, then 
  * also delete it here.
  */
-#include "gui/debugwin.hpp"
+#include "gui/debug_win.hpp"
 
 #include "gui/list.hpp"
 #include "gui/util.hpp"

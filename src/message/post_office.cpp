@@ -29,7 +29,7 @@
  * also delete it here.
  */
 
-#include "message/postoffice.hpp"
+#include "message/post_office.hpp"
 #include "util/dbc.hpp"
 #include "util/log.hpp"
 #include "util/string.hpp"

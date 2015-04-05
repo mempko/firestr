@@ -34,7 +34,7 @@ inbox and put messages in the outbox. A post office will
 grab messages from the outbox and send them to the address
 requested.
 
-postoffice  
+post_office  
 -------------------------------------------------------------------
 
 Implements a post office as described above. Each post office

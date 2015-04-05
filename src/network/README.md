@@ -51,7 +51,7 @@ the same port. Had a send and receive function which
 multiplexes and demultiplexes messages between all open
 connections
 
-stungun              
+stun_gun              
 -------------------------------------------------------------------
 Implementation of a simple STUN client to get ip and port 
 information. Currently uses QT's UDP sockets but will eventually

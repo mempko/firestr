@@ -31,11 +31,9 @@
 #ifndef FIRESTR_MESSAGE_MASERT_POSTOFFICE_H
 #define FIRESTR_MESSAGE_MASERT_POSTOFFICE_H
 
-#include "message/postoffice.hpp"
+#include "message/post_office.hpp"
 
 #include "network/connection_manager.hpp"
-#include "network/stungun.hpp"
-
 #include "security/security_library.hpp"
 
 #include "util/thread.hpp"
@@ -63,10 +61,8 @@ namespace fire
                 virtual bool send_outside(const message&);
 
             private:
-                bool _stunned;
                 std::string _in_host;
                 network::port_type _in_port;
-                network::stun_gun_ptr _stun;
                 util::thread_uptr _in_thread;
                 util::thread_uptr _out_thread;
                 queue _out;

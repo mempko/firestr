@@ -31,7 +31,7 @@
 
 #include <QtWidgets>
 
-#include "gui/messagelist.hpp"
+#include "gui/message_list.hpp"
 #include "gui/unknown_message.hpp"
 #include "gui/app/chat.hpp"
 #include "gui/app/app_editor.hpp"

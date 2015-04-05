@@ -32,9 +32,9 @@
 #ifndef FIRESTR_DEBUGWIN_H
 #define FIRESTR_DEBUGWIN_H
 
-#include "user/userservice.hpp"
+#include "user/user_service.hpp"
 #include "conversation/conversation_service.hpp"
-#include "message/postoffice.hpp"
+#include "message/post_office.hpp"
 #include "network/udp_queue.hpp"
 
 #include "gui/list.hpp"

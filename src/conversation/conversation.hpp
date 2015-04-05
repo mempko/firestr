@@ -33,9 +33,9 @@
 #define FIRESTR_CONVERSATION_CONVERSATION_H
 
 #include "user/user.hpp"
-#include "user/userservice.hpp"
+#include "user/user_service.hpp"
 
-#include "message/postoffice.hpp"
+#include "message/post_office.hpp"
 #include "message/mailbox.hpp"
 #include "messages/sender.hpp"
 

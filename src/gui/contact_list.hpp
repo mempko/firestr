@@ -33,9 +33,9 @@
 #define FIRESTR_GUI_CONTACT_LIST_H
 
 #include "gui/list.hpp"
-#include "gui/contactselect.hpp"
+#include "gui/contact_select.hpp"
 #include "user/user.hpp"
-#include "user/userservice.hpp"
+#include "user/user_service.hpp"
 
 #include <set>
 #include <string>

@@ -32,9 +32,9 @@
 #ifndef FIRESTR_GUI_CONVERSATION_H
 #define FIRESTR_GUI_CONVERSATION_H
 
-#include "gui/messagelist.hpp"
-#include "gui/contactlist.hpp"
-#include "gui/contactselect.hpp"
+#include "gui/message_list.hpp"
+#include "gui/contact_list.hpp"
+#include "gui/contact_select.hpp"
 #include "gui/mail_service.hpp"
 #include "gui/app/app_service.hpp"
 #include "gui/app/app_reaper.hpp"

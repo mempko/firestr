@@ -32,7 +32,7 @@
 #define FIRESTR_MESSAGES_SENDER_H
 
 #include "message/message.hpp"
-#include "user/userservice.hpp"
+#include "user/user_service.hpp"
 
 #include <string>
 #include <memory>

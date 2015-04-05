@@ -120,7 +120,8 @@ Main application
 firelocator     
 -------------------------------------------------------------------
 
-Greeter application which helps firestr communicate over NAT
+Locator application which helps firestr instances find each other and 
+communicate over NAT.
 
 packaged_apps 
 -------------------------------------------------------------------
