@@ -29,7 +29,7 @@
  * also delete it here.
  */
 
-#include <gui/mail_service.hpp>
+#include "gui/mail_service.hpp"
 
 #include "util/dbc.hpp"
 #include "util/log.hpp"

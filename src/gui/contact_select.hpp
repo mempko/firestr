@@ -32,7 +32,7 @@
 #ifndef FIRESTR_GUI_CONTACT_SELECT_H
 #define FIRESTR_GUI_CONTACT_SELECT_H
 
-#include "user/userservice.hpp"
+#include "user/user_service.hpp"
 
 #include <QWidget>
 #include <QGridLayout>

@@ -33,13 +33,13 @@
 #define FIRESTR_MAINWIN_H
 
 #include <QMainWindow>
-#include "gui/contactlist.hpp"
+#include "gui/contact_list.hpp"
 #include "gui/conversation.hpp"
 #include "gui/app/app_service.hpp"
 #include "gui/app/app_reaper.hpp"
 #include "gui/mail_service.hpp"
-#include "message/postoffice.hpp"
-#include "user/userservice.hpp"
+#include "message/post_office.hpp"
+#include "user/user_service.hpp"
 #include "conversation/conversation.hpp"
 #include "conversation/conversation_service.hpp"
 #include "security/security_library.hpp"

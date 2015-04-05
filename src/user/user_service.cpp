@@ -29,7 +29,7 @@
  * also delete it here.
  */
 
-#include "user/userservice.hpp"
+#include "user/user_service.hpp"
 #include "messages/greeter.hpp"
 #include "messages/pinhole.hpp"
 #include "network/connection.hpp"

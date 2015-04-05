@@ -29,7 +29,7 @@
  * also delete it here.
  */
 
-#include "gui/contactlist.hpp"
+#include "gui/contact_list.hpp"
 #include "gui/util.hpp"
 #include "network/message_queue.hpp"
 #include "util/dbc.hpp"

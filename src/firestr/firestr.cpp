@@ -32,7 +32,7 @@
 #include <QApplication>
 
 #include "user/user.hpp"
-#include "gui/mainwin.hpp"
+#include "gui/main_win.hpp"
 #include "gui/util.hpp"
 #include "network/util.hpp"
 

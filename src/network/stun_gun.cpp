@@ -29,7 +29,7 @@
  * also delete it here.
  */
 
-#include "network/stungun.hpp"
+#include "network/stun_gun.hpp"
 #include "util/bytes.hpp"
 #include "util/dbc.hpp"
 #include "util/log.hpp"

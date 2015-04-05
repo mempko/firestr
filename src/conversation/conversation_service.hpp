@@ -34,7 +34,7 @@
 
 #include "conversation/conversation.hpp"
 #include "service/service.hpp"
-#include "message/postoffice.hpp"
+#include "message/post_office.hpp"
 #include "message/mailbox.hpp"
 #include "messages/sender.hpp"
 

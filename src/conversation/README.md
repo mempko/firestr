@@ -5,10 +5,10 @@ Library provides the model for the conversation state and service which
 manipulates it.
 
 A conversation is an instance of communication between a set of people.
+The lifetime of the conversation exists as long as one person is in it.
 
-This needs to be fleshed out. I am thinking of doing a reference 
-counted setup for the life of a conversation. Right now if you leave
-a conversation, you cannot come back.
+If you leave a conversation, you need someone who is still in it to add
+you back.
 
 file summary
 ===================================================================
