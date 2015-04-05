@@ -7,6 +7,12 @@ executables start with `fire', where `firestr' is the main one.
 
 Each subdirectory has it's own CMakeLists file and README.
 
+Design 
+===================================================================
+
+The design of Fire★ is based on a microkernel architecture where
+various parts run as services which communicate over message queues.
+
 Dependency Graph 
 ===================================================================
         
@@ -111,7 +117,7 @@ firestr
 
 Main application
 
-firegreet     
+firelocator     
 -------------------------------------------------------------------
 
 Greeter application which helps firestr communicate over NAT

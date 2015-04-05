@@ -42,14 +42,14 @@ QT5_WRAP_CPP(moc_headers ${headers})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 add_executable(
-    firegreet
+    firelocator
     ${src}
     ${moc_headers})
 
-qt5_use_modules(firegreet Widgets Network Multimedia)
+qt5_use_modules(firelocator Widgets Network Multimedia)
 
 target_link_libraries(
-    firegreet
+    firelocator
     fire_user
     fire_messages
     fire_service
@@ -61,7 +61,7 @@ target_link_libraries(
     ${MISC_LIBRARIES})
 
 add_dependencies(
-    firegreet 
+    firelocator 
     fire_messages
     fire_user
     fire_message
@@ -69,4 +69,4 @@ add_dependencies(
     fire_security
     fire_util)
 
-install(TARGETS firegreet DESTINATION bin)
+install(TARGETS firelocator DESTINATION bin)
