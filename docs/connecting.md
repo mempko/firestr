@@ -6,14 +6,15 @@ There are two steps to connect to others.
   1. Add a locator to help you connect with others.
   2. Share your identity with people you want to connect with.
 
-1. Adding a Locator
+1. Using a Locator
 ============
 
-To connect to people across the internet you need to first add a **locator**. 
-Click on **Manage Contacts** in the **Contacts** menu. This will open up the **Contacts** dialog.
-Then go to the **Locator** tab and click on the **green** add button. 
+To connect to people across the internet you need to use a **locator**.  A free locator 
+provided by **mempko.com** is added by default when you first run Fire★.
 
-You can use the free public locator **mempko.com:8080** which is provided for your convenience.
+If you want to use a different locator or your own, you can click on **Manage Contacts** in 
+the **Contacts** menu. This will open up the **Contacts** dialog. Then go to the **Locator** 
+tab and click on the **green** add button. 
 
 The locator is a signaling service that helps Fire★ find your peers across the internet and helps 
 initiate the peer-to-peer connections. None of your communication with someone is routed through 
