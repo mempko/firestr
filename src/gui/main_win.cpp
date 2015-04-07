@@ -261,13 +261,20 @@ namespace fire
 
         us::local_user_ptr make_new_user(const std::string& home)
         {
+            QMessageBox::information(
+                    0, 
+                    qApp->tr("Welcome"),
+                    qApp->tr(
+                        "Welcome to Fire★,<br>"
+                        "First you will need to create a User Account.<br>"
+                        "It is stored ONLY on this computer and the password is used to protect your identity.<br>"));
             bool ok = false;
             std::string name = "your name here";
 
             auto r = QInputDialog::getText(
                     0, 
-                    qApp->tr("New User"),
-                    qApp->tr("Select User Name"),
+                    qApp->tr("New User"), 
+                    qApp->tr("Choose a User Name"),
                     QLineEdit::Normal, name.c_str(), &ok);
 
             if(ok && !r.isEmpty()) name = convert(r);
