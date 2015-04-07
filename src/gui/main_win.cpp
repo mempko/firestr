@@ -533,6 +533,7 @@ namespace fire
             REQUIRE(_app_editor_action);
             REQUIRE(_create_conversation_action);
             REQUIRE(_install_app_action);
+            REQUIRE(_remove_app_action);
             REQUIRE(_show_getting_started_action);
             REQUIRE(_open_docs_action);
             REQUIRE(_open_api_action);
@@ -540,7 +541,9 @@ namespace fire
 
             _main_menu = new QMenu{tr("&Main"), this};
             _main_menu->addAction(_about_action);
+            _main_menu->addSeparator();
             _main_menu->addAction(_install_app_action);
+            _main_menu->addAction(_remove_app_action);
             _main_menu->addSeparator();
             _main_menu->addAction(_close_action);
 
@@ -591,6 +594,7 @@ namespace fire
             _app_menu = new QMenu{tr("&App"), this};
 
             update_app_menu();
+            update_remove_app_menu();
         }
 
         void main_window::update_app_menu()
@@ -616,6 +620,13 @@ namespace fire
 
                 _app_menu->addAction(action);
             }
+        }
+
+        void main_window::update_remove_app_menu()
+        {
+            INVARIANT(_remove_app_action);
+            INVARIANT(_app_service);
+            _remove_app_action->setEnabled(!_app_service->available_apps().empty());
         }
 
         void main_window::setup_timers()
@@ -662,6 +673,8 @@ namespace fire
             _install_app_action = new QAction{tr("&Install App"), this};
             connect(_install_app_action, SIGNAL(triggered()), this, SLOT(install_app()));
 
+            _remove_app_action = new QAction{tr("&Remove App"), this};
+            connect(_remove_app_action, SIGNAL(triggered()), this, SLOT(remove_app()));
 
             _create_conversation_action = new QAction{tr("&Create"), this};
             connect(_create_conversation_action, SIGNAL(triggered()), this, SLOT(create_conversation()));
@@ -701,6 +714,7 @@ namespace fire
             ENSURE(_chat_app_action);
             ENSURE(_app_editor_action);
             ENSURE(_install_app_action);
+            ENSURE(_remove_app_action);
             ENSURE(_open_docs_action);
             ENSURE(_open_api_action);
             ENSURE(_open_website_action);
@@ -813,10 +827,11 @@ namespace fire
             s->add_chat_app();
         }
 
-        bool ask_user_to_select_app(QWidget* w, const a::app_service& apps, std::string& id)
+        bool ask_user_to_select_app(QWidget* w, const a::app_service& apps, const std::string& no_select, std::string& id, std::string& name)
         {
             QStringList as;
-            as << NEW_APP_S.c_str();
+            if(!no_select.empty())
+                as << no_select.c_str();
             for(const auto& a : apps.available_apps())
                 as << a.second.name.c_str();
 
@@ -826,8 +841,8 @@ namespace fire
 
             if (!ok || g.isEmpty()) return false;
 
-            std::string name = convert(g);
-            if(name == NEW_APP_S) id = "";
+            name = convert(g);
+            if(name == no_select) id = "";
             else 
                 for(const auto& a : apps.available_apps())
                     if(a.second.name == name) { id = a.second.id; break; }
@@ -845,7 +860,8 @@ namespace fire
             if(!s) return;
 
             std::string id; 
-            if(!ask_user_to_select_app(this, *_app_service, id)) return;
+            std::string name; 
+            if(!ask_user_to_select_app(this, *_app_service, NEW_APP_S, id, name)) return;
 
             s->add_app_editor(id);
         }
@@ -863,7 +879,31 @@ namespace fire
             {
                 std::stringstream ss;
                 ss << "`" << app->name() << "' has been installed";
-                QMessageBox::information(this, tr("App installed"), ss.str().c_str());
+                QMessageBox::information(this, tr("App Installed"), ss.str().c_str());
+            }
+        }
+
+        void main_window::remove_app()
+        {
+            INVARIANT(_app_service);
+
+            std::string id; 
+            std::string name; 
+            if(!ask_user_to_select_app(this, *_app_service, "", id, name)) return;
+
+            CHECK_FALSE(id.empty());
+
+            bool removed = _app_service->remove_app(id);
+            std::stringstream ss;
+            if(removed)
+            {
+                ss << "`" << name << "' has been removed";
+                QMessageBox::information(this, tr("App Removed"), ss.str().c_str());
+            }
+            else
+            {
+                ss << "Error removing `" << name << "'";
+                QMessageBox::critical(this, tr("Error Removing App"), ss.str().c_str());
             }
         }
 
@@ -1454,6 +1494,7 @@ namespace fire
         void main_window::apps_updated_event(const app::event::apps_updated&)
         {
             update_app_menu();
+            update_remove_app_menu();
         }
     }
 }

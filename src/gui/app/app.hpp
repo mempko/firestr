@@ -104,6 +104,8 @@ namespace fire
 
             bool save_app(const std::string& dir, const app&);
             app_ptr load_app(util::disk_store& local, const std::string& dir);
+            bool app_removed(const std::string& dir);
+            bool tag_app_removed(const std::string& dir);
             bool load_app_metadata(const std::string& dir, app_metadata&);
 
             void export_app_as_message(const std::string& file, const app&);

@@ -59,6 +59,7 @@ namespace fire
                 const std::string METADATA_FILE = "metadata";
                 const std::string CODE_FILE = "code.lua";
                 const std::string DATA_PATH = "data";
+                const std::string REMOVE_TAG_FILE = "removed";
             }
 
             std::string get_metadata_file(const std::string& dir)
@@ -83,6 +84,30 @@ namespace fire
 
                 p /= DATA_PATH;
                 return p.string();
+            }
+
+            std::string get_remove_tag_path(const std::string& dir)
+            {
+                bf::path p = dir;
+
+                p /= REMOVE_TAG_FILE;
+                return p.string();
+            }
+
+            bool app_removed(const std::string& dir)
+            {
+                return bf::exists(get_remove_tag_path(dir));
+            }
+
+            bool tag_app_removed(const std::string& dir)
+            {
+                if(!bf::exists(dir)) return false;
+
+                std::ofstream f(get_remove_tag_path(dir).c_str());
+                if(!f.good()) return false;
+
+                f << "1";
+                return true;
             }
 
             app::app(u::disk_store& s, const std::string& id) : 

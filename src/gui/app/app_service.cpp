@@ -147,8 +147,11 @@ namespace fire
                 {
                     if (!bf::is_directory(*d)) continue;
 
+                    auto app_path = d->path().string();
+                    if(app_removed(app_path)) continue;
+                    
                     app_metadata m;
-                    if(!load_app_metadata(d->path().string(), m)) continue;
+                    if(!load_app_metadata(app_path, m)) continue;
 
                     _app_metadata[m.id] = m;
                 } 
@@ -244,6 +247,42 @@ namespace fire
                 _app_metadata[m.id] = m;
                 fire_apps_updated_event();
                 return saved;
+            }
+
+            bool app_service::remove_app(const std::string& id)
+            {
+                REQUIRE_FALSE(id.empty());
+
+                u::mutex_scoped_lock l(_mutex);
+                auto ai = _app_metadata.find(id);
+                if(ai == _app_metadata.end()) 
+                {
+                    LOG << "cannot find app with id `" << id << "'" << std::endl;
+                    return false;
+                }
+
+                const auto& m = ai->second;
+                CHECK(!m.id.empty());
+                CHECK(!m.path.empty());
+
+                //must start with the app home, we don't want to have a bug moves 
+                //random files
+                CHECK(m.path.find(_app_home) == 0); 
+
+                //to remove an app, we simply tag it as removed on the filesystem.
+                //It stays around forever for now. 
+                //Maybe later we can garbage collect...
+                if(!tag_app_removed(m.path)) 
+                {
+                    LOG << "error tagging app as removed with id `" << id << "'" << std::endl;
+                    return false;
+                }
+                LOG << "removed app `" << m.name << "' (" << m.id << ") at `" << m.path << "'" << std::endl;
+
+                _app_metadata.erase(ai);
+                fire_apps_updated_event();
+
+                return true;
             }
 
             bool app_service::clone_app(const app& a)
