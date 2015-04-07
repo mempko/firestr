@@ -134,15 +134,15 @@ namespace fire
             _service{s},
             _action{action}
         {
-            REQUIRE(p)
-            REQUIRE(s)
+            REQUIRE(p);
+            REQUIRE(s);
 
             auto* layout = new QGridLayout{this};
             setLayout(layout);
 
             bool online = is_online(p, _service);
             auto version = s->check_contact_version(p->id());
-            
+
             _user_text = new QLabel{p->name().c_str()};
             _user_text->setToolTip(user_tooltip(p, online, _removed, version).c_str());
             _text_color = QColor{0, 0, 0, 0};
@@ -244,7 +244,7 @@ namespace fire
             setLayout(layout);
             auto* tabs = new QTabWidget{this};
             layout->addWidget(tabs);
-            
+
             auto* contacts_tab = new QWidget;
             auto* contacts_layout = new QGridLayout{contacts_tab};
 
@@ -266,7 +266,7 @@ namespace fire
 
             tabs->addTab(intro_tab, tr("introductions"));
             if(!_service->user().introductions().empty())
-                    tabs->tabBar()->setTabTextColor(2, QColor{"red"});
+                tabs->tabBar()->setTabTextColor(2, QColor{"red"});
 
             init_greeters_tab(greeters_tab, greeters_layout);
             init_contacts_tab(contacts_tab, contacts_layout);
@@ -385,7 +385,7 @@ namespace fire
                     //don't update action here because we want to be able to 
                     //delete contacts even when they are offline
                     ui->update(false); 
-                                              
+
                 }
                 return;
             }
@@ -422,7 +422,7 @@ namespace fire
             if(a != QMessageBox::Yes) return;
 
             _service->remove_contact(id);
-            
+
             update();
         }
 
@@ -436,8 +436,8 @@ namespace fire
         contact_list::contact_list(us::user_service_ptr service, const us::contact_list& contacts) :
             contact_list(service, contacts, 
                     [=](us::user_info_ptr u) { return simple_info(u, _service);})
-        {
-        }
+            {
+            }
 
         contact_list::contact_list(us::user_service_ptr service, const us::contact_list& contacts, make_user_info mk) :
             _service{service},
@@ -540,16 +540,15 @@ namespace fire
             for(const auto& s : _service->user().greeters())
                 add_greeter(s);
         }
-                
+
         void greeter_list::add_greeter(const us::greet_server& s)
         {
             add(new greeter_info{_service, s});
         }
 
-       std::string add_new_greeter(us::user_service_ptr service, QWidget* parent)
-       {
-           REQUIRE(service);
-           REQUIRE(parent);
+        std::string add_new_greeter(us::user_service& service, QWidget* parent)
+        {
+            REQUIRE(parent);
 
             bool ok = false;
             bool error = false;
@@ -580,13 +579,20 @@ namespace fire
             //append port if not specified
             if(address.find(":") == std::string::npos) address.append(":7070");
 
-            service->add_greeter(address);
+            service.add_greeter(address);
             return address;
-       }
+        }
+
+        void add_default_greeter(us::user_service& service)
+        {
+            if(!service.user().greeters().empty()) return;
+            service.add_greeter(DEFAULT_GREETER);
+        }
 
         void greeter_list::add_greeter()
         {
-            auto address = add_new_greeter(_service, this);
+            INVARIANT(_service);
+            auto address = add_new_greeter(*_service, this);
             if(address.empty()) return;
 
             auto host_port = n::parse_host_port(address);
@@ -733,9 +739,9 @@ namespace fire
         }
 
         introduce_dialog::introduce_dialog(
-                        const std::string& title, 
-                        us::user_service_ptr s, 
-                        QWidget* parent) : 
+                const std::string& title, 
+                us::user_service_ptr s, 
+                QWidget* parent) : 
             QDialog{parent},
             _user_service{s}
         {
@@ -900,16 +906,16 @@ namespace fire
 
             us::contact_introduction i1{
                 _user_service->user().info().id(),
-                GREETER,
-                convert(_message_1->text()),
-                *c2
+                    GREETER,
+                    convert(_message_1->text()),
+                    *c2
             };
 
             us::contact_introduction i2{
                 _user_service->user().info().id(),
-                GREETER,
-                convert(_message_2->text()),
-                *c1
+                    GREETER,
+                    convert(_message_2->text()),
+                    *c1
             };
 
             _user_service->send_introduction(c1->id(), i1);
@@ -970,8 +976,8 @@ namespace fire
 
             url << "mailto:" << "?subject=" << name << " wants to connect with Fire★" 
                 << "&body=" << name << " wants to connect with you using Fire★. \n\n" 
-                                    << "You can download Fire★ at http://firestr.com\n\n"
-                                    << "Copy and Paste the identity below into Fire★ and give them yours.\n\n";
+                << "You can download Fire★ at http://firestr.com\n\n"
+                << "Copy and Paste the identity below into Fire★ and give them yours.\n\n";
 
             us::identity iden{ s->user().info(), greeter.first};
             url << us::create_identity(iden) << std::endl;
@@ -1186,7 +1192,7 @@ namespace fire
                     QMessageBox::critical(p, p->tr("Error Adding Contact"), ss.str().c_str());
                 }
             }
-            
+
             return added;
         }
 
@@ -1198,7 +1204,7 @@ namespace fire
             //get file name to load
             add_contact_dialog ac;
             ac.exec();
-            
+
             if(ac.result() == QDialog::Rejected) return false;
 
             auto iden = ac.iden();

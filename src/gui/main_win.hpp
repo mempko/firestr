@@ -90,7 +90,6 @@ namespace fire
 
             private slots:
                 void about();
-                void add_locator();
                 void email_invite();
                 void show_identity();
                 void add_contact();
@@ -130,6 +129,7 @@ namespace fire
                 void save_state();
                 void restore_state();
                 void setup_timers();
+                void setup_defaults();
                 void create_contacts_screen();
                 void create_welcome_screen(bool force);
                 void create_alert_screen();
