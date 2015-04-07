@@ -66,6 +66,7 @@ namespace fire
                     bool save_app(const app&);
                     bool clone_app(const app&);
                     void export_app(const app&, const std::string& file);
+                    bool remove_app(const std::string& id);
                     app_ptr import_app(const std::string& file);
 
                 public:

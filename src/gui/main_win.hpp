@@ -98,6 +98,7 @@ namespace fire
                 void make_chat_app();
                 void make_app_editor();
                 void install_app();
+                void remove_app();
                 void closeEvent(QCloseEvent*);
                 void dragEnterEvent(QDragEnterEvent*);
                 void dropEvent(QDropEvent*);
@@ -123,6 +124,7 @@ namespace fire
                 void create_menus();
                 void create_app_menu();
                 void update_app_menu();
+                void update_remove_app_menu();
                 void make_new_user();
                 void setup_services();
                 void save_state();
@@ -186,6 +188,7 @@ namespace fire
                 QAction *_chat_app_action = nullptr;
                 QAction *_app_editor_action = nullptr;
                 QAction *_install_app_action = nullptr;
+                QAction *_remove_app_action = nullptr;
 
                 QMenu *_help_menu = nullptr;
                 QAction *_show_getting_started_action = nullptr;
