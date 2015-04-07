@@ -407,7 +407,7 @@ namespace fire
                         "Once you have someone's identity, you can add <br>"
                         "them as a contact by copy and pasting it.<br>"
                       ));
-            auto step2b = new QPushButton(tr("Add contact"));
+            auto step2b = new QPushButton(tr("Add Contact"));
 
             auto step3 = new QLabel(
                     tr(
