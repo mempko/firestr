@@ -141,7 +141,8 @@ namespace fire
                 user::user_service_ptr _service;
         };
 
-       std::string add_new_greeter(user::user_service_ptr service, QWidget* parent);
+       std::string add_new_greeter(user::user_service& service, QWidget* parent);
+       void add_default_greeter(user::user_service& service);
 
         class intro_info : public QWidget
         {

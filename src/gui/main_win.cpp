@@ -155,6 +155,7 @@ namespace fire
             create_main();
             restore_state();
             setup_timers();
+            setup_defaults();
 
             INVARIANT(_master);
             INVARIANT(_main_menu);
@@ -386,70 +387,47 @@ namespace fire
 
             auto step1 = new QLabel(
                     tr(
-                        "<h2>1. Add a Locator</h2>"
-                        "Fire★ is a peer-to-peer communication platform.<br>"
-                        "All communication happens directly with your contacts.<br>"
-                        "A Locator helps create peer-to-peer connections.<br>"
-                        "A free Locator service is provided by mempko.com<br>"
-                        "You can also use different Locators if you wish.<br>"
-                      ));
-            auto step1b = new QPushButton(tr("Add Locator"));
-
-            auto step2 = new QLabel(
-                    tr(
-                        "<h2>2. Email Your Identity</h2>"
+                        "<h2>1. Share Your Identity</h2>"
                         "There is no central authority managing your contacts.<br>"
                         "You must give your identity to others and get theirs yourself.<br>"
                         "You can email it, print it, or send a pigeon.<br>"
                       ));
-            auto step2ba = new QPushButton(tr("Email Identity"));
-            auto step2bb = new QPushButton(tr("Show Identity"));
-            auto step3 = new QLabel(
+            auto step1ba = new QPushButton(tr("Email Identity"));
+            auto step1bb = new QPushButton(tr("Show Identity"));
+            auto step2 = new QLabel(
                     tr(
-                        "<h2>3. Add a Contact</h2>"
+                        "<h2>2. Add a Contact</h2>"
                         "Once you have someone's identity, you can add <br>"
                         "them as a contact by copy and pasting it.<br>"
                       ));
-            auto step3b = new QPushButton(tr("Add contact"));
+            auto step2b = new QPushButton(tr("Add contact"));
 
-            auto step4 = new QLabel(
+            auto step3 = new QLabel(
                     tr(
-                        "<h2>4. Start a Conversation</h2>"
+                        "<h2>3. Start a Conversation</h2>"
                         "When you are connected with someone, <br>"
                         "you can start a conversation with them.<br>"
                       ));
 
-            auto step4b = new QPushButton(tr("Start Conversation"));
+            auto step3b = new QPushButton(tr("Start Conversation"));
 
             //step 1
             l->addWidget(step1, 0, 0);
-            l->addWidget(step1b, 0, 1, 1, 2);
-
-            //step2
-            l->addWidget(step2, 1, 0);
-
-            auto bw = new QWidget;
-            auto bl = new QHBoxLayout{bw};
-            bl->addWidget(step2ba);
-            bl->addWidget(step2bb);
-
-            //l->addWidget(bw, 1, 1);
-            l->addWidget(step2ba, 1, 1);
-            l->addWidget(step2bb, 1, 2);
+            l->addWidget(step1ba, 0, 1);
+            l->addWidget(step1bb, 0, 2);
 
             //step3
+            l->addWidget(step2, 1, 0);
+            l->addWidget(step2b, 1, 1, 1, 2);
+
+            //step 4
             l->addWidget(step3, 2, 0);
             l->addWidget(step3b, 2, 1, 1, 2);
 
-            //step 4
-            l->addWidget(step4, 3, 0);
-            l->addWidget(step4b, 3, 1, 1, 2);
-
-            connect(step1b, SIGNAL(clicked()), this, SLOT(add_locator()));
-            connect(step2ba, SIGNAL(clicked()), this, SLOT(email_invite()));
-            connect(step2bb, SIGNAL(clicked()), this, SLOT(show_identity()));
-            connect(step3b, SIGNAL(clicked()), this, SLOT(add_contact()));
-            connect(step4b, SIGNAL(clicked()), this, SLOT(create_conversation()));
+            connect(step1ba, SIGNAL(clicked()), this, SLOT(email_invite()));
+            connect(step1bb, SIGNAL(clicked()), this, SLOT(show_identity()));
+            connect(step2b, SIGNAL(clicked()), this, SLOT(add_contact()));
+            connect(step3b, SIGNAL(clicked()), this, SLOT(create_conversation()));
 
             _conversations->addTab(_welcome_screen, "Getting Started");
 
@@ -637,6 +615,12 @@ namespace fire
             ENSURE(_mail_service);
         }
 
+        void main_window::setup_defaults()
+        {
+            INVARIANT(_user_service);
+            add_default_greeter(*_user_service);
+        }
+
         void main_window::create_actions()
         {
             REQUIRE_FALSE(_about_action);
@@ -755,12 +739,6 @@ namespace fire
             ENSURE(_conversation_service);
             ENSURE(_encrypted_channels);
             ENSURE(_app_service);
-        }
-
-        void main_window::add_locator()
-        {
-            INVARIANT(_user_service);
-            add_new_greeter(_user_service, this);
         }
 
         void main_window::email_invite()
