@@ -959,6 +959,8 @@ namespace fire
                     bind(&main_window::received_contact_connected, this, _1));
             _service_map.handle(us::event::CONTACT_DISCONNECTED,
                     bind(&main_window::received_contact_disconnected, this, _1));
+            _service_map.handle(us::event::CONTACT_ACTIVITY_CHANGED,
+                    bind(&main_window::received_contact_activity_changed, this, _1));
             _service_map.handle(us::event::NEW_INTRODUCTION,
                     bind(&main_window::received_new_introduction, this, _1));
             _service_map.handle(a::event::APPS_UPDATED,
@@ -1039,6 +1041,16 @@ namespace fire
             r.from_message(m);
 
             contact_disconnected_event(r);
+        }
+
+        void main_window::received_contact_activity_changed(const m::message& m)
+        {
+            REQUIRE_EQUAL(m.meta.type, us::event::CONTACT_ACTIVITY_CHANGED);
+
+            us::event::contact_activity_changed r;
+            r.from_message(m);
+
+            contact_activity_changed_event(r);
         }
 
         void main_window::received_new_introduction(const m::message& m)
@@ -1450,6 +1462,18 @@ namespace fire
 
             if(should_alert(_contacts_tab_index)) 
                 alert_tab(_contacts_tab_index);
+        }
+
+        void main_window::contact_activity_changed_event(const us::event::contact_activity_changed& r)
+        {
+            INVARIANT(_user_service);
+            INVARIANT(_start_contacts);
+
+            //update status of exising contacts
+            _start_contacts->update_status(true);
+
+            //broadcast to conversations
+            _conversation_service->broadcast_message(r.to_message());
         }
 
         void main_window::new_intro_event(const user::event::new_introduction& i)

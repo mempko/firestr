@@ -221,6 +221,8 @@ namespace fire
                     bind(&conversation_widget::received_contact_connected, this, _1));
             _sm.handle(us::event::CONTACT_DISCONNECTED, 
                     bind(&conversation_widget::received_contact_disconnected, this, _1));
+            _sm.handle(us::event::CONTACT_ACTIVITY_CHANGED, 
+                    bind(&conversation_widget::received_contact_activity_changed, this, _1));
         }
 
         void conversation_widget::received_new_app(const m::message& m)
@@ -331,6 +333,23 @@ namespace fire
             _conversation->remove_contact(r.id);
             update_contacts();
             notify_apps_contact_quit(r.id);
+        }
+
+        void conversation_widget::received_contact_activity_changed(const m::message& m)
+        {
+            REQUIRE_EQUAL(m.meta.type, us::event::CONTACT_ACTIVITY_CHANGED);
+            INVARIANT(_conversation);
+            INVARIANT(_conversation->mail());
+            
+            m::expect_local(m);
+
+            us::event::contact_activity_changed r;
+            r.from_message(m);
+
+            auto c = _conversation->contacts().by_id(r.id);
+            if(!c) return;
+
+            update_contacts();
         }
 
         void conversation_widget::notify_apps_contact_quit(const std::string& id)

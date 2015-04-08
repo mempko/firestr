@@ -91,6 +91,7 @@ namespace fire
                 void received_contact_added(const fire::message::message&);
                 void received_contact_connected(const fire::message::message&);
                 void received_contact_disconnected(const fire::message::message&);
+                void received_contact_activity_changed(const fire::message::message&);
                 void sync_apps();
                 void got_req_app_message(const messages::request_app&);
                 void notify_apps_contact_quit(const std::string& id);

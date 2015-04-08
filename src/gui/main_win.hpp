@@ -150,6 +150,7 @@ namespace fire
                 void received_conversation_alert(const fire::message::message&);
                 void received_contact_connected(const fire::message::message&);
                 void received_contact_disconnected(const fire::message::message&);
+                void received_contact_activity_changed(const fire::message::message&);
                 void received_new_introduction(const fire::message::message&);
                 void received_apps_updated(const fire::message::message&);
                 void received_not_part_of_clique(const fire::message::message&);
@@ -163,6 +164,7 @@ namespace fire
                 void new_contact_event(const std::string& id);
                 void contact_connected_event(const user::event::contact_connected&);
                 void contact_disconnected_event(const user::event::contact_disconnected&);
+                void contact_activity_changed_event(const user::event::contact_activity_changed&);
                 void apps_updated_event(const app::event::apps_updated&);
                 void new_intro_event(const user::event::new_introduction&);
                 void conversation_alert_event(const conversation::event::conversation_alert&);
