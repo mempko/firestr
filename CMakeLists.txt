@@ -87,7 +87,7 @@ if(APPLE)
 elseif(CMAKE_HOST_WIN32)
     set(MISC_LIBRARIES celt.lib silk_common.lib silk_float.lib opus.lib botan.lib snappy.lib)
 else()
-    set(MISC_LIBRARIES libopus.a libuuid.so libpthread.so librt.so libbotan-1.10.a libcrypto.so libgmp.so libsnappy.a)
+    set(MISC_LIBRARIES libopus.a libuuid.so libpthread.so librt.so libbotan-1.10.a libcrypto.so libgmp.so libsnappy.a libXss.so libX11.so)
 endif()
 
 add_subdirectory(src)
