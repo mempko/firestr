@@ -74,56 +74,90 @@ namespace fire
             return !force_offline && s->contact_available(c->id());
         }
 
+        enum user_state {REMOVED, OFFLINE, ONLINE, IDLE};
+
         QColor user_color(
                 us::user_info_ptr c, 
-                bool online,
-                bool removed,
+                user_state s,
                 const us::contact_version& version)
         {
             REQUIRE(c);
             std::stringstream ss;
-            std::string color = removed ? "grey" : "red";
-            if(!removed && online)
+            std::string color;
+            switch(s)
             {
-                color = "green";
-                if(version.client != u::CLIENT_VERSION)
-                    color = "blue";
+                case REMOVED: color = "grey"; break;
+                case OFFLINE: color = "red"; break;
+                case ONLINE: 
+                {
+                    color = "green"; 
+                    if(version.client != u::CLIENT_VERSION)
+                        color = "blue";
 
-                if(version.protocol != u::PROTOCOL_VERSION)
-                    color = "purple";
-            }
+                    if(version.protocol != u::PROTOCOL_VERSION)
+                        color = "purple";
+                } 
+                break;
+                case IDLE: color = "orange"; break;
+                default: CHECK(false && "missed case");
+            };
 
+            ENSURE_FALSE(color.empty());
             return QColor{color.c_str()};
         }
 
         std::string user_tooltip(
                 us::user_info_ptr c, 
-                bool online,
-                bool removed,
+                user_state s,
                 const us::contact_version& version)
         {
             REQUIRE(c);
-            std::string text = removed ? "not here" : "offline";
-            if(!removed && online)
+            std::string text;
+            switch(s)
             {
-                text = "online ";
+                case REMOVED: text = "not here"; break;
+                case OFFLINE: text = "offline"; break;
+                case ONLINE: 
+                {
+                    text = "online ";
 
-                if(version.client < u::CLIENT_VERSION)
-                    text = "older client ";
-                else if(version.client > u::CLIENT_VERSION)
-                    text = "newer client ";
+                    if(version.client < u::CLIENT_VERSION)
+                        text = "older client ";
+                    else if(version.client > u::CLIENT_VERSION)
+                        text = "newer client ";
 
-                if(version.protocol < u::PROTOCOL_VERSION)
-                    text = "older protocol ";
-                if(version.protocol > u::PROTOCOL_VERSION)
-                    text = "newer protocol ";
+                    if(version.protocol < u::PROTOCOL_VERSION)
+                        text = "older protocol ";
+                    if(version.protocol > u::PROTOCOL_VERSION)
+                        text = "newer protocol ";
 
-                std::stringstream ss;
-                ss << "(" << version.protocol << "." << version.client << ")";
-                text += ss.str();
-            }
+                    std::stringstream ss;
+                    ss << "(" << version.protocol << "." << version.client << ")";
+                    text += ss.str();
+                }
+                break;
+                case IDLE: text = "away"; break;
+                default: CHECK(false && "missed case");
 
+            };
+
+            ENSURE_FALSE(text.empty());
             return text;
+        }
+
+        user_state determine_state(
+                bool removed,
+                us::user_service_ptr s,
+                us::user_info_ptr c)
+        {
+            REQUIRE(s);
+            REQUIRE(c);
+            if(removed) return REMOVED;
+
+            user_state st = OFFLINE;
+            if(is_online(c, s))
+                st = s->contact_idle(c->id()) ? IDLE : ONLINE;
+            return st;
         }
 
         user_info::user_info(
@@ -140,11 +174,11 @@ namespace fire
             auto* layout = new QGridLayout{this};
             setLayout(layout);
 
-            bool online = is_online(p, _service);
             auto version = s->check_contact_version(p->id());
 
             _user_text = new QLabel{p->name().c_str()};
-            _user_text->setToolTip(user_tooltip(p, online, _removed, version).c_str());
+            _user_text->setToolTip(
+                    user_tooltip(p, determine_state(_removed, s, p), version).c_str());
             _text_color = QColor{0, 0, 0, 0};
 
             layout->addWidget(_user_text, 0,0);
@@ -152,7 +186,7 @@ namespace fire
 
             layout->setContentsMargins(2,2,2,2);
 
-            set_text_color_to(user_color(_contact, online, _removed, version));
+            set_text_color_to(user_color(_contact, determine_state(_removed, s, p), version));
 
             ENSURE(_contact);
             ENSURE(_user_text);
@@ -208,8 +242,10 @@ namespace fire
             auto version = _service->check_contact_version(_contact->id());
 
             _user_text->setText(_contact->name().c_str());
-            _user_text->setToolTip(user_tooltip(_contact, online, _removed, version).c_str());
-            set_text_color_to(user_color(_contact, online, _removed, version));
+            _user_text->setToolTip(
+                    user_tooltip(_contact, determine_state(_removed, _service, _contact), version).c_str());
+            set_text_color_to(
+                    user_color(_contact, determine_state(_removed, _service, _contact), version));
 
             if(_action && update_action) _action->setVisible(!_removed && online);
 
@@ -224,8 +260,10 @@ namespace fire
             bool online = is_online(_contact, _service , !f(*_contact));
             auto version = _service->check_contact_version(_contact->id());
             _user_text->setText(_contact->name().c_str());
-            _user_text->setToolTip(user_tooltip(_contact, online, _removed, version).c_str());
-            set_text_color_to(user_color(_contact, online, _removed, version));
+            _user_text->setToolTip(
+                    user_tooltip(_contact, determine_state(_removed, _service, _contact), version).c_str());
+            set_text_color_to(
+                    user_color(_contact, determine_state(_removed, _service, _contact), version));
 
             if(_action && update_action) _action->setVisible(!_removed && online);
         }
