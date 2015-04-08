@@ -70,3 +70,8 @@ A concurrent string implementation which uses version vectors and a diff3 merge 
 to help maintain string replicas. For example the code editor uses this to help assist
 in achieving concurrent code editing.
 
+idle     
+-------------------------------------------------------------------
+Has a simple function to determine if the computer user is idle or not. The implementation
+is platform specific.
+
