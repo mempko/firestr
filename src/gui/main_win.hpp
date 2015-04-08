@@ -51,8 +51,6 @@ namespace fire
 {
     namespace gui
     {
-        user::local_user_ptr setup_user(const std::string& home);
-
         using tab_animation_list = std::vector<QPropertyAnimation*>;
 
         class MainTabs : public QTabWidget

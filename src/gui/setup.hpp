@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Maxim Noah Khailo
+ * Copyright (C) 2015  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,22 +29,23 @@
  * also delete it here.
  */
 
-#include "util/version.hpp"
+#ifndef FIRESTR_GUI_SETUP_H
+#define FIRESTR_GUI_SETUP_H
 
-#include <sstream>
+#include "user/user.hpp"
+
+#include <string>
+
+#include <QDialog>
+#include <QPushButton>
+#include <QLabel>
+#include <QTextEdit>
 
 namespace fire
 {
-    namespace util
+    namespace gui
     {
-        const int PROTOCOL_VERSION = 0;
-        const int CLIENT_VERSION = 7;
-
-        std::string version_string()
-        {
-            std::stringstream ss;
-            ss << PROTOCOL_VERSION << "." << CLIENT_VERSION;
-            return ss.str();
-        }
+        user::local_user_ptr setup_user(const std::string& home);
     }
 }
+#endif
