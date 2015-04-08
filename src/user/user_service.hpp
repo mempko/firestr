@@ -54,6 +54,7 @@ namespace fire
             size_t last_ping;
             int client_version;
             int protocol_version;
+            bool idle;
         };
 
         struct contact_version
@@ -112,6 +113,7 @@ namespace fire
             public:
                 user_info_ptr by_id(const std::string& id) const;
                 bool contact_available(const std::string& id) const;
+                bool contact_idle(const std::string& id) const;
                 int  protocol_version(const std::string& id) const;
                 contact_version check_contact_version(const std::string& id) const;
 
@@ -143,6 +145,7 @@ namespace fire
                 bool contact_connected(const std::string& id);
                 void fire_contact_connected_event(const std::string& id);
                 void fire_contact_disconnected_event(const std::string& id);
+                void fire_contact_activity_changed_event(const std::string& id);
                 void fire_new_introduction(size_t i);
 
             private:
@@ -200,6 +203,7 @@ namespace fire
             extern const std::string CONTACT_CONNECTED;
             extern const std::string CONTACT_DISCONNECTED;
             extern const std::string NEW_INTRODUCTION;
+            extern const std::string CONTACT_ACTIVITY_CHANGED;
 
             f_message(contact_connected)
             { 
@@ -236,6 +240,16 @@ namespace fire
                 }
             };
 
+            f_message(contact_activity_changed)
+            { 
+                std::string id; 
+
+                f_message_init(contact_activity_changed, CONTACT_ACTIVITY_CHANGED);
+                f_serialize 
+                { 
+                    f_s(id); 
+                }
+            };
         }
     }
 }

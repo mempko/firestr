@@ -38,6 +38,7 @@
 #include "util/dbc.hpp"
 #include "util/log.hpp"
 #include "util/serialize.hpp"
+#include "util/idle.hpp"
 #include "util/version.hpp"
 
 #include <stdexcept>
@@ -71,6 +72,7 @@ namespace fire
             const size_t RECONNECT_TICKS = 30; //send reconnect every minute
             const size_t RECONNECT_THREAD_SLEEP = 2000; //two seconds
             const char CONNECTED = 'c';
+            const char IDLE = 'i';
             const char DISCONNECTED = 'd';
         }
 
@@ -217,7 +219,7 @@ namespace fire
         {
             u::mutex_scoped_lock l(_ping_mutex);
             REQUIRE(u);
-            contact_data cd = {contact_data::OFFLINE, u, PING_THRESH, 0, 0};
+            contact_data cd = {contact_data::OFFLINE, u, PING_THRESH, 0, 0, false};
             _contacts[u->id()] = cd; 
 
             REQUIRE(_contacts[u->id()].contact == u);
@@ -358,6 +360,7 @@ namespace fire
             convert(m, r);
 
             bool fire_event = false;
+            bool fire_idle_event = false;
             bool cur_state = false;
             {
                 u::mutex_scoped_lock l(_ping_mutex);
@@ -367,19 +370,36 @@ namespace fire
 
                 auto& ticks = p->second.last_ping;
                 bool prev_state = available(ticks);
+                bool prev_idle = p->second.idle;
 
-                if(r.state == CONNECTED)
+                switch(r.state)
                 {
-                    ticks = 0;
+                    case IDLE: 
+                        {
+                            ticks = 0;
+                            p->second.idle = true;
+                        }
+                        break;
+                    case CONNECTED: 
+                        {
+                            ticks = 0; 
+                            p->second.idle = false;
+                        }
+                        break;
+                    case DISCONNECTED: 
+                        {
+                            ticks = PING_THRESH + PING_THRESH;
+                            CHECK_FALSE(available(ticks));
+                        }
+                        break;
+                    default: ticks = 0;
                 }
-                else
-                {
-                    ticks = PING_THRESH + PING_THRESH;
-                    CHECK_FALSE(available(ticks));
-                }
+
                 cur_state = available(ticks);
                 fire_event = cur_state != prev_state || p->second.state == contact_data::CONNECTING;
+                fire_idle_event = prev_idle != p->second.idle;
             }
+
 
             if(fire_event)
             {
@@ -390,6 +410,9 @@ namespace fire
                     fire_contact_disconnected_event(r.from_id);
                 }
             }
+
+            if(fire_idle_event) 
+                fire_contact_activity_changed_event(r.from_id);
         }
 
         void user_service::received_connect_request(const message::message& m)
@@ -676,7 +699,8 @@ namespace fire
             {
                 if(send_ticks > PING_TICKS)
                 {
-                    s->send_ping(CONNECTED);
+                    auto st = u::user_is_idle() ? IDLE : CONNECTED;
+                    s->send_ping(st);
                     send_ticks = 0;
                 } 
                 else send_ticks++; 
@@ -732,6 +756,14 @@ namespace fire
             return c->second.state == contact_data::CONNECTED;
         }
 
+        bool user_service::contact_idle(const std::string& id) const
+        {
+            u::mutex_scoped_lock l(_ping_mutex);
+            auto c = _contacts.find(id);
+            if(c == _contacts.end() || !c->second.contact) return false;
+            return c->second.idle;
+        }
+
         bool user_service::is_contact_connecting(const std::string& id) const
         {
             u::mutex_scoped_lock l(_ping_mutex);
@@ -763,7 +795,7 @@ namespace fire
 
         void user_service::send_ping(char s)
         {
-            REQUIRE(s == CONNECTED || s == DISCONNECTED);
+            REQUIRE(s == CONNECTED || s == DISCONNECTED || s == IDLE);
 
             //send ping message to all connected contacts
             for(auto p : _contacts)
@@ -840,6 +872,7 @@ namespace fire
 
             auto& cd = _contacts[c->id()];
 
+            cd.idle = false;
             cd.contact = c;
             cd.last_ping = 0;
             cd.state = contact_data::CONNECTING;
@@ -860,6 +893,7 @@ namespace fire
             CHECK(cd.state == contact_data::CONNECTING);
 
             cd.contact = c;
+            cd.idle = false;
             cd.last_ping = 0;
             cd.state = contact_data::CONNECTED;
             LOG << c->name() << " connected" << std::endl;
@@ -891,6 +925,13 @@ namespace fire
             if(!state_changed) return;
 
             event::contact_connected e;
+            e.id = id;
+            send_event(e.to_message());
+        }
+
+        void user_service::fire_contact_activity_changed_event(const std::string& id)
+        {
+            event::contact_activity_changed e;
             e.id = id;
             send_event(e.to_message());
         }
@@ -1051,6 +1092,7 @@ namespace fire
             const std::string CONTACT_CONNECTED = "contact_con";
             const std::string CONTACT_DISCONNECTED = "contact_discon";
             const std::string NEW_INTRODUCTION = "new_introduction";
+            const std::string CONTACT_ACTIVITY_CHANGED = "contact_activ";
         }
     }
 }
