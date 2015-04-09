@@ -116,6 +116,13 @@ namespace fire
             b.setMinimumHeight(40);
         }
 
+        void make_bigger_centered(QWidget& b)
+        {
+            b.setFont(QFont{"Entypo", 80});
+            b.setMaximumHeight(80);
+            b.setMinimumHeight(80);
+        }
+
         void make_x(QPushButton& b)
         {
             REQUIRE(GUI_SETUP_CALLED);
@@ -318,6 +325,22 @@ namespace fire
             make_small(w);
             w.setText("\xf0\x9f\x91\x8d"); //\U0001F44D
             w.setStyleSheet("border: 0px; color: 'green';");
+        }
+
+        void make_next(QPushButton& b)
+        {
+            REQUIRE(GUI_SETUP_CALLED);
+
+            make_bigger_centered(b);
+            b.setText("\xee\x9d\x9a"); //\uE75A
+            b.setStyleSheet("border: 0px; color: 'green';");
+        }
+
+        void enable_icon_button(QPushButton& b, bool enabled)
+        {
+            b.setEnabled(enabled);
+            if(enabled) b.setStyleSheet("border: 0px; color: 'green';");
+            else b.setStyleSheet("border: 0px; color: 'grey';");
         }
 
         bool install_app_gui(a::app& a, a::app_service& s, QWidget* w)
