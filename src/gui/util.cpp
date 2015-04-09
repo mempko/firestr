@@ -221,6 +221,33 @@ namespace fire
             b.setStyleSheet("border: 0px; color: 'green';");
         }
 
+        void make_big_add_contact(QPushButton& b)
+        {
+            REQUIRE(GUI_SETUP_CALLED);
+
+            make_bigger_centered(b);
+            b.setText("\xee\x9c\x80"); //\uE700
+            b.setStyleSheet("border: 0px; color: 'green';");
+        }
+
+        void make_big_email(QPushButton& b)
+        {
+            REQUIRE(GUI_SETUP_CALLED);
+
+            make_bigger_centered(b);
+            b.setText("\xe2\x9c\x89"); //\u2709
+            b.setStyleSheet("border: 0px; color: 'green';");
+        }
+
+        void make_big_identity(QPushButton& b)
+        {
+            REQUIRE(GUI_SETUP_CALLED);
+
+            make_bigger_centered(b);
+            b.setText("\xee\x9c\xa2"); //\uE722
+            b.setStyleSheet("border: 0px; color: 'green';");
+        }
+
         void make_cancel(QPushButton& b)
         {
             REQUIRE(GUI_SETUP_CALLED);
@@ -262,7 +289,7 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_big_centered(b);
-            b.setText("\xf0\x9f\x91\xa5"); //\U0001F465
+            b.setText("\xee\x9c\xa0"); //\uE720
             b.setStyleSheet("border: 0px; color: 'green';");
         }
 
@@ -271,7 +298,16 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_small(b);
-            b.setText("\xf0\x9f\x91\xa5"); //\U0001F465
+            b.setText("\xee\x9c\xa0"); //\uE720
+            b.setStyleSheet("border: 0px; color: 'green';");
+        }
+
+        void make_big_new_conversation(QPushButton& b)
+        {
+            REQUIRE(GUI_SETUP_CALLED);
+
+            make_bigger_centered(b);
+            b.setText("\xee\x9c\xa0"); //\uE720
             b.setStyleSheet("border: 0px; color: 'green';");
         }
 

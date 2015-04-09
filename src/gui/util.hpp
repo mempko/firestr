@@ -61,12 +61,16 @@ namespace fire
         void make_export(QPushButton&);
         void make_add_contact_small(QPushButton&);
         void make_add_contact(QPushButton&);
+        void make_big_add_contact(QPushButton&);
+        void make_big_email(QPushButton&);
+        void make_big_identity(QPushButton&);
         void make_cancel(QPushButton&);
         void make_ok(QPushButton&);
         void make_add_to_list(QPushButton&);
         void make_introduce(QPushButton&);
         void make_new_conversation(QPushButton&);
         void make_new_conversation_small(QPushButton&);
+        void make_big_new_conversation(QPushButton&);
 
         void make_progress_0(QLabel&);
         void make_progress_1(QLabel&);
@@ -74,7 +78,7 @@ namespace fire
         void make_progress_3(QLabel&);
         void make_error(QLabel&);
         void make_thumbs_up(QLabel&);
-        void make_next(QPushButton& b);
+        void make_next(QPushButton&);
         void enable_icon_button(QPushButton& b, bool enabled);
 
         namespace app
