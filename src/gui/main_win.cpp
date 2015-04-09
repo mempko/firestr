@@ -298,9 +298,9 @@ namespace fire
             auto step1 = new QLabel(
                     tr(
                         "<h2>1. <font color='green'>Share Your Identity</font></h2>"
+                        "Use the <font color='green'>buttons</font> on the right to share your identity.<br>"
                         "There is no central authority managing your contacts.<br>"
-                        "You must give your identity to others and get theirs yourself.<br>"
-                        "You can email it, print it, or send a pigeon.<br>"
+                        "Give your identity to others and get theirs to connect.<br>"
                       ));
             auto step1ba = new QPushButton;
             make_big_email(*step1ba);
@@ -312,8 +312,9 @@ namespace fire
             auto step2 = new QLabel(
                     tr(
                         "<h2>2. <font color='green'>Add a Contact</font></h2>"
-                        "Once you have someone's identity, you can add <br>"
-                        "them as a contact by copy and pasting it.<br>"
+                        "Use the <font color='green'>buttons</font> on the right to add contacts.<br>"
+                        "Once you have someone's identity, you can add them as <br>" 
+                        "a contact by copy and pasting it.<br>"
                       ));
 
             auto step2b = new QPushButton(tr("Add Contact"));
@@ -323,8 +324,9 @@ namespace fire
             auto step3 = new QLabel(
                     tr(
                         "<h2>3. <font color='green'>Start a Conversation</font></h2>"
-                        "When you are connected with someone, <br>"
-                        "you can start a conversation with them.<br>"
+                        "Use the <font color='green'>buttons</font> on the right to start a conversation.<br>"
+                        "When you are connected with someone you can start a <br>"
+                        "conversation with them.<br>"
                       ));
 
             auto step3b = new QPushButton(tr("Start Conversation"));
