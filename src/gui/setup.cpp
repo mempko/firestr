@@ -48,6 +48,13 @@ namespace fire
         namespace
         {
             const int MARGIN = 40;
+            const int LOGO_HEIGHT = 150;
+        }
+
+        QPixmap smaller_logo()
+        {
+            auto logo_pix = logo_pixmap();
+            return logo_pix.scaledToHeight(LOGO_HEIGHT, Qt::SmoothTransformation);
         }
 
         setup_user_dialog::setup_user_dialog(const std::string& home, QWidget* parent) : QDialog{parent}
@@ -58,7 +65,7 @@ namespace fire
             setLayout(l);
 
             auto logo = new QLabel;
-            logo->setPixmap(logo_pixmap());
+            logo->setPixmap(smaller_logo());
 
             auto welcome = new QLabel{tr(
                         "<br><h1>The <font color='darkgreen'>Grass</font> Computing Platform</h1><br>")};
@@ -207,7 +214,7 @@ namespace fire
             setLayout(l);
 
             auto logo = new QLabel;
-            logo->setPixmap(logo_pixmap());
+            logo->setPixmap(smaller_logo());
 
             auto welcome = new QLabel{tr(
                         "<br><h1>The <font color='darkgreen'>Grass</font> Computing Platform</h1><br>")};
