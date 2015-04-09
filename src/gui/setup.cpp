@@ -68,7 +68,7 @@ namespace fire
             logo->setPixmap(smaller_logo());
 
             auto welcome = new QLabel{tr(
-                        "<br><h1>The <font color='darkgreen'>Grass</font> Computing Platform</h1><br>")};
+                        "<br><h1>The <font color='green'>Grass</font> Computing Platform</h1><br>")};
 
             auto create_iden = new QLabel{tr("<h3>Create Your <font color='blue'>Identity</font></h3>")};
             auto points = new QLabel{tr(

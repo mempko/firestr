@@ -297,29 +297,39 @@ namespace fire
 
             auto step1 = new QLabel(
                     tr(
-                        "<h2>1. Share Your Identity</h2>"
+                        "<h2>1. <font color='green'>Share Your Identity</font></h2>"
                         "There is no central authority managing your contacts.<br>"
                         "You must give your identity to others and get theirs yourself.<br>"
                         "You can email it, print it, or send a pigeon.<br>"
                       ));
-            auto step1ba = new QPushButton(tr("Email Identity"));
+            auto step1ba = new QPushButton;
+            make_big_email(*step1ba);
+            step1ba->setToolTip(tr("Email Identity"));
             auto step1bb = new QPushButton(tr("Show Identity"));
+            make_big_identity(*step1bb);
+            step1bb->setToolTip(tr("Show Identity"));
+
             auto step2 = new QLabel(
                     tr(
-                        "<h2>2. Add a Contact</h2>"
+                        "<h2>2. <font color='green'>Add a Contact</font></h2>"
                         "Once you have someone's identity, you can add <br>"
                         "them as a contact by copy and pasting it.<br>"
                       ));
+
             auto step2b = new QPushButton(tr("Add Contact"));
+            make_big_add_contact(*step2b);
+            step2b->setToolTip(tr("Add Contact"));
 
             auto step3 = new QLabel(
                     tr(
-                        "<h2>3. Start a Conversation</h2>"
+                        "<h2>3. <font color='green'>Start a Conversation</font></h2>"
                         "When you are connected with someone, <br>"
                         "you can start a conversation with them.<br>"
                       ));
 
             auto step3b = new QPushButton(tr("Start Conversation"));
+            make_big_new_conversation(*step3b);
+            step3b->setToolTip(tr("Start Conversation"));
 
             //step 1
             l->addWidget(step1, 0, 0);
