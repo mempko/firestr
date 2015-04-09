@@ -46,8 +46,8 @@ namespace fire
     {
         namespace
         {
-            //2 minutes until idle
-            const size_t IDLE_TIME = 2 * 60 * 1000; 
+            //1 minute until idle
+            const size_t IDLE_TIME = 1 * 60 * 1000; 
         }
 
         bool user_is_idle()
