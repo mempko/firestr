@@ -33,6 +33,7 @@
 #include "util/log.hpp"
 
 #ifdef _WIN64
+#include <Windows.h>
 #elif __APPLE__
 #include <IOKit/IOKitLib.h>
 #include <CoreFoundation/CFNumber.h>
@@ -58,7 +59,14 @@ namespace fire
 #ifdef _WIN64
         size_t user_idle()
         {
-            return 0.0;
+            auto uptime = GetTickCount();
+            LASTINPUTINFO inf;
+            inf.cbSize = sizeof(inf);
+            inf.dwTime = 0;
+
+            if (!GetLastInputInfo(&inf)) return 0;
+            auto idle = uptime - inf.dwTime;
+            return idle >= 0 ? idle : 0;
         }
 #elif __APPLE__
         size_t user_idle()
