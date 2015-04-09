@@ -74,6 +74,8 @@ namespace fire
         void make_progress_3(QLabel&);
         void make_error(QLabel&);
         void make_thumbs_up(QLabel&);
+        void make_next(QPushButton& b);
+        void enable_icon_button(QPushButton& b, bool enabled);
 
         namespace app
         {

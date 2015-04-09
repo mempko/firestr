@@ -39,12 +39,68 @@
 #include <QDialog>
 #include <QPushButton>
 #include <QLabel>
-#include <QTextEdit>
+#include <QLineEdit>
 
 namespace fire
 {
     namespace gui
     {
+        class setup_user_dialog : public QDialog
+        {
+            Q_OBJECT
+            public:
+                setup_user_dialog(const std::string& home, QWidget* parent = nullptr);
+            public:
+                std::string name() const;
+                std::string pass() const;
+                bool should_create() const;
+
+            public slots:
+                void cancel();
+                void create();
+                void validate_name(QString);
+                void validate_pass1(QString);
+                void validate_pass2(QString);
+
+            private:
+                void validate_input();
+                void keyPressEvent(QKeyEvent*);
+
+            private:
+                bool _valid_name = false;
+                bool _valid_pass = false;
+                bool _should_create = false;
+                QLineEdit* _name = nullptr;
+                QLineEdit* _pass1 = nullptr;
+                QLineEdit* _pass2 = nullptr;
+                QPushButton* _create = nullptr;
+        };
+
+        class login_dialog : public QDialog
+        {
+            Q_OBJECT
+            public:
+                login_dialog(const std::string& home, bool retry, QWidget* parent = nullptr);
+
+            public:
+                std::string pass() const;
+                bool should_login() const;
+
+            public slots:
+                void cancel();
+                void login();
+                void validate_pass(QString);
+
+            private:
+                void validate_input();
+                void keyPressEvent(QKeyEvent*);
+
+            private:
+                bool _should_login = false;
+                QLineEdit* _pass = nullptr;
+                QPushButton* _login = nullptr;
+        };
+
         user::local_user_ptr setup_user(const std::string& home);
     }
 }
