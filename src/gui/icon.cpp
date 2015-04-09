@@ -527,10 +527,14 @@ namespace fire
 
         }
 
+        QPixmap logo_pixmap()
+        {
+            return QPixmap{firestr250_xpm};
+        }
+
         QIcon logo()
         {
-            QPixmap p{firestr250_xpm};
-            return {p};
+            return QIcon{logo_pixmap()};
         }
     }
 }
