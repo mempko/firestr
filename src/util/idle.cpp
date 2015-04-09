@@ -34,6 +34,8 @@
 
 #ifdef _WIN64
 #elif __APPLE__
+#include <IOKit/IOKitLib.h>
+#include <CoreFoundation/CFNumber.h>
 #else
 #include <X11/extensions/scrnsaver.h>
 #endif
@@ -61,7 +63,43 @@ namespace fire
 #elif __APPLE__
         size_t user_idle()
         {
-            return 0.0;
+            io_iterator_t iter = 0;
+            if (IOServiceGetMatchingServices(kIOMasterPortDefault, IOServiceMatching("IOHIDSystem"), &iter) != KERN_SUCCESS) 
+                return 0;
+
+            io_registry_entry_t entry = IOIteratorNext(iter);
+            if(!entry)
+            {
+                IOObjectRelease(iter);
+                return 0;
+            }
+
+            CFMutableDictionaryRef dict = nullptr;
+            if (IORegistryEntryCreateCFProperties(entry, &dict, kCFAllocatorDefault, 0) != KERN_SUCCESS) 
+            {
+                IOObjectRelease(entry);
+                IOObjectRelease(iter);
+                return 0;
+            }
+
+            CFNumberRef obj = static_cast<CFNumberRef>(CFDictionaryGetValue(dict, CFSTR("HIDIdleTime")));
+            if(!obj)
+            {
+                CFRelease(dict);
+                IOObjectRelease(entry);
+                IOObjectRelease(iter);
+                return 0;
+            }
+                
+            int64_t mill = 0;
+            int64_t nano = 0;
+            if (CFNumberGetValue(obj, kCFNumberSInt64Type, &nano)) 
+                mill = (nano / 1000000); 
+
+            CFRelease(dict);
+            IOObjectRelease(entry);
+            IOObjectRelease(iter);
+            return mill;
         }
 #else
         size_t user_idle()
