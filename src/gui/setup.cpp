@@ -73,7 +73,7 @@ namespace fire
             auto create_iden = new QLabel{tr("<h3>Create Your <font color='blue'>Identity</font></h3>")};
             auto points = new QLabel{tr(
                         "<ul>"
-                        "<li>The idenity is stored on this computer.</li>"
+                        "<li>The identity is stored on this computer.</li>"
                         "<li>Your identity and data is not stored anywhere else.</li>"
                         "<li>The password is used to protect your identity.</li>"
                         "</ul><br>")};
