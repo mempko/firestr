@@ -456,7 +456,8 @@ namespace fire
             //update conversation to use DH 
             auto address = n::make_udp_address(r.from_ip, r.from_port);
             setup_security_conversation(address, c->key(), r.public_secret);
-            send_ping_to(CONNECTED, c->id(), true);
+            auto st = u::user_is_idle() ? IDLE : CONNECTED;
+            send_ping_to(st, c->id(), true);
         }
 
         void user_service::received_register_with_greeter(const message::message& m)
