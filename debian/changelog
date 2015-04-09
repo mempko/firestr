@@ -1,3 +1,11 @@
+firestr (0.7) trusty; urgency=low
+
+  * Idle detection.
+  * New setup and login dialogs.
+  * Improved getting started screen.
+
+ -- mempko <mempko@mempko-g780>  Thu, 9 Apr 2015 01:55:01 -0500
+
 firestr (0.6) trusty; urgency=low
 
   * User friendly GUI based on identity strings
