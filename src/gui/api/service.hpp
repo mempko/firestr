@@ -163,12 +163,14 @@ namespace fire
 
                 //overall gui
                 virtual void height(int h) = 0;
+                virtual void width(int w) = 0;
                 virtual bool visible() = 0;
                 virtual void grow() = 0;
                 virtual void alert() = 0;
 
                 //errors
                 virtual void report_error(const std::string& e) = 0;
+                virtual void adjust_size() = 0;
 
                 //control
                 virtual void reset() = 0;

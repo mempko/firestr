@@ -83,6 +83,7 @@ namespace fire
                     ~script_app();
 
                 public:
+                    virtual void start();
                     virtual void contact_quit(const std::string& id);
 
                 public:
@@ -93,10 +94,11 @@ namespace fire
                 public slots:
                     void clone_app();
                     void got_alert();
+                    void got_adjust_size();
 
                 private:
-                    void setup_decorations();
                     void init();
+                    void setup_decorations();
 
                 private:
                     std::string _from_id;

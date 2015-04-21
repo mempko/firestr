@@ -357,6 +357,7 @@ namespace fire
                     .set("hide", &image_ref::hide)
                     .set("width", &image_ref::width)
                     .set("height", &image_ref::height)
+                    .set("width", &image_ref::width)
                     .set("good", &image_ref::good);
 
                 SLB::Class<timer_ref>{"timer_ref", &manager}
@@ -454,7 +455,7 @@ namespace fire
                 ENSURE(image_refs.empty());
             }
 
-            void lua_api::run(const std::string& code)
+            void lua_api::run(const std::string& code, bool adjust_size)
             {
                 REQUIRE_FALSE(code.empty());
                 INVARIANT(front);
@@ -465,6 +466,8 @@ namespace fire
                 auto error = execute(code);
                 if(!error.message.empty())
                     report_error(error.message, error.line);
+
+                if(adjust_size) front->adjust_size();
             }
 
             //API implementation 
@@ -831,6 +834,12 @@ namespace fire
             {
                 INVARIANT(front);
                 front->height(h);
+            }
+
+            void lua_api::width(int w)
+            {
+                INVARIANT(front);
+                front->width(w);
             }
 
             void lua_api::grow()

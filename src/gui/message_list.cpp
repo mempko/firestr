@@ -37,6 +37,7 @@
 #include "gui/app/app_editor.hpp"
 #include "gui/app/script_app.hpp"
 #include "util/dbc.hpp"
+#include "util/log.hpp"
 
 #include <sstream>
 
@@ -58,6 +59,7 @@ namespace fire
                 a::app_reaper_ptr app_reaper,
                 s::conversation_service_ptr conversation_s,
                 s::conversation_ptr conversation) :
+            QMdiArea{nullptr},
             _conversation_service{conversation_s},
             _conversation{conversation},
             _app_service{app_service},
@@ -68,11 +70,13 @@ namespace fire
             REQUIRE(conversation_s);
             REQUIRE(conversation);
 
-            auto_scroll(true);
-            QObject::connect(verticalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(clear_alerts()));
+            setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+            setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
 
-            INVARIANT(_root);
-            INVARIANT(_layout);
+            QObject::connect(verticalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(clear_alerts()));
+            QObject::connect(horizontalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(clear_alerts()));
+
+
             INVARIANT(_conversation_service);
             INVARIANT(_conversation);
             INVARIANT(_app_service);
@@ -82,18 +86,20 @@ namespace fire
         void message_list::add(app::generic_app* m)
         {
             REQUIRE(m);
-            INVARIANT(_layout);
-            INVARIANT(_conversation);
 
-            list::add(m);
-        }
+            auto sw = addSubWindow(m);
+            CHECK(sw);
 
-        void message_list::add(QWidget* w)
-        {
-            REQUIRE(w);
-            INVARIANT(_layout);
+            m->set_sub_window(sw);
 
-            list::add(w);
+            Qt::WindowFlags flags = Qt::CustomizeWindowHint | Qt::WindowMinimizeButtonHint | Qt::WindowTitleHint;
+            sw->setWindowFlags(flags);
+            sw->setWindowTitle(m->title_text().c_str());
+
+            ENSURE(sw->widget() == m);
+
+            //start generic app
+            m->start();
         }
 
         s::conversation_ptr message_list::conversation()
@@ -172,7 +178,7 @@ namespace fire
             }
             else
             {
-                add(new unknown_message{"unknown app type `" + n.type() + "'"});
+                LOG << "unknown app type`" << n.type() << "'" << std::endl;
                 return false;
             }
 
@@ -269,12 +275,11 @@ namespace fire
 
         void message_list::clear_alerts()
         {
-            INVARIANT(_layout);
-
-            for(int i = 0; i < _layout->count(); i++)
+            for(auto sw :  subWindowList())
             {
-                auto itm = _layout->itemAt(i);
-                auto w  = itm->widget();
+                CHECK(sw);
+
+                auto w  = sw->widget();
                 CHECK(w);
 
                 auto mw = dynamic_cast<gui::message*>(w);

@@ -104,7 +104,7 @@ namespace fire
                     //util
                     void bind();
                     error_info execute(const std::string&);
-                    void run(const std::string&);
+                    void run(const std::string&, bool adjust_size = false);
                     void reset_refs();
                     void message_received(const script_message&);
                     void event_received(const event_message&);
@@ -169,6 +169,7 @@ namespace fire
 
                     //size
                     void height(int h);
+                    void width(int w);
                     void grow();
 
                     //messages

@@ -101,6 +101,7 @@ namespace fire
 
                 signals:
                     void alerted();
+                    void do_adjust_size();
 
                 public:
                     //all widgets
@@ -210,12 +211,14 @@ namespace fire
 
                     //overall gui
                     virtual void height(int h);
+                    virtual void width(int w);
                     virtual void grow();
                     virtual bool visible();
                     virtual void alert();
 
                     //errors
                     virtual void report_error(const std::string& e);
+                    virtual void adjust_size();
 
                     virtual void reset();
 

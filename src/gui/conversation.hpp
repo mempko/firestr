@@ -75,8 +75,7 @@ namespace fire
 
             public slots:
                 void check_mail(fire::message::message); 
-                void add(message*);
-                void add(QWidget*);
+                void add(app::generic_app*);
                 void add_contact();
                 void update_contacts();
                 void update_contact_select();

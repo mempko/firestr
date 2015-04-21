@@ -36,6 +36,7 @@
 
 #include <QPushButton>
 #include <QLabel>
+#include <QMdiSubWindow>
 
 namespace fire
 {
@@ -46,16 +47,15 @@ namespace fire
             class generic_app : public message
             {
                 Q_OBJECT
-                Q_PROPERTY(int app_min_height READ app_min_height WRITE set_app_min_height);
                 public:
                     generic_app();
 
+                    virtual void start() = 0;
                     virtual void contact_quit(const std::string& id) = 0;
 
                 public:
-                    void animate_min_height_to(int);
-                    int app_min_height() const;
-                    void set_app_min_height(int);
+                    const std::string& title_text() const;
+                    void set_sub_window(QMdiSubWindow*);
 
                 protected:
                     virtual void set_alert_style(const std::string& s);
@@ -63,19 +63,22 @@ namespace fire
                 protected:
                     void set_title(const std::string&);
                     void set_main(QWidget*);
+                    void adjust_size();
                     void alerted();
 
+                signals:
+                    void do_maximize();
+                    void do_minimize();
+
                 private slots:
-                    void toggle_visible();
+                    void minimize();
+                    void maximize();
 
                 private:
+                    QMdiSubWindow* _win = nullptr;
                     QWidget* _main = nullptr;
-                    QPushButton* _show_hide = nullptr;
-                    QLabel* _title = nullptr;
                     std::string _title_text;
                     bool _visible = true;
-                    size_t _min_height = 0;
-                    size_t _max_height = 0;
             };
         }
     }

@@ -70,6 +70,7 @@ namespace fire
                     ~chat_app();
 
                 public:
+                    virtual void start();
                     virtual void contact_quit(const std::string& id);
 
                 public:

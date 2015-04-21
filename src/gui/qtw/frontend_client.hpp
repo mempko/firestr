@@ -178,12 +178,14 @@ namespace fire
 
                     //overall gui
                     virtual void height(int h);
+                    virtual void width(int w);
                     virtual void grow();
                     virtual bool visible();
                     virtual void alert();
 
                     //errors
                     virtual void report_error(const std::string& e);
+                    virtual void adjust_size();
 
                     virtual void reset();
 
@@ -295,10 +297,12 @@ namespace fire
 
                     //overall gui
                     void got_height(int h);
+                    void got_width(int w);
                     void got_grow();
 
                     //errors
                     void got_report_error(const std::string& e);
+                    void got_adjust_size();
 
                     void got_reset();
                     void got_visible(bool_promise_ptr);
@@ -411,12 +415,14 @@ namespace fire
 
                     //overall gui
                     void do_height(int h);
+                    void do_width(int w);
                     void do_grow();
                     void do_visible(bool_promise_ptr);
                     void do_alert();
 
                     //errors
                     void do_report_error(const std::string& e);
+                    void do_adjust_size();
 
                     void do_reset();
 

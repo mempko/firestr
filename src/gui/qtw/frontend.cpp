@@ -1066,6 +1066,12 @@ namespace fire
                 output->add(make_error_widget(e));
             }
 
+            void qt_frontend::adjust_size()
+            {
+                INVARIANT(canvas);
+                emit do_adjust_size();
+            }
+
             bool qt_frontend::visible() 
             {
                 INVARIANT(canvas);
@@ -1090,8 +1096,16 @@ namespace fire
                 canvas->setMinimumHeight(h);
             }
 
+            void qt_frontend::width(int w)
+            {
+                INVARIANT(canvas);
+
+                canvas->setMinimumWidth(w);
+            }
+
             void qt_frontend::grow()
             {
+                adjust_size();
             }
 
             void qt_frontend::reset()
