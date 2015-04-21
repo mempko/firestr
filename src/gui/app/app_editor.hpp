@@ -136,6 +136,7 @@ namespace fire
                     ~app_editor();
 
                 public:
+                    virtual void start();
                     virtual void contact_quit(const std::string& id);
                     bool visible() const;
 
@@ -182,6 +183,7 @@ namespace fire
 
                 private slots:
                     void update_error(const std::string& e);
+                    void got_adjust_size();
                     void emit_got_code(const fire::message::message&);
                     void emit_got_init(const fire::message::message&);
 

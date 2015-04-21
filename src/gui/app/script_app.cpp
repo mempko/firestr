@@ -56,6 +56,12 @@ namespace fire
         {
             const std::string SCRIPT_APP = "SCRIPT_APP";
 
+            namespace 
+            {
+                const size_t MIN_HEIGHT = 200;
+                const size_t MIN_WIDTH = 400;
+            }
+
             script_app::script_app(
                     app_ptr app, 
                     app_service_ptr as,
@@ -79,7 +85,6 @@ namespace fire
 
                 init();
 
-                INVARIANT(_api);
                 INVARIANT(_conversation_service);
                 INVARIANT(_conversation);
                 INVARIANT(_app);
@@ -114,7 +119,6 @@ namespace fire
 
                 init();
 
-                INVARIANT(_api);
                 INVARIANT(_conversation_service);
                 INVARIANT(_conversation);
                 INVARIANT(_app);
@@ -180,16 +184,29 @@ namespace fire
                 _canvas = new QWidget;
                 _canvas_layout = new QGridLayout{_canvas};
                 layout()->addWidget(_canvas, 1,0,2,3);
-                auto front = std::make_shared<qtw::qt_frontend>(_canvas, _canvas_layout, nullptr);
-                connect(front.get(), SIGNAL(alerted()), this, SLOT(got_alert()));
-
-                _front = std::make_shared<qtw::qt_frontend_client>(front);
-
                 set_main(_canvas);
 
                 //setup mail
                 _mail = std::make_shared<m::mailbox>(_id);
                 _sender = std::make_shared<ms::sender>(_conversation->user_service(), _mail);
+
+                ENSURE(_mail);
+                ENSURE(_sender);
+            }
+
+            void script_app::start()
+            {
+                INVARIANT(root());
+                INVARIANT(layout());
+                INVARIANT(_conversation);
+                INVARIANT(_app);
+
+                //setup frontend
+                auto front = std::make_shared<qtw::qt_frontend>(_canvas, _canvas_layout, nullptr);
+                connect(front.get(), SIGNAL(alerted()), this, SLOT(got_alert()));
+                connect(front.get(), SIGNAL(do_adjust_size()), this, SLOT(got_adjust_size()));
+
+                _front = std::make_shared<qtw::qt_frontend_client>(front);
 
                 //setup api and backend
                 _api = std::make_shared<l::lua_api>(
@@ -214,8 +231,6 @@ namespace fire
                 INVARIANT(_front);
                 INVARIANT(_back);
                 INVARIANT(_conversation);
-                INVARIANT(_mail);
-                INVARIANT(_sender);
             }
 
             void script_app::contact_quit(const std::string& id)
@@ -255,6 +270,11 @@ namespace fire
             void script_app::got_alert()
             {
                 alerted();
+            }
+
+            void script_app::got_adjust_size()
+            {
+                adjust_size();
             }
 
         }

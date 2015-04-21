@@ -268,7 +268,7 @@ namespace fire
                             if(!m::is_local(m)) return;
                             run_code_msg b;
                             b.from_message(m);
-                            _api->run(b.code);
+                            _api->run(b.code, true);
                             send_contact_joined();
                         });
 

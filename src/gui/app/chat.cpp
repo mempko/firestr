@@ -56,7 +56,8 @@ namespace fire
 
             namespace
             {
-                const size_t PADDING = 200;
+                const size_t MIN_WIDTH = 400;
+                const size_t MIN_HEIGHT = 200;
                 const std::string MESSAGE = "m";
                 const std::string JOINED = "j";
             }
@@ -140,20 +141,22 @@ namespace fire
 
             void chat_app::init()
             {
-                INVARIANT(root());
-                INVARIANT(layout());
-                INVARIANT(_conversation);
-
                 set_title("Chat");
 
                 _mail = std::make_shared<m::mailbox>(_id);
                 _sender = std::make_shared<ms::sender>(_conversation->user_service(), _mail);
-
                 _main = new QWidget;
                 _main_layout = new QGridLayout{_main};
                 layout()->addWidget(_main, 1,0,2,3);
-
+                setMinimumSize(QSize{MIN_WIDTH, MIN_HEIGHT});
                 set_main(_main);
+            }
+
+            void chat_app::start()
+            {
+                INVARIANT(root());
+                INVARIANT(layout());
+                INVARIANT(_conversation);
 
                 //message list
                 _messages = new QTextEdit;
@@ -175,14 +178,13 @@ namespace fire
                 connect(_message, SIGNAL(returnPressed()), this, SLOT(send_message()));
                 connect(_send, SIGNAL(clicked()), this, SLOT(send_message()));
 
-                setMinimumHeight(layout()->sizeHint().height() + PADDING);
-
                 //setup mail service
                 _mail_service = new mail_service{_mail, this};
                 _mail_service->start();
 
                 //join the chat
                 join();
+                adjust_size();
 
                 INVARIANT(_conversation);
                 INVARIANT(_mail);

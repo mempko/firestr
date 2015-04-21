@@ -149,18 +149,11 @@ namespace fire
                 _add_contact->setStyleSheet("border: 0px; color: 'grey';");
         }
 
-        void conversation_widget::add(message* m)
+        void conversation_widget::add(app::generic_app* m)
         {
             REQUIRE(m);
             INVARIANT(_messages);
             _messages->add(m);
-        }
-
-        void conversation_widget::add(QWidget* w)
-        {
-            REQUIRE(w);
-            INVARIANT(_messages);
-            _messages->add(w);
         }
 
         s::conversation_ptr conversation_widget::conversation()

@@ -32,7 +32,7 @@
 #ifndef FIRESTR_GUI_MESSAGELIST_H
 #define FIRESTR_GUI_MESSAGELIST_H
 
-#include <QScrollArea>
+#include <QMdiArea>
 
 #include "gui/list.hpp"
 #include "gui/message.hpp"
@@ -56,7 +56,7 @@ namespace fire
 
         using app_map = std::unordered_map<std::string, app_pair>; 
 
-        class message_list : public list
+        class message_list : public QMdiArea
         {
             Q_OBJECT
             public:
@@ -75,11 +75,10 @@ namespace fire
                 void add_chat_app();
                 void add_app_editor(const std::string& id);
                 void add_script_app(const std::string& id);
+                void add(app::generic_app*);
+                bool add_new_app(const messages::new_app&); 
 
             public slots:
-                bool add_new_app(const messages::new_app&); 
-                void add(app::generic_app*);
-                void add(QWidget*);
                 void clear_alerts();
 
             private:

@@ -51,29 +51,18 @@ namespace fire
 
             generic_app::generic_app() : message{}
             {
-                REQUIRE_FALSE(_title);
-                REQUIRE_FALSE(_show_hide);
-
-                _title = new QLabel;
-                _title->setMinimumHeight(_title->font().pointSize()*TEXT_PADDING);
-
-                _show_hide = new QPushButton;
-                make_minimize(*_show_hide);
-                _show_hide->setToolTip(tr("minimize app"));
-                connect(_show_hide, SIGNAL(clicked()), this, SLOT(toggle_visible()));
-                
-                layout()->addWidget(_show_hide, 0,0);
-                layout()->addWidget(_title, 0,1);
-
-                ENSURE(_show_hide);
-                ENSURE(_visible);
+                connect(this, SIGNAL(do_maximize()), SLOT(maximize()));
+                connect(this, SIGNAL(do_minimize()), SLOT(minimize()));
             }
 
             void generic_app::set_title(const std::string& t)
             {
-                INVARIANT(_title);
-                _title->setText(t.c_str());
                 _title_text = t;
+            }
+
+            const std::string& generic_app::title_text() const
+            {
+                return _title_text;
             }
 
             void generic_app::set_main(QWidget* m)
@@ -83,85 +72,40 @@ namespace fire
                 ENSURE(_main);
             }
 
+            void generic_app::set_sub_window(QMdiSubWindow* w)
+            {
+                REQUIRE(w);
+                REQUIRE(w->widget() == this);
+
+                _win = w;
+
+                ENSURE(_win);
+            }
+
             void generic_app::alerted()
             {
-                INVARIANT(_title);
                 set_alert();
 
                 if(_visible) return;
-
-                std::stringstream s;
-                s << "<font color='red'>" << _title_text << " ...</font>";
-                _title->setText(s.str().c_str());
-
             }
 
-            void generic_app::animate_min_height_to(int h)
+            void generic_app::adjust_size()
             {
-                auto a = new QPropertyAnimation{this, "app_min_height"};
-
-                a->setDuration(500);
-                a->setKeyValueAt(0.0, app_min_height());
-                a->setKeyValueAt(1.0, h);
-                a->setEasingCurve(QEasingCurve::OutExpo);
-                a->start(QAbstractAnimation::DeleteWhenStopped);
+                INVARIANT(_win);
+                INVARIANT(_main);
+                emit do_minimize();
             }
 
-            int generic_app::app_min_height() const
+            void generic_app::minimize()
             {
-                return minimumHeight();
+                _win->showMinimized();
+                _win->updateGeometry();
+                emit do_maximize();
             }
 
-            void generic_app::set_app_min_height(int h)
+            void generic_app::maximize()
             {
-                setMinimumHeight(h);
-
-                if(_visible && h >= static_cast<int>(_min_height) - 1)
-                {
-                    //enable min/max constraint so that the widget can be to original size
-                    layout()->setSizeConstraint(QLayout::SetMinAndMaxSize);
-                    setMaximumHeight(_max_height);
-                    _main->show();
-                }
-            }
-
-            void generic_app::toggle_visible()
-            {
-                REQUIRE(_main);
-                INVARIANT(_show_hide);
-                INVARIANT(root());
-                INVARIANT(layout());
-
-                if(_visible)
-                {
-                    {
-                        std::stringstream s;
-                        s << "<font color='grey'>" << _title_text << " ...</font>";
-                        _title->setText(s.str().c_str());
-                    }
-
-                    make_maximize(*_show_hide);
-
-                    //remove min/max constraint so that the widget can be resized to a tiny size
-                    layout()->setSizeConstraint(QLayout::SetDefaultConstraint);
-
-                    _show_hide->setToolTip(tr("show app"));
-                    _visible = false;
-                    _min_height = minimumHeight();
-                    _max_height = maximumHeight();
-                    _main->hide();
-                    animate_min_height_to(PADDING);
-                    setMaximumHeight(PADDING);
-                } 
-                else
-                {
-                    _title->setText(_title_text.c_str());
-
-                    make_minimize(*_show_hide);
-                    _show_hide->setToolTip(tr("hide app"));
-                    _visible = true;
-                    animate_min_height_to(_min_height);
-                }
+                _win->showNormal();
             }
 
             void generic_app::set_alert_style(const std::string& s)

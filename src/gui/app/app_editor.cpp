@@ -170,7 +170,8 @@ namespace fire
                 {"when_quit", "app:when_quit(callback) -- will call the callback when a contact quits the conversation"},
                 {"when_triggered", "timer:when_triggered(callback) -- will call the callback when the timer fires"},
                 {"who_started", "app:who_started() -- returns the contact who started the app"},
-                {"width", "image:height() -- returns the height of the image"},
+                {"width", "image:width() -- returns the width of the image"},
+                {"height", "image:height() -- returns the height of the image"},
                 {"encode", "audio_encoder:encode(pcm data) -- recieves mono 12khz pcm and encodes it using opus"},
                 {"decode", "audio_decoder:decode(opus data) -- recieves mono 12khz opus and decodes it to pcm"},
                 {"inc","vclock:inc() -- increment vclock"},
@@ -188,7 +189,8 @@ namespace fire
             {
                 const size_t TIMER_UPDATE = 1000; //in milliseconds
                 const size_t PADDING = 20;
-                const size_t MIN_EDIT_HEIGHT = 500;
+                const size_t MIN_EDIT_HEIGHT = 320;
+                const size_t MIN_EDIT_WIDTH = 480;
                 const std::string SCRIPT_CODE_MESSAGE = "scpt";
                 const std::string SCRIPT_INIT_MESSAGE = "init";
             }
@@ -256,7 +258,6 @@ namespace fire
                 init();
 
                 INVARIANT(_app);
-                ENSURE(_api);
                 ENSURE(_conversation_service);
                 ENSURE(_conversation);
                 ENSURE(_app_service);
@@ -318,6 +319,21 @@ namespace fire
 
             void app_editor::init()
             {
+                INVARIANT(_conversation);
+                INVARIANT(_conversation->user_service());
+
+                set_title("App Editor");
+
+                _mail = std::make_shared<m::mailbox>(_id);
+                _sender = std::make_shared<ms::sender>(_conversation->user_service(), _mail);
+                _code.init_set(_app->code());
+
+                ENSURE(_sender);
+                ENSURE(_mail);
+            }
+
+            void app_editor::start()
+            {
                 INVARIANT(root());
                 INVARIANT(layout());
                 INVARIANT(_conversation_service);
@@ -326,14 +342,6 @@ namespace fire
                 INVARIANT(_app_service);
                 INVARIANT(_app_reaper);
                 INVARIANT(_app);
-
-                set_title("App Editor");
-
-                auto my_id = _conversation->user_service()->user().info().id();
-
-                _mail = std::make_shared<m::mailbox>(_id);
-                _sender = std::make_shared<ms::sender>(_conversation->user_service(), _mail);
-                _code.init_set(_app->code());
 
                 //create gui
                 auto tabs = new QTabWidget{this};
@@ -359,8 +367,8 @@ namespace fire
                 init_handlers();
 
                 //run app
-
                 run_script();
+                adjust_size();
 
                 INVARIANT(_app);
                 INVARIANT(_conversation);
@@ -412,6 +420,8 @@ namespace fire
                 l->addWidget(_output, 2, 0, 1, 4);
 
                 auto front = std::make_shared<qtw::qt_frontend>(_canvas, _canvas_layout, _output);
+                connect(front.get(), SIGNAL(do_adjust_size()), this, SLOT(got_adjust_size()));
+
                 _front = std::make_shared<qtw::qt_frontend_client>(front);
                 connect(_front.get(), SIGNAL(got_report_error(const std::string&)), this, SLOT(update_error(const std::string&)));
 
@@ -428,7 +438,7 @@ namespace fire
 
                 //text edit
                 _script = new app_text_editor{_api.get()};
-                _script->setMinimumHeight(MIN_EDIT_HEIGHT);
+                _script->setMinimumSize(QSize{MIN_EDIT_WIDTH, MIN_EDIT_HEIGHT});
                 _script->setWordWrapMode(QTextOption::NoWrap);
                 _script->setTabStopWidth(40);
                 _highlighter = new lua_highlighter(_script->document());
@@ -930,6 +940,11 @@ namespace fire
                     update_status_to_errors();
                 }
                 _script->setExtraSelections( extras );
+            }
+
+            void app_editor::got_adjust_size()
+            {
+                adjust_size();
             }
 
             bool app_editor::set_app_name()

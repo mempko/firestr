@@ -171,12 +171,14 @@ namespace fire
 
                 //overall gui
                 F_CON(height(int));
+                F_CON(width(int));
                 F_CON(grow());
                 F_CON(visible(bool_promise_ptr));
                 F_CON(alert());
 
                 //errors
                 F_CON(report_error(const std::string&));
+                F_CON(adjust_size());
 
                 F_CON(reset());
 
@@ -738,6 +740,12 @@ namespace fire
                 emit got_height(h);
             }
 
+            void qt_frontend_client::width(int w)
+            {
+                if(_done) return;
+                emit got_width(w);
+            }
+
             void qt_frontend_client::grow()
             {
                 if(_done) return;
@@ -766,6 +774,12 @@ namespace fire
             {
                 if(_done) return;
                 emit got_report_error(e);
+            }
+
+            void qt_frontend_client::adjust_size()
+            {
+                if(_done) return;
+                emit got_adjust_size();
             }
 
             void qt_frontend_client::reset()
@@ -1287,6 +1301,13 @@ namespace fire
                 _f->height(h);
             }
 
+            void qt_frontend_client::do_width(int w)
+            {
+                INVARIANT(_f);
+                if(_done) return;
+                _f->width(w);
+            }
+
             void qt_frontend_client::do_grow()
             {
                 INVARIANT(_f);
@@ -1315,6 +1336,13 @@ namespace fire
                 INVARIANT(_f);
                 if(_done) return;
                 _f->report_error(e);
+            }
+
+            void qt_frontend_client::do_adjust_size()
+            {
+                INVARIANT(_f);
+                if(_done) return;
+                _f->adjust_size();
             }
 
             void qt_frontend_client::do_reset()
