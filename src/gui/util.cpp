@@ -451,5 +451,12 @@ namespace fire
             return s.str();
         }
 
+        std::string color_to_stylesheet_2(const QColor c)
+        {
+            std::stringstream s;
+            s << "rgba(" << c.red() << "," << c.green() << ","<< c.blue() << ","<<c.alpha() << ")";
+            return s.str();
+        }
+
     }
 }

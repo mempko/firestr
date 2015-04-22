@@ -55,11 +55,13 @@ namespace fire
                 virtual bool visible() const;
 
             public:
-                void clear_alert();
                 void set_alert();
 
                 QColor alert_color() const;
                 void set_alert_color(const QColor& c);
+
+            public slots:
+                void clear_alert();
 
             protected:
                 virtual void set_alert_style(const std::string& s) {}

@@ -62,7 +62,7 @@ namespace fire
                 s::conversation_ptr conversation,
                 a::app_service_ptr app_service,
                 a::app_reaper_ptr app_reaper) :
-            _messages{new message_list{app_service, app_reaper, conversation_service, conversation}},
+            _app_area{new app_area{app_service, app_reaper, conversation_service, conversation}},
             _conversation{conversation},
             _conversation_service{conversation_service},
             _app_service{app_service},
@@ -106,7 +106,7 @@ namespace fire
             auto s = new QSplitter{Qt::Horizontal};
             s->setFrameShape(QFrame::NoFrame);
             s->setContentsMargins(0,0,0,0);
-            s->addWidget(_messages);
+            s->addWidget(_app_area);
             s->addWidget(cw);
             s->setStretchFactor(0, 1);
             s->setStretchFactor(1, 0);
@@ -123,7 +123,7 @@ namespace fire
             INVARIANT(_contact_list);
             INVARIANT(_conversation_service);
             INVARIANT(_conversation);
-            INVARIANT(_messages);
+            INVARIANT(_app_area);
             INVARIANT(_layout);
             INVARIANT(_app_service);
             INVARIANT(_app_reaper);
@@ -152,8 +152,8 @@ namespace fire
         void conversation_widget::add(app::generic_app* m)
         {
             REQUIRE(m);
-            INVARIANT(_messages);
-            _messages->add(m);
+            INVARIANT(_app_area);
+            _app_area->add(m);
         }
 
         s::conversation_ptr conversation_widget::conversation()
@@ -222,7 +222,7 @@ namespace fire
         {
             REQUIRE_EQUAL(m.meta.type, ms::NEW_APP);
 
-            INVARIANT(_messages);
+            INVARIANT(_app_area);
             INVARIANT(_conversation);
             INVARIANT(_conversation_service);
 
@@ -230,7 +230,7 @@ namespace fire
             m::expect_symmetric(m);
 
             //add new app and get metadata
-            if(!_messages->add_new_app(m)) return;
+            if(!_app_area->add_new_app(m)) return;
             _conversation_service->fire_conversation_alert(_conversation->id(), false);
         }
 
@@ -347,8 +347,8 @@ namespace fire
 
         void conversation_widget::notify_apps_contact_quit(const std::string& id)
         {
-            INVARIANT(_messages);
-            for(auto p : _messages->apps()) 
+            INVARIANT(_app_area);
+            for(auto p : _app_area->apps()) 
             {
                 CHECK(p.second.widget);
                 p.second.widget->contact_quit(id);
@@ -378,7 +378,7 @@ namespace fire
         void conversation_widget::got_req_app_message(const messages::request_app& m)
         {
             INVARIANT(_conversation);
-            INVARIANT(_messages);
+            INVARIANT(_app_area);
 
             //find the app in the current conversation with the address specified
             auto a = _conversation->apps().find(m.app_address);
@@ -391,8 +391,8 @@ namespace fire
             u::bytes encoded_app;
             if(ad.type == SCRIPT_APP)
             {
-                auto ap = _messages->apps().find(ad.address);
-                if(ap == _messages->apps().end()) return;
+                auto ap = _app_area->apps().find(ad.address);
+                if(ap == _app_area->apps().end()) return;
 
                 CHECK(ap->second.app);
                 m::message app_message = *ap->second.app;
@@ -406,26 +406,26 @@ namespace fire
 
         void conversation_widget::add_chat_app()
         {
-            INVARIANT(_messages);
-            _messages->add_chat_app();
+            INVARIANT(_app_area);
+            _app_area->add_chat_app();
         }
 
         void conversation_widget::add_app_editor(const std::string& id)
         {
-            INVARIANT(_messages);
-            _messages->add_app_editor(id);
+            INVARIANT(_app_area);
+            _app_area->add_app_editor(id);
         }
 
         void conversation_widget::add_script_app(const std::string& id)
         {
-            INVARIANT(_messages);
-            _messages->add_script_app(id);
+            INVARIANT(_app_area);
+            _app_area->add_script_app(id);
         }
 
         void conversation_widget::clear_alerts()
         {
-            INVARIANT(_messages);
-            _messages->clear_alerts();
+            INVARIANT(_app_area);
+            _app_area->clear_alerts();
         }
     }
 }

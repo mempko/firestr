@@ -31,7 +31,7 @@
 
 #include <QtWidgets>
 
-#include "gui/message_list.hpp"
+#include "gui/app_area.hpp"
 #include "gui/unknown_message.hpp"
 #include "gui/app/chat.hpp"
 #include "gui/app/app_editor.hpp"
@@ -40,6 +40,7 @@
 #include "util/log.hpp"
 
 #include <sstream>
+#include <algorithm>
 
 namespace m = fire::message;
 namespace ms = fire::messages;
@@ -54,7 +55,7 @@ namespace fire
 {
     namespace gui
     {
-        message_list::message_list(
+        app_area::app_area(
                 a::app_service_ptr app_service,
                 a::app_reaper_ptr app_reaper,
                 s::conversation_service_ptr conversation_s,
@@ -73,8 +74,9 @@ namespace fire
             setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
             setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
 
-            QObject::connect(verticalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(clear_alerts()));
-            QObject::connect(horizontalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(clear_alerts()));
+            connect(verticalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(clear_alerts()));
+            connect(horizontalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(clear_alerts()));
+            connect(this, SIGNAL(subWindowActivated(QMdiSubWindow*)), this, SLOT(sub_window_activated(QMdiSubWindow*)));
 
 
             INVARIANT(_conversation_service);
@@ -83,9 +85,52 @@ namespace fire
             INVARIANT(_app_reaper);
         }
 
-        void message_list::add(app::generic_app* m)
+        size_t count_open(const QList<QMdiSubWindow *>& l)
+        {
+            return std::count_if(l.begin(), l.end(), 
+                    [](const QMdiSubWindow* w) 
+                    { 
+                        REQUIRE(w); 
+                        if(dynamic_cast<app::app_editor*>(w->widget()) != nullptr) return false;
+                        return w->visibleRegion().isEmpty() && !w->isMinimized();
+                    });
+        }
+
+        /**
+         * keep open the last 'op' amount of windows. 
+         * This is so that when a conversation is created in the background and apps are loaded
+         * into it, it won't be overwhelming to the user.
+         */
+        void keep_open(QList<QMdiSubWindow *> l, size_t op)
+        {
+            std::reverse(l.begin(), l.end());
+            size_t c = 0;
+            for(auto sw :  l)
+            {
+                CHECK(sw);
+                if(!sw->isMinimized())
+                {
+                    c++;
+                    if(c > op && sw->visibleRegion().isEmpty())
+                        sw->showMinimized();
+                }
+            }
+        }
+
+        void app_area::handle_resize_hack()
+        {
+            auto l = subWindowList();
+            auto o = count_open(l);
+            if(o > 2) return;
+
+            keep_open(l, 1);
+        }
+
+        void app_area::add(app::generic_app* m)
         {
             REQUIRE(m);
+
+            connect(m, SIGNAL(did_resize_hack()), this, SLOT(handle_resize_hack()));
 
             auto sw = addSubWindow(m);
             CHECK(sw);
@@ -100,21 +145,22 @@ namespace fire
 
             //start generic app
             m->start();
+            m->set_alert();
         }
 
-        s::conversation_ptr message_list::conversation()
+        s::conversation_ptr app_area::conversation()
         {
             ENSURE(_conversation);
             return _conversation;
         }
 
-        a::app_service_ptr message_list::app_service()
+        a::app_service_ptr app_area::app_service()
         {
             ENSURE(_app_service);
             return _app_service;
         }
 
-        bool message_list::add_new_app(const ms::new_app& n) 
+        bool app_area::add_new_app(const ms::new_app& n) 
         {
             INVARIANT(_conversation_service);
             INVARIANT(_conversation);
@@ -191,7 +237,7 @@ namespace fire
             return true;
         }
 
-        void message_list::add_chat_app()
+        void app_area::add_chat_app()
         {
             INVARIANT(_conversation);
             INVARIANT(_conversation_service);
@@ -201,7 +247,7 @@ namespace fire
             add(t, nullptr, ""); 
         }
 
-        void message_list::add_app_editor(const std::string& id)
+        void app_area::add_app_editor(const std::string& id)
         {
             INVARIANT(_app_service)
             INVARIANT(_app_reaper)
@@ -219,7 +265,7 @@ namespace fire
             add(t, nullptr, ""); 
         }
 
-        void message_list::add_script_app(const std::string& id)
+        void app_area::add_script_app(const std::string& id)
         {
             INVARIANT(_app_service)
             INVARIANT(_app_reaper)
@@ -235,7 +281,7 @@ namespace fire
             add(t, a, id);
         }
 
-        void message_list::add(a::generic_app* t, a::app_ptr app, const std::string& id)
+        void app_area::add(a::generic_app* t, a::app_ptr app, const std::string& id)
         {
             REQUIRE(t);
             REQUIRE(_conversation);
@@ -268,12 +314,23 @@ namespace fire
             }
         }
 
-        const app_map& message_list::apps() const
+        const app_map& app_area::apps() const
         {
             return _apps;
         }
 
-        void message_list::clear_alerts()
+        void app_area::sub_window_activated(QMdiSubWindow* w)
+        {
+            if(!w) w = currentSubWindow();
+            if(!w) return;
+
+            auto mw = dynamic_cast<gui::message*>(w);
+            if(!mw) return;
+            
+            mw->clear_alert();
+        }
+
+        void app_area::clear_alerts()
         {
             for(auto sw :  subWindowList())
             {

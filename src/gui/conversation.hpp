@@ -32,7 +32,7 @@
 #ifndef FIRESTR_GUI_CONVERSATION_H
 #define FIRESTR_GUI_CONVERSATION_H
 
-#include "gui/message_list.hpp"
+#include "gui/app_area.hpp"
 #include "gui/contact_list.hpp"
 #include "gui/contact_select.hpp"
 #include "gui/mail_service.hpp"
@@ -104,7 +104,7 @@ namespace fire
                 QPushButton* _add_contact;
                 QSplitter* _splitter;
                 QString _name;
-                message_list* _messages;
+                app_area* _app_area;
                 contact_list* _contact_list;
                 conversation::conversation_ptr _conversation;
                 conversation::conversation_service_ptr _conversation_service;
