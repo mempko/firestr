@@ -142,6 +142,5 @@ namespace fire
             else 
                 set_alert_style(background_color_to_stylesheet(c).c_str());
         }
-
     }
 }

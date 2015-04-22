@@ -293,7 +293,6 @@ namespace fire
                 init();
 
                 INVARIANT(_app);
-                ENSURE(_api);
                 ENSURE(_conversation_service);
                 ENSURE(_conversation);
                 ENSURE(_app_service);

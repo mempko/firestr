@@ -51,13 +51,13 @@ namespace fire
 
             generic_app::generic_app() : message{}
             {
-                connect(this, SIGNAL(do_maximize()), SLOT(maximize()));
-                connect(this, SIGNAL(do_minimize()), SLOT(minimize()));
+                connect(this, SIGNAL(do_resize_hack()), SLOT(wacky_resize_hack()));
             }
 
             void generic_app::set_title(const std::string& t)
             {
                 _title_text = t;
+                if(_win) _win->setWindowTitle(_title_text.c_str());
             }
 
             const std::string& generic_app::title_text() const
@@ -84,28 +84,32 @@ namespace fire
 
             void generic_app::alerted()
             {
+                INVARIANT(_win);
+
                 set_alert();
 
-                if(_visible) return;
+                _win->setWindowModified(true);
+                if(_win->isMinimized()) 
+                    _win->showNormal();
             }
 
             void generic_app::adjust_size()
             {
                 INVARIANT(_win);
                 INVARIANT(_main);
-                emit do_minimize();
+                emit do_resize_hack();
             }
 
-            void generic_app::minimize()
+            void generic_app::wacky_resize_hack()
             {
+                _win->mdiArea()->setActiveSubWindow(_win);
                 _win->showMinimized();
                 _win->updateGeometry();
-                emit do_maximize();
-            }
-
-            void generic_app::maximize()
-            {
                 _win->showNormal();
+                _win->updateGeometry();
+                _win->update();
+                _win->setWindowModified(true);
+                emit did_resize_hack();
             }
 
             void generic_app::set_alert_style(const std::string& s)

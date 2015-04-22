@@ -56,11 +56,11 @@ namespace fire
 
         using app_map = std::unordered_map<std::string, app_pair>; 
 
-        class message_list : public QMdiArea
+        class app_area : public QMdiArea
         {
             Q_OBJECT
             public:
-                message_list(
+                app_area(
                         app::app_service_ptr,
                         app::app_reaper_ptr,
                         conversation::conversation_service_ptr,
@@ -80,6 +80,10 @@ namespace fire
 
             public slots:
                 void clear_alerts();
+                void sub_window_activated(QMdiSubWindow*);
+
+            private slots:
+                void handle_resize_hack();
 
             private:
                 void add(app::generic_app*, app::app_ptr, const std::string& id);

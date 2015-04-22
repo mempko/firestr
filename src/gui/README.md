@@ -47,11 +47,10 @@ conversation
 implements a conversation gui, including code to add contacts
 to a conversation and stores messages for that conversation.
 
-message_list   
+app_area   
 -------------------------------------------------------------------
-a factory class which creates a message based on type.
-for example, if a app message comes it, it will initiate.
-the application.
+This is where the apps live. It is an mdi interface manage app windows.
+Also provides a factory for creating apps based on type.
 
 contact_list   
 -------------------------------------------------------------------

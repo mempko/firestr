@@ -67,12 +67,11 @@ namespace fire
                     void alerted();
 
                 signals:
-                    void do_maximize();
-                    void do_minimize();
+                    void do_resize_hack();
+                    void did_resize_hack();
 
                 private slots:
-                    void minimize();
-                    void maximize();
+                    void wacky_resize_hack();
 
                 private:
                     QMdiSubWindow* _win = nullptr;
