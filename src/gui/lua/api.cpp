@@ -146,6 +146,7 @@ namespace fire
                     .set("place", &lua_api::place)
                     .set("place_across", &lua_api::place_across)
                     .set("height", &lua_api::height)
+                    .set("width", &lua_api::width)
                     .set("grow", &lua_api::grow)
                     .set("total_contacts", &lua_api::total_contacts)
                     .set("last_contact", &lua_api::last_contact)
@@ -357,7 +358,6 @@ namespace fire
                     .set("hide", &image_ref::hide)
                     .set("width", &image_ref::width)
                     .set("height", &image_ref::height)
-                    .set("width", &image_ref::width)
                     .set("good", &image_ref::good);
 
                 SLB::Class<timer_ref>{"timer_ref", &manager}

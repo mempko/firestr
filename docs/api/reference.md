@@ -273,6 +273,14 @@ app:height
     height(pixels:int) : nil
 
 Changes the height of the app in pixels. The app cannot get smaller than the height specified.
+Use this if you want more vertical room.
+
+app:width
+-----
+
+    width(pixels:int) : nil
+
+Changes the width of the app in pixels. The app cannot get smaller than the width specified.
 Use this if you want more horizontal room.
 
 app:total_contacts
