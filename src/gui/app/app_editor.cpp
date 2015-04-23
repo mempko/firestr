@@ -188,8 +188,8 @@ namespace fire
             {
                 const size_t TIMER_UPDATE = 1000; //in milliseconds
                 const size_t PADDING = 20;
-                const size_t MIN_EDIT_HEIGHT = 320;
-                const size_t MIN_EDIT_WIDTH = 480;
+                const int MIN_EDIT_HEIGHT = 320;
+                const int MIN_EDIT_WIDTH = 480;
                 const std::string SCRIPT_CODE_MESSAGE = "scpt";
                 const std::string SCRIPT_INIT_MESSAGE = "init";
             }

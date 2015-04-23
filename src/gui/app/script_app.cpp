@@ -56,12 +56,6 @@ namespace fire
         {
             const std::string SCRIPT_APP = "SCRIPT_APP";
 
-            namespace 
-            {
-                const size_t MIN_HEIGHT = 200;
-                const size_t MIN_WIDTH = 400;
-            }
-
             script_app::script_app(
                     app_ptr app, 
                     app_service_ptr as,
