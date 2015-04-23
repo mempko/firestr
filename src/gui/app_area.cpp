@@ -29,7 +29,6 @@
  * also delete it here.
  */
 
-#include <QtWidgets>
 
 #include "gui/app_area.hpp"
 #include "gui/unknown_message.hpp"
@@ -41,6 +40,8 @@
 
 #include <sstream>
 #include <algorithm>
+
+#include <QtWidgets>
 
 namespace m = fire::message;
 namespace ms = fire::messages;
@@ -132,16 +133,20 @@ namespace fire
 
             connect(m, SIGNAL(did_resize_hack()), this, SLOT(handle_resize_hack()));
 
-            auto sw = addSubWindow(m);
+
+            auto sw = new app_sub_window;
             CHECK(sw);
 
+            sw->setWidget(m);
             m->set_sub_window(sw);
 
-            Qt::WindowFlags flags = Qt::CustomizeWindowHint | Qt::WindowMinimizeButtonHint | Qt::WindowTitleHint;
+            Qt::WindowFlags flags = Qt::CustomizeWindowHint | Qt::WindowMinimizeButtonHint | Qt::WindowMaximizeButtonHint | Qt::WindowTitleHint;
             sw->setWindowFlags(flags);
             sw->setWindowTitle(m->title_text().c_str());
 
             ENSURE(sw->widget() == m);
+
+            addSubWindow(sw);
 
             //start generic app
             m->start();
