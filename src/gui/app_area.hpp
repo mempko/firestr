@@ -32,8 +32,6 @@
 #ifndef FIRESTR_GUI_MESSAGELIST_H
 #define FIRESTR_GUI_MESSAGELIST_H
 
-#include <QMdiArea>
-
 #include "gui/list.hpp"
 #include "gui/message.hpp"
 #include "gui/app/app_service.hpp"
@@ -41,6 +39,10 @@
 #include "gui/app/generic_app.hpp"
 #include "conversation/conversation_service.hpp"
 #include "messages/new_app.hpp"
+
+#include <QMdiArea>
+#include <QCloseEvent>
+
 
 namespace fire
 {
@@ -56,46 +58,77 @@ namespace fire
 
         using app_map = std::unordered_map<std::string, app_pair>; 
 
-        class app_area : public QMdiArea
+        class app_sub_window : public QMdiSubWindow
         {
             Q_OBJECT
             public:
-                app_area(
-                        app::app_service_ptr,
-                        app::app_reaper_ptr,
-                        conversation::conversation_service_ptr,
-                        conversation::conversation_ptr);
 
-            public:
-                conversation::conversation_ptr conversation();
-                app::app_service_ptr app_service();
-                const app_map& apps() const;
+                app_sub_window() : QMdiSubWindow()
+                {      
+                    connect(this,SIGNAL(windowStateChanged(Qt::WindowStates,Qt::WindowStates )),this,
+                            SLOT(handleWindowStateChanged(Qt::WindowStates,Qt::WindowStates )));
+                }
+                ~app_sub_window() {};
+            protected:
 
-            public:
-                void add_chat_app();
-                void add_app_editor(const std::string& id);
-                void add_script_app(const std::string& id);
-                void add(app::generic_app*);
-                bool add_new_app(const messages::new_app&); 
-
-            public slots:
-                void clear_alerts();
-                void sub_window_activated(QMdiSubWindow*);
+                //prevent close on mac
+                virtual void closeEvent(QCloseEvent* e)
+                {
+                    e->ignore();
+                }
 
             private slots:
-                void handle_resize_hack();
 
-            private:
-                void add(app::generic_app*, app::app_ptr, const std::string& id);
+                void handleWindowStateChanged(Qt::WindowStates oldState,Qt::WindowStates newState)
+                {
+                    if(newState == Qt::WindowActive)
+                        if(auto a = dynamic_cast<app::generic_app*>(widget()))
+                            a->clear_alert();
+                }
 
-            private:
-                conversation::conversation_service_ptr _conversation_service;
-                conversation::conversation_ptr _conversation;
-                app::app_service_ptr _app_service;
-                app::app_reaper_ptr _app_reaper;
-                app_map _apps;
+                
         };
-    }
+
+            class app_area : public QMdiArea
+            {
+                Q_OBJECT
+                public:
+                    app_area(
+                            app::app_service_ptr,
+                            app::app_reaper_ptr,
+                            conversation::conversation_service_ptr,
+                            conversation::conversation_ptr);
+
+                public:
+                    conversation::conversation_ptr conversation();
+                    app::app_service_ptr app_service();
+                    const app_map& apps() const;
+
+                public:
+                    void add_chat_app();
+                    void add_app_editor(const std::string& id);
+                    void add_script_app(const std::string& id);
+                    void add(app::generic_app*);
+                    bool add_new_app(const messages::new_app&); 
+
+                    public slots:
+                        void clear_alerts();
+                    void sub_window_activated(QMdiSubWindow*);
+
+                    private slots:
+                        void handle_resize_hack();
+
+                private:
+                    void add(app::generic_app*, app::app_ptr, const std::string& id);
+
+                private:
+                    conversation::conversation_service_ptr _conversation_service;
+                    conversation::conversation_ptr _conversation;
+                    app::app_service_ptr _app_service;
+                    app::app_reaper_ptr _app_reaper;
+                    app_map _apps;
+            };
+        }
 }
 
 #endif
