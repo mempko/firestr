@@ -56,8 +56,8 @@ namespace fire
 
             namespace
             {
-                const size_t MIN_WIDTH = 400;
-                const size_t MIN_HEIGHT = 200;
+                const int MIN_WIDTH = 400;
+                const int MIN_HEIGHT = 200;
                 const std::string MESSAGE = "m";
                 const std::string JOINED = "j";
             }
