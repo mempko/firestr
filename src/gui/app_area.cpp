@@ -140,13 +140,13 @@ namespace fire
             sw->setWidget(m);
             m->set_sub_window(sw);
 
-            Qt::WindowFlags flags = Qt::CustomizeWindowHint | Qt::WindowMinimizeButtonHint | Qt::WindowMaximizeButtonHint | Qt::WindowTitleHint;
-            sw->setWindowFlags(flags);
-            sw->setWindowTitle(m->title_text().c_str());
-
             ENSURE(sw->widget() == m);
 
-            addSubWindow(sw);
+            auto nsw = addSubWindow(sw);
+
+            Qt::WindowFlags flags = Qt::CustomizeWindowHint | Qt::WindowMaximizeButtonHint| Qt::WindowMinimizeButtonHint | Qt::WindowTitleHint;
+            nsw->setWindowFlags(flags);
+            nsw->setWindowTitle(m->title_text().c_str());
 
             //start generic app
             m->start();
