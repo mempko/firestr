@@ -14,7 +14,7 @@ Firestr uses CMake for it's meta-build configuration.
 
     $ mkdir build
     $ cd build
-    $ cmake 
+    $ cmake ..
     $ make -j
 
 Running Firestr
