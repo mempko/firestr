@@ -312,7 +312,7 @@ namespace fire
             auto step2 = new QLabel(
                     tr(
                         "<h2>2. <font color='green'>Add a Contact</font></h2>"
-                        "Use the <font color='green'>buttons</font> on the right to add contacts.<br>"
+                        "Use the <font color='green'>button</font> on the right to add contacts.<br>"
                         "Once you have someone's identity, you can add them as <br>" 
                         "a contact by copy and pasting it.<br>"
                       ));
@@ -324,7 +324,7 @@ namespace fire
             auto step3 = new QLabel(
                     tr(
                         "<h2>3. <font color='green'>Start a Conversation</font></h2>"
-                        "Use the <font color='green'>buttons</font> on the right to start a conversation.<br>"
+                        "Use the <font color='green'>button</font> on the right to start a conversation.<br>"
                         "When you are connected with someone you can start a <br>"
                         "conversation with them.<br>"
                       ));
