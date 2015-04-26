@@ -88,7 +88,6 @@ namespace fire
 
                 set_alert();
 
-                _win->setWindowModified(true);
                 if(_win->isMinimized()) 
                     _win->showNormal();
             }
@@ -108,7 +107,6 @@ namespace fire
                 _win->showNormal();
                 _win->updateGeometry();
                 _win->update();
-                _win->setWindowModified(true);
                 emit did_resize_hack();
             }
 
