@@ -2,7 +2,7 @@ Source: firestr
 Section: unknown
 Priority: extra
 Maintainer: Maxim Khailo (Firestr Creator) <firestr.dev@gmail.com>
-Build-Depends: debhelper (>= 8.0.0), cmake, qtbase5-dev, libbotan1.10-dev, libboost-system-dev, libboost-program-options-dev, libboost-filesystem-dev, libboost-regex-dev, libboost-thread-dev, cdbs, libxss-dev
+Build-Depends: debhelper (>= 8.0.0), cmake, qtbase5-dev, libbotan1.10-dev, libboost-system-dev, libboost-program-options-dev, libboost-filesystem-dev, libboost-regex-dev, libboost-thread-dev, cdbs, libxss-dev, libsnappy-dev, libopus-dev, uuid-dev
 Standards-Version: 3.9.4
 Homepage: http://www.firestr.com
 Vcs-Git: git://github.com/mempko/firestr.git
