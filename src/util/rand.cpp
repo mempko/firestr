@@ -66,7 +66,7 @@ namespace fire
             std::uniform_int_distribution<uint32_t> dist(min,max); 
 
             auto v = dist(RNG);
-            ENSURE_RANGE(v, min, max);
+            ENSURE_BETWEEN(v, min, max);
             return v;
         }
     }
