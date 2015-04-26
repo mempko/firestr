@@ -24,7 +24,6 @@ without a central server.
 All communication is encrypted between peers to provide a safe environment and 
 no communication is routed through a server.
 
-
 WARNING
 ===================================================================
 
@@ -32,6 +31,9 @@ The software is in development. The security of the software has
 not been audited so use AT YOUR OWN RISK.
 
 If you are a security expert, please contribute.
+
+The encryption used is RSA with 4k keys for handshaking and AES where 
+Diffie-Hellman is used to create an ephemeral key for a connection session.
 
 Organization
 ===================================================================
