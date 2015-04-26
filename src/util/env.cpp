@@ -31,6 +31,8 @@
 
 #include "util/env.hpp"
 
+#include "util/rand.hpp"
+
 #include <cstdlib>
 #include <boost/filesystem.hpp>
 
@@ -84,6 +86,7 @@ namespace fire
         void setup_env()
         {
             Botan::LibraryInitializer init;
+            init_rand();
 
 #ifdef __APPLE__
             QString p = "defaults";
