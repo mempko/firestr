@@ -39,6 +39,7 @@
 
 #include "util/env.hpp"
 #include "util/log.hpp"
+#include "util/rand.hpp"
 #include "util/serialize.hpp"
 
 #include <string>
@@ -75,7 +76,7 @@ po::options_description create_descriptions()
         ("help", "prints help")
         ("home", po::value<std::string>()->default_value(firestr_home), "configuration directory")
         ("host", po::value<std::string>()->default_value(host), "host/ip of this machine") 
-        ("port", po::value<int>()->default_value(DEFAULT_PORT), "port this machine will receive messages on")
+        ("port", po::value<int>()->default_value(DEFAULT_PORT), "port this machine will receive messages on. If not specified, then the port will be within 1000 of the default")
         ("debug", "if set, turns on the debug menu");
 
     return d;
@@ -90,13 +91,18 @@ po::variables_map parse_options(int argc, char* argv[], po::options_description&
     return v;
 }
 
+fn::port_type randomize_port(fn::port_type port)
+{
+    return port + fu::rand(0, 1000);
+}
 
 fn::port_type get_port(const std::string& home, fn::port_type cmd_port)
 {
     if(cmd_port != DEFAULT_PORT) return cmd_port;
     auto cached_port = fus::load_port(home);
-    return cached_port != 0 ? cached_port : cmd_port;
+    return cached_port != 0 ? cached_port : randomize_port(cmd_port);
 }
+
 
 int main(int argc, char *argv[])
 try
@@ -125,8 +131,6 @@ try
 
     c.user = fg::setup_user(c.home);
     if(!c.user) return 0;
-
-    fus::save_port(c.home, c.port);
 
     fg::main_window w{c};
     w.show();
