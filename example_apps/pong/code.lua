@@ -1,5 +1,3 @@
-
-
 W = 500
 H = 500
 PW = 10
@@ -25,7 +23,8 @@ pdl = app:image(data:get_bin("paddle.png"))
 bg = app:image(data:get_bin("background.png"))
 ball_image = app:image(data:get_bin("ball.png"))
 d = app:draw(W,H)
-app:height(H + 20)
+app:height(H + 23)
+app:width(W + 23)
 
 bg_ref = d:image(bg, 0, 0, W, H)
 ball_ref = d:image(ball_image, ball.x-BHW, ball.y-BHH, BDW, BDH)

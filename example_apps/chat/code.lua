@@ -1,3 +1,7 @@
+
+app:height(200)
+app:width(300)
+
 m = app:list()
 app:place_across(m, 0, 0, 1, 2)
 
@@ -34,4 +38,5 @@ function add_message(name, text)
     local t = "<b>"..name..":</b> "..text
     local nl = app:label(t)
     m:add(nl)
+    app:alert()
 end
