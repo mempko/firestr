@@ -1,6 +1,8 @@
 s = app:button("send")
 app:place(s, 0,0)
 app:height(100)
+app:height(300)
+
 row=1
 send_id = 1
 CHUNK=1024 * 64
