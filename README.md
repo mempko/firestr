@@ -86,7 +86,7 @@ You can then run two test instances
 License GPLv3
 ===================================================================
 
-Copyright (C) 2013  Maxim Noah Khailo
+Copyright (C) 2015  Maxim Noah Khailo
  
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
