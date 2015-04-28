@@ -176,14 +176,38 @@ namespace fire
                 return data.size();
             }
 
-            char bin_data::get(size_t i) const
+            char bin_data::get(int i) const
             {
-                return i >= data.size() ? 0 : data[i];
+                if(i < 0) return 0;
+
+                size_t ui = static_cast<size_t>(i);
+                return ui >= data.size() ? 0 : data[ui];
             }
 
-            void bin_data::set(size_t i, char c)
+            void bin_data::set(int i, char c)
             {
-                if(i < data.size()) data[i] = c;
+                if(i < 0) return;
+
+                size_t ui = static_cast<size_t>(i);
+                if(ui >= data.size()) data.resize(ui+1);
+                data[ui] = c;
+            }
+
+            void bin_data::overlay(int i, const bin_data& d)
+            {
+                if(i < 0) return;
+                size_t ui = static_cast<size_t>(i);
+
+                if(ui + d.data.size() >= data.size())
+                    data.resize(ui+d.data.size());
+
+                CHECK_GREATER_EQUAL(data.size(), ui+d.data.size());
+                std::copy(d.data.begin(), d.data.end(), data.begin() + ui);
+            }
+
+            void bin_data::from_str(const std::string& s)
+            {
+                data.assign(s.begin(), s.end());
             }
 
             std::string bin_data::to_str() const

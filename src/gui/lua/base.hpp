@@ -112,10 +112,12 @@ namespace fire
             {
                 util::bytes data;
                 size_t get_size() const;
-                char get(size_t i) const;
-                void set(size_t i, char);
+                char get(int i) const;
+                void set(int i, char);
+                void from_str(const std::string&);
                 bin_data sub(size_t p, size_t s) const;
                 void append(const bin_data&);
+                void overlay(int i, const bin_data&);
                 std::string to_str() const;
             };
 

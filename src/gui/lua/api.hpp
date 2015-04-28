@@ -154,6 +154,7 @@ namespace fire
                     pen_ref make_pen(const std::string& color, int width);
                     timer_ref make_timer(int msec, const std::string& callback);
                     image_ref make_image(const bin_data& data);
+                    bin_data make_bin_data();
 
                     //multimedia
                     microphone_ref make_mic(const std::string& callback, const std::string& codec);
