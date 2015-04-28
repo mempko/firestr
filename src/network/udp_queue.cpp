@@ -115,10 +115,11 @@ namespace fire
 
         working_udp_chunks* init_working(hash_type addr_hash, working_udp_messages& w, const udp_chunk& c)
         {
+            REQUIRE_GREATER(c.total_chunks, 0);
+
             auto& wms = w[addr_hash];
             auto& wm = wms[c.sequence];
             if(!wm.chunks.empty()) return &wm;
-            if(c.total_chunks == 0) return nullptr;
 
             wm.chunks.resize(c.total_chunks);
             wm.set.resize(c.total_chunks);
@@ -151,7 +152,7 @@ namespace fire
             REQUIRE_FALSE(c.resent);
 
             auto wmp = init_working(addr_hash, w, c);
-            if(!wmp) return;
+            CHECK(wmp);
             sent_chunk(*wmp, c);
         }
 
@@ -316,8 +317,8 @@ namespace fire
             auto port = m.ep.port;
             const auto& b = m.data;
 
-            int total_chunks = b.size() < UDP_CHuNK_SIZE ? 
-                1 : (b.size() / UDP_CHuNK_SIZE) + 1;
+            int total_chunks = (b.size() / UDP_CHuNK_SIZE);
+            if(b.size() % UDP_CHuNK_SIZE) total_chunks += 1;
 
             CHECK_GREATER(total_chunks, 0);
 
@@ -350,14 +351,13 @@ namespace fire
 
                 //add to working
                 if(!wmp) wmp = init_working(addr_hash, _out_working, c);
-                if(!wmp) break;
+                CHECK(wmp);
                 remember_chunk(*wmp, c);
 
                 //step
                 chunk++;
                 s = e;
-                e+=UDP_CHuNK_SIZE;
-                if(e > b.size()) e = b.size();
+                e = std::min(b.size(), e + UDP_CHuNK_SIZE);
             }
 
             CHECK_EQUAL(chunk, total_chunks);
