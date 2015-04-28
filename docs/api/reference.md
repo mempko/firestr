@@ -570,6 +570,17 @@ The name you give to this function is a suggested name and the user is free to c
 
     data = app:open_bin_file()
 
+app:bin_data
+-----
+
+    bin_data() : bin_data
+
+Creates an empty binary data [bin_data](reference.md#bin_data-object) object. You can use
+this to manipulate binary data.
+
+    data = app:bin_data()
+    data:set(0, 'i')
+
 app:i_started
 -----
 
@@ -1921,6 +1932,16 @@ Sets the byte at the specified index.
 
     my_data:set(5, 44)
 
+bin_data:overlay
+-----
+
+    overlay(index:int, data:bin_data) : nil
+
+Overlays the binary data at the position specified. Will resize if the original bin_data 
+is too small
+
+    my_data:overlay(10, other_data)
+
 bin_data:sub
 -----
 
@@ -1938,6 +1959,15 @@ bin_data:append
 Appends data to the end.
 
     my_data:append(more_ata)
+
+bin_data:from_str
+-----
+
+    from_str(str:string) : nil
+
+Converts a string to binary data.
+
+    my_data:from_str("hello")
 
 bin_data:str
 -----
