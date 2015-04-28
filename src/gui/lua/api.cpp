@@ -169,6 +169,7 @@ namespace fire
                     .set("open_file", &lua_api::open_file)
                     .set("save_bin_file", &lua_api::save_bin_file)
                     .set("open_bin_file", &lua_api::open_bin_file)
+                    .set("bin_data", &lua_api::make_bin_data)
                     .set("i_started", &lua_api::launched_local);
 
                 SLB::Class<pen_ref>{"pen", &manager}
@@ -189,6 +190,8 @@ namespace fire
                     .set("set", &bin_data::set)
                     .set("sub", &bin_data::sub)
                     .set("append", &bin_data::append)
+                    .set("overlay", &bin_data::overlay)
+                    .set("from_str", &bin_data::from_str)
                     .set("str", &bin_data::to_str);
 
                 SLB::Class<script_message>{"script_message", &manager}
@@ -1191,6 +1194,11 @@ namespace fire
                 ENSURE_FALSE(ref.id == 0);
                 ENSURE(ref.api);
                 return ref;
+            }
+
+            bin_data lua_api::make_bin_data()
+            {
+                return bin_data{};
             }
 
             microphone_ref lua_api::make_mic(const std::string& callback, const std::string& codec)
