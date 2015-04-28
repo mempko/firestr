@@ -418,6 +418,7 @@ namespace fire
                 _canvas->setLayout(_canvas_layout);
                 _output = new list;
                 l->addWidget(_canvas, 1, 0, 1, 4);
+                l->setRowStretch(1, 1);
                 l->addWidget(_output, 2, 0, 1, 4);
 
                 auto front = std::make_shared<qtw::qt_frontend>(_canvas, _canvas_layout, _output);
@@ -448,6 +449,7 @@ namespace fire
                 _script->setPlainText(_app->code().c_str());
                 connect(_script, SIGNAL(keyPressed(QKeyEvent*)), this, SLOT(text_typed(QKeyEvent*)));
                 l->addWidget(_script, 3, 0, 2, 4);
+                l->setRowStretch(3, 2);
 
                 setMinimumHeight(layout()->sizeHint().height() + PADDING);
 
