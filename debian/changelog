@@ -1,3 +1,10 @@
+firestr (0.9) trusty; urgency=low
+
+  * Bug fix in udp queue
+  * New bin_data api 
+
+ -- mempko <mempko@mempko-g780>  Thu, 27 Apr 2015 10:29:00 -0500
+
 firestr (0.8) trusty; urgency=low
 
   * Apps are now in their own windows that you can resize and minimize.
