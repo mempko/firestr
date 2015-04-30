@@ -14,7 +14,7 @@ The best way to get started with Fire★ depends on which platform you're runnin
 Windows
 -------
 
-  * Download the [latest build](http://mempko.com/firestr/build/0.8/firestr_0.8_win64.zip)
+  * Download the [latest build](http://mempko.com/firestr/build/0.9/firestr_0.9_win64.zip)
 
   * Run `firestr.exe`
 
@@ -27,9 +27,9 @@ Windows
 OS X
 ----
 
-  * Download the [latest build](http://mempko.com/firestr/build/0.8/firestr_0.8.dmg)
+  * Download the [latest build](http://mempko.com/firestr/build/0.9/firestr_0.9.dmg)
 
-  * Open `firestr_0.8.dmg`
+  * Open `firestr_0.9.dmg`
 
   * Drag the Fire★ icon into `Applications`
 
@@ -44,9 +44,9 @@ OS X
 Ubuntu
 ------
 
-  * Download the [latest build](http://mempko.com/firestr/build/0.8/firestr_0.8_amd64.deb)
+  * Download the [latest build](http://mempko.com/firestr/build/0.9/firestr_0.9_amd64.deb)
 
-  * Open `firestr_0.8_amd64.deb` with Ubuntu Software Center (the default option)
+  * Open `firestr_0.9_amd64.deb` with Ubuntu Software Center (the default option)
 
   * Type `nohup firestr&` in the terminal
 
