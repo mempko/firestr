@@ -40,6 +40,7 @@
 #include "util/uuid.hpp"
 
 #include <QTimer>
+#include <QSplitter>
 
 #include <functional>
 #include <sstream>
@@ -192,7 +193,8 @@ namespace fire
                 const size_t TIMER_UPDATE = 1000; //in milliseconds
                 const size_t PADDING = 20;
                 const int MIN_EDIT_HEIGHT = 320;
-                const int MIN_EDIT_WIDTH = 480;
+                const int MIN_EDIT_WIDTH = 320;
+                const int MIN_APP_WIDTH = 240;
                 const std::string SCRIPT_CODE_MESSAGE = "scpt";
                 const std::string SCRIPT_INIT_MESSAGE = "init";
             }
@@ -393,6 +395,7 @@ namespace fire
                 INVARIANT(_app_service);
                 INVARIANT(_mail);
 
+
                 //add status bar
                 _status = new QLabel;
                 l->addWidget(_status, 0, 0, 1, 2);
@@ -411,22 +414,32 @@ namespace fire
                 expt->setToolTip(tr("Export to File"));
                 connect(expt, SIGNAL(clicked()), this, SLOT(export_app()));
 
+                //text editor and canvas splitter
+                auto s = new QSplitter{Qt::Horizontal};
+                s->setFrameShape(QFrame::NoFrame);
+                s->setContentsMargins(0,0,0,0);
 
                 //add application canvas and print area
+                auto hs = new QSplitter{Qt::Vertical};
+                hs->setFrameShape(QFrame::NoFrame);
+                hs->setContentsMargins(0,0,0,0);
                 _canvas = new QWidget;
                 _canvas_layout = new QGridLayout;
                 _canvas->setLayout(_canvas_layout);
+                _canvas->setMinimumWidth(MIN_APP_WIDTH);
                 _output = new list;
-                l->addWidget(_canvas, 1, 0, 1, 4);
-                l->setRowStretch(1, 1);
-                l->addWidget(_output, 2, 0, 1, 4);
+
+                hs->addWidget(_canvas);
+                hs->addWidget(_output);
+
+                hs->setStretchFactor(0, 1);
+                hs->setStretchFactor(1, 0);
 
                 auto front = std::make_shared<qtw::qt_frontend>(_canvas, _canvas_layout, _output);
                 connect(front.get(), SIGNAL(do_adjust_size()), this, SLOT(got_adjust_size()));
 
                 _front = std::make_shared<qtw::qt_frontend_client>(front);
                 connect(_front.get(), SIGNAL(got_report_error(const std::string&)), this, SLOT(update_error(const std::string&)));
-
                 _api = std::make_shared<l::lua_api>(
                         _app, 
                         _sender, 
@@ -448,10 +461,16 @@ namespace fire
                 _started = _app->code().empty() ? start_state::GET_CODE : start_state::DONE_START;
                 _script->setPlainText(_app->code().c_str());
                 connect(_script, SIGNAL(keyPressed(QKeyEvent*)), this, SLOT(text_typed(QKeyEvent*)));
-                l->addWidget(_script, 3, 0, 2, 4);
-                l->setRowStretch(3, 2);
 
                 setMinimumHeight(layout()->sizeHint().height() + PADDING);
+
+
+                //setup splitter
+                s->addWidget(_script);
+                s->addWidget(hs);
+
+                l->addWidget(s, 1, 0, 1, 4);
+
 
                 //setup update timer
                 auto *t2 = new QTimer(this);
