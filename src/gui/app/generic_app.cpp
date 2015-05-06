@@ -101,12 +101,13 @@ namespace fire
 
             void generic_app::wacky_resize_hack()
             {
-                _win->mdiArea()->setActiveSubWindow(_win);
+                auto aw = _win->mdiArea()->activeSubWindow();
                 _win->showMinimized();
                 _win->updateGeometry();
                 _win->showNormal();
                 _win->updateGeometry();
                 _win->update();
+                _win->mdiArea()->setActiveSubWindow(aw);
                 emit did_resize_hack();
             }
 
