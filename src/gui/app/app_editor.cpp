@@ -414,26 +414,12 @@ namespace fire
                 expt->setToolTip(tr("Export to File"));
                 connect(expt, SIGNAL(clicked()), this, SLOT(export_app()));
 
-                //text editor and canvas splitter
-                auto s = new QSplitter{Qt::Horizontal};
-                s->setFrameShape(QFrame::NoFrame);
-                s->setContentsMargins(0,0,0,0);
-
                 //add application canvas and print area
-                auto hs = new QSplitter{Qt::Vertical};
-                hs->setFrameShape(QFrame::NoFrame);
-                hs->setContentsMargins(0,0,0,0);
                 _canvas = new QWidget;
                 _canvas_layout = new QGridLayout;
                 _canvas->setLayout(_canvas_layout);
                 _canvas->setMinimumWidth(MIN_APP_WIDTH);
                 _output = new list;
-
-                hs->addWidget(_canvas);
-                hs->addWidget(_output);
-
-                hs->setStretchFactor(0, 1);
-                hs->setStretchFactor(1, 0);
 
                 auto front = std::make_shared<qtw::qt_frontend>(_canvas, _canvas_layout, _output);
                 connect(front.get(), SIGNAL(do_adjust_size()), this, SLOT(got_adjust_size()));
@@ -464,13 +450,25 @@ namespace fire
 
                 setMinimumHeight(layout()->sizeHint().height() + PADDING);
 
+                //setup vertical splitter
+                auto vs = new QSplitter{Qt::Horizontal};
+                vs->setFrameShape(QFrame::NoFrame);
+                vs->setContentsMargins(0,0,0,0);
+                vs->addWidget(_script);
+                vs->addWidget(_canvas);
 
-                //setup splitter
-                s->addWidget(_script);
-                s->addWidget(hs);
+                //setup horizontal splitter
+                auto hs = new QSplitter{Qt::Vertical};
+                hs->setFrameShape(QFrame::NoFrame);
+                hs->setContentsMargins(0,0,0,0);
 
-                l->addWidget(s, 1, 0, 1, 4);
+                hs->addWidget(vs);
+                hs->addWidget(_output);
 
+                hs->setStretchFactor(0, 1);
+                hs->setStretchFactor(1, 0);
+
+                l->addWidget(hs, 1, 0, 1, 4);
 
                 //setup update timer
                 auto *t2 = new QTimer(this);
