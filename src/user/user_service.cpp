@@ -775,6 +775,8 @@ namespace fire
 
         void user_service::send_ping_to(char s, const std::string& id, bool force)
         {
+            INVARIANT(_encrypted_channels);
+
             u::mutex_scoped_lock l(_ping_mutex);
             if(_contacts.count(id) == 0) return;
 
@@ -783,6 +785,9 @@ namespace fire
 
             if(!c || (p.state == contact_data::OFFLINE && !force)) return;
             CHECK(c);
+
+            const auto& sc = _encrypted_channels->get_channel(c->address());
+            CHECK(sc.shared_secret.ready());
 
             if(!by_id(c->id()))
             {
