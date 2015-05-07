@@ -61,6 +61,12 @@ namespace
     fn::port_type DEFAULT_PORT = 6060;
 }
 
+void assert_dialog(const char* msg) 
+{ 
+    fg::assert_dialog d{msg};
+    d.exec();
+}
+
 po::options_description create_descriptions()
 {
     po::options_description d{"Options"};
@@ -116,6 +122,7 @@ try
     }
 
     fu::setup_env();
+    fu::set_assert_dialog_callback(assert_dialog);
 
     QApplication a{argc, argv};
 

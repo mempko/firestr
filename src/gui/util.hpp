@@ -36,6 +36,7 @@
 #include <QWidget>
 #include <QPushButton>
 #include <QLabel>
+#include <QDialog>
 #include "user/user.hpp"
 
 namespace fire
@@ -91,6 +92,13 @@ namespace fire
         std::string color_to_stylesheet(const QColor c);
         std::string color_to_stylesheet_2(const QColor c);
         std::string background_color_to_stylesheet(const QColor c);
+
+        class assert_dialog : public QDialog
+        {
+            Q_OBJECT
+            public:
+                assert_dialog(const char* msg, QWidget* parent = nullptr);
+        };
     }
 }
 

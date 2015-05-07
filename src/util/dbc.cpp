@@ -31,6 +31,7 @@
  */
 #include "util/dbc.hpp"
 #include "util/log.hpp"
+
 #include <cstdlib>
 
 #ifndef _WIN64
@@ -44,27 +45,35 @@ namespace fire
         namespace 
         {
             const size_t TRACE_SIZE = 16;
+            dialog_callback DIALOG_CALLBACK = [](const char*){};
         }
 
 #ifdef _WIN64
-        void trace() {}
+        void trace(std::ostream&) {}
 #else
-        void trace()
+        void trace(std::ostream& o)
         {
             void *t[TRACE_SIZE];
             auto size = backtrace(t, TRACE_SIZE);
             auto s = backtrace_symbols (t, size);
             for (int i = 0; i < size; i++)
-                LOG << s[i] << std::endl;
+                o << s[i] << std::endl;
 
             std::free(s);
         }
 #endif
+        void set_assert_dialog_callback(dialog_callback c)
+        {
+            DIALOG_CALLBACK = c;
+        }
 
         void raise(const char * msg) 
         {
-            LOG << msg << std::endl;
-            trace();
+            std::stringstream s;
+            s << msg << std::endl;
+            trace(s);
+            LOG << s.str() << std::endl;
+            DIALOG_CALLBACK(s.str().c_str());
             exit(1);
         }
 

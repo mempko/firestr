@@ -37,8 +37,11 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QLineEdit>
+#include <QTextEdit>
+#include <QVBoxLayout>
 #include <QInputDialog>
 #include <QFontDatabase>
+#include <QDialogButtonBox>
 
 #include <fstream>
 
@@ -458,5 +461,25 @@ namespace fire
             return s.str();
         }
 
+        assert_dialog::assert_dialog(const char* msg, QWidget* parent) : QDialog{parent}
+        {
+            auto layout = new QVBoxLayout{this};
+            setLayout(layout);
+
+            auto l = new QLabel{tr(
+                    "<h1>A <font color='red'>bug</font> was detected with the software!</h1><br/>"
+                    "Fire★ is now going to close in case there was a security problem.<br><br>"
+                    "Copy and Paste the text below and report this problem to<br><a href='mailto:firestr@librelist.com'>firestr@librelist.com</a><br> or <br><a href='https://github.com/mempko/firestr/issues'>https://github.com/mempko/firestr/issues</a>")};
+            auto m = new QTextEdit;
+            m->setPlainText(msg);
+            m->setReadOnly(true); 
+
+            auto b = new QDialogButtonBox(QDialogButtonBox::Ok);
+            connect(b, SIGNAL(accepted()), this, SLOT(accept()));
+
+            layout->addWidget(l);
+            layout->addWidget(m);
+            layout->addWidget(b);
+        }
     }
 }
