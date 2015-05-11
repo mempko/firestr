@@ -122,3 +122,10 @@ add_dependencies(
     fire_slb)
 
 install(TARGETS firestr DESTINATION bin)
+
+if(APPLE)
+elseif(CMAKE_HOST_WIN32)
+else()
+    install(FILES ${DESKTOP} DESTINATION share/applications)
+    install(FILES ${ICON} DESTINATION share/icons/hicolor/scalable/apps)
+endif()
