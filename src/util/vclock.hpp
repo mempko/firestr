@@ -43,31 +43,39 @@ namespace fire
 {
     namespace util 
     {
-        template <class m>
-            auto get_keys(const m& p) -> std::set<typename m::key_type>
-            {
-                using kt = typename m::key_type;
-                using vt = typename m::value_type;
-                std::set<kt> r;
-                std::transform(std::begin(p), std::end(p), 
-                        std::inserter(r, r.end()),
-                        [](const vt& p) { return p.first;});
-                return r;
-            }
+        namespace detail
+        {
+            template <class m>
+                auto get_keys(const m& p) -> std::set<typename m::key_type>
+                {
+                    using kt = typename m::key_type;
+                    using vt = typename m::value_type;
+                    std::set<kt> r;
+                    std::transform(std::begin(p), std::end(p), 
+                            std::inserter(r, r.end()),
+                            [](const vt& p) { return p.first;});
+                    return r;
+                }
 
-        template <class ks>
-            auto merge_keys(const ks& k1, const ks& k2) -> std::set<typename ks::key_type>
-            {
-                ks r;
-                std::set_union(
-                        std::begin(k1), std::end(k1), 
-                        std::begin(k2), std::end(k2),
-                        std::inserter(r, r.end()));
-                return r;
-            }
+            template <class ks>
+                auto merge_keys(const ks& k1, const ks& k2) -> std::set<typename ks::key_type>
+                {
+                    ks r;
+                    std::set_union(
+                            std::begin(k1), std::end(k1), 
+                            std::begin(k2), std::end(k2),
+                            std::inserter(r, r.end()));
+                    return r;
+                }
+        }
 
         /**
-         * Simple implementation of a vector clock/version vector with compare, increment, and merge
+         * Simple implementation of a vector clock/version vector with compare, increment, and merge.
+         * A vector clock can be used to create a partial order of events or determining when two messages
+         * happened concurrently. 
+         *
+         * It keeps track of what 'last seen' or 'last version' count for each 
+         * client who receives a message and provides semantics for incrementing and merging vector clocks.
          */
         template <class id_t>
             class vclock
@@ -81,7 +89,11 @@ namespace fire
                 public:
 
                     size_t& operator[](id_t i) { return _c[i];}
-                    const size_t& operator[](id_t i) const 
+
+                    /**
+                     * The id is expected to be there if you don't want to change it.
+                     */
+                    const size_t operator[](id_t i) const 
                     { 
                         REQUIRE_GREATER(i, 0);
 
@@ -135,14 +147,18 @@ namespace fire
                         bool l = false;
                         bool g = false;
 
-                        auto keys = merge_keys(get_keys(_c), get_keys(o._c));
+                        auto keys = detail::merge_keys(detail::get_keys(_c), detail::get_keys(o._c));
+
                         for(const auto& k : keys)
                         {
                             auto lvi = _c.find(k); 
                             auto rvi = o._c.find(k);
+
                             size_t lv = lvi != std::end(_c) ? lvi->second : 0;
                             size_t rv = rvi != std::end(o._c) ? rvi->second : 0;
+                            
                             auto diff = static_cast<ptrdiff_t>(lv) - static_cast<ptrdiff_t>(rv);
+
                             if(diff > 0) g = true;
                             if(diff < 0) l = true;
                         }
