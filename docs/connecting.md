@@ -80,7 +80,7 @@ is provided on the following network.
 Using Your Own
 ------------
 
-You can also run your own locator by downloading the [code](http://www.github.com/mempko/firestr) 
+You can also run your own locator by downloading the [code](https://www.github.com/mempko/firestr) 
 and compiling it. Once compiled, running your own locator is as simple as running the **firegreet** executable.
 
 
