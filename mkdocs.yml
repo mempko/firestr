@@ -6,6 +6,7 @@ pages:
   - [connecting.md, 'Connecting']
   - [installing_apps.md, 'Installing Apps']
   - [api/index.md, 'Creating Apps', 'Creating Apps']
-  - [api/hello_world.md, 'Creating Apps', 'Hello World']
+  - [api/hello_world.md, 'Creating Apps', 'Hello World Tutorial']
+  - [api/chat.md, 'Creating Apps', 'Simple Chat Tutorial']
   - [api/reference.md, 'Creating Apps', 'API Reference']
 
