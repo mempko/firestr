@@ -7,11 +7,11 @@ custom object oriented API for building Apps. The main object you interact with 
 app object
 =====
 
-The **app** object is a global object and provides functions for creating all other objects in an app. 
+The `app` object is a global object and provides functions for creating all other objects in an app. 
 It also provides other functions such as sending messages and handling them. This is the
 entry point to the Fire★ API.
 
-There is only one **app** object.
+There is only one `app` object.
 
 app:print
 -----
@@ -389,7 +389,7 @@ app:when_message
     when_message(type:string, callback:string) : nil
 
 Sets the callback called when a message is received of a specific type. 
-Messages can have a **type** which can be any string. You can capture messages of a specific
+Messages can have a `type` which can be any string. You can capture messages of a specific
 type with this callback 
 
 The callback must be of the following form.
@@ -411,7 +411,7 @@ app:when_local_message
     when_local_message(type:string, callback:string) : nil
 
 Sets the callback called when a message is received of a specific type. 
-Messages can have a **type** which can be any string. You can capture messages of a specific
+Messages can have a `type` which can be any string. You can capture messages of a specific
 type with this callback 
 
 A local message is one that is sent by another app from within the conversation from the
@@ -1539,7 +1539,7 @@ The callback must be of the form:
 
     callback(x: int, y: int)
 
-Where **x** and **y** are the pixel coordinates of the mouse.
+Where `x` and `y` are the pixel coordinates of the mouse.
 
     my_draw:when_mouse_mmoved("foo")
 
@@ -1557,7 +1557,7 @@ The callback must be of the form:
 
     callback(button: int, x: int, y: int)
 
-Where **button** is the mouse button number and **x** and **y** are the pixel coordinates of the mouse.
+Where `button` is the mouse button number and `x` and `y` are the pixel coordinates of the mouse.
 
     my_draw:when_mouse_pressed("foo")
 
@@ -1575,7 +1575,7 @@ The callback must be of the form:
 
     callback(button: int, x: int, y: int)
 
-Where **button** is the mouse button number and **x** and **y** are the pixel coordinates of the mouse.
+Where `button` is the mouse button number and `x` and `y` are the pixel coordinates of the mouse.
 
     my_draw:when_mouse_released("foo")
 
@@ -1594,7 +1594,7 @@ The callback must be of the form:
 
     callback(button: int, x: int, y: int)
 
-Where **button** is the mouse button number and **x** and **y** are the pixel coordinates of the mouse.
+Where `button` is the mouse button number and `x` and `y` are the pixel coordinates of the mouse.
 
     my_draw:when_mouse_dragged("foo")
 
@@ -1620,7 +1620,7 @@ For the case of a draw surface, if the draw is clicked or the mouse is moved, it
     end
 
 So if one user moves the mouse, then the "foo" function will be called for each user
-in a conversation with the **x** and **y** coordinates.
+in a conversation with the `x` and `y` coordinates.
 
 draw:clear
 -----
@@ -1636,7 +1636,7 @@ draw:line
 
     line(x1:int, y1:int, x2:int, y2:int) : line
 
-Draws a line from **x1**, **y1** to **x2**, **y2**. Returns a reference
+Draws a line from `x1`, `y1` to `x2`, `y2`. Returns a reference
 [line object](reference.md#line-object) which can be used to manipulate the line.
 
     line_ref = my_draw:line(0, 0, 500, 500)
@@ -1646,7 +1646,7 @@ draw:circle
 
     circle(x:int, y:int, radius:int) : circle
 
-Draws a circle at **x**, **y** with the **radius** specified. Returns a reference
+Draws a circle at `x`, `y` with the `radius` specified. Returns a reference
 [circle object](reference.md#circle-object) which can be used to manipulate the circle.
 
     circle_ref = my_draw:circle(50, 50, 20)
@@ -1656,7 +1656,7 @@ draw:image
 
     image(img:image, x:int, y:int, width:int, height:int) : draw_image
 
-Draws an image at **x**, **y** with the **width** and **height** specified. Returns a reference
+Draws an image at `x`, `y` with the `width` and `height` specified. Returns a reference
 [draw_image](reference.md#draw_image-object) which can be used to manipulate the image.
 
     img_ref = my_draw:image(my_img, 50, 60, 120, 120)
@@ -2050,7 +2050,7 @@ Mutes the speaker.
 audio_encoder object
 =====
 
-An audio_encoder is used to encode **pcm** audio data to **opus**. 
+An audio_encoder is used to encode `pcm` audio data to `opus`. 
 Use [app:audio_encoder](reference.md#appaudio_encoder) to create an audio_encoder.
 
 audio_encoder:encode
@@ -2058,14 +2058,14 @@ audio_encoder:encode
 
     encode(pcm:bin_data) : bin_data
 
-Takes **pcm** audio data and encodes it to **opus**.
+Takes `pcm` audio data and encodes it to `opus`.
 
     some_opus = my_encoder:encode(some_pcm)
 
 audio_decoder object
 =====
 
-An audio_decoder is used to decode **opus** audio data to **pcm**. 
+An audio_decoder is used to decode `opus` audio data to `pcm`. 
 Use [app:audio_decoder](reference.md#appaudio_decoder) to create an audio_decorder.
 
 audio_decoder:decode
@@ -2073,7 +2073,7 @@ audio_decoder:decode
 
     decode(opus:bin_data) : bin_data
 
-Takes **opus** audio data and decodes it to **pcm**.
+Takes `opus` audio data and decodes it to `pcm`.
 
     some_pcm = my_decoder:decode(some_opus)
 
@@ -2088,7 +2088,7 @@ contact:id
 
     id() : string
 
-Returns the **id** of the contact. Each contact has a unique **id**.
+Returns the `id` of the contact. Each contact has a unique `id`.
 
     id = my_friend:id()
 
@@ -2097,7 +2097,7 @@ contact:name
 
     name() : string
 
-Returns the **name** of the contact. The **name** is not unique.
+Returns the `name` of the contact. The `name` is not unique.
 
     name = my_friend:name()
 
@@ -2123,7 +2123,7 @@ app:id
 
     id() : string
 
-Returns the **id** of the app. Each app has a unique **id**.
+Returns the `id` of the app. Each app has a unique `id`.
 
     id = some_app:id()
 
@@ -2232,7 +2232,7 @@ message:set_type
 
     set_type(type:string) : nil
 
-Sets the **type** of the message. The type can be used to call different functions
+Sets the `type` of the message. The type can be used to call different functions
 to respond to a message. You can use [when_message](reference.md#appwhen_message) method 
 in app to call a specific function based on the type.
 
@@ -2243,7 +2243,7 @@ message:type
 
     type() : string
 
-Returns the **type** of the message.The type can be used to call different functions
+Returns the `type` of the message.The type can be used to call different functions
 to respond to a message. You can use [when_message](reference.md#appwhen_message) method 
 in app to call a specific function based on the type.
 
@@ -2497,7 +2497,7 @@ store object
 =====
 
 A store object is a global object that can be used to store permanent data. This data
-will be available to all apps and survives restarts. There is only one **store** object.
+will be available to all apps and survives restarts. There is only one `store` object.
 
 store:get_bin
 -----
@@ -2581,7 +2581,7 @@ is stored with the app and is sent to all contacts along with the app. Use this 
 any data the app needs like graphics and sounds. Do not store a lot of data because it
 is sent to all contacts in a conversation each time the app starts.
 
-You can also populate the data using the **data** tab in the App Editor.
+You can also populate the data using the `data` tab in the App Editor.
 
 data:get_bin
 -----
