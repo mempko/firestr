@@ -230,7 +230,7 @@ namespace fire
             INVARIANT(_user);
             if(_user->info().address() == address) return;
 
-            _user->info().address(address);
+            _user->info().add_known_address(address);
             save_user(_home, *_user);
         }
 
@@ -555,7 +555,7 @@ namespace fire
             if(c->address() == a) return;
 
             LOG << "updating address from: " << c->address() << " to: " << a << std::endl;
-            c->address(a);
+            c->add_known_address(a);
             save_user(_home, *_user);
         }
 
@@ -597,7 +597,8 @@ namespace fire
             if(!c) return;
             
             //remove security conversation
-            _encrypted_channels->remove_channel(c->address());
+            for(const auto& a : c->addresses())
+                _encrypted_channels->remove_channel(a);
 
             //remove contact
             fire_contact_disconnected_event(id);
@@ -849,9 +850,12 @@ namespace fire
             REQUIRE_FALSE(is_contact_connecting(c->id()));
             REQUIRE_FALSE(contact_available(c->id()));
 
-            LOG << "sending connection request to " << c->name() << " (" << c->id() << ", " << c->address() << ")" << std::endl;
-            _encrypted_channels->create_channel(c->address(), c->key());
-            send_ping_request(c->address(), send_back);
+            for(const auto& address : c->addresses())
+            {
+                LOG << "sending connection request to " << c->name() << " (" << c->id() << ", " << address << ")" << std::endl;
+                _encrypted_channels->create_channel(address, c->key());
+                send_ping_request(address, send_back);
+            }
         }
 
         void user_service::update_contact_version(
@@ -960,7 +964,8 @@ namespace fire
             if(prev_state == contact_data::CONNECTED)
             {
                 LOG << cd.contact->name() << " disconnected" << std::endl;
-                _encrypted_channels->remove_channel(cd.contact->address());
+                for(const auto& address : cd.contact->addresses())
+                    _encrypted_channels->remove_channel(address);
                 event::contact_disconnected e;
                 e.id = id;
                 e.name = cd.contact->name();
