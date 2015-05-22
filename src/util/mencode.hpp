@@ -185,11 +185,21 @@ namespace fire
                 value_array _a;
         };
 
+        template<class C>
+        array to_array(const C& cs)
+        {
+            array a;
+            for(const auto& c : cs) a.add(c);
+
+            ENSURE_EQUAL(a.size(), cs.size());
+            return a;
+        }
+
         template<class C, class Convert>
         array to_array(const C& cs, Convert conv)
         {
             array a;
-            for(auto c : cs) a.add(conv(c));
+            for(const auto& c : cs) a.add(conv(c));
 
             ENSURE_EQUAL(a.size(), cs.size());
             return a;
@@ -198,8 +208,8 @@ namespace fire
         template<class C, class Convert>
         void from_array(const array& a, C& cs, Convert conv)
         {
-            for(auto v : a)
-                cs.emplace_back(conv(v.as_dict()));
+            for(const auto& v : a)
+                cs.emplace_back(conv(v));
 
             ENSURE_EQUAL(cs.size(), a.size());
         }

@@ -36,6 +36,7 @@
 #include <memory>
 #include <unordered_map>
 #include <vector>
+#include <deque>
 
 #include "network/endpoint.hpp"
 #include "security/security.hpp"
@@ -48,27 +49,29 @@ namespace fire
 {
     namespace user
     {
+        using known_addresses = std::deque<std::string>;
+
         class user_info
         {
             public:
                 user_info() :
-                    _address{}, _name{}, _id{}, _pkey{} {}
+                    _addresses{}, _name{}, _id{}, _pkey{} {}
 
                 user_info(
-                        const std::string& address, 
+                        const known_addresses& addresses, 
                         const std::string& name, 
                         const std::string& id,
                         const security::public_key& pub_key) :
-                    _address{address}, _name{name}, _id{id}, _pkey{pub_key} 
+                    _addresses{addresses}, _name{name}, _id{id}, _pkey{pub_key} 
                 {
-                    REQUIRE_FALSE(address.empty());
+                    REQUIRE_FALSE(addresses.empty());
                     REQUIRE_FALSE(name.empty());
                     REQUIRE_FALSE(id.empty());
                     REQUIRE_FALSE(pub_key.key().empty());
                 }
 
                 user_info(const user_info& o) :
-                    _address{o._address}, _name{o._name}, _id{o._id}, _pkey{o._pkey} {}
+                    _addresses{o._addresses}, _name{o._name}, _id{o._id}, _pkey{o._pkey} {}
 
                 user_info& operator=(const user_info& o)
                 {
@@ -78,7 +81,7 @@ namespace fire
                     fire::util::mutex_scoped_lock lo(o._mutex);
                     _name = o._name;
                     _id = o._id;
-                    _address = o._address;
+                    _addresses = o._addresses;
                     _pkey = o._pkey;
                     return *this;
                 }
@@ -87,16 +90,18 @@ namespace fire
                 std::string name() const;
                 std::string id() const;
                 std::string address() const;
+                const known_addresses& addresses() const;
+
                 const security::public_key& key() const;
 
 
                 void name(const std::string& v);
-                void address(const std::string& v);
+                void add_known_address(const std::string& v);
                 void id(const std::string& v);
                 void key(const security::public_key& v);
 
             private:
-                std::string _address;
+                known_addresses _addresses;
                 std::string _name;
                 std::string _id;
                 security::public_key _pkey;
@@ -173,7 +178,7 @@ namespace fire
             bool operator==(const contact_introduction&) const;
         };
         using contact_introductions = std::vector<contact_introduction>;
-        contact_introduction to_introduction(const util::dict&);
+        contact_introduction to_introduction(const util::value&);
         util::dict from_introduction(const contact_introduction&);
 
         class local_user

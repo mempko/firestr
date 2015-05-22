@@ -35,6 +35,7 @@
 #include "util/dbc.hpp"
 
 #include <fstream>
+#include <exception>
 
 #include <boost/filesystem.hpp>
 
@@ -47,6 +48,11 @@ namespace fire
 {
     namespace user
     {
+        namespace
+        {
+            const size_t MAX_ADDRESSES = 3;
+        }
+
         bool create_home_directory(const std::string& dir)
         {
             if(bf::exists(dir)) return true;
@@ -60,7 +66,7 @@ namespace fire
         {
             u::dict d;
 
-            d["address"] = u.address();
+            d["addrs"] = u::to_array(u.addresses());
             d["name"] = u.name();
             d["id"] = u.id();
             d["pkey"] = u.key().key();
@@ -70,9 +76,21 @@ namespace fire
 
         void convert(const u::dict& d, user_info& u)
         {
+            known_addresses addrs;
+
+            //for backwards compatibility
+            //we need to handle single address
+            if(d.has("addrs"))
+                u::from_array(d["addrs"].as_array(), addrs, [](u::value v){ return v.as_string();});
+            else
+                addrs.push_front(d["address"].as_string());
+
+            if(addrs.empty())
+                throw std::runtime_error{"user info is missing addresses"};
+
             u = 
             {
-                d["address"].as_string(),
+                addrs,
                 d["name"].as_string(),
                 d["id"].as_string(),
                 d["pkey"].as_string()
@@ -129,14 +147,14 @@ namespace fire
             return d;
         }
 
-        greet_server to_greet_server(const u::dict& d)
+        greet_server to_greet_server(const u::value& v)
         {
-            greet_server g{
+            const auto& d = v.as_dict();
+            return greet_server{
                 d["host"].as_string(),
                 static_cast<n::port_type>(d["port"].as_int()),
                 d["pub_key"].as_string(),
             };
-            return g;
         }
 
         bool contact_introduction::operator==(const contact_introduction& o) const
@@ -157,15 +175,15 @@ namespace fire
             return d;
         }
 
-        contact_introduction to_introduction(const u::dict& d)
+        contact_introduction to_introduction(const u::value& v)
         {
-            contact_introduction i{
+            const auto& d = v.as_dict();
+            return contact_introduction{
                 d["from_id"].as_string(),
                 d["greeter"].as_string(),
                 d["message"].as_string(),
                 to_user_info(d["contact"].as_dict()),
             };
-            return i;
         }
 
         std::ostream& operator<<(std::ostream& out, const user_info& u)
@@ -366,7 +384,7 @@ namespace fire
         }
 
         local_user::local_user(const std::string& name, sc::private_key_ptr pk) : 
-            _info{"local", name, util::uuid(), pk->public_key()}, 
+            _info{known_addresses{"local"}, name, util::uuid(), pk->public_key()}, 
             _contacts{},
             _greet_servers{},
             _prv_key{pk}
@@ -516,7 +534,12 @@ namespace fire
         std::string user_info::address() const 
         {
             u::mutex_scoped_lock l(_mutex);
-            return _address;
+            return _addresses.empty() ? "" : _addresses.front();
+        }
+
+        const known_addresses& user_info::addresses() const
+        {
+            return _addresses;
         }
 
         const sc::public_key& user_info::key() const 
@@ -531,10 +554,17 @@ namespace fire
             _name = v;
         }
 
-        void user_info::address(const std::string& v) 
+        void user_info::add_known_address(const std::string& v)
         {
             u::mutex_scoped_lock l(_mutex);
-            _address = v;
+            //if it already exists in the list remove it
+            auto p = std::find(_addresses.begin(), _addresses.end(), v);
+            if(p != _addresses.end()) _addresses.erase(p);
+
+            //add to top
+            _addresses.push_front(v);
+            if(_addresses.size() > MAX_ADDRESSES)
+                _addresses.pop_back();
         }
 
         void user_info::id(const std::string& v) 
