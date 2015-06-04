@@ -294,6 +294,7 @@ namespace fire
         {
             ENSURE(_socket);
             if(_state == disconnected) return;
+            if(_out_queue.empty()) return;
 
             //check to see if a write is in progress
             if(!force && _writing) return;
