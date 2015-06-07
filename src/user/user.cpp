@@ -67,6 +67,7 @@ namespace fire
             u::dict d;
 
             d["addrs"] = u::to_array(u.addresses());
+            d["address"] = u.address();
             d["name"] = u.name();
             d["id"] = u.id();
             d["pkey"] = u.key().key();
