@@ -1,4 +1,4 @@
-Contributtors
+Contributors
 =========================
 
 The names of contributors from big to small. A big thanks to all contributors!
