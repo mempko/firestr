@@ -51,6 +51,17 @@ namespace fire
         bool load_from_file(const std::string& f, fire::util::bytes& data);
 
 
+        //set color styles for icon buttons
+        void make_green(QLabel&);
+        void make_green(QPushButton&);
+        void make_red(QPushButton&);
+        void make_red(QLabel&);
+        void make_grey(QPushButton&);
+        void make_grey(QPushButton&);
+        void make_black(QPushButton&);
+        void make_black(QLabel&);
+        
+        //create various icon buttons
         QPushButton* make_x_button();
         void make_x(QPushButton&);
         void make_plus(QPushButton&);

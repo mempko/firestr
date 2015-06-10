@@ -98,6 +98,41 @@ namespace fire
             return true;
         }
 
+        void make_green(QPushButton& b)
+        {
+            b.setStyleSheet("QPushButton:enabled:!hover{border: 0px; color: 'green';} QPushButton:enabled:hover{border: 0px; color: 'limegreen'} QPushButton:!enabled{border: 0px; color: 'grey'}");
+        }
+
+        void make_green(QLabel& b)
+        {
+            b.setStyleSheet("QLabel:enabled {border: 0px; color: 'green';} QLabel:!enabled{border: 0px; color: 'grey'}");
+        }
+
+        void make_red(QPushButton& b)
+        {
+            b.setStyleSheet("QPushButton:enabled:!hover{border: 0px; color: 'red';} QPushButton:enabled:hover{border: 0px; color: 'darkred'} QPushButton:!enabled{border: 0px; color: 'grey'}");
+        }
+
+        void make_red(QLabel& b)
+        {
+            b.setStyleSheet("QLabel:enabled {border: 0px; color: 'red';} QLabel:!enabled {border: 0px; color: 'grey'}");
+        }
+
+        void make_grey(QPushButton& b)
+        {
+            b.setStyleSheet("QPushButton:enabled:!hover{border: 0px; color: 'grey';} QPushButton:enabled:hover{border: 0px; color: 'darkgrey'}");
+        }
+
+        void make_black(QPushButton& b)
+        {
+            b.setStyleSheet("QPushButton:enabled:!hover{border: 0px; color: 'black';} QPushButton:enabled:hover{border: 0px; color: 'darkslategrey'} QPushButton:!enabled{border: 0px; color: 'grey'}");
+        }
+
+        void make_black(QLabel& b)
+        {
+            b.setStyleSheet("QPushButton:enabled {border: 0px; color: 'black';} QPushButton:!enabled {border: 0px; color: 'grey'}");
+        }
+
         void make_small(QWidget& b)
         {
             b.setFont(QFont{"Entypo", 26});
@@ -130,8 +165,8 @@ namespace fire
         {
             REQUIRE(GUI_SETUP_CALLED);
             make_small(b);
+            make_red(b);
             b.setText("\xE2\x9c\x96");  //\u2716
-            b.setStyleSheet("border: 0px; color: 'red';");
         }
 
         QPushButton* make_x_button()
@@ -148,8 +183,8 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_small(b);
+            make_green(b);
             b.setText("\xe2\x8a\x95"); //\u2295
-            b.setStyleSheet("border: 0px; color: 'green';");
         }
 
         void make_minimize(QPushButton& b)
@@ -157,8 +192,8 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_small(b);
+            make_grey(b);
             b.setText("\xe2\x8a\x9f"); //\u229F
-            b.setStyleSheet("border: 0px; color: 'grey';");
         }
 
         void make_maximize(QPushButton& b)
@@ -166,8 +201,8 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_small(b);
+            make_grey(b);
             b.setText("\xe2\x8a\x9e"); //\u229E
-            b.setStyleSheet("border: 0px; color: 'grey';");
         }
 
         void make_install(QPushButton& b)
@@ -175,8 +210,8 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_small(b);
+            make_green(b);
             b.setText("\xee\x9d\xb8"); //\uE778
-            b.setStyleSheet("border: 0px; color: 'green';");
         }
 
         void make_reply(QPushButton& b)
@@ -184,8 +219,8 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_small(b);
+            make_black(b);
             b.setText("\xee\x9c\x92"); //\uE712
-            b.setStyleSheet("border: 0px; color: 'black';");
         }
 
         void make_export(QPushButton& b)
@@ -193,8 +228,8 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_big(b);
+            make_black(b);
             b.setText("\xee\x9c\x95"); //\uE715
-            b.setStyleSheet("border: 0px; color: 'black';");
         }
 
         void make_save(QPushButton& b)
@@ -202,8 +237,8 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_big(b);
+            make_black(b);
             b.setText("\xf0\x9f\x92\xbe"); //\U0001F4BE
-            b.setStyleSheet("border: 0px; color: 'black';");
         }
 
         void make_add_contact_small(QPushButton& b)
@@ -211,8 +246,8 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_small(b);
+            make_green(b);
             b.setText("\xee\x9c\x80"); //\uE700
-            b.setStyleSheet("border: 0px; color: 'green';");
         }
 
         void make_add_contact(QPushButton& b)
@@ -220,8 +255,8 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_big_centered(b);
+            make_green(b);
             b.setText("\xee\x9c\x80"); //\uE700
-            b.setStyleSheet("border: 0px; color: 'green';");
         }
 
         void make_big_add_contact(QPushButton& b)
@@ -229,8 +264,8 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_bigger_centered(b);
+            make_green(b);
             b.setText("\xee\x9c\x80"); //\uE700
-            b.setStyleSheet("border: 0px; color: 'green';");
         }
 
         void make_big_email(QPushButton& b)
@@ -238,8 +273,8 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_bigger_centered(b);
+            make_green(b);
             b.setText("\xe2\x9c\x89"); //\u2709
-            b.setStyleSheet("border: 0px; color: 'green';");
         }
 
         void make_big_identity(QPushButton& b)
@@ -247,8 +282,8 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_bigger_centered(b);
+            make_green(b);
             b.setText("\xee\x9c\xa2"); //\uE722
-            b.setStyleSheet("border: 0px; color: 'green';");
         }
 
         void make_cancel(QPushButton& b)
@@ -256,8 +291,8 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_big_centered(b);
+            make_red(b);
             b.setText("\xe2\x9d\x8c"); //\u274C
-            b.setStyleSheet("border: 0px; color: 'red';");
         }
 
         void make_ok(QPushButton& b)
@@ -265,8 +300,8 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_big_centered(b);
+            make_green(b);
             b.setText("\xe2\x9c\x93"); //\u2713
-            b.setStyleSheet("border: 0px; color: 'green';");
         }
 
         void make_add_to_list(QPushButton& b)
@@ -274,8 +309,8 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_big_centered(b);
+            make_green(b);
             b.setText("\xee\x80\x83"); //\uE003
-            b.setStyleSheet("border: 0px; color: 'green';");
         }
 
         void make_introduce(QPushButton& b)
@@ -283,8 +318,8 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_big_centered(b);
+            make_green(b);
             b.setText("\xf0\x9f\x91\xa5"); //\U0001F465
-            b.setStyleSheet("border: 0px; color: 'green';");
         }
 
         void make_new_conversation(QPushButton& b)
@@ -292,8 +327,8 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_big_centered(b);
+            make_green(b);
             b.setText("\xee\x9c\xa0"); //\uE720
-            b.setStyleSheet("border: 0px; color: 'green';");
         }
 
         void make_new_conversation_small(QPushButton& b)
@@ -301,8 +336,8 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_small(b);
+            make_green(b);
             b.setText("\xee\x9c\xa0"); //\uE720
-            b.setStyleSheet("border: 0px; color: 'green';");
         }
 
         void make_big_new_conversation(QPushButton& b)
@@ -310,8 +345,8 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_bigger_centered(b);
+            make_green(b);
             b.setText("\xee\x9c\xa0"); //\uE720
-            b.setStyleSheet("border: 0px; color: 'green';");
         }
 
         void make_progress_00(QLabel& w)
@@ -319,7 +354,7 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_small(w);
-            w.setStyleSheet("border: 0px; color: 'black';");
+            make_black(w);
         }
 
         void make_progress_0(QLabel& w)
@@ -354,16 +389,16 @@ namespace fire
         {
             REQUIRE(GUI_SETUP_CALLED);
             make_small(w);
+            make_red(w);
             w.setText("\xe2\x9a\xa0"); //\u26A0
-            w.setStyleSheet("border: 0px; color: 'red';");
         }
 
         void make_thumbs_up(QLabel& w)
         {
             REQUIRE(GUI_SETUP_CALLED);
             make_small(w);
+            make_green(w);
             w.setText("\xf0\x9f\x91\x8d"); //\U0001F44D
-            w.setStyleSheet("border: 0px; color: 'green';");
         }
 
         void make_next(QPushButton& b)
@@ -371,15 +406,13 @@ namespace fire
             REQUIRE(GUI_SETUP_CALLED);
 
             make_bigger_centered(b);
+            make_green(b);
             b.setText("\xee\x9d\x9a"); //\uE75A
-            b.setStyleSheet("border: 0px; color: 'green';");
         }
 
         void enable_icon_button(QPushButton& b, bool enabled)
         {
             b.setEnabled(enabled);
-            if(enabled) b.setStyleSheet("border: 0px; color: 'green';");
-            else b.setStyleSheet("border: 0px; color: 'grey';");
         }
 
         bool install_app_gui(a::app& a, a::app_service& s, QWidget* w)
