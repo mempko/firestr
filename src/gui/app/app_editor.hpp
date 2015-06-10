@@ -175,7 +175,7 @@ namespace fire
                     void update_status_to_typing();
                     void update_status_to_waiting();
                     void update_status_to_running();
-
+                    void update_save_button();
 
                 signals:
                     void got_code(const fire::message::message&);
@@ -218,6 +218,7 @@ namespace fire
                     QLineEdit* _data_key;
                     QLineEdit* _data_value;
                     QPushButton* _add_button;
+                    QPushButton* _save_button;
                     util::bytes _data_bytes;
                     list* _data_items;
 
@@ -232,6 +233,7 @@ namespace fire
                     run_state  _run_state;
                     enum start_state { GET_CODE, DONE_START};
                     start_state _started;
+                    bool _dirty = false;
             };
             extern const std::string APP_EDITOR;
 
