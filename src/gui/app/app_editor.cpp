@@ -401,11 +401,11 @@ namespace fire
                 l->addWidget(_status, 0, 0, 1, 2);
 
                 //save button
-                auto save = new QPushButton;
-                make_save(*save);
-                save->setToolTip(tr("Save"));
-                l->addWidget(save, 0, 2);
-                connect(save, SIGNAL(clicked()), this, SLOT(save_app()));
+                _save_button = new QPushButton;
+                make_save(*_save_button);
+                _save_button->setToolTip(tr("Save"));
+                l->addWidget(_save_button, 0, 2);
+                connect(_save_button, SIGNAL(clicked()), this, SLOT(save_app()));
 
                 //export button
                 auto expt = new QPushButton;
@@ -485,6 +485,7 @@ namespace fire
                 INVARIANT(_canvas_layout);
                 INVARIANT(_output);
                 INVARIANT(_status);
+                INVARIANT(_save_button);
             }
 
             void app_editor::init_data()
@@ -846,6 +847,7 @@ namespace fire
 
                 //update code before send
                 _code.set(gui::convert(_script->toPlainText()));
+                _dirty = true;
 
                 send_script(false);
             }
@@ -919,16 +921,13 @@ namespace fire
                 _conversation_service->fire_conversation_alert(_conversation->id(), visible());
                 alerted();
 
-                //get the code
-                auto code = gui::convert(_script->toPlainText());
-
                 //reset ui
                 update_status_to_no_errors();
                 _back->reset();
                 _front->reset();
 
                 //run the code
-                if(!code.empty()) _back->run(code);
+                if(!_code.str().empty()) _back->run(_code.str());
 
                 //update ui
                 init_data();
@@ -994,8 +993,7 @@ namespace fire
                 INVARIANT(_app);
                 INVARIANT(_script);
 
-                auto code = gui::convert(_script->toPlainText());
-                _app->code(code);
+                _app->code(_code.str());
             }
 
             void app_editor::save_app() 
@@ -1008,6 +1006,8 @@ namespace fire
                 update_app_code();
 
                 _app_service->save_app(*_app);
+                _dirty = false;
+                update_save_button();
             }
 
             void app_editor::export_app() 
@@ -1061,6 +1061,13 @@ namespace fire
                 make_progress_3(*_status);
             }
 
+            void app_editor::update_save_button()
+            {
+                INVARIANT(_save_button);
+                if(_dirty) make_green(*_save_button);
+                else make_black(*_save_button);
+            }
+
             void app_editor::init_update()
             {
                 //ask for script first time on startup
@@ -1077,7 +1084,7 @@ namespace fire
 
                 init_update();
 
-                auto code = gui::convert(_script->toPlainText());
+                auto code = _code.str();
                 int pos = _script->textCursor().position();
 
                 switch(_run_state)
@@ -1105,6 +1112,7 @@ namespace fire
                             if(pos == _prev_pos && code == _prev_code) 
                             {
                                 update_status_to_running();
+                                update_save_button();
 
                                 //update status bar
                                 run_script();
@@ -1174,6 +1182,7 @@ namespace fire
 
                 //merge code if there is a conflict
                 auto merged = _code.merge(t.code);
+                _dirty = true;
 
                 //update text
                 auto pos = _script->textCursor().position();
