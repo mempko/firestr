@@ -798,7 +798,6 @@ namespace fire
             make_introduce(*_introduce);
             _introduce->setToolTip(tr("Introduce"));
             _introduce->setEnabled(false);
-            _introduce->setStyleSheet("border: 0px; color: 'grey';");
 
             _cancel = new QPushButton;
             _cancel->setToolTip(tr("Cancel"));
@@ -889,14 +888,12 @@ namespace fire
 
             bool same = false;
             _introduce->setEnabled(false);
-            _introduce->setStyleSheet("border: 0px; color: 'grey';");
             if(c1 && c2)
             {
                 same = c1->id() == c2->id();
                 if(!same) 
                 {
                     _introduce->setEnabled(true);
-                    _introduce->setStyleSheet("border: 0px; color: 'green';");
                 }
             }
 
@@ -1035,7 +1032,6 @@ namespace fire
             _add = new QPushButton;
             make_add_contact(*_add);
             _add->setEnabled(false);
-            _add->setStyleSheet("border: 0px; color: 'grey';");
             _add->setToolTip(tr("Add Contact"));
 
             _cancel = new QPushButton;
@@ -1084,13 +1080,11 @@ namespace fire
             if(good) 
             {
                 _add->setEnabled(true);
-                _add->setStyleSheet("border: 0px; color: 'green';");
                 _iden->setStyleSheet("QTextEdit { background-color: rgb(128, 255, 128) }");
             }
             else 
             {
                 _add->setEnabled(false);
-                _add->setStyleSheet("border: 0px; color: 'grey';");
                 if(_iden->toPlainText().isEmpty()) 
                     _iden->setStyleSheet("QTextEdit { background-color: rgb(255, 255, 255) }");
                 else 

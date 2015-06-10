@@ -143,10 +143,6 @@ namespace fire
 
             bool enabled = _contact_select->count() > 0;
             _add_contact->setEnabled(enabled);
-            if(enabled) 
-                _add_contact->setStyleSheet("border: 0px; color: 'green';");
-            else 
-                _add_contact->setStyleSheet("border: 0px; color: 'grey';");
         }
 
         void conversation_widget::add(app::generic_app* m)
