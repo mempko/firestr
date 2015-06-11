@@ -1,3 +1,12 @@
+firestr (0.10) vivid; urgency=medium
+
+  * TCP connection race condition fix
+  * Various UI improvements
+  * Support for storing last 3 known locations to help
+    connect without a locator.
+
+ -- Maxim Khailo <mempko@gmail.com>  Wed, 10 Jun 2015 22:03:06 -0500
+
 firestr (0.9) trusty; urgency=low
 
   * Bug fix in udp queue
