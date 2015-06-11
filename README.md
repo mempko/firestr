@@ -1,4 +1,4 @@
-[Fire★](http://www.firestr.com) (Fire Star) 0.9
+[Fire★](http://www.firestr.com) (Fire Star) 0.10
 ===================================================================
 
 [![Documentation Status](https://readthedocs.org/projects/fire/badge/?version=latest)](https://readthedocs.org/projects/fire/?badge=latest)
