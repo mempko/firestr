@@ -110,7 +110,7 @@ namespace fire
 
         void make_red(QPushButton& b)
         {
-            b.setStyleSheet("QPushButton:enabled:!hover{border: 0px; color: 'red';} QPushButton:enabled:hover{border: 0px; color: 'darkred'} QPushButton:!enabled{border: 0px; color: 'grey'}");
+            b.setStyleSheet("QPushButton:enabled:!hover{border: 0px; color: 'darkred';} QPushButton:enabled:hover{border: 0px; color: 'red'} QPushButton:!enabled{border: 0px; color: 'grey'}");
         }
 
         void make_red(QLabel& b)
