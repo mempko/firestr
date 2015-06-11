@@ -62,6 +62,8 @@ namespace fire
             const size_t TIMER_SLEEP = 5000;//in milliseconds
             const char* GREETER_TIP = "A locator helps connect you with your contacts.\nTry adding 'mempko.com:8080' and ask them to do the same.";
             const std::string DEFAULT_GREETER = "mempko.com:8080";
+            const std::string PASTE_IDENTITY = "Paste Identity Here";
+            const std::string BAD_IDENTITY = "Try to Copy/Paste Again";
         }
 
         bool is_online(
@@ -1026,7 +1028,7 @@ namespace fire
             auto layout = new QVBoxLayout{this};
             setLayout(layout);
 
-            auto label = new QLabel{tr("Paste Identity Here")};
+            _label = new QLabel{tr(PASTE_IDENTITY.c_str())};
             _iden = new QTextEdit;
 
             _add = new QPushButton;
@@ -1038,7 +1040,7 @@ namespace fire
             _cancel->setToolTip(tr("Cancel"));
             make_cancel(*_cancel);
 
-            layout->addWidget(label);
+            layout->addWidget(_label);
             layout->addWidget(_iden);
 
             auto bw = new QWidget;
@@ -1053,6 +1055,7 @@ namespace fire
 
             setWindowTitle(tr("Add Contact"));
 
+            INVARIANT(_label);
             INVARIANT(_add);
             INVARIANT(_cancel);
             INVARIANT(_iden);
@@ -1072,6 +1075,7 @@ namespace fire
         { 
             INVARIANT(_add);
             INVARIANT(_iden);
+            INVARIANT(_label);
 
             us::identity i;
             auto iden64 = iden();
@@ -1081,14 +1085,26 @@ namespace fire
             {
                 _add->setEnabled(true);
                 _iden->setStyleSheet("QTextEdit { background-color: rgb(128, 255, 128) }");
+                
+                std::stringstream s;
+                s << "<font color='blue'>" << i.contact.name() << "</font>" 
+                  << " using locator <font color='blue'>" << i.greeter << "</font>" << std::endl;
+                _label->setText(s.str().c_str());
+
             }
             else 
             {
                 _add->setEnabled(false);
                 if(_iden->toPlainText().isEmpty()) 
+                {
                     _iden->setStyleSheet("QTextEdit { background-color: rgb(255, 255, 255) }");
+                    _label->setText(tr(PASTE_IDENTITY.c_str()));
+                }
                 else 
+                {
                     _iden->setStyleSheet("QTextEdit { background-color: rgb(255, 128, 128) }");
+                    _label->setText(tr(BAD_IDENTITY.c_str()));
+                }
             }
         }
 
