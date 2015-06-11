@@ -258,6 +258,7 @@ namespace fire
                 std::string iden() const;
 
             protected:
+                QLabel* _label;
                 QTextEdit* _iden;
                 QPushButton* _add;
                 QPushButton* _cancel;
