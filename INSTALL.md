@@ -6,6 +6,7 @@ Boost
 Botan 1.10
 libsnappy
 libopus
+libxss
 
 Building Firestr
 ===================================================================
