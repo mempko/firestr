@@ -7,6 +7,8 @@ Botan 1.10
 libsnappy
 libopus
 libxss
+uuid
+libgmp
 
 Building Firestr
 ===================================================================
