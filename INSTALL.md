@@ -1,11 +1,14 @@
 Library Dependencies
 ===================================================================
-gcc 4.7
-Qt 5
-Boost
-Botan 1.10
-libsnappy
-libopus
+* gcc 4.7
+* Qt 5
+* Boost
+* Botan 1.10
+* libsnappy
+* libopus
+* libxss
+* uuid
+* libgmp
 
 Building Firestr
 ===================================================================
