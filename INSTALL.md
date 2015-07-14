@@ -30,29 +30,20 @@ If you are on a local network and only want to communicate within
 the local network, you can simply run firestr.
 
 If you want to communicate over the internet, you have to 
-first have to add a public firegreet server to your greeter list
+first add a public locator server to your locator list
 under the contact menu. 
 
-You can run your own or add mempko (http://mempko.com:8080)
+mempko.com provides a free public server at http://mempko.com:8080
 
-To connect with someone, create an invite file and give it to them in
-a secure way. Also get their invite file. They can then add you as a 
-contact using the invite file. After you both add each other as
-contacts, firestr should automatically connect you with the other 
-person. If you have added a greeter, it will talk to the greeter
-and use it as part of the connection process.
+To connect with someone, give them your identity and get theirs.
 
-The firegreet service is simply responsible for providing information
+After you both add each other as contacts, firestr should automatically 
+connect you with the other person.  If you have added a locator, it will 
+talk to the locator and use it as part of the connection process.
+
+The locator service is simply responsible for providing information
 to the parties on their public ip/port after which firestr will 
-initiate a p2p connection. No communication between contacts is sent
-to the firegreet service.
-
-Once a contact is added, they are saved as your contact and you will
-connect to them the next time you start the application.
-
-You can have multiple contacts and multiple greeters. Once you have
-a contact to communicate with, you can initiate a conversation and start
-chatting or sharing applications.
+initiate a p2p connection. 
 
 Have fun.
 
