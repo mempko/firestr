@@ -10,7 +10,7 @@ To stay true, we will follow the philosophy below.
 4. Work "out of the box".
 5. Make writing decentralized software easier than centralized software.
 6. Enable the full power of computers in the most accessible way.
-8. Have Fun!
+8. Have fun!
 
 
 
