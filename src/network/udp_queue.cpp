@@ -309,6 +309,50 @@ namespace fire
             }
         }
 
+        chunk_total_type total_chunks(size_t data_size)
+        {
+            REQUIRE_GREATER(data_size, 0);
+
+            chunk_total_type r = (data_size / UDP_CHuNK_SIZE);
+            if(data_size % UDP_CHuNK_SIZE) r += 1;
+
+            ENSURE_GREATER(r, 0);
+            return r;
+        }
+
+        udp_chunk create_prototype(sequence_type sequence, const endpoint_message& m)
+        {
+            udp_chunk c;
+            c.type = m.robust ? udp_chunk::msg : udp_chunk::qmsg;
+            c.host = m.ep.address;
+            c.port = m.ep.port;
+            c.sequence = sequence;
+            c.total_chunks = total_chunks(m.data.size());
+            c.chunk = 0;
+
+            return c;
+        }
+
+        udp_chunk nth_chunk(size_t n, const udp_chunk& prototype, const util::bytes& data)
+        {
+            REQUIRE_LESS(n, prototype.total_chunks);
+
+            size_t start = n * UDP_CHuNK_SIZE;
+            size_t end = std::min(data.size(), start + UDP_CHuNK_SIZE);
+            size_t size = end - start; 
+
+            CHECK_GREATER(size, 0);
+
+            udp_chunk c = prototype;
+            c.chunk = n;
+            c.data.resize(size);
+            std::copy(data.begin() + start, data.begin() + end, c.data.begin());
+
+            ENSURE_FALSE(c.data.empty());
+            ENSURE_EQUAL(c.chunk, n);
+            return c;
+        }
+
         size_t udp_connection::chunkify(endpoint_message m)
         {
             REQUIRE_FALSE(m.data.empty());
@@ -317,50 +361,26 @@ namespace fire
             auto port = m.ep.port;
             const auto& b = m.data;
 
-            int total_chunks = (b.size() / UDP_CHuNK_SIZE);
-            if(b.size() % UDP_CHuNK_SIZE) total_chunks += 1;
-
-            CHECK_GREATER(total_chunks, 0);
-
-            int chunk = 0;
-            size_t s = 0;
-            size_t e = std::min(b.size(), UDP_CHuNK_SIZE);
-
-            CHECK_GREATER(total_chunks, 0);
-
             //update sequence
             _sequence++;
 
+            udp_chunk proto = create_prototype(_sequence, m);
+            chunk_id_type chunk = 0;
+
             working_udp_chunks* wmp = nullptr;
             auto addr_hash = hash_endpoint(host, port);
-            while(s < b.size())
+            for(;chunk < proto.total_chunks; chunk++)
             {
-                size_t size = e - s;
-                CHECK_GREATER(size, 0);
-
                 //create chunk
-                udp_chunk c;
-                c.type = m.robust ? udp_chunk::msg : udp_chunk::qmsg;
-                c.host = host;
-                c.port = port;
-                c.sequence = _sequence;
-                c.total_chunks = total_chunks;
-                c.chunk = chunk;
-                c.data.resize(size);
-                std::copy(b.begin() + s, b.begin() + e, c.data.begin());
+                udp_chunk c = nth_chunk(chunk, proto, b);
 
                 //add to working
                 if(!wmp) wmp = init_working(addr_hash, _out_working, c);
                 CHECK(wmp);
                 remember_chunk(*wmp, c);
-
-                //step
-                chunk++;
-                s = e;
-                e = std::min(b.size(), e + UDP_CHuNK_SIZE);
             }
 
-            CHECK_EQUAL(chunk, total_chunks);
+            CHECK_EQUAL(chunk, proto.total_chunks);
             return chunk;
         }
 
