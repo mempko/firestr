@@ -210,11 +210,12 @@ namespace fire
 
             udp_chunk c = prototype;
             c.chunk = n;
-            c.data.resize(size);
-            std::copy(data.begin() + start, data.begin() + end, c.data.begin());
+            c.write_size = size;
+            c.write_data = data.data() + start;
 
-            ENSURE_FALSE(c.data.empty());
             ENSURE_EQUAL(c.chunk, n);
+            ENSURE(c.write_data);
+            ENSURE_GREATER(c.write_size, 0);
             return c;
         }
 
@@ -247,6 +248,8 @@ namespace fire
         void udp_connection::queue_chunk(udp_chunk&& c)
         {
             auto p = _out_queue_map.insert(std::make_pair(c.sequence, _out_queues.end()));
+
+            //add to ring buffer
             if(p.second)
             {
                 auto addr_hash = hash_endpoint(c.host, c.port);
@@ -479,7 +482,7 @@ namespace fire
 
         void encode_udp_wire(u::bytes& r, const udp_chunk& ch)
         {
-            r.resize(HEADER_SIZE + ch.data.size());
+            r.resize(HEADER_SIZE + ch.write_size);
 
             //set mark
             switch(ch.type)
@@ -500,8 +503,8 @@ namespace fire
             write_be_u16(r, CHUNK_BASE, ch.chunk);
 
             //write message
-            if(!ch.data.empty()) 
-                std::copy(ch.data.begin(), ch.data.end(), r.begin() + MESSAGE_BASE);
+            if(ch.write_size > 0 && ch.write_data != nullptr) 
+                std::copy(ch.write_data, ch.write_data + ch.write_size, r.begin() + MESSAGE_BASE);
         }
 
         udp_chunk decode_udp_wire(const u::bytes& b)
