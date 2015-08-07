@@ -113,47 +113,32 @@ namespace fire
             _writing = false;
         }
 
-        working_udp_chunks* init_working(hash_type addr_hash, working_udp_messages& w, const udp_chunk& c)
+        void init_working(hash_type addr_hash, working_udp_messages& w, udp_chunk& proto, util::bytes& data)
         {
-            REQUIRE_GREATER(c.total_chunks, 0);
+            REQUIRE_GREATER(proto.total_chunks, 0);
 
             auto& wms = w[addr_hash];
-            auto& wm = wms[c.sequence];
-            if(!wm.chunks.empty()) return &wm;
+            auto& wm = wms[proto.sequence];
 
-            wm.chunks.resize(c.total_chunks);
-            wm.set.resize(c.total_chunks);
-            wm.sent.resize(c.total_chunks);
-            return &wm;
-        }
-
-        void remember_chunk(working_udp_chunks& wm ,const udp_chunk& c)
-        {
-            REQUIRE_RANGE(c.chunk, 0, c.total_chunks);
-            wm.chunks[c.chunk] = c;
-            wm.sent[c.chunk] = 0;
-        }
-
-        void sent_chunk(working_udp_chunks& wm , const udp_chunk& c)
-        {
-            REQUIRE_RANGE(c.chunk, 0, c.total_chunks);
-
-            wm.chunks[c.chunk] = c;
-            wm.sent[c.chunk] = 1;
-            if(wm.queued > 0) wm.queued--;
-
-            bool robust = c.type == udp_chunk::msg;
-            if(robust) wm.in_flight++;
+            wm.proto = std::move(proto);
+            wm.data = std::move(data);
+            wm.set.resize(proto.total_chunks);
+            wm.sent.resize(proto.total_chunks);
         }
 
         void sent_chunk(hash_type addr_hash, const udp_chunk& c, working_udp_messages& w)
         {
             REQUIRE(c.type != udp_chunk::ack);
             REQUIRE_FALSE(c.resent);
+            REQUIRE(w.count(addr_hash));
 
-            auto wmp = init_working(addr_hash, w, c);
-            CHECK(wmp);
-            sent_chunk(*wmp, c);
+            auto& wms = w[addr_hash];
+            auto& wm = wms[c.sequence];
+            wm.sent[c.chunk] = 1;
+            if(wm.queued > 0) wm.queued--;
+
+            bool robust = wm.proto.type == udp_chunk::msg;
+            if(robust) wm.in_flight++;
         }
 
         void validate_chunk(hash_type addr_hash, const udp_chunk& c, working_udp_messages& w)
@@ -169,8 +154,8 @@ namespace fire
 
             auto& wm = wmi->second;
 
-            if(chunk_n >= wm.chunks.size()) return;
-            if(c.total_chunks != wm.chunks.size()) return;
+            if(chunk_n >= wm.proto.total_chunks) return;
+            if(c.total_chunks != wm.proto.total_chunks) return;
             if(wm.set[chunk_n]) return;
 
             wm.set[chunk_n] = 1;
@@ -178,9 +163,9 @@ namespace fire
             if(wm.in_flight > 0 ) wm.in_flight--;
 
             //if message is not complete yet, return 
-            if(wm.set.count() != wm.chunks.size()) return;
+            if(wm.set.count() != wm.proto.total_chunks) return;
 
-            CHECK_EQUAL(wm.sent.count(), wm.chunks.size());
+            CHECK_EQUAL(wm.sent.count(), wm.proto.total_chunks);
             CHECK_EQUAL(wm.in_flight, 0);
             CHECK_EQUAL(wm.queued, 0);
 
@@ -203,9 +188,9 @@ namespace fire
                 exhausted_messages em;
                 for(auto& wm : wms.second)
                 {
-                    CHECK_FALSE(wm.second.chunks.empty());
+                    CHECK_GREATER(wm.second.proto.total_chunks, 0);
                     bool remove_non_robust = queue_chunks(wm.second);
-                    if(remove_non_robust) em.insert(em.end(), wm.second.chunks[0].sequence);
+                    if(remove_non_robust) em.insert(em.end(), wm.second.proto.sequence);
                 }
 
                 //cleanup exhausted messages that are not robust
@@ -213,23 +198,43 @@ namespace fire
             }
         }
 
+        udp_chunk nth_chunk(size_t n, const udp_chunk& prototype, const util::bytes& data)
+        {
+            REQUIRE_LESS(n, prototype.total_chunks);
+
+            size_t start = n * UDP_CHuNK_SIZE;
+            size_t end = std::min(data.size(), start + UDP_CHuNK_SIZE);
+            size_t size = end - start; 
+
+            CHECK_GREATER(size, 0);
+
+            udp_chunk c = prototype;
+            c.chunk = n;
+            c.data.resize(size);
+            std::copy(data.begin() + start, data.begin() + end, c.data.begin());
+
+            ENSURE_FALSE(c.data.empty());
+            ENSURE_EQUAL(c.chunk, n);
+            return c;
+        }
+
         bool all_sent(working_udp_chunks& wm)
         {
-            return wm.sent.count() == wm.chunks.size();
+            return wm.sent.count() == wm.proto.total_chunks;
         }
 
         bool udp_connection::queue_chunks(working_udp_chunks& wm)
         {
-            REQUIRE_FALSE(wm.chunks.empty());
-            bool robust = wm.chunks[0].type == udp_chunk::msg;
+            REQUIRE_GREATER(wm.proto.total_chunks, 0);
+            bool robust = wm.proto.type == udp_chunk::msg;
 
             auto in_flight = robust ? wm.in_flight : 0;
 
             if(in_flight + wm.queued > MAX_FLIGHT) return false;
             auto t = MAX_FLIGHT - (in_flight + wm.queued);
-            while(t > 0 && wm.next_send < wm.chunks.size())
+            while(t > 0 && wm.next_send < wm.proto.total_chunks)
             {
-                queue_chunk(wm.chunks[wm.next_send]);
+                queue_chunk(nth_chunk(wm.next_send, wm.proto, wm.data));
 
                 wm.next_send++;
                 wm.queued++;
@@ -239,7 +244,7 @@ namespace fire
             return !robust && all_sent(wm);
         }
 
-        void udp_connection::queue_chunk(udp_chunk& c)
+        void udp_connection::queue_chunk(udp_chunk&& c)
         {
             auto p = _out_queue_map.insert(std::make_pair(c.sequence, _out_queues.end()));
             if(p.second)
@@ -333,55 +338,19 @@ namespace fire
             return c;
         }
 
-        udp_chunk nth_chunk(size_t n, const udp_chunk& prototype, const util::bytes& data)
-        {
-            REQUIRE_LESS(n, prototype.total_chunks);
-
-            size_t start = n * UDP_CHuNK_SIZE;
-            size_t end = std::min(data.size(), start + UDP_CHuNK_SIZE);
-            size_t size = end - start; 
-
-            CHECK_GREATER(size, 0);
-
-            udp_chunk c = prototype;
-            c.chunk = n;
-            c.data.resize(size);
-            std::copy(data.begin() + start, data.begin() + end, c.data.begin());
-
-            ENSURE_FALSE(c.data.empty());
-            ENSURE_EQUAL(c.chunk, n);
-            return c;
-        }
-
-        size_t udp_connection::chunkify(endpoint_message m)
+        void udp_connection::add_to_working_set(endpoint_message m)
         {
             REQUIRE_FALSE(m.data.empty());
 
             const auto& host = m.ep.address;
             auto port = m.ep.port;
-            const auto& b = m.data;
+            auto& b = m.data;
 
             //update sequence
             _sequence++;
 
             udp_chunk proto = create_prototype(_sequence, m);
-            chunk_id_type chunk = 0;
-
-            working_udp_chunks* wmp = nullptr;
-            auto addr_hash = hash_endpoint(host, port);
-            for(;chunk < proto.total_chunks; chunk++)
-            {
-                //create chunk
-                udp_chunk c = nth_chunk(chunk, proto, b);
-
-                //add to working
-                if(!wmp) wmp = init_working(addr_hash, _out_working, c);
-                CHECK(wmp);
-                remember_chunk(*wmp, c);
-            }
-
-            CHECK_EQUAL(chunk, proto.total_chunks);
-            return chunk;
+            init_working(hash_endpoint(host, port), _out_working, proto, b);
         }
 
         bool udp_connection::send(const endpoint_message& m, bool block)
@@ -394,7 +363,7 @@ namespace fire
                 return false;
             }
 
-            _io.post(boost::bind(&udp_connection::chunkify, this, m));
+            _io.post(boost::bind(&udp_connection::add_to_working_set, this, m));
 
             //post to do send
             _io.post(boost::bind(&udp_connection::do_send, this));
@@ -655,43 +624,49 @@ namespace fire
 
             auto& wms = w[addr_hash];
             auto& wm = wms[c.sequence];
-            if(wm.chunks.empty())
+            if(wm.proto.total_chunks == 0)
             {
                 if(c.total_chunks == 0) return false;
 
-                wm.chunks.resize(c.total_chunks);
+                const size_t max_size = c.total_chunks * UDP_CHuNK_SIZE;
+                if(max_size > MAX_MESSAGE_SIZE) return false;
+
+                wm.proto = c;
+                wm.proto.data.clear();
+                wm.data.resize(max_size);
                 wm.set.resize(c.total_chunks);
             }
 
-            CHECK_FALSE(wm.chunks.empty());
+            CHECK_GREATER(wm.proto.total_chunks, 0);
 
-            auto chunk_n = c.chunk;
-            auto sequence_n = c.sequence;
+            const auto chunk_n = c.chunk;
+            const auto sequence_n = c.sequence;
 
-            if(chunk_n >= wm.chunks.size()) return false;
-            if(c.total_chunks != wm.chunks.size()) return false;
+            if(chunk_n >= wm.proto.total_chunks) return false;
+            if(c.total_chunks != wm.proto.total_chunks) return false;
             if(wm.set[chunk_n]) return false;
 
-            wm.chunks[chunk_n] = std::move(c);
+            //potentially resize if we get the last chunk
+            if(c.chunk == wm.proto.total_chunks - 1)
+            {
+                auto extra = UDP_CHuNK_SIZE - c.data.size(); 
+
+                //should only shrink
+                CHECK_GREATER_EQUAL(extra, 0);
+                wm.data.resize(wm.data.size() - extra);
+            }
+            //only the last chunk can be less than the UDP_CHUNK_SIZE. Otherwise something is wrong
+            else if(c.data.size() != UDP_CHuNK_SIZE) return false;
+            
+            const size_t insert_spot = c.chunk * UDP_CHuNK_SIZE; 
+            std::copy(c.data.begin(), c.data.end(), wm.data.begin() + insert_spot); 
             wm.set[chunk_n] = 1;
 
             //if message is not complete yet, return 
-            if(wm.set.count() != wm.chunks.size()) return false;
+            if(wm.set.count() != wm.proto.total_chunks) return false;
 
-            //get total size
-            size_t total_message_size = 0; 
-            for(const auto& cc : wm.chunks) 
-                total_message_size += cc.data.size();
-
-            //combine chunks to recreate original message
-            complete_message.resize(total_message_size);
-            size_t s = 0;
-            for(const auto& cc : wm.chunks) 
-            {
-                std::copy(cc.data.begin(), cc.data.end(), complete_message.begin() + s);
-                s += cc.data.size();
-            }
-            CHECK_EQUAL(s, total_message_size);
+            //return message
+            complete_message = std::move(wm.data);
 
             //remove message from working
             wms.erase(sequence_n);
@@ -765,23 +740,26 @@ namespace fire
 
         size_t udp_connection::resend(working_udp_chunks& wm)
         {
-            if(wm.set.count() == wm.chunks.size()) return 0;
+            REQUIRE_GREATER(wm.proto.total_chunks, 0);
+            REQUIRE_GREATER(wm.data.size(), 0);
+
+            if(wm.set.count() == wm.proto.total_chunks) return 0;
 
             size_t resent_m = 0;
             size_t cnt = 0;
-            for(const auto& c : wm.chunks)
+            for(chunk_id_type c = 0; c < wm.proto.total_chunks; c++)
             {
                 if(cnt >= wm.next_send) break;
                 cnt++;
                 //skip validated or not sent
-                if(wm.set[c.chunk] || !wm.sent[c.chunk]) continue;
+                if(wm.set[c] || !wm.sent[c]) continue;
                 resent_m++;
                 if(resent_m > MAX_FLIGHT) break;
 
-                udp_chunk mc = c;//copy
+                udp_chunk mc = nth_chunk(c, wm.proto, wm.data);
                 mc.resent = true;
                 _stats.dropped++;
-                queue_chunk(mc);
+                queue_chunk(std::move(mc));
             }
             return resent_m;
         }
@@ -795,7 +773,7 @@ namespace fire
                 for(auto& wmp : wms.second)
                 {
                     auto& wm = wmp.second;
-                    CHECK(!wm.chunks.empty());
+                    CHECK_GREATER(wm.proto.total_chunks, 0);
 
                     wm.ticks++;
 
@@ -803,15 +781,12 @@ namespace fire
 
                     //check if we should try to resend
                     bool skip = wm.ticks <= RESEND_TICK_THRESHOLD;
-                    bool robust = wm.chunks[0].type == udp_chunk::msg;
+                    bool robust = wm.proto.type == udp_chunk::msg;
 
                     //walk working message and resend all chunks that never got
                     //acked
                     if(robust && !skip && resend(wm) > 0) 
-                    {
                         resent = true;
-                        CHECK_FALSE(wm.chunks.empty());
-                    } 
 
                     bool erase = robust ?  wm.ticks >= RESEND_THRESHOLD : all_sent(wm);
                     if(erase) em.insert(em.end(), sequence);

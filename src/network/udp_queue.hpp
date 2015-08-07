@@ -60,11 +60,11 @@ namespace fire
 
         struct udp_chunk
         {
-            bool valid;
+            bool valid = false;
             std::string host;
-            port_type port;
-            sequence_type sequence;
-            chunk_total_type total_chunks;
+            port_type port = 0;
+            sequence_type sequence = 0;
+            chunk_total_type total_chunks = 0;
             chunk_id_type chunk;
             util::bytes data;
             bool resent = false;
@@ -76,7 +76,8 @@ namespace fire
 
         struct working_udp_chunks
         {
-            udp_chunks chunks;
+            udp_chunk proto;
+            util::bytes data;
             boost::dynamic_bitset<> set;
             boost::dynamic_bitset<> sent;
             size_t ticks = 0;
@@ -131,11 +132,11 @@ namespace fire
                 const udp_stats& stats() const; 
 
             private:
-                size_t chunkify(endpoint_message m);
+                void add_to_working_set(endpoint_message m);
                 void send_right_away(udp_chunk& c);
                 void queue_chunks(working_udp_messages&);
                 bool queue_chunks(working_udp_chunks&);
-                void queue_chunk(udp_chunk& c);
+                void queue_chunk(udp_chunk&& c);
                 void queue_next_chunk();
                 bool next_chunk_incr();
                 size_t resend(working_udp_chunks& wm);
