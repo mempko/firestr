@@ -69,6 +69,10 @@ namespace fire
             util::bytes data;
             bool resent = false;
             enum msg_type { qmsg, msg, ack} type;
+
+            //used for writing
+            const char* write_data = nullptr;
+            size_t write_size = 0;
         };
 
         using chunk_queue = util::queue<udp_chunk>;
