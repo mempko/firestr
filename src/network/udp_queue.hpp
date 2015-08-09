@@ -92,18 +92,15 @@ namespace fire
 
         //working set for both incoming and outgoing messages
         using hash_type = std::size_t;
-        using working_udp_sequences = std::unordered_map<sequence_type, working_udp_chunks>;
-        using working_udp_messages = std::unordered_map<hash_type, working_udp_sequences>;
+        using working_udp_messages = std::unordered_map<sequence_type, working_udp_chunks>;
         using resolve_map = std::unordered_map<std::string, std::string>;
 
         //outgoing chunks are send round robin in the chunk_queue_ring
         //the chunk_queue_map links to the chunk queue for that address
         struct queue_ring_item
         {
-            hash_type address_hash;
-            chunk_queue queue;
+            chunk_queue resends; 
             sequence_type sequence;
-            size_t erase_count;
         };
         using chunk_queue_ring = std::list<queue_ring_item>;
         using chunk_queue_map = std::unordered_map<sequence_type, chunk_queue_ring::iterator>;
@@ -137,14 +134,18 @@ namespace fire
 
             private:
                 void add_to_working_set(endpoint_message m);
+                void init_working(udp_chunk& proto, util::bytes& data);
                 void send_right_away(udp_chunk& c);
-                void queue_chunks(working_udp_messages&);
-                bool queue_chunks(working_udp_chunks&);
-                void queue_chunk(udp_chunk&& c);
+                bool get_next_chunk(working_udp_chunks&, udp_chunk& queued_chunk);
+                void cleanup_message(sequence_type sequence);
+                void validate_chunk(const udp_chunk& c);
+                void queue_resend(udp_chunk&& c);
                 void queue_next_chunk();
                 bool next_chunk_incr();
+                void sent_chunk(const udp_chunk& c);
                 size_t resend(working_udp_chunks& wm);
                 void resend();
+                void post_send();
 
             private:
                 //reading
