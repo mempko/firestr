@@ -58,7 +58,7 @@ namespace fire
         using chunk_total_type = uint16_t;
         using chunk_id_type = uint16_t;
 
-        struct udp_chunk
+        struct chunk
         {
             bool valid = false;
             std::string host;
@@ -75,12 +75,10 @@ namespace fire
             size_t write_size = 0;
         };
 
-        using chunk_queue = util::queue<udp_chunk>;
-        using udp_chunks = std::vector<udp_chunk>;
 
-        struct working_udp_chunks
+        struct working_message
         {
-            udp_chunk proto;
+            chunk proto;
             util::bytes data;
             boost::dynamic_bitset<> set;
             boost::dynamic_bitset<> sent;
@@ -92,17 +90,18 @@ namespace fire
 
         //working set for both incoming and outgoing messages
         using hash_type = std::size_t;
-        using working_udp_messages = std::unordered_map<sequence_type, working_udp_chunks>;
+        using working_messages = std::unordered_map<sequence_type, working_message>;
         using resolve_map = std::unordered_map<std::string, std::string>;
 
-        //outgoing chunks are send round robin in the chunk_queue_ring
-        struct queue_ring_item
+        //outgoing chunks are send round robin in the message_ring
+        using chunk_id_queue = util::queue<chunk_id_type>;
+        struct message_ring_item
         {
-            working_udp_chunks* wm;
-            chunk_queue resends; 
+            working_message* wm;
+            chunk_id_queue resends; 
         };
 
-        using chunk_queue_ring = std::vector<queue_ring_item>;
+        using message_ring = std::vector<message_ring_item>;
 
         struct udp_stats
         {
@@ -110,6 +109,8 @@ namespace fire
             size_t bytes_sent = 0;
             size_t bytes_recv = 0;
         };
+
+        using chunk_queue = util::queue<chunk>;
 
         class udp_queue;
         class udp_connection
@@ -133,16 +134,16 @@ namespace fire
 
             private:
                 void add_to_working_set(endpoint_message m);
-                void init_working(udp_chunk& proto, util::bytes& data);
-                void send_right_away(udp_chunk& c);
-                bool get_next_chunk(working_udp_chunks&, udp_chunk& queued_chunk);
+                void init_working(chunk& proto, util::bytes& data);
+                void send_right_away(chunk& c);
+                bool get_next_chunk(working_message&, chunk& queued_chunk);
                 void cleanup_message(sequence_type sequence);
-                void validate_chunk(const udp_chunk& c);
-                void queue_resend(queue_ring_item&, udp_chunk&& c);
+                void validate_chunk(const chunk& c);
+                void queue_resend(message_ring_item&, chunk_id_type c);
                 void queue_next_chunk();
-                bool next_chunk_incr();
-                void sent_chunk(const udp_chunk& c);
-                size_t resend(queue_ring_item&);
+                bool incr_next_message();
+                void sent_chunk(const chunk& c);
+                size_t resend(message_ring_item&);
                 void resend();
                 void post_send();
 
@@ -152,13 +153,13 @@ namespace fire
                 util::bytes _in_buffer;
                 util::bytes _out_buffer;
                 boost::asio::ip::udp::endpoint _in_endpoint;
-                working_udp_messages _in_working;
-                working_udp_messages _out_working;
+                working_messages _in_working;
+                working_messages _out_working;
                 endpoint_queue& _in_queue;
 
                 //writing
-                size_t _next_out_queue = 0;
-                chunk_queue_ring _out_queues; //messages get chunked to here
+                size_t _next_message = 0;
+                message_ring _message_ring; //messages get chunked to here
 
                 //queue for chunks ready to go
                 chunk_queue _out_queue; //the queue loop adds next message to here to be sent
