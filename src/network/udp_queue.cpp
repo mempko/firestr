@@ -122,14 +122,13 @@ namespace fire
 
         void udp_connection::cleanup_message(sequence_type s)
         {
-            _out_working.erase(s);
-
             //cleanup ring buffer
             auto ring_iter = std::find_if(_out_queues.begin(), _out_queues.end(), 
                     [s](const queue_ring_item& i){ return i.wm->proto.sequence == s;});
             CHECK(ring_iter != _out_queues.end());
 
             _out_queues.erase(ring_iter);
+            _out_working.erase(s);
         }
 
         bool all_sent(working_udp_chunks& wm)
