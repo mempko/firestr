@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
     auto total_bytes_sent = total_iterations * data.size();
     auto time_per_byte = duration / total_bytes_sent;
     auto kb_per_sec = (total_bytes_sent/1024) / sec;
-    auto time_per_message = (duration / total_iterations) / 1000.0;
+    auto time_per_message = (duration / total_iterations) / 1000000.0;
     std::cout << "messages: " << total_iterations << " time: " << sec << "s" << std::endl;
     std::cout << "bytes per message: " << bytes_per_message << std::endl;
     std::cout << "sent bytes: " << total_bytes_sent<< std::endl;
