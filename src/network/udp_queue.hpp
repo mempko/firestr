@@ -58,7 +58,7 @@ namespace fire
         using chunk_total_type = uint16_t;
         using chunk_id_type = uint16_t;
 
-        struct chunk
+        struct message_chunk
         {
             bool valid = false;
             std::string host;
@@ -78,7 +78,7 @@ namespace fire
 
         struct working_message
         {
-            chunk proto;
+            message_chunk proto;
             util::bytes data;
             boost::dynamic_bitset<> set;
             boost::dynamic_bitset<> sent;
@@ -110,7 +110,7 @@ namespace fire
             size_t bytes_recv = 0;
         };
 
-        using chunk_queue = util::queue<chunk>;
+        using chunk_queue = util::queue<message_chunk>;
 
         class udp_queue;
         class udp_connection
@@ -134,15 +134,15 @@ namespace fire
 
             private:
                 void add_to_working_set(endpoint_message m);
-                void init_working(chunk& proto, util::bytes& data);
-                void send_right_away(chunk& c);
-                bool get_next_chunk(working_message&, chunk& queued_chunk);
+                void init_working(message_chunk& proto, util::bytes& data);
+                void send_right_away(message_chunk& c);
+                bool get_next_chunk(working_message&, message_chunk& queued_chunk);
                 void cleanup_message(sequence_type sequence);
-                void validate_chunk(const chunk& c);
+                void validate_chunk(const message_chunk& c);
                 void queue_resend(message_ring_item&, chunk_id_type c);
                 void queue_next_chunk();
                 bool incr_next_message();
-                void sent_chunk(const chunk& c);
+                void sent_chunk(const message_chunk& c);
                 size_t resend(message_ring_item&);
                 void resend();
                 void post_send();
