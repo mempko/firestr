@@ -88,7 +88,6 @@ namespace fire
         {
             boost::system::error_code error;
             _socket->open(udp::v4(), error);
-            _next_out_queue = _out_queues.end();
 
             INVARIANT(_socket);
         }
@@ -117,32 +116,20 @@ namespace fire
             wm.set.resize(proto.total_chunks);
             wm.sent.resize(proto.total_chunks);
 
-            auto p = _out_queue_map.insert(std::make_pair(proto.sequence, _out_queues.end()));
-            CHECK(p.second);
-
-            queue_ring_item ri = { chunk_queue(), proto.sequence};
-            auto i = _out_queues.insert(_out_queues.end(), ri);
-            p.first->second = i;
+            queue_ring_item ri = { &wm,  chunk_queue()};
+            _out_queues.emplace_back(ri);
         }
 
         void udp_connection::cleanup_message(sequence_type s)
         {
             _out_working.erase(s);
 
-            //find sequence -> iter
-            auto qp = _out_queue_map.find(s);
-            CHECK(qp != _out_queue_map.end());
-                
             //cleanup ring buffer
-            auto ring_iter = qp->second;
-            bool is_next = _next_out_queue == ring_iter;
-            ring_iter = _out_queues.erase(ring_iter);
+            auto ring_iter = std::find_if(_out_queues.begin(), _out_queues.end(), 
+                    [s](const queue_ring_item& i){ return i.wm->proto.sequence == s;});
+            CHECK(ring_iter != _out_queues.end());
 
-            //move next if we erased it
-            if(is_next) _next_out_queue = ring_iter;
-
-            //finally delete sequence->iter 
-            _out_queue_map.erase(qp);
+            _out_queues.erase(ring_iter);
         }
 
         bool all_sent(working_udp_chunks& wm)
@@ -246,11 +233,9 @@ namespace fire
             return true;
         }
 
-        void udp_connection::queue_resend(udp_chunk&& c)
+        void udp_connection::queue_resend(queue_ring_item& r, udp_chunk&& c)
         {
-            auto p = _out_queue_map.find(c.sequence);
-            CHECK(p != _out_queue_map.end());
-            p->second->resends.emplace_push(c);
+            r.resends.emplace_push(c);
             post_send();
         }
 
@@ -258,22 +243,17 @@ namespace fire
         {
             if(_out_queues.empty())
             {
-                _next_out_queue = _out_queues.end();
+                _next_out_queue = 0;
                 return false;
             }
 
             //if at end, go to beginning
-            if(_next_out_queue == _out_queues.end()) 
-                _next_out_queue = _out_queues.begin();
-            else _next_out_queue++;
-
-            //if was at one before end and hit end, go to the beginning
-            if(_next_out_queue == _out_queues.end()) 
-                _next_out_queue = _out_queues.begin();
+            _next_out_queue = (_next_out_queue + 1) % _out_queues.size();
+            ENSURE_RANGE(_next_out_queue, 0, _out_queues.size());
             return true;
         }
 
-        using exhausted_messages = std::set<sequence_type>;
+        using exhausted_messages = std::vector<sequence_type>;
 
         void udp_connection::queue_next_chunk()
         {
@@ -284,16 +264,16 @@ namespace fire
             udp_chunk c;
             do
             {
-                auto sequence = _next_out_queue->sequence;
-                auto wm = _out_working.find(sequence);
-                CHECK(wm != _out_working.end());
-                if(get_next_chunk(wm->second, c))
+                auto& r = _out_queues[_next_out_queue];
+                CHECK(r.wm != nullptr);
+                auto& wm = *r.wm;
+                if(get_next_chunk(wm, c))
                 {
                     _out_queue.emplace_push(c);
                     break;
                 }
                 //check to see if there are resends
-                else if(_next_out_queue->resends.pop(c))
+                else if(r.resends.pop(c))
                 {
                     _out_queue.emplace_push(c);
                     break;
@@ -719,8 +699,11 @@ namespace fire
             start_read();
         }
 
-        size_t udp_connection::resend(working_udp_chunks& wm)
+        size_t udp_connection::resend(queue_ring_item& r)
         {
+            REQUIRE(r.wm);
+            auto &wm = *r.wm;
+            
             REQUIRE_GREATER(wm.proto.total_chunks, 0);
             REQUIRE_GREATER(wm.data.size(), 0);
 
@@ -740,7 +723,7 @@ namespace fire
                 udp_chunk mc = nth_chunk(c, wm.proto, wm.data);
                 mc.resent = true;
                 _stats.dropped++;
-                queue_resend(std::move(mc));
+                queue_resend(r, std::move(mc));
             }
             return resent_m;
         }
@@ -749,14 +732,15 @@ namespace fire
         {
             bool resent = false;
             exhausted_messages em;
-            for(auto& wmp : _out_working)
+            for(auto& r : _out_queues)
             {
-                auto& wm = wmp.second;
+                CHECK(r.wm);
+                auto& wm = *r.wm;
                 CHECK_GREATER(wm.proto.total_chunks, 0);
 
                 wm.ticks++;
 
-                sequence_type sequence = wmp.first;
+                sequence_type sequence = wm.proto.sequence;
 
                 //check if we should try to resend
                 bool skip = wm.ticks <= RESEND_TICK_THRESHOLD;
@@ -764,7 +748,7 @@ namespace fire
 
                 //walk working message and resend all chunks that never got
                 //acked
-                if(robust && !skip && resend(wm) > 0) 
+                if(robust && !skip && resend(r) > 0) 
                     resent = true;
 
                 bool erase = robust ?  wm.ticks >= RESEND_THRESHOLD : all_sent(wm);
