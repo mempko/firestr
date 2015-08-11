@@ -96,14 +96,13 @@ namespace fire
         using resolve_map = std::unordered_map<std::string, std::string>;
 
         //outgoing chunks are send round robin in the chunk_queue_ring
-        //the chunk_queue_map links to the chunk queue for that address
         struct queue_ring_item
         {
+            working_udp_chunks* wm;
             chunk_queue resends; 
-            sequence_type sequence;
         };
-        using chunk_queue_ring = std::list<queue_ring_item>;
-        using chunk_queue_map = std::unordered_map<sequence_type, chunk_queue_ring::iterator>;
+
+        using chunk_queue_ring = std::vector<queue_ring_item>;
 
         struct udp_stats
         {
@@ -139,11 +138,11 @@ namespace fire
                 bool get_next_chunk(working_udp_chunks&, udp_chunk& queued_chunk);
                 void cleanup_message(sequence_type sequence);
                 void validate_chunk(const udp_chunk& c);
-                void queue_resend(udp_chunk&& c);
+                void queue_resend(queue_ring_item&, udp_chunk&& c);
                 void queue_next_chunk();
                 bool next_chunk_incr();
                 void sent_chunk(const udp_chunk& c);
-                size_t resend(working_udp_chunks& wm);
+                size_t resend(queue_ring_item&);
                 void resend();
                 void post_send();
 
@@ -158,9 +157,8 @@ namespace fire
                 endpoint_queue& _in_queue;
 
                 //writing
-                chunk_queue_ring::iterator _next_out_queue;
+                size_t _next_out_queue = 0;
                 chunk_queue_ring _out_queues; //messages get chunked to here
-                chunk_queue_map _out_queue_map; //address are mapped to queue
 
                 //queue for chunks ready to go
                 chunk_queue _out_queue; //the queue loop adds next message to here to be sent
