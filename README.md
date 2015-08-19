@@ -67,7 +67,7 @@ Install vagrant on your machine. Open a terminal and run:
 
     $ vagrant up
     $ vagrant ssh
-    $ startxfc4&
+    $ startxfce4&
 
 Open terminal in VM and run:
 
