@@ -264,7 +264,7 @@ namespace fire
             {
                 _tcp_send_queue.push({to, b});
                 return true;
-            }
+            } else if (type != asio_params::udp) return false;
 
             CHECK(type == asio_params::udp);
 

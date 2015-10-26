@@ -74,6 +74,7 @@ namespace fire
             const char CONNECTED = 'c';
             const char IDLE = 'i';
             const char DISCONNECTED = 'd';
+            const std::string LOCAL = "local"; //local address string to skip.
         }
 
         struct ping 
@@ -851,10 +852,20 @@ namespace fire
             REQUIRE_FALSE(contact_available(c->id()));
 
             for(const auto& address : c->addresses())
+            try
             {
+                if(address == LOCAL) continue;
                 LOG << "sending connection request to " << c->name() << " (" << c->id() << ", " << address << ")" << std::endl;
                 _encrypted_channels->create_channel(address, c->key());
                 send_ping_request(address, send_back);
+            }
+            catch(std::exception& e)
+            {
+                LOG << "error sending connection request: " << e.what() << std::endl;
+            }
+            catch(...)
+            {
+                LOG << "unknown error sending connection request." << std::endl;
             }
         }
 
