@@ -63,9 +63,11 @@ namespace fire
                 const queue_options& defaults)
         {
             auto s = util::split<strings>(queue_address, ",");
-            if(s.size() < 1) std::invalid_argument("address must have at least a transport and port. Example: tcp://localhost:10"); 
+            CHECK_GREATER_EQUAL(s.size(), 1);
 
             auto a = util::split<strings>(s[0], ":");
+            if(a.size() < 2)
+                std::invalid_argument("address must have at least a transport and port. Example: tcp://localhost:10"); 
 
             address_components c;
             c.address = queue_address;

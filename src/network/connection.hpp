@@ -46,7 +46,7 @@ namespace fire
 
         struct asio_params
         {
-            enum endpoint_type { tcp, udp} type;
+            enum endpoint_type { tcp, udp, unknown} type;
             enum connect_mode {bind, connect, delayed_connect} mode; 
             std::string uri;
             std::string host;

@@ -55,7 +55,7 @@ namespace fire
 
         asio_params::endpoint_type determine_type(const std::string& t)
         {
-            asio_params::endpoint_type m = asio_params::udp;
+            asio_params::endpoint_type m = asio_params::unknown;
             auto s = t.substr(0,3);
             if(s == TCP) m = asio_params::tcp;
             else if(s == UDP) m = asio_params::udp;
