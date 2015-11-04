@@ -96,7 +96,7 @@ namespace fire
                 local_user& user();
                 const local_user& user() const;
                 const std::string& home() const;
-                const std::string& in_host() const;
+                std::string in_host() const;
                 network::port_type in_port() const;
 
             public:

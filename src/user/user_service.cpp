@@ -308,12 +308,20 @@ namespace fire
                 const std::string& udp_addr, 
                 const std::string& pub_key)
         {
+            REQUIRE_GREATER(_in_port, 0);
+
             //regiser with greeter
             LOG << "sending greet message to " << tcp_addr << " : " << udp_addr << std::endl;
+
+            //update address
+            auto host = in_host();
+            update_address(n::make_udp_address(host, _in_port));
+
+            //create greet message
             ms::greet_register gr
             {
                 _user->info().id(), 
-                ms::greet_endpoint{_in_host, _in_port},
+                ms::greet_endpoint{host, _in_port},
                 _user->info().key().key(),
                 SERVICE_ADDRESS
             };
@@ -578,10 +586,9 @@ namespace fire
             return _home;
         }
 
-        const std::string& user_service::in_host() const
+        std::string user_service::in_host() const
         {
-            ENSURE_FALSE(_in_host.empty());
-            return _in_host;
+            return n::get_lan_ip(_in_host);
         }
 
         n::port_type user_service::in_port() const
