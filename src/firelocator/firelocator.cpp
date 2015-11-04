@@ -184,6 +184,18 @@ void send_response(
     con.send(address, data);
 }
 
+bool is_disconnected_and_cleanup(const std::string& addr,
+        n::connection_manager& con, 
+        sc::encrypted_channels& sec) 
+{
+    if(con.is_disconnected(addr))
+    {
+        sec.remove_channel(addr);
+        return true;
+    }
+    return false;
+}
+
 void find_user(
         n::connection_manager& con, 
         sc::encrypted_channels& sec, 
@@ -205,8 +217,11 @@ void find_user(
     auto& i = up->second;
 
     //don't send match if either is disconnected
-    if(con.is_disconnected(n::make_address_str(f.tcp_ep))) return;
-    if(con.is_disconnected(n::make_address_str(i.tcp_ep))) return;
+    auto f_addr = n::make_address_str(f.tcp_ep);
+    if(is_disconnected_and_cleanup(f_addr, con, sec)) return;
+
+    auto i_addr = n::make_address_str(i.tcp_ep);
+    if(is_disconnected_and_cleanup(i_addr, con, sec)) return;
 
     //send response to both clients
     ms::greet_find_response fr{true, i.id, i.local,  i.ext};
