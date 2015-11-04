@@ -237,7 +237,7 @@ namespace fire
 
             //create post office to handle incoming and outgoing messages
             _master = std::make_shared<m::master_post_office>(
-                    _context.host, 
+                    n::get_lan_ip(_context.host), 
                     _context.port, 
                     _encrypted_channels);
 

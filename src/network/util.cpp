@@ -106,5 +106,9 @@ namespace fire
             return ip;
         }
 #endif
+        std::string get_lan_ip(const std::string& override)
+        {
+            return override.empty() ? get_lan_ip() : override;
+        }
     }
 }
