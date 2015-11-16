@@ -34,6 +34,7 @@
 #include <map>
 #include <set>
 #include <algorithm>
+#include <iterator>
 #include <ostream>
 #include <memory>
 #include "util/dbc.hpp"
@@ -212,9 +213,9 @@ namespace fire
                     /**
                      * New clock using id
                      */
-                    tracked_vclock(id_t i) : _c{}, _i{i} { _c[i] = 1;}
-                    tracked_vclock(id_t i, size_t v) : _c{}, _i{i} { _c[i] = v;}
-                    tracked_vclock(id_t i, const vclock<id_t>& c) : _c{c}, _i{i} 
+                    tracked_vclock(id_t i) : _c{}, _i(i) { _c[i] = 1;}
+                    tracked_vclock(id_t i, size_t v) : _c{}, _i(i) { _c[i] = v;}
+                    tracked_vclock(id_t i, const vclock<id_t>& c) : _c(c), _i(i) 
                     {
                         if(!_c.has(i)) _c[i] = 1;
                     }

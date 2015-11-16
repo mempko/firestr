@@ -40,7 +40,7 @@ namespace fire
     {
         cr_string::cr_string() : _c{""} {}
         cr_string::cr_string(const std::string& id) : _c{id} {}
-        cr_string::cr_string(const tracked_sclock& c, const std::string& s) : _c{c}, _s{s} {}
+        cr_string::cr_string(const tracked_sclock& c, const std::string& s) : _c{c}, _s(s) {}
 
         const std::string& cr_string::str() const { return _s; }
         const tracked_sclock& cr_string::clock() const { return _c; }

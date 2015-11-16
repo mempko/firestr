@@ -230,7 +230,7 @@ namespace fire
                 const std::string& in_host,
                 n::port_type in_port,
                 sc::encrypted_channels_ptr sl) : 
-            _in_host{in_host},
+            _in_host(in_host),
             _in_port{in_port},
             _connections{POOL_SIZE, in_port, false},
             _encrypted_channels{sl}

@@ -45,7 +45,7 @@ namespace fire
         {
             public:
                 mailbox() : _address{}, _in{}, _out{} { }
-                mailbox(const std::string& a) : _address{a}, _in{}, _out{} { }
+                mailbox(const std::string& a) : _address(a), _in{}, _out{} { }
                 ~mailbox() { done(); }
 
             public:

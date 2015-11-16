@@ -190,7 +190,7 @@ namespace fire
                     if(v.is_dict()) _d = v.as_dict();
                     else _v = v;
                 }
-                mencode_in(const dict& d) : _d{d} { }
+                mencode_in(const dict& d) : _d(d) { }
 
             public:
                 void operator()(bool& t) {  t = _v; }

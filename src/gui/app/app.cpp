@@ -182,7 +182,7 @@ namespace fire
 
             app::app(const app& o) : 
                 _meta(o._meta),
-                _code{o._code},
+                _code(o._code),
                 _data{o.data()},
                 _local_data(o._local_data), 
                 _is_tmp{o._is_tmp}

@@ -106,7 +106,7 @@ namespace fire
                     s::conversation_service_ptr conversation_s,
                     s::conversation_ptr conversation) :
                 generic_app{},
-                _id{u::uuid()},
+                _id(u::uuid()),
                 _clock{conversation->user_service()->user().info().id()},
                 _conversation_service{conversation_s},
                 _conversation{conversation}
@@ -121,7 +121,7 @@ namespace fire
                     s::conversation_service_ptr conversation_s,
                     s::conversation_ptr conversation) :
                 generic_app{},
-                _id{id},
+                _id(id),
                 _clock{conversation->user_service()->user().info().id()},
                 _conversation_service{conversation_s},
                 _conversation{conversation}

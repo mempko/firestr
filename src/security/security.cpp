@@ -96,7 +96,7 @@ namespace fire
         private_key::private_key(
                 const std::string& encrypted_private_key, 
                 const std::string& passphrase) :
-            _encrypted_private_key{encrypted_private_key}
+            _encrypted_private_key(encrypted_private_key)
         {
             REQUIRE_FALSE(encrypted_private_key.empty());
             u::mutex_scoped_lock l(BOTAN_MUTEX);
@@ -152,7 +152,7 @@ namespace fire
         }
 
         public_key::public_key(const std::string& key) : 
-            _ks{key}
+            _ks(key)
         {
             REQUIRE_FALSE(key.empty());
 
@@ -169,7 +169,7 @@ namespace fire
             INVARIANT_FALSE(_ks.empty());
         }
 
-        public_key::public_key(const public_key& pk) : _ks{pk._ks}, _k{}
+        public_key::public_key(const public_key& pk) : _ks(pk._ks), _k{}
         {
             if(!pk._k) return;
 
@@ -297,8 +297,8 @@ namespace fire
 
         dh_secret::dh_secret(const dh_secret& o) : 
             _pkey{o._pkey}, _skey{o._skey}, 
-            _pub_value{o._pub_value}, 
-            _other_pub_value{o._other_pub_value} {}
+            _pub_value(o._pub_value), 
+            _other_pub_value(o._other_pub_value) {}
 
         dh_secret& dh_secret::operator=(const dh_secret& o)
         {

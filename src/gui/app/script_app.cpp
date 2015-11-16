@@ -63,8 +63,8 @@ namespace fire
                     s::conversation_service_ptr conversation_s,
                     s::conversation_ptr conversation) :
                 generic_app{},
-                _from_id{conversation->user_service()->user().info().id()},
-                _id{u::uuid()},
+                _from_id(conversation->user_service()->user().info().id()),
+                _id(u::uuid()),
                 _conversation_service{conversation_s},
                 _conversation{conversation},
                 _app{app},
@@ -96,8 +96,8 @@ namespace fire
                     s::conversation_service_ptr conversation_s,
                     s::conversation_ptr conversation) :
                 generic_app{},
-                _from_id{from_id},
-                _id{id},
+                _from_id(from_id),
+                _id(id),
                 _conversation_service{conversation_s},
                 _conversation{conversation},
                 _app{app},

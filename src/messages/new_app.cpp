@@ -44,8 +44,8 @@ namespace fire
         new_app::new_app(
                 const std::string& id,
                 const std::string& type) :
-            _id{id},
-            _type{type},
+            _id(id),
+            _type(type),
             _from_id{},
             _data{}
         {
@@ -55,10 +55,10 @@ namespace fire
                 const std::string& id,
                 const std::string& type,
                 const u::bytes& data) :
-            _id{id},
-            _type{type},
+            _id(id),
+            _type(type),
             _from_id{},
-            _data{data}
+            _data(data)
         {
         }
 
@@ -103,7 +103,7 @@ namespace fire
         }
 
         request_app::request_app(std::string a, std::string cid) 
-            : app_address{a}, conversation_id{cid}
+            : app_address(a), conversation_id(cid)
         { }
 
         request_app::request_app(const message::message& m)

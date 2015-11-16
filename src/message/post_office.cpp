@@ -111,7 +111,7 @@ namespace fire
         }
 
         post_office::post_office(const std::string& a) : 
-                _address{a},
+                _address(a),
                 _boxes{},
                 _offices{},
                 _parent{},

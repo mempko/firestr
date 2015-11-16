@@ -273,7 +273,7 @@ namespace fire
                     const std::string& type,
                     const u::value& v,
                     lua_api* api) : 
-                _obj{obj}, _type{type}, _v{v}, _api{api} 
+                _obj(obj), _type(type), _v{v}, _api{api} 
                 { 
                     REQUIRE(_api);
                     INVARIANT(_api);
