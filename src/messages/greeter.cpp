@@ -46,7 +46,7 @@ namespace fire
         const std::string GREET_FIND_RESPONSE = "greet_response";
 
         greet_key_request::greet_key_request( const std::string& response_service_address) :
-            _response_service_address{response_service_address} { }
+            _response_service_address(response_service_address) { }
 
         greet_key_request::greet_key_request(const m::message& m)
         {
@@ -69,7 +69,7 @@ namespace fire
         }
 
         greet_key_response::greet_key_response(const std::string& key) :
-             _host{}, _port{}, _pub_key{key} {}
+             _host{}, _port{}, _pub_key(key) {}
 
         greet_key_response::greet_key_response(const m::message& m)
         {
@@ -107,10 +107,10 @@ namespace fire
                 const greet_endpoint& local,
                 const std::string& pbkey,
                 const std::string& response_service_address) :
-            _id{id},
+            _id(id),
             _local(local),
             _pub_key(pbkey),
-            _response_service_address{response_service_address}
+            _response_service_address(response_service_address)
         {
         }
 
@@ -160,8 +160,8 @@ namespace fire
         greet_find_request::greet_find_request(
                 const std::string& from_id,
                 const std::string& search_id) :
-            _from_id{from_id},
-            _search_id{search_id}
+            _from_id(from_id),
+            _search_id(search_id)
         {
         }
 
@@ -198,7 +198,7 @@ namespace fire
                 const greet_endpoint& local,
                 const greet_endpoint& ext) :
             _found{found},
-            _id{id},
+            _id(id),
             _local(local),
             _ext(ext)
         {

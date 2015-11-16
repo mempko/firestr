@@ -52,7 +52,7 @@ namespace fire
         conversation::conversation(
                 us::user_service_ptr s,
                 m::post_office_wptr pp) :
-            _id{u::uuid()},
+            _id(u::uuid()),
             _parent_post{pp},
             _user_service{s},
             _initiated_by_user{true}
@@ -64,7 +64,7 @@ namespace fire
                 const std::string id, 
                 us::user_service_ptr s,
                 m::post_office_wptr pp) :
-            _id{id},
+            _id(id),
             _parent_post{pp},
             _user_service{s},
             _initiated_by_user{false}

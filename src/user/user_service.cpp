@@ -167,8 +167,8 @@ namespace fire
         user_service::user_service(user_service_context& c) :
             s::service{SERVICE_ADDRESS, c.events},
             _user{c.user},
-            _home{c.home},
-            _in_host{c.host},
+            _home(c.home),
+            _in_host(c.host),
             _in_port{c.port},
             _encrypted_channels{c.encrypted_channels},
             _done{false}
@@ -858,22 +858,25 @@ namespace fire
             REQUIRE_FALSE(is_contact_connecting(c->id()));
             REQUIRE_FALSE(contact_available(c->id()));
 
-            for(const auto& address : c->addresses())
-            try
-            {
-                if(address == LOCAL) continue;
-                LOG << "sending connection request to " << c->name() << " (" << c->id() << ", " << address << ")" << std::endl;
-                _encrypted_channels->create_channel(address, c->key());
-                send_ping_request(address, send_back);
-            }
-            catch(std::exception& e)
-            {
-                LOG << "error sending connection request: " << e.what() << std::endl;
-            }
-            catch(...)
-            {
-                LOG << "unknown error sending connection request." << std::endl;
-            }
+			for (const auto& address : c->addresses())
+			{
+				try
+				{
+					if (address == LOCAL) continue;
+					LOG << "sending connection request to " << c->name() << " (" << c->id() << ", " << address << ")" << std::endl;
+
+					_encrypted_channels->create_channel(address, c->key());
+					send_ping_request(address, send_back);
+				}
+				catch (std::exception& e)
+				{
+					LOG << "error sending connection request: " << e.what() << std::endl;
+				}
+				catch (...)
+				{
+					LOG << "unknown error sending connection request." << std::endl;
+				}
+			}
         }
 
         void user_service::update_contact_version(

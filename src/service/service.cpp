@@ -82,7 +82,7 @@ namespace fire
         service::service(
                 const std::string& address, 
                 message::mailbox_ptr event) :
-            _address{address},
+            _address(address),
             _done{false},
             _event{event}
         {

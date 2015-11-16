@@ -72,7 +72,7 @@ namespace fire
         }
 
         queue_debug::queue_debug(const std::string& name, m::mailbox_stats& stats) :
-            _name_s{name},
+            _name_s(name),
             _mailbox_stats{&stats}
         {
             REQUIRE(_mailbox_stats);

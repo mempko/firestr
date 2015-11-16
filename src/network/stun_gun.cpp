@@ -200,9 +200,9 @@ namespace fire
         stun_gun::stun_gun(QObject* parent, const std::string& stun_server, const std::string stun_port, const std::string port) :
             QObject{parent},
             _state{stun_in_progress},
-            _stun_server{stun_server}, 
-            _stun_port{stun_port}, 
-            _int_port{port}
+            _stun_server(stun_server), 
+            _stun_port(stun_port), 
+            _int_port(port)
         {
             REQUIRE(parent);
 

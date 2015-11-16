@@ -96,7 +96,7 @@ namespace fire
                 std::string from_ip;
                 int from_port = 0;
 
-                explicit as_message(const std::string& t) : type{t} {}
+                explicit as_message(const std::string& t) : type(t) {}
 
                 message to_message() const
                 {

@@ -378,8 +378,8 @@ namespace fire
                 sc::private_key_ptr pk) : 
             _info{i},
             _contacts{c},
-            _greet_servers{g},
-            _introductions{is},
+            _greet_servers(g),
+            _introductions(is),
             _prv_key{pk}
         {
             REQUIRE(pk);

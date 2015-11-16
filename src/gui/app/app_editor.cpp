@@ -243,8 +243,8 @@ namespace fire
                     s::conversation_ptr conversation, 
                     app_ptr app) :
                 generic_app{},
-                _from_id{conversation->user_service()->user().info().id()},
-                _id{u::uuid()},
+                _from_id(conversation->user_service()->user().info().id()),
+                _id(u::uuid()),
                 _app_service{app_service},
                 _app_reaper{app_reaper},
                 _conversation_service{conversation_s},
@@ -277,8 +277,8 @@ namespace fire
                     s::conversation_ptr conversation,
                     app_ptr app) :
                 generic_app{},
-                _from_id{from_id},
-                _id{id},
+                _from_id(from_id),
+                _id(id),
                 _app_service{app_service},
                 _app_reaper{app_reaper},
                 _conversation_service{conversation_s},
@@ -1316,7 +1316,7 @@ namespace fire
             }
 
             data_item::data_item(util::disk_store& d, const std::string& key) :
-                _key{key}, _d(d)
+                _key(key), _d(d)
             {
                 auto l = new QHBoxLayout{this};
                 setLayout(l);

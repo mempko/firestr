@@ -62,7 +62,7 @@ namespace fire
                         const std::string& name, 
                         const std::string& id,
                         const security::public_key& pub_key) :
-                    _addresses{addresses}, _name{name}, _id{id}, _pkey{pub_key} 
+                    _addresses(addresses), _name(name), _id(id), _pkey(pub_key) 
                 {
                     REQUIRE_FALSE(addresses.empty());
                     REQUIRE_FALSE(name.empty());
@@ -71,7 +71,7 @@ namespace fire
                 }
 
                 user_info(const user_info& o) :
-                    _addresses{o._addresses}, _name{o._name}, _id{o._id}, _pkey{o._pkey} {}
+                    _addresses(o._addresses), _name(o._name), _id(o._id), _pkey(o._pkey) {}
 
                 user_info& operator=(const user_info& o)
                 {
@@ -145,10 +145,10 @@ namespace fire
                 greet_server() : _host(), _port(), _key(){}
 
                 greet_server(const greet_server& o) : 
-                    _host{o._host}, _port{o._port}, _key{o._key}{}
+                    _host(o._host), _port(o._port), _key(o._key){}
 
                 greet_server(const std::string& host, network::port_type port, const std::string& key) : 
-                    _host{host}, _port{port}, _key{key}{}
+                    _host(host), _port(port), _key(key){}
 
                 greet_server& operator=(const greet_server& o);
 
