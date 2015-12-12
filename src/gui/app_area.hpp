@@ -106,6 +106,7 @@ namespace fire
 
                 public:
                     void add_chat_app();
+                    app::app_ptr create_new_app();
                     void add_app_editor(const std::string& id);
                     void add_script_app(const std::string& id);
                     void add(app::generic_app*);

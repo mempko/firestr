@@ -252,6 +252,17 @@ namespace fire
             add(t, nullptr, ""); 
         }
 
+        a::app_ptr app_area::create_new_app()
+        {
+            INVARIANT(_app_service);
+
+            auto app = _app_service->create_new_app();
+            app->code(a::EXAMPLE_APP);
+
+            ENSURE(app);
+            return app;
+        }
+
         void app_area::add_app_editor(const std::string& id)
         {
             INVARIANT(_app_service)
@@ -259,8 +270,9 @@ namespace fire
             INVARIANT(_conversation);
             INVARIANT(_conversation_service);
 
+            //create new app or load it
             a::app_ptr app = id.empty() ? 
-                _app_service->create_new_app() : 
+                create_new_app() : 
                 _app_service->load_app(id);
 
             CHECK(app);
