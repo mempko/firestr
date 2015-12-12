@@ -188,8 +188,28 @@ namespace fire
             const std::string LUA_NUMBERS = "[0-9\\.]+";
             const std::string LUA_OPERATORS = "[=+-\\*\\^:%#~<>\\(\\){}\\[\\];:,]+";
 
+            const std::string EXAMPLE_APP =
+                "-- Write your program here.\n"
+                "-- As you write, the program will run\n"
+                "-- and the results will show on the right.\n"
+                "\n"
+                "-- Create a button and place it on the grid.\n"
+                "hello = app:button('Hello')\n"
+                "app:place(hello, 0, 0)\n"
+                "\n"
+                "--choose which function to run when the\n" 
+                "--button is clicked.\n"
+                "hello:when_clicked(\"hello_world()\")\n"
+                "\n"
+                "--Set the button text to 'Hello World'.\n"
+                "function hello_world()\n"
+                "    hello:set_text(\"Hello World\")\n"
+                "end\n";
+
             namespace
             {
+
+
                 const size_t TIMER_UPDATE = 1000; //in milliseconds
                 const size_t PADDING = 20;
                 const int MIN_EDIT_HEIGHT = 320;

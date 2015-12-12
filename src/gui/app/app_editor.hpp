@@ -260,6 +260,7 @@ namespace fire
             };
 
 
+            extern const std::string EXAMPLE_APP;
         }
     }
 }
