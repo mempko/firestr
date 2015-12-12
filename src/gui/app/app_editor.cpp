@@ -208,7 +208,9 @@ namespace fire
 
             namespace
             {
-
+                const std::string ERROR_SELECTION = "error";
+                const char SELECTION_ALPHA = 60;
+                const QColor ERROR_COLOR{255, 0, 0, SELECTION_ALPHA};
 
                 const size_t TIMER_UPDATE = 1000; //in milliseconds
                 const size_t PADDING = 20;
@@ -217,6 +219,27 @@ namespace fire
                 const int MIN_APP_WIDTH = 240;
                 const std::string SCRIPT_CODE_MESSAGE = "scpt";
                 const std::string SCRIPT_INIT_MESSAGE = "init";
+                const std::string CURSOR_POS_MESSAGE = "cp";
+
+                const std::vector<std::string> CURSOR_COLORS = {
+                    "#AEC6CF",
+                    "#CB99C9",
+                    "#836953",
+                    "#B19CD9",
+                    "#DEA5A4",
+                    "#C23B22",
+                    "#F49AC2",
+                    "#FF6961",
+                    "#FDFD96",
+                    "#77DD77",
+                    "#FFB347",
+                    "#779ECB",
+                    "#966FD6",
+                    "#03C03C",
+                    "#CFCFC4",
+                    "#B39EB5",
+                    "#FFD1DC",
+                };
             }
 
             f_message(text_script)
@@ -254,6 +277,20 @@ namespace fire
             {
                 f_message_init(script_init, SCRIPT_INIT_MESSAGE);
                 f_serialize_empty;
+            };
+
+            f_message(cursor_pos)
+            {
+                int s = 0;     //start
+                int e = 0;     //end
+                std::string c; //color
+                f_message_init(cursor_pos, CURSOR_POS_MESSAGE);
+                f_serialize 
+                { 
+                    f_s(s);
+                    f_s(e);
+                    f_s(c);
+                };
             };
 
             app_editor::app_editor(
@@ -350,6 +387,8 @@ namespace fire
                 _mail = std::make_shared<m::mailbox>(_id);
                 _sender = std::make_shared<ms::sender>(_conversation->user_service(), _mail);
                 _code.init_set(_app->code());
+
+                init_cursor_color();
 
                 ENSURE(_sender);
                 ENSURE(_mail);
@@ -467,6 +506,7 @@ namespace fire
                 _started = _app->code().empty() ? start_state::GET_CODE : start_state::DONE_START;
                 _script->setPlainText(_app->code().c_str());
                 connect(_script, SIGNAL(keyPressed(QKeyEvent*)), this, SLOT(text_typed(QKeyEvent*)));
+                connect(_script, SIGNAL(cursorPositionChanged()), this, SLOT(cursor_changed()));
 
                 setMinimumHeight(layout()->sizeHint().height() + PADDING);
 
@@ -574,6 +614,22 @@ namespace fire
                 ENSURE(_data_value);
                 ENSURE(_add_button);
                 ENSURE(_data_items);
+            }
+
+            void app_editor::init_cursor_color()
+            {
+                INVARIANT(_conversation);
+                INVARIANT(_conversation->user_service());
+
+                //compute color based on hash of user id.
+                const auto id = _conversation->user_service()->user().info().id();
+                std::hash<std::string> hash_func;
+                auto color_index = hash_func(id) % CURSOR_COLORS.size();
+                CHECK_RANGE(color_index, 0, CURSOR_COLORS.size());
+
+                //get color
+                auto rgb = CURSOR_COLORS[color_index];
+                _cursor_color = QColor(rgb.c_str());
             }
 
             void app_editor::data_key_edited()
@@ -861,6 +917,28 @@ namespace fire
                 if(emit_e) emit keyPressed(e);
             }
 
+            void app_editor::cursor_changed()
+            {
+                INVARIANT(_script);
+
+                auto cursor = _script->textCursor();
+                cursor_pos p;
+                p.s = cursor.selectionStart();
+                p.e = cursor.selectionEnd();
+
+                //don't send at 0,0
+                if(p.s == 0 && p.e == 0) return;
+
+                p.c = 
+                { 
+                    static_cast<char>(_cursor_color.red()), 
+                    static_cast<char>(_cursor_color.green()), 
+                    static_cast<char>(_cursor_color.blue())
+                };
+
+                send_all(p.to_message());
+            }
+
             void app_editor::text_typed(QKeyEvent* e)
             {
                 INVARIANT(_script);
@@ -887,6 +965,18 @@ namespace fire
                 return true;
             }
 
+            void app_editor::send_all(const m::message& m)
+            {
+                INVARIANT(_conversation);
+                INVARIANT(_sender);
+
+                for(auto c : _conversation->contacts().list())
+                {
+                    CHECK(c);
+                    _sender->send(c->id(), m); 
+                }
+            }
+
             void app_editor::send_script(bool send_data)
             {
                 INVARIANT(_script);
@@ -900,11 +990,7 @@ namespace fire
 
                 //send it all
                 auto m = tm.to_message();
-                for(auto c : _conversation->contacts().list())
-                {
-                    CHECK(c);
-                    _sender->send(c->id(), m); 
-                }
+                send_all(m);
             }
 
             void app_editor::send_script_to(const std::string& id)
@@ -952,6 +1038,74 @@ namespace fire
                 //update ui
                 init_data();
             }
+
+            void app_editor::set_selection(const std::string& key, int start, int end, const QColor& color)
+            {
+                INVARIANT(_script);
+                
+                selection s;
+                s.start = start;
+                s.end = end;
+                s.color = color;
+
+                _selections[key] = s;
+
+                update_selections();
+            }
+
+            void app_editor::set_selection(const std::string& key, const QTextCursor& c, const QColor& color)
+            {
+                set_selection(key, c.selectionStart(), c.selectionEnd() , color);
+            }
+
+            QTextEdit::ExtraSelection make_extra_selection(const selection& s, QTextCursor c)
+            {
+                c.setPosition(s.start);
+                c.setPosition(s.end, QTextCursor::KeepAnchor);
+
+                //setup color
+                QBrush b{s.color};
+
+                //create selection
+                QTextEdit::ExtraSelection h;
+                h.cursor = c;
+                h.format.setBackground(b);
+                h.format.setProperty(QTextFormat::FullWidthSelection, true);
+
+                return h;
+            }
+
+            void app_editor::update_selections()
+            {
+                INVARIANT(_script);
+
+                QList<QTextEdit::ExtraSelection> extras;
+                for( const auto& pr : _selections) 
+                {
+                    const auto& s = pr.second;
+
+                    //create selection
+                    auto c = _script->textCursor();
+                    extras << make_extra_selection(s, c);
+
+                    //if start and end are the same, overlay another extra
+                    //with same color to show cursor.
+                    if(s.start == s.end) 
+                    {
+                        selection cp = s;
+                        cp.end += 1;
+                        extras << make_extra_selection(cp, c);
+                    }
+                }
+                _script->setExtraSelections( extras );
+            }
+
+            void app_editor::clear_selection(const std::string& key) 
+            {
+                _selections.erase(key);
+
+                update_selections();
+            }
             
             void app_editor::update_error(const std::string& msg)
             {
@@ -966,19 +1120,14 @@ namespace fire
                     int line = e.line - 2;
                     if(line >= 0) 
                     {
-                        QTextEdit::ExtraSelection h;
                         auto c = _script->textCursor();
                         c.movePosition(QTextCursor::Start);
                         c.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, line); 
-                        h.cursor = c;
-                        h.format.setProperty(QTextFormat::FullWidthSelection, true);
-                        QBrush b{QColor{255, 0, 0, 50}};
-                        h.format.setBackground(b);
-                        extras << h;
+                        set_selection(ERROR_SELECTION, c, ERROR_COLOR);
                     }
+                    else clear_selection(ERROR_SELECTION);
                     update_status_to_errors();
                 }
-                _script->setExtraSelections( extras );
             }
 
             void app_editor::got_adjust_size()
@@ -1059,7 +1208,7 @@ namespace fire
             void app_editor::update_status_to_no_errors()
             {
                 INVARIANT(_status);
-                _script->setExtraSelections(QList<QTextEdit::ExtraSelection>{});
+                clear_selection(ERROR_SELECTION);
                 make_thumbs_up(*_status);
             }
 
@@ -1165,6 +1314,7 @@ namespace fire
                 qRegisterMetaType<m::message>("fire::message::message");
                 connect(this, SIGNAL(got_code(const fire::message::message&)), this, SLOT(received_code(const fire::message::message&)));
                 connect(this, SIGNAL(got_init(const fire::message::message&)), this, SLOT(received_script_init(const fire::message::message&)));
+                connect(this, SIGNAL(got_cursor_pos(const fire::message::message&)), this, SLOT(received_cursor_pos(const fire::message::message&)));
 
                 INVARIANT(_back);
                 using std::bind;
@@ -1175,6 +1325,9 @@ namespace fire
 
                 _back->handle(SCRIPT_INIT_MESSAGE, 
                         bind(&app_editor::emit_got_init, this, _1));
+
+                _back->handle(CURSOR_POS_MESSAGE, 
+                        bind(&app_editor::emit_got_cursor_pos, this, _1));
 
                 _back->start();
             }
@@ -1189,6 +1342,11 @@ namespace fire
                 emit got_init(m);
             }
 
+            void app_editor::emit_got_cursor_pos(const m::message& m)
+            {
+                emit got_cursor_pos(m);
+            }
+
             void app_editor::received_code(const m::message& m) 
             {
                 REQUIRE_EQUAL(m.meta.type, SCRIPT_CODE_MESSAGE);
@@ -1197,8 +1355,9 @@ namespace fire
 
                 text_script t;
                 t.from_message(m);
-                auto c = _conversation->contacts().by_id(t.from_id);
-                if(!c) return;
+
+                //check to see if contact is still in conversation.
+                if(!_conversation->contacts().has(t.from_id)) return;
 
                 //merge code if there is a conflict
                 auto merged = _code.merge(t.code);
@@ -1212,6 +1371,8 @@ namespace fire
                 auto cursor = _script->textCursor();
                 cursor.setPosition(pos);
                 _script->setTextCursor(cursor);
+
+                update_selections();
 
                 //update data
                 bool data_changed = !t.data.empty();
@@ -1239,10 +1400,26 @@ namespace fire
                 script_init i;
                 i.from_message(m);
 
-                auto c = _conversation->contacts().by_id(i.from_id);
-                if(!c) return;
+                if(!_conversation->contacts().has(i.from_id));
 
-                send_script_to(c->id());
+                send_script_to(i.from_id);
+            }
+            
+            void app_editor::received_cursor_pos(const m::message& m) 
+            {
+                REQUIRE_EQUAL(m.meta.type, CURSOR_POS_MESSAGE);
+                INVARIANT(_conversation);
+
+                cursor_pos p;
+                p.from_message(m);
+
+                if(!_conversation->contacts().has(p.from_id)) return;
+                if(p.c.size() != 3) return;
+
+                //since we are packing rgb in a byte array, convert to unsigned to get back color.
+                const unsigned char r = p.c[0], g = p.c[1], b = p.c[2];
+                set_selection(p.from_id, p.s, p.e, QColor{r, g, b, SELECTION_ALPHA});
+                update_selections();
             }
 
             bool app_editor::visible() const
