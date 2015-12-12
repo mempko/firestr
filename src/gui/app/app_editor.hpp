@@ -113,6 +113,13 @@ namespace fire
                     lua::lua_api* _api;
             };
 
+            struct selection
+            {
+                int start = 0;
+                int end = 0;
+                QColor color;
+            };
+
             struct text_script;
             class app_editor : public generic_app
             {
@@ -149,7 +156,9 @@ namespace fire
                     void run_script();                                        
                     void send_script(bool send_data = true);
                     void send_script_to(const std::string& id);
+                    void send_all(const fire::message::message& m);
                     void ask_for_script();
+                    void cursor_changed();
                     void text_typed(QKeyEvent*);
                     void save_app();
                     void export_app();
@@ -160,6 +169,10 @@ namespace fire
                     void data_key_edited();
                     void key_was_clicked(QString);
                     void data_updated();
+                    void set_selection(const std::string& key, int start, int end, const QColor& color);
+                    void set_selection(const std::string& key, const QTextCursor& c, const QColor& color);
+                    void clear_selection(const std::string& key);
+                    void update_selections();
 
                 private:
                     void init();
@@ -168,6 +181,7 @@ namespace fire
                     void init_data_tab(QGridLayout*);
                     bool prepare_script_message(text_script& tm, bool send_data);
                     void init_data();
+                    void init_cursor_color();
                     bool set_app_name();
                     void update_app_code();
                     void update_status_to_errors();
@@ -180,15 +194,18 @@ namespace fire
                 signals:
                     void got_code(const fire::message::message&);
                     void got_init(const fire::message::message&);
+                    void got_cursor_pos(const fire::message::message&);
 
                 private slots:
                     void update_error(const std::string& e);
                     void got_adjust_size();
                     void emit_got_code(const fire::message::message&);
                     void emit_got_init(const fire::message::message&);
+                    void emit_got_cursor_pos(const fire::message::message&);
 
                     void received_code(const fire::message::message&);
                     void received_script_init(const fire::message::message&); 
+                    void received_cursor_pos(const fire::message::message&); 
 
                 private:
                     std::string _from_id;
@@ -222,10 +239,16 @@ namespace fire
                     util::bytes _data_bytes;
                     list* _data_items;
 
+                    //stores selections in editor
+                    std::map<std::string, selection> _selections;
+                    QColor _cursor_color;
+
+                    //app engine
                     qtw::qt_frontend_client_ptr _front;
                     lua::lua_api_ptr _api;
                     lua::backend_client_ptr _back;
 
+                    //state
                     app_ptr _app;
                     std::string _prev_code;
                     int _prev_pos = 0;
@@ -234,6 +257,7 @@ namespace fire
                     enum start_state { GET_CODE, DONE_START};
                     start_state _started;
                     bool _dirty = false;
+
             };
             extern const std::string APP_EDITOR;
 
