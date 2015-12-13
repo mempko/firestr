@@ -209,7 +209,7 @@ namespace fire
             namespace
             {
                 const std::string ERROR_SELECTION = "error";
-                const char SELECTION_ALPHA = 60;
+                const char SELECTION_ALPHA = 75;
                 const QColor ERROR_COLOR{255, 0, 0, SELECTION_ALPHA};
 
                 const size_t TIMER_UPDATE = 1000; //in milliseconds
