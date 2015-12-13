@@ -52,8 +52,10 @@ namespace fire
     {
         namespace
         {
+            const size_t SIGNATURE_SIZE = 512;
             const size_t RSA_SIZE = 4096;
             const std::string EME_SCHEME = "EME1(SHA-256)";
+            const std::string EMSA_SCHEME = "EMSA1(SHA-224)"; 
             const std::string KEY_AGREEMENT_ALGO = "KDF2(SHA-256)";
             const std::string CONVERSATION_PARAM = "firestr";
             const std::string CYPHER = "AES-256/CBC";
@@ -62,7 +64,7 @@ namespace fire
             std::mutex BOTAN_MUTEX;
             std::unique_ptr<b::AutoSeeded_RNG> RNG;
 
-            void init_rng()
+            inline void init_rng()
             {
                 if(RNG) return;
                 RNG.reset(new b::AutoSeeded_RNG);
@@ -248,11 +250,26 @@ namespace fire
             while(!bs.empty())
             {
                 auto r = d.decrypt(reinterpret_cast<const unsigned char*>(bs.data()), bs.size());
-                rs.insert(rs.end(), std::begin(r), std::end(r));
+                rs.insert(std::end(rs), std::begin(r), std::end(r));
 
                 s >> bs;
             }
             return rs;
+        }
+
+        u::bytes private_key::sign(const u::bytes& b) const
+        {
+            INVARIANT(_k);
+            u::mutex_scoped_lock l(BOTAN_MUTEX);
+
+            init_rng();
+            CHECK(RNG);
+
+            b::PK_Signer s{*_k, EMSA_SCHEME};
+            auto r = s.sign_message(reinterpret_cast<const unsigned char*>(b.data()), b.size(), *RNG); 
+
+            ENSURE_EQUAL(r.size(), SIGNATURE_SIZE);
+            return u::bytes {std::begin(r), std::end(r)};
         }
 
         u::bytes public_key::encrypt(const u::bytes& b) const
@@ -278,6 +295,23 @@ namespace fire
                 advance+=size;
             }
             return u::to_bytes(rs.str());
+        }
+
+        bool public_key::verify(const util::bytes& msg, const util::bytes& sig) const
+        {
+            INVARIANT(_k);
+            INVARIANT_FALSE(_ks.empty());
+            u::mutex_scoped_lock l(BOTAN_MUTEX);
+
+            b::PK_Verifier v{*_k, EMSA_SCHEME};
+            return v.verify_message(
+                    reinterpret_cast<const unsigned char*>(msg.data()), msg.size(),
+                    reinterpret_cast<const unsigned char*>(sig.data()), sig.size());
+        }
+
+        size_t public_key::signature_size() const
+        {
+            return SIGNATURE_SIZE;
         }
 
         dh_secret::dh_secret()

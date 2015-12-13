@@ -66,6 +66,7 @@ namespace fire
 
             public:
                 util::bytes decrypt(const util::bytes&) const;
+                util::bytes sign(const util::bytes&) const;
 
             private:
                 prv_key_ptr _k;
@@ -89,6 +90,8 @@ namespace fire
 
             public:
                 util::bytes encrypt(const util::bytes&) const;
+                bool verify(const util::bytes& msg, const util::bytes& sig) const;
+                size_t signature_size() const;
 
             private:
                 void set(const std::string& key);
