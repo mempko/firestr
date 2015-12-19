@@ -1001,7 +1001,7 @@ namespace fire
                 bf::path p = sf;
 
                 u::bytes bin;
-                if(!load_from_file(sf, bin)) return api::bin_file_data{};
+                if(!load_raw_from_file(sf, bin)) return api::bin_file_data{};
 
                 api::bin_file_data fd;
                 fd.name = p.filename().string();

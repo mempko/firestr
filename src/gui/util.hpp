@@ -48,8 +48,8 @@ namespace fire
         const unsigned short* convert16(const QString&);
         std::string app_id(const user::local_user& l);
         std::string get_file_name(QWidget* root);
-        bool load_from_file(const std::string& f, fire::util::bytes& data);
 
+        bool load_raw_from_file(const std::string& f, fire::util::bytes& data);
 
         //set color styles for icon buttons
         void make_green(QLabel&);
@@ -110,6 +110,9 @@ namespace fire
             public:
                 assert_dialog(const char* msg, QWidget* parent = nullptr);
         };
+
+        QByteArray get_resource_as_qbytearray(const std::string& path);
+        util::bytes get_resource_as_bytes(const std::string& path);
     }
 }
 

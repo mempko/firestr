@@ -77,6 +77,7 @@ namespace fire
             network::port_type port;
             user::local_user_ptr user;
             bool debug;
+            bool user_just_created;
         };
 
         class main_window : public QMainWindow
@@ -94,6 +95,8 @@ namespace fire
                 void show_contact_list();
                 void make_chat_app();
                 void make_app_editor();
+                void install_example_app(const std::string& resource_path);
+                void install_example_apps();
                 void install_app();
                 void remove_app();
                 void closeEvent(QCloseEvent*);

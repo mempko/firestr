@@ -37,12 +37,9 @@ include_directories(..)
 file(GLOB src *.cpp)
 file(GLOB headers *.hpp)
 file(GLOB forms *.ui)
-file(GLOB resources *.qrc)
 
 #qt specific
-QT5_WRAP_CPP(moc_headers ${headers})
-QT5_WRAP_UI(moc_forms ${forms})
-QT5_ADD_RESOURCES(moc_resources ${resources})
+qt5_add_resources(moc_resources ../gui/resources/examples.qrc)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 if(APPLE)
@@ -66,8 +63,6 @@ if(APPLE)
         firestr
         MACOSX_BUNDLE
         ${src}
-        ${moc_headers}
-        ${moc_forms}
         ${moc_resources})
 
     #set_target_properties(firestr PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/cmake/mac_bundle.plist.in)
@@ -80,19 +75,13 @@ elseif(CMAKE_HOST_WIN32)
     add_executable(
         firestr
         ${src}
-        ${moc_headers}
-        ${moc_forms}
         ${moc_resources})
 else()
     add_executable(
         firestr
         ${src}
-        ${moc_headers}
-        ${moc_forms}
         ${moc_resources})
 endif()
-
-qt5_use_modules(firestr Widgets Network Multimedia MultimediaWidgets)
 
 target_link_libraries(
     firestr
@@ -106,6 +95,10 @@ target_link_libraries(
     fire_security
     fire_util
     fire_slb
+    Qt5::Widgets
+    Qt5::Network
+    Qt5::Multimedia
+    Qt5::MultimediaWidgets
     ${Boost_LIBRARIES}
     ${MISC_LIBRARIES})
 

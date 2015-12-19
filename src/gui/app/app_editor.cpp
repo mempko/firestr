@@ -707,7 +707,7 @@ namespace fire
                 auto sf = get_file_name(this);
                 if(sf.empty()) return;
 
-                if(!load_from_file(sf, _data_bytes)) return;
+                if(!load_raw_from_file(sf, _data_bytes)) return;
 
                 _data_value->setText("<file>");
                 if(_data_key->text().isEmpty())

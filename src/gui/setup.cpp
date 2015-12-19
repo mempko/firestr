@@ -356,9 +356,11 @@ namespace fire
             return us::local_user_ptr{};
         }
 
-        us::local_user_ptr setup_user(const std::string& home)
+        setup_info setup_user(const std::string& home)
         {
-            return us::user_created(home) ? load_user(home) : make_new_user(home);
+            return us::user_created(home) ? 
+                std::make_pair(load_user(home), false) : 
+                std::make_pair(make_new_user(home), true);
         }
 
     }

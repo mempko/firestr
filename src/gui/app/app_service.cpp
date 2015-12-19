@@ -301,10 +301,7 @@ namespace fire
             app_ptr app_service::import_app(const std::string& file)
             {
                 auto m = import_app_as_message(file);
-                auto tmp_dir = setup_tmp_dir(m, _tmp_app_home);
-                auto a = std::make_shared<app>(_local_data, tmp_dir, m);
-                a->set_tmp();
-                return a;
+                return create_app(m);
             }
 
             void app_service::fire_apps_updated_event()

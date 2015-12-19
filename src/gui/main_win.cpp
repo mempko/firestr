@@ -61,6 +61,7 @@
 #include <QtWidgets>
 #include <QSignalMapper>
 #include <QDesktopServices>
+#include <QDir>
 
 namespace m = fire::message;
 namespace ms = fire::messages;
@@ -83,6 +84,7 @@ namespace fire
             const std::string WEB_URL = "http://firestr.com";
             const std::string DOC_URL = "http://fire.readthedocs.org/en/latest/";
             const std::string DOC_API_URL = "http://fire.readthedocs.org/en/latest/api/reference/";
+            const std::string EXAMPLE_APP_DIR = ":examples/";
 
             const QString NEW_CONVERSATION_NAME = "new"; 
             const int MAIN_X = 80;
@@ -538,9 +540,25 @@ namespace fire
         }
 
         void main_window::setup_defaults()
+        try
         {
             INVARIANT(_user_service);
+            INVARIANT(_app_service);
+
+            //if the user has been already created, skip defaults
+            //as they should have been created the first time.
+            if(!_context.user_just_created) return;
+
             add_default_greeter(*_user_service);
+            install_example_apps();
+        }
+        catch(std::exception& e)
+        {
+            LOG << "Error configuring defaults: " << e.what() << std::endl;
+        }
+        catch(...)
+        {
+            LOG << "Unexpected error configuring defaults." << std::endl;
         }
 
         void main_window::create_actions()
@@ -766,8 +784,43 @@ namespace fire
             s->add_app_editor(id);
         }
 
+        void main_window::install_example_app(const std::string& resource_path)
+        {
+            INVARIANT(_app_service);
+
+            auto bytes = gui::get_resource_as_bytes(resource_path);
+            auto decoded_bytes = u::decode<u::bytes>(bytes); //file is stored in mencoded bytes form
+            auto msg = a::import_app_as_message(decoded_bytes);
+            auto app = _app_service->create_app(msg);
+
+            if(!app) 
+            {
+                LOG << "error installing " << resource_path << std::endl;
+                return;
+            }
+
+            _app_service->save_app(*app);
+
+            LOG << "installed " << resource_path << std::endl;
+        }
+
+        void main_window::install_example_apps()
+        {
+            INVARIANT(_app_service);
+            auto example_dir = QDir{EXAMPLE_APP_DIR.c_str()}; 
+            auto examples = example_dir.entryList(); 
+            for(auto e = examples.constBegin(); e != examples.constEnd(); e++) 
+            { 
+                std::stringstream full_path;
+                full_path << EXAMPLE_APP_DIR << gui::convert(*e);
+
+                install_example_app(full_path.str());
+            }
+        }
+
         void main_window::install_app(const std::string& file)
         {
+            INVARIANT(_app_service);
             REQUIRE_FALSE(file.empty());
 
             auto app = _app_service->import_app(file);
@@ -1007,11 +1060,11 @@ namespace fire
         }
         catch(std::exception& e)
         {
-            LOG << "Error recieving message in `" << _mail->address() << "'. " << e.what() << std::endl;
+            LOG << "Error receiving message in `" << _mail->address() << "'. " << e.what() << std::endl;
         }
         catch(...)
         {
-            LOG << "Unexpected error recieving message in `" << _mail->address() << "'" << std::endl;
+            LOG << "Unexpected error receiving message in `" << _mail->address() << "'" << std::endl;
         }
 
         void main_window::tab_changed(int i)

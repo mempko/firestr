@@ -42,6 +42,8 @@
 #include <QInputDialog>
 #include <QFontDatabase>
 #include <QDialogButtonBox>
+#include <QFile>
+#include <QDataStream>
 
 #include <fstream>
 
@@ -83,7 +85,7 @@ namespace fire
             return sf;
         }
 
-        bool load_from_file(const std::string& f, u::bytes& data)
+        bool load_raw_from_file(const std::string& f, u::bytes& data)
         {
             std::ifstream fs(f.c_str(), std::fstream::in | std::fstream::binary);
             if(!fs) return false;
@@ -513,6 +515,20 @@ namespace fire
             layout->addWidget(l);
             layout->addWidget(m);
             layout->addWidget(b);
+        }
+
+        QByteArray get_resource_as_qbytearray(const std::string& path)
+        {
+            QFile r{path.c_str()};
+            if(!r.open(QFile::ReadOnly)) return QByteArray{};
+
+            return r.readAll();
+        }
+
+        u::bytes get_resource_as_bytes(const std::string& path)
+        {
+            auto bs = get_resource_as_qbytearray(path);
+            return u::bytes{std::begin(bs), std::end(bs)};
         }
     }
 }

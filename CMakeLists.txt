@@ -28,7 +28,7 @@
 # this exception statement from all source files in the program, then 
 # also delete it here.
 
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8.11)
 project(firestr)
 
 if(APPLE)
@@ -65,6 +65,8 @@ link_directories(${Boost_LIBRARY_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})
 
 #setup QT
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CMAKE_AUTOMOC ON)
 find_package(Qt5Core)
 find_package(Qt5Widgets)
 find_package(Qt5Network)
