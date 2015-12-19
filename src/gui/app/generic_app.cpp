@@ -102,10 +102,11 @@ namespace fire
             void generic_app::wacky_resize_hack()
             {
                 auto aw = _win->mdiArea()->activeSubWindow();
-                const bool was_maximized = _win->isMaximized();
+                if(_win->isMaximized()) return;
+
                 _win->showMinimized();
                 _win->updateGeometry();
-                was_maximized ? _win->showMaximized(): _win->showNormal();
+                _win->showNormal();
                 _win->updateGeometry();
                 _win->update();
                 _win->mdiArea()->setActiveSubWindow(aw);
