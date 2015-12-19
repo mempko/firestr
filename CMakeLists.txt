@@ -84,7 +84,7 @@ add_definitions(${Qt5Multimedia_DEFINITIONS})
 add_definitions(${Qt5MultimediaWidgets_DEFINITIONS})
 set(CMAKE_CXX_FLAGS "${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
 
-set(ICON ${PROJECT_SOURCE_DIR}/docs/img/firestr.svg)
+set(ICON ${PROJECT_SOURCE_DIR}/src/gui/resources/firestr.svg)
 set(DESKTOP ${PROJECT_SOURCE_DIR}/debian/firestr.desktop)
 if(APPLE)
     find_library(IOKIT NAMES IOKit)
