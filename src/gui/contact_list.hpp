@@ -50,6 +50,18 @@ namespace fire
 {
     namespace gui
     {
+
+        class user_label : public QLabel 
+        {
+            Q_OBJECT
+            public:
+                user_label(const std::string& s, QPushButton * action = nullptr, QWidget* parent = nullptr);
+
+                void mouseDoubleClickEvent(QMouseEvent *event);
+            private:
+                QPushButton* _action;
+        };
+
         class user_info : public QWidget
         {
             Q_OBJECT
@@ -76,7 +88,7 @@ namespace fire
                 user::user_info_ptr _contact;
                 user::user_service_ptr _service;
                 QPushButton* _action;
-                QLabel* _user_text;
+                user_label* _user_text;
                 QColor _text_color;
                 bool _removed = false;
         };
