@@ -38,8 +38,8 @@ namespace fire
 {
     namespace gui
     {
+        QPixmap login_logo();
         QIcon logo();
-        QPixmap logo_pixmap();
     }
 }
 
