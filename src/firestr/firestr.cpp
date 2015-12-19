@@ -131,7 +131,11 @@ try
 
     fg::setup_gui();
 
-    c.user = fg::setup_user(c.home);
+    auto setup = fg::setup_user(c.home);
+
+    c.user = setup.first;
+    c.user_just_created = setup.second;
+
     if(!c.user) return 0;
 
     fg::main_window w{c};

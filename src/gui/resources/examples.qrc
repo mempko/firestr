@@ -1,0 +1,10 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+    <file>examples/draw.fab</file>
+    <file>examples/pong.fab</file>
+    <file>examples/transfer.fab</file>
+    <file>examples/voicechat.fab</file>
+    <file>firestr.svg</file>
+    <file>entypo.ttf</file>
+</qresource>
+</RCC>

@@ -38,15 +38,11 @@ file(GLOB src *.cpp)
 file(GLOB headers *.hpp)
 
 #qt specific
-QT5_WRAP_CPP(moc_headers ${headers})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 add_executable(
     firelocator
-    ${src}
-    ${moc_headers})
-
-qt5_use_modules(firelocator Widgets Network Multimedia)
+    ${src})
 
 target_link_libraries(
     firelocator
@@ -57,6 +53,9 @@ target_link_libraries(
     fire_network
     fire_security
     fire_util
+    Qt5::Widgets
+    Qt5::Network
+    Qt5::Multimedia
     ${Boost_LIBRARIES}
     ${MISC_LIBRARIES})
 

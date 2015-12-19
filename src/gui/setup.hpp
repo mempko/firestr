@@ -100,8 +100,8 @@ namespace fire
                 QLineEdit* _pass = nullptr;
                 QPushButton* _login = nullptr;
         };
-
-        user::local_user_ptr setup_user(const std::string& home);
+        using setup_info = std::pair<user::local_user_ptr, bool>;
+        setup_info setup_user(const std::string& home);
     }
 }
 #endif

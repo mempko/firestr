@@ -109,6 +109,8 @@ namespace fire
             bool load_app_metadata(const std::string& dir, app_metadata&);
 
             void export_app_as_message(const std::string& file, const app&);
+
+            fire::message::message import_app_as_message(util::bytes compressed_app);
             fire::message::message import_app_as_message(const std::string& file);
         }
     }

@@ -37,7 +37,7 @@ namespace fire
 {
     namespace gui
     {
-        namespace 
+        namespace
         {
             static const char * const firestr250_xpm[] = {
                 "250 233 250 2",

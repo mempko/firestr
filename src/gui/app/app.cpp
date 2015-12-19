@@ -390,6 +390,11 @@ namespace fire
             {
                 u::bytes b;
                 u::load_from_file(file, b);
+                return import_app_as_message(b);
+            }
+
+            m::message import_app_as_message(u::bytes b)
+            {
                 b = u::uncompress(b);
                 m::message m;
                 u::decode(b, m);

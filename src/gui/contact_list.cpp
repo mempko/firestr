@@ -639,7 +639,6 @@ namespace fire
 
         void add_default_greeter(us::user_service& service)
         {
-            if(!service.user().greeters().empty()) return;
             service.add_greeter(DEFAULT_GREETER);
         }
 
