@@ -210,6 +210,8 @@ namespace fire
             {
                 const std::string ERROR_SELECTION = "error";
                 const char SELECTION_ALPHA = 75;
+                const char CURSOR_ALPHA = 100;
+                const char DARKER = 60;
                 const QColor ERROR_COLOR{255, 0, 0, SELECTION_ALPHA};
 
                 const size_t TIMER_UPDATE = 1000; //in milliseconds
@@ -1075,6 +1077,16 @@ namespace fire
                 return h;
             }
 
+            QColor create_cursor_color(QColor c)
+            {
+                c.setAlpha(CURSOR_ALPHA);
+                c.setRed(std::max(0, c.red() - DARKER));
+                c.setGreen(std::max(0, c.green() - DARKER));
+                c.setBlue(std::max(0, c.blue() - DARKER));
+
+                return c;
+            }
+
             void app_editor::update_selections()
             {
                 INVARIANT(_script);
@@ -1094,6 +1106,7 @@ namespace fire
                     {
                         selection cp = s;
                         cp.end += 1;
+                        cp.color = create_cursor_color(cp.color);
                         extras << make_extra_selection(cp, c);
                     }
                 }
