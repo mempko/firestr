@@ -47,8 +47,6 @@
 
 #include <fstream>
 
-#include "gui/data/entypo.dat"
-
 namespace u = fire::util;
 namespace a = fire::gui::app;
 
@@ -59,6 +57,7 @@ namespace fire
         namespace
         {
             bool GUI_SETUP_CALLED = false;
+            const std::string ENTYPO_PATH = ":/entypo.ttf";
         }
 
         std::string convert(const QString& q)
@@ -458,7 +457,7 @@ namespace fire
 
         void setup_entypo()
         {
-            auto entypo = QByteArray::fromRawData(reinterpret_cast<const char*>(data::entypo_ttf), data::entypo_ttf_len);
+            auto entypo = get_resource_as_qbytearray(ENTYPO_PATH);
             auto id = QFontDatabase::addApplicationFontFromData(entypo);
 
             for(auto l : QFontDatabase::applicationFontFamilies(id))
