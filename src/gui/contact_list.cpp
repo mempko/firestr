@@ -66,6 +66,20 @@ namespace fire
             const std::string BAD_IDENTITY = "Try to Copy/Paste Again";
         }
 
+        user_label::user_label(
+                const std::string& s, 
+                QPushButton * action, 
+                QWidget* parent) : QLabel{s.c_str(), parent} , _action{action}
+        {}
+
+        void user_label::mouseDoubleClickEvent(QMouseEvent *event)
+        {
+            if(!_action) return;
+            if(!_action->isVisible()) return;
+
+            _action->clicked();
+        }
+
         bool is_online(
                 us::user_info_ptr c, 
                 us::user_service_ptr s, 
@@ -178,7 +192,7 @@ namespace fire
 
             auto version = s->check_contact_version(p->id());
 
-            _user_text = new QLabel{p->name().c_str()};
+            _user_text = new user_label{p->name().c_str(), action};
             _user_text->setToolTip(
                     user_tooltip(p, determine_state(_removed, s, p), version).c_str());
             _text_color = QColor{0, 0, 0, 0};
