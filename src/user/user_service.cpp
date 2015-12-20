@@ -903,7 +903,7 @@ namespace fire
 
             auto& cd = _contacts[c->id()];
 
-            cd.idle = false;
+            cd.idle = true;
             cd.contact = c;
             cd.last_ping = 0;
             cd.state = contact_data::CONNECTING;
@@ -924,7 +924,7 @@ namespace fire
             CHECK(cd.state == contact_data::CONNECTING);
 
             cd.contact = c;
-            cd.idle = false;
+            cd.idle = true;
             cd.last_ping = 0;
             cd.state = contact_data::CONNECTED;
             LOG << c->name() << " connected" << std::endl;
