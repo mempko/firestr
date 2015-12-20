@@ -1,3 +1,11 @@
+firestr (0.11) wily; urgency=medium
+
+  * Better App Editor with cursor visualization.
+  * Packaged with default example Apps.
+  * Various UI improvements.
+
+ -- Maxim Khailo <mempko@gmail.com>  Sun, 20 Dec 2015 00:17:43 -0600
+
 firestr (0.10) vivid; urgency=medium
 
   * TCP connection race condition fix
