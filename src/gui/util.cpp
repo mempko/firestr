@@ -99,6 +99,43 @@ namespace fire
             return true;
         }
 
+#ifdef _WIN64
+        void make_green(QPushButton& b)
+        {
+            b.setStyleSheet("QPushButton:enabled:!hover{border: 0px; color: 'green'; text-align: bottom;} QPushButton:enabled:hover{border: 0px; color: 'limegreen'; text-align: bottom;} QPushButton:!enabled{border: 0px; color: 'grey'; text-align: bottom;}");
+        }
+
+        void make_green(QLabel& b)
+        {
+            b.setStyleSheet("QLabel:enabled {border: 0px; color: 'green'; text-align: bottom;} QLabel:!enabled{border: 0px; color: 'grey'; text-align: bottom;}");
+        }
+
+        void make_red(QPushButton& b)
+        {
+            b.setStyleSheet("QPushButton:enabled:!hover{border: 0px; color: 'darkred'; text-align: bottom;} QPushButton:enabled:hover{border: 0px; color: 'red'; text-align: bottom;} QPushButton:!enabled{border: 0px; color: 'grey'; text-align: bottom;}");
+        }
+
+        void make_red(QLabel& b)
+        {
+            b.setStyleSheet("QLabel:enabled {border: 0px; color: 'red'; text-align: bottom;} QLabel:!enabled {border: 0px; color: 'grey'; text-align: bottom;}");
+        }
+
+        void make_grey(QPushButton& b)
+        {
+            b.setStyleSheet("QPushButton:enabled:!hover{border: 0px; color: 'grey'; text-align: bottom;} QPushButton:enabled:hover{border: 0px; color: 'darkgrey'; text-align: bottom;}");
+        }
+
+        void make_black(QPushButton& b)
+        {
+            b.setStyleSheet("QPushButton:enabled:!hover{border: 0px; color: 'black'; text-align: bottom;} QPushButton:enabled:hover{border: 0px; color: 'darkslategrey'; text-align: bottom;} QPushButton:!enabled{border: 0px; color: 'grey'; text-align: bottom;}");
+        }
+
+        void make_black(QLabel& b)
+        {
+            b.setStyleSheet("QPushButton:enabled {border: 0px; color: 'black'; text-align: bottom;} QPushButton:!enabled {border: 0px; color: 'grey'; text-align: bottom;}");
+        }
+#else
+
         void make_green(QPushButton& b)
         {
             b.setStyleSheet("QPushButton:enabled:!hover{border: 0px; color: 'green';} QPushButton:enabled:hover{border: 0px; color: 'limegreen'} QPushButton:!enabled{border: 0px; color: 'grey'}");
@@ -133,6 +170,7 @@ namespace fire
         {
             b.setStyleSheet("QPushButton:enabled {border: 0px; color: 'black';} QPushButton:!enabled {border: 0px; color: 'grey'}");
         }
+#endif
 
         QFont font(int size)
         {
@@ -141,13 +179,10 @@ namespace fire
             return f;
         }
 
+        //In the future, we may want to adjust button size as some multiple of points.
         int button_size_from_point(int points)
         {
-#ifdef _WIN64
-            return points + 2;
-#else
             return points;
-#endif
         }
 
         void make_small(QWidget& b)
