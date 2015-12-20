@@ -889,6 +889,8 @@ namespace fire
                 INVARIANT(back);
                 microphone_ptr m{new microphone{back, this, id, codec}};
                 mics[id] = m;
+
+                emit mic_added();
             }
 
             void qt_frontend::mic_start(api::ref_id id)
@@ -905,6 +907,21 @@ namespace fire
                 if(m == mics.end()) return;
 
                 m->second->stop();
+            }
+
+            void qt_frontend::mic_disable()
+            {
+                _mic_enabled = false;
+            }
+
+            void qt_frontend::mic_enable()
+            {
+                _mic_enabled = true;
+            }
+
+            bool qt_frontend::mic_enabled() const
+            {
+                return _mic_enabled;
             }
 
             void qt_frontend::add_speaker(api::ref_id id, const std::string& codec)
@@ -967,7 +984,7 @@ namespace fire
                 while(!bd.empty())
                 {
                     if(mic->codec() == codec_type::opus) bd = mic->encode(bd);
-                    if(rec && !bd.empty()) back->got_sound(id, bd);
+                    if(_mic_enabled && rec && !bd.empty()) back->got_sound(id, bd);
                     bd = mic->read_data();
                 }
             }

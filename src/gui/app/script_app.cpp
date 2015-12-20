@@ -143,6 +143,25 @@ namespace fire
 
                 set_title(_app->name().c_str());
 
+                //setup error widget
+                _err = new QLabel;
+                _err->setVisible(false);
+                _err->setToolTip(tr("The App Encountered an Error"));
+                make_error(*_err);
+                layout()->addWidget(_err, 0,0);
+
+                //setup mic
+                _mic = new QPushButton;
+                make_mic(*_mic);
+                _mic->setVisible(false);
+                connect(_mic, SIGNAL(clicked()), this, SLOT(toggle_mic()));
+                layout()->addWidget(_mic, 0,1);
+
+                CHECK_FALSE(_resource.mic);
+                update_mic_widget();
+
+
+                //setup clone
                 _clone = new QPushButton;
                 make_install(*_clone);
 
@@ -163,6 +182,33 @@ namespace fire
                 layout()->addWidget(_clone, 0,2);
 
                 ENSURE(_clone);
+                ENSURE(_mic);
+            }
+
+            void script_app::update_mic_widget()
+            {
+                INVARIANT(_mic);
+                if(_resource.mic)
+                {
+                    make_green(*_mic);
+                    _mic->setToolTip(tr("disable microphone"));
+                }
+                else
+                {
+                    make_red(*_mic);
+                    _mic->setToolTip(tr("enable microphone"));
+                }
+            }
+
+            void script_app::toggle_mic()
+            {
+                INVARIANT(_front);
+
+                _resource.mic = !_resource.mic;
+                update_mic_widget();
+
+                if(_resource.mic) _front->mic_enable();
+                else _front->mic_disable();
             }
 
             void script_app::init()
@@ -199,8 +245,10 @@ namespace fire
                 auto front = std::make_shared<qtw::qt_frontend>(_canvas, _canvas_layout, nullptr);
                 connect(front.get(), SIGNAL(alerted()), this, SLOT(got_alert()));
                 connect(front.get(), SIGNAL(do_adjust_size()), this, SLOT(got_adjust_size()));
+                connect(front.get(), SIGNAL(mic_added()), this, SLOT(got_mic_added()));
 
                 _front = std::make_shared<qtw::qt_frontend_client>(front);
+                connect(_front.get(), SIGNAL(got_report_error(const std::string&)), this, SLOT(got_error(const std::string&)));
 
                 //setup api and backend
                 _api = std::make_shared<l::lua_api>(
@@ -271,6 +319,17 @@ namespace fire
                 adjust_size();
             }
 
+            void script_app::got_mic_added()
+            {
+                INVARIANT(_mic);
+                _mic->setVisible(true);
+            }
+
+            void script_app::got_error(const std::string&)
+            {
+                INVARIANT(_err);
+                _err->setVisible(true);
+            }
         }
     }
 }

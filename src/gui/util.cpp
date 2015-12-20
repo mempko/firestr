@@ -215,6 +215,15 @@ namespace fire
             b.setText("\xee\x9d\xb8"); //\uE778
         }
 
+        void make_mic(QPushButton& b)
+        {
+            REQUIRE(GUI_SETUP_CALLED);
+
+            make_small(b);
+            make_red(b);
+            b.setText("\xf0\x9f\x8e\xa4"); //\u1F3A4
+        }
+
         void make_reply(QPushButton& b)
         {
             REQUIRE(GUI_SETUP_CALLED);

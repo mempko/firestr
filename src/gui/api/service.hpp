@@ -145,6 +145,9 @@ namespace fire
                 virtual void add_mic(ref_id, const std::string& codec) = 0;
                 virtual void mic_start(ref_id) = 0;
                 virtual void mic_stop(ref_id) = 0;
+                virtual void mic_disable() = 0;
+                virtual void mic_enable() = 0;
+                virtual bool mic_enabled() const = 0;
 
                 //speaker
                 virtual void add_speaker(ref_id, const std::string& codec) = 0;

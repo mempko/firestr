@@ -61,6 +61,11 @@ namespace fire
     {
         namespace app
         {
+            struct hardware_resource_access
+            {
+                bool mic = false;
+            };
+
             class script_app : public generic_app
             {
                 Q_OBJECT
@@ -95,10 +100,14 @@ namespace fire
                     void clone_app();
                     void got_alert();
                     void got_adjust_size();
+                    void got_mic_added();
+                    void toggle_mic();
+                    void got_error(const std::string&);
 
                 private:
                     void init();
                     void setup_decorations();
+                    void update_mic_widget();
 
                 private:
                     std::string _from_id;
@@ -119,6 +128,9 @@ namespace fire
                     QWidget* _canvas = nullptr;
                     QGridLayout* _canvas_layout = nullptr;
                     QPushButton* _clone = nullptr;
+                    QPushButton* _mic = nullptr;
+                    QLabel* _err = nullptr;
+                    hardware_resource_access _resource;
             };
 
             extern const std::string SCRIPT_APP;
