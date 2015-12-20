@@ -190,6 +190,7 @@ namespace fire
                     void update_status_to_waiting();
                     void update_status_to_running();
                     void update_save_button();
+                    void update_mic_widget();
 
                 signals:
                     void got_code(const fire::message::message&);
@@ -199,6 +200,7 @@ namespace fire
                 private slots:
                     void update_error(const std::string& e);
                     void got_adjust_size();
+                    void got_mic_added();
                     void emit_got_code(const fire::message::message&);
                     void emit_got_init(const fire::message::message&);
                     void emit_got_cursor_pos(const fire::message::message&);
@@ -206,6 +208,7 @@ namespace fire
                     void received_code(const fire::message::message&);
                     void received_script_init(const fire::message::message&); 
                     void received_cursor_pos(const fire::message::message&); 
+                    void toggle_mic();
 
                 private:
                     std::string _from_id;
@@ -236,6 +239,7 @@ namespace fire
                     QLineEdit* _data_value;
                     QPushButton* _add_button;
                     QPushButton* _save_button;
+                    QPushButton* _mic;
                     util::bytes _data_bytes;
                     list* _data_items;
 
@@ -257,6 +261,7 @@ namespace fire
                     enum start_state { GET_CODE, DONE_START};
                     start_state _started;
                     bool _dirty = false;
+                    api::hardware_resource_access _resource;
 
             };
             extern const std::string APP_EDITOR;

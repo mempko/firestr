@@ -41,6 +41,11 @@ namespace fire
     {
         namespace api 
         {
+            struct hardware_resource_access
+            {
+                bool mic = false;
+            };
+
             using ref_id = std::size_t;
 
             template<class T>

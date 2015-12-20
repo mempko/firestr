@@ -69,6 +69,7 @@ namespace fire
         void make_maximize(QPushButton&);
         void make_install(QPushButton&);
         void make_mic(QPushButton&);
+        void make_big_mic(QPushButton& b);
         void make_reply(QPushButton&);
         void make_save(QPushButton&);
         void make_export(QPushButton&);
