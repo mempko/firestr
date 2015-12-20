@@ -153,6 +153,8 @@ namespace fire
                 F_CON(add_mic(api::ref_id, const std::string&));
                 F_CON(mic_start(api::ref_id));
                 F_CON(mic_stop(api::ref_id));
+                F_CON(mic_enable());
+                F_CON(mic_disable());
 
                 //speaker
                 F_CON(add_speaker(api::ref_id, const std::string&));
@@ -634,7 +636,6 @@ namespace fire
                 return get_until(f, 0);
             }
 
-
             //mic
             void qt_frontend_client::add_mic(api::ref_id id, const std::string& codec)
             {
@@ -654,6 +655,23 @@ namespace fire
                 emit got_mic_stop(id);
             }
 
+            void qt_frontend_client::mic_disable()
+            {
+                if(_done) return;
+                emit got_mic_disable();
+            }
+
+            void qt_frontend_client::mic_enable()
+            {
+                if(_done) return;
+                emit got_mic_enable();
+            }
+
+            bool qt_frontend_client::mic_enabled() const
+            {
+                INVARIANT(_f);
+                return _f->mic_enabled();
+            }
 
             //speaker
             void qt_frontend_client::add_speaker(api::ref_id id, const std::string& codec)
@@ -1219,6 +1237,19 @@ namespace fire
                 INVARIANT(_f);
                 if(_done) return;
                 _f->mic_stop(id);
+            }
+
+            void qt_frontend_client::do_mic_enable()
+            {
+                INVARIANT(_f);
+                if(_done) return;
+                _f->mic_enable();
+            }
+
+            void qt_frontend_client::do_mic_disable()
+            {
+                INVARIANT(_f);
+                _f->mic_disable();
             }
 
 

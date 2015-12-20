@@ -160,6 +160,9 @@ namespace fire
                     virtual void add_mic(api::ref_id id, const std::string& codec);
                     virtual void mic_start(api::ref_id);
                     virtual void mic_stop(api::ref_id);
+                    virtual void mic_disable();
+                    virtual void mic_enable();
+                    virtual bool mic_enabled() const;
 
                     //speaker
                     virtual void add_speaker(api::ref_id, const std::string& codec);
@@ -279,6 +282,8 @@ namespace fire
                     void got_add_mic(api::ref_id id, const std::string& codec);
                     void got_mic_start(api::ref_id);
                     void got_mic_stop(api::ref_id);
+                    void got_mic_enable();
+                    void got_mic_disable();
 
                     //speaker
                     void got_add_speaker(api::ref_id, const std::string& codec);
@@ -397,6 +402,8 @@ namespace fire
                     void do_add_mic(api::ref_id id, const std::string& codec);
                     void do_mic_start(api::ref_id);
                     void do_mic_stop(api::ref_id);
+                    void do_mic_enable();
+                    void do_mic_disable();
 
                     //speaker
                     void do_add_speaker(api::ref_id, const std::string& codec);

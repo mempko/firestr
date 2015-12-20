@@ -102,6 +102,7 @@ namespace fire
                 signals:
                     void alerted();
                     void do_adjust_size();
+                    void mic_added();
 
                 public:
                     //all widgets
@@ -193,6 +194,9 @@ namespace fire
                     virtual void add_mic(api::ref_id id, const std::string& codec);
                     virtual void mic_start(api::ref_id);
                     virtual void mic_stop(api::ref_id);
+                    virtual void mic_disable();
+                    virtual void mic_enable();
+                    virtual bool mic_enabled() const;
 
                     //speaker
                     virtual void add_speaker(api::ref_id, const std::string& codec);
@@ -256,6 +260,7 @@ namespace fire
                     QWidget* canvas = nullptr;
                     QGridLayout* layout = nullptr;
                     api::backend* back = nullptr;
+                    bool _mic_enabled = false;
             };
 
             using qt_frontend_ptr = std::shared_ptr<qt_frontend>;
