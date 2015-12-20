@@ -68,14 +68,20 @@ namespace fire
 
         user_label::user_label(
                 const std::string& s, 
+                bool enable_double_click,
                 QPushButton * action, 
-                QWidget* parent) : QLabel{s.c_str(), parent} , _action{action}
+                QWidget* parent) : 
+            QLabel{s.c_str(), parent} , 
+            _enable_double_click{enable_double_click},
+            _action{action}
         {}
 
         void user_label::mouseDoubleClickEvent(QMouseEvent *event)
         {
+            if(!_enable_double_click) return;
             if(!_action) return;
             if(!_action->isVisible()) return;
+            if(!_action->isEnabled()) return;
 
             _action->clicked();
         }
@@ -179,7 +185,8 @@ namespace fire
         user_info::user_info(
                 us::user_info_ptr p, 
                 us::user_service_ptr s,
-                QPushButton* action) :
+                QPushButton* action,
+                bool enable_double_click) :
             _contact{p},
             _service{s},
             _action{action}
@@ -192,7 +199,7 @@ namespace fire
 
             auto version = s->check_contact_version(p->id());
 
-            _user_text = new user_label{p->name().c_str(), action};
+            _user_text = new user_label{p->name().c_str(), enable_double_click, action};
             _user_text->setToolTip(
                     user_tooltip(p, determine_state(_removed, s, p), version).c_str());
             _text_color = QColor{0, 0, 0, 0};
@@ -408,7 +415,7 @@ namespace fire
                 connect(rm, SIGNAL(clicked()), mapper, SLOT(map()));
                 connect(mapper, SIGNAL(mapped(QString)), this, SLOT(remove(QString)));
 
-                auto ui = new user_info{u, _service, rm};
+                auto ui = new user_info{u, _service, rm, false};
                 _list->add(ui);
                 _ui.push_back(ui);
             }
