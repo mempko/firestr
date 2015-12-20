@@ -55,10 +55,15 @@ namespace fire
         {
             Q_OBJECT
             public:
-                user_label(const std::string& s, QPushButton * action = nullptr, QWidget* parent = nullptr);
+                user_label(
+                        const std::string& s, 
+                        bool enable_double_click = false,
+                        QPushButton * action = nullptr, 
+                        QWidget* parent = nullptr);
 
                 void mouseDoubleClickEvent(QMouseEvent *event);
             private:
+                bool _enable_double_click = false;
                 QPushButton* _action;
         };
 
@@ -70,7 +75,8 @@ namespace fire
                 user_info(
                         user::user_info_ptr, 
                         user::user_service_ptr,
-                        QPushButton* action = nullptr);
+                        QPushButton* action = nullptr,
+                        bool enable_double_click = false);
             public:
 
                 void set_text_color_to(const QColor&);

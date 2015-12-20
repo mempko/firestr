@@ -383,7 +383,7 @@ namespace fire
                     connect(con, SIGNAL(clicked()), mapper, SLOT(map()));
                     connect(mapper, SIGNAL(mapped(QString)), this, SLOT(create_conversation(QString)));
 
-                    return new user_info{u, _user_service, con};
+                    return new user_info{u, _user_service, con, true};
                 }
             };
 
@@ -1291,7 +1291,6 @@ namespace fire
             //create the conversations widget
             sw->name(name.c_str());
             auto tab_index = _conversations->addTab(sw, name.c_str());
-
             //switch to new tab if initiated by user
             if(s->initiated_by_user()) 
                 _conversations->setCurrentIndex(tab_index);
