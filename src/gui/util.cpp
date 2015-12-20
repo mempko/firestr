@@ -134,32 +134,56 @@ namespace fire
             b.setStyleSheet("QPushButton:enabled {border: 0px; color: 'black';} QPushButton:!enabled {border: 0px; color: 'grey'}");
         }
 
+        QFont font(int size)
+        {
+            QFont f{"Entypo"};
+            f.setPointSize(size);
+            return f;
+        }
+
+        int button_size_from_point(int points)
+        {
+#ifdef _WIN64
+            return points + 2;
+#else
+            return points;
+#endif
+        }
+
         void make_small(QWidget& b)
         {
-            b.setFont(QFont{"Entypo", 26});
-            b.setMaximumSize(24,24);
-            b.setMinimumSize(24,24);
+            const int size = 26;
+            const int bsize = button_size_from_point(size);
+            b.setFont(font(size));
+            b.setMaximumSize(bsize,bsize);
+            b.setMinimumSize(bsize,bsize);
         }
 
         void make_big(QWidget& b)
         {
-            b.setFont(QFont{"Entypo", 40});
-            b.setMaximumSize(40,40);
-            b.setMinimumSize(40,40);
+            const int size = 40;
+            const int bsize = button_size_from_point(size);
+            b.setFont(font(size));
+            b.setMaximumSize(bsize,bsize);
+            b.setMinimumSize(bsize,bsize);
         }
 
         void make_big_centered(QWidget& b)
         {
-            b.setFont(QFont{"Entypo", 40});
-            b.setMaximumHeight(40);
-            b.setMinimumHeight(40);
+            const int size = 40;
+            const int bsize = button_size_from_point(size);
+            b.setFont(font(size));
+            b.setMaximumHeight(bsize);
+            b.setMinimumHeight(bsize);
         }
 
         void make_bigger_centered(QWidget& b)
         {
-            b.setFont(QFont{"Entypo", 80});
-            b.setMaximumHeight(80);
-            b.setMinimumHeight(80);
+            const int size = 80;
+            const int bsize = button_size_from_point(size);
+            b.setFont(font(size));
+            b.setMaximumHeight(bsize);
+            b.setMinimumHeight(bsize);
         }
 
         void make_x(QPushButton& b)
