@@ -61,11 +61,6 @@ namespace fire
     {
         namespace app
         {
-            struct hardware_resource_access
-            {
-                bool mic = false;
-            };
-
             class script_app : public generic_app
             {
                 Q_OBJECT
@@ -130,7 +125,7 @@ namespace fire
                     QPushButton* _clone = nullptr;
                     QPushButton* _mic = nullptr;
                     QLabel* _err = nullptr;
-                    hardware_resource_access _resource;
+                    api::hardware_resource_access _resource;
             };
 
             extern const std::string SCRIPT_APP;

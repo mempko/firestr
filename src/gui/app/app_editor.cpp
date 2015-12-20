@@ -475,6 +475,16 @@ namespace fire
                 expt->setToolTip(tr("Export to File"));
                 connect(expt, SIGNAL(clicked()), this, SLOT(export_app()));
 
+                //mic button
+                _mic = new QPushButton;
+                make_big_mic(*_mic);
+                _mic->setVisible(false);
+                connect(_mic, SIGNAL(clicked()), this, SLOT(toggle_mic()));
+                l->addWidget(_mic, 0,1);
+
+                CHECK_FALSE(_resource.mic);
+                update_mic_widget();
+
                 //add application canvas and print area
                 _canvas = new QWidget;
                 _canvas_layout = new QGridLayout;
@@ -484,9 +494,11 @@ namespace fire
 
                 auto front = std::make_shared<qtw::qt_frontend>(_canvas, _canvas_layout, _output);
                 connect(front.get(), SIGNAL(do_adjust_size()), this, SLOT(got_adjust_size()));
+                connect(front.get(), SIGNAL(mic_added()), this, SLOT(got_mic_added()));
 
                 _front = std::make_shared<qtw::qt_frontend_client>(front);
                 connect(_front.get(), SIGNAL(got_report_error(const std::string&)), this, SLOT(update_error(const std::string&)));
+
                 _api = std::make_shared<l::lua_api>(
                         _app, 
                         _sender, 
@@ -1148,6 +1160,12 @@ namespace fire
                 adjust_size();
             }
 
+            void app_editor::got_mic_added()
+            {
+                INVARIANT(_mic);
+                _mic->setVisible(true);
+            }
+
             bool app_editor::set_app_name()
             {
                 INVARIANT(_app);
@@ -1440,6 +1458,32 @@ namespace fire
                 INVARIANT(_code_tab);
                 INVARIANT(_data_tab);
                 return !_code_tab->visibleRegion().isEmpty() || !_data_tab->visibleRegion().isEmpty();
+            }
+
+            void app_editor::update_mic_widget()
+            {
+                INVARIANT(_mic);
+                if(_resource.mic)
+                {
+                    make_green(*_mic);
+                    _mic->setToolTip(tr("disable microphone"));
+                }
+                else
+                {
+                    make_red(*_mic);
+                    _mic->setToolTip(tr("enable microphone"));
+                }
+            }
+
+            void app_editor::toggle_mic()
+            {
+                INVARIANT(_front);
+
+                _resource.mic = !_resource.mic;
+                update_mic_widget();
+
+                if(_resource.mic) _front->mic_enable();
+                else _front->mic_disable();
             }
 
 
