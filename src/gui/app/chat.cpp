@@ -186,6 +186,9 @@ namespace fire
                 join();
                 adjust_size();
 
+                //Let user know this widget is a chat.
+                add_text(make_message_str("red", "notice", "Chat Started"));
+
                 INVARIANT(_conversation);
                 INVARIANT(_mail);
                 INVARIANT(_sender);

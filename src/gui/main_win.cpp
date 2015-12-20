@@ -1274,6 +1274,14 @@ namespace fire
 
             auto sw = new conversation_widget{_conversation_service, s, _app_service, _app_reaper};
 
+            //if the conversation was initiated by the user
+            //Then add a chat app and sync the conversation
+            if(s->initiated_by_user()) 
+            {
+                sw->add_chat_app();
+                _conversation_service->sync_existing_conversation(s);
+            }
+
             std::string name = convert(NEW_CONVERSATION_NAME);
 
             //make default name to be first person in contact list
