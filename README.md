@@ -69,7 +69,9 @@ Install vagrant on your machine. Open a terminal and run:
     $ vagrant ssh
     $ startxfce4&
 
-Open terminal in VM and run:
+If asked, password is 'vagrant'.
+
+Open terminal in the VM and run:
 
     $ cd /vagrant
     $ mkdir build
@@ -77,11 +79,12 @@ Open terminal in VM and run:
     $ cmake ..
     $ make -j2
 
-You can then run two test instances
+You can then run two test instances:
 
     $ cd src/firestr/
-    $ ./firestr --home test1 --port 6060&
-    $ ./firestr --home test2 --port 7070&
+    $ ./firestr --home test1 &
+    $ ./firestr --home test2 &
+
 
 License GPLv3
 ===================================================================
