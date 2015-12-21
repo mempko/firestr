@@ -10,6 +10,6 @@ Vcs-Browser: http://github.com/mempko/firestr
 
 Package: firestr
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, libqt5multimedia5-plugins, libqt5multimediawidgets5
 Description: A simple platform for p2p communication and computation
  A simple platform for p2p communication and computation. Create and distribute p2p apps in a chat like user interface.
