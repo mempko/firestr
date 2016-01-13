@@ -113,6 +113,13 @@ namespace fire
                 assert_dialog(const char* msg, QWidget* parent = nullptr);
         };
 
+        class unexpected_error_dialog : public QDialog
+        {
+            Q_OBJECT
+            public:
+                unexpected_error_dialog(const char* msg, QWidget* parent = nullptr);
+        };
+
         QByteArray get_resource_as_qbytearray(const std::string& path);
         util::bytes get_resource_as_bytes(const std::string& path);
     }
