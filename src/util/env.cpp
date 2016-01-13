@@ -42,6 +42,7 @@
 #include <QProcess>
 #include <QString>
 #include <QStringList>
+#include <CoreServices/CoreServices.h>
 #endif
 
 namespace bf = boost::filesystem;
@@ -67,11 +68,16 @@ namespace fire
             const char* app_data = std::getenv("APPDATA");
             bf::path root = app_data != nullptr ? app_data : "./";
 #elif __APPLE__
-            //~/Library/Application Support/
-            const char* home = std::getenv("HOME");
-            bf::path root = home != nullptr ? home : "./";
-            root /= "Library"; 
-            root /= "Application Support";
+            const size_t MAX_SIZE = 1024;
+            //something like ~/Library/Application Support/
+            FSRef ref;
+            OSType type = kApplicationSupportFolderType;
+            char found_path[MAX_SIZE];
+
+            FSFindFolder( kUserDomain, type, kCreateFolder, &ref );
+            FSRefMakePath( &ref, (UInt8*)&found_path, MAX_SIZE );
+
+            bf::path root = found_path;
 #else
             //~/.config/firestr
             const char* home = std::getenv("HOME");
