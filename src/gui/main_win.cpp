@@ -1455,7 +1455,7 @@ namespace fire
         {
             INVARIANT(_user_service);
             auto is = _user_service->introductions();
-            if(i.index < 0 || i.index >= is.size()) return;
+            if(i.index >= is.size()) return;
 
             auto in = is[i.index];
             auto from = _user_service->by_id(in.from_id);
