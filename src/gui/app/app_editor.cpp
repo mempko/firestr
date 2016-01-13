@@ -1197,6 +1197,7 @@ namespace fire
             }
 
             void app_editor::save_app() 
+            try
             {
                 INVARIANT(_conversation);
                 INVARIANT(_app_service);
@@ -1209,8 +1210,21 @@ namespace fire
                 _dirty = false;
                 update_save_button();
             }
+            catch(std::runtime_error e)
+            {
+                std::stringstream ss;
+                ss << "There was an error saving the app. " << e.what();
+                QMessageBox::critical(this, tr("Error Saving App"), ss.str().c_str());
+            }
+            catch(...)
+            {
+                std::stringstream ss;
+                ss << "There was an unexpected error saving the app.";
+                QMessageBox::critical(this, tr("Error Saving App"), ss.str().c_str());
+            }
 
             void app_editor::export_app() 
+            try
             {
                 INVARIANT(_conversation);
                 INVARIANT(_app_service);
@@ -1228,6 +1242,18 @@ namespace fire
                     return;
 
                 _app_service->export_app(*_app, gui::convert(file));
+            }
+            catch(std::runtime_error e)
+            {
+                std::stringstream ss;
+                ss << "There was an error exporting the app. " << e.what();
+                QMessageBox::critical(this, tr("Error Exporting App"), ss.str().c_str());
+            }
+            catch(...)
+            {
+                std::stringstream ss;
+                ss << "There was an unexpected error exporting the app.";
+                QMessageBox::critical(this, tr("Error Exporting App"), ss.str().c_str());
             }
 
             void app_editor::update_status_to_errors()
