@@ -40,8 +40,8 @@ namespace fire
         namespace
         {
 #ifdef __APPLE__
-            const int LOGIN_LOGO_WIDTH = 400;
-            const int LOGIN_LOGO_HEIGHT = 400;
+            const int LOGIN_LOGO_WIDTH = 300;
+            const int LOGIN_LOGO_HEIGHT = 300;
 #else
             const int LOGIN_LOGO_WIDTH = 200;
             const int LOGIN_LOGO_HEIGHT = 200;
