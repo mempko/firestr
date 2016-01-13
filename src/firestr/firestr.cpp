@@ -104,6 +104,36 @@ fn::port_type get_port(const std::string& home, fn::port_type cmd_port)
     return cached_port != 0 ? cached_port : randomize_port(cmd_port);
 }
 
+class firestr_app : public QApplication 
+{
+    public:
+        firestr_app(int& argc, char ** argv) : QApplication{argc, argv} {}
+
+        virtual ~firestr_app() {}
+        virtual bool notify(QObject * receiver, QEvent* event) 
+        try
+        {
+            return QApplication::notify(receiver, event);
+        }
+        catch(std::exception& e)
+        {
+            std::stringstream ss;
+            ss << "There was an unexpected error : " << e.what() << std::endl;
+            auto s = ss.str();
+            LOG << s;
+            fg::unexpected_error_dialog{s.c_str()}.exec();
+            return false;
+        }
+        catch(...)
+        {
+            std::stringstream ss;
+            ss << "There was an unexpected unknown error." << std::endl;
+            auto s = ss.str();
+            LOG << s;
+            fg::unexpected_error_dialog{s.c_str()}.exec();
+            return false;
+        }
+};
 
 int main(int argc, char *argv[])
 try
@@ -119,7 +149,7 @@ try
     fu::setup_env();
     fu::set_assert_dialog_callback(assert_dialog);
 
-    QApplication a{argc, argv};
+    firestr_app a{argc, argv};
 
     fg::main_window_context c;
     c.home = vm["home"].as<std::string>();
