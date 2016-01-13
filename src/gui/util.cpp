@@ -593,6 +593,27 @@ namespace fire
             layout->addWidget(b);
         }
 
+        unexpected_error_dialog::unexpected_error_dialog(const char* msg, QWidget* parent) : QDialog{parent}
+        {
+            auto layout = new QVBoxLayout{this};
+            setLayout(layout);
+
+            auto l = new QLabel{tr(
+                    "<h1>An <font color='red'>unexpected</font> occurred!</h1><br/>"
+                    "Help make Fire★ better!<br><br>"
+                    "Copy and Paste the text below and report this problem to<br><a href='mailto:firestr@librelist.com'>firestr@librelist.com</a><br> or <br><a href='https://github.com/mempko/firestr/issues'>https://github.com/mempko/firestr/issues</a>")};
+            auto m = new QTextEdit;
+            m->setPlainText(msg);
+            m->setReadOnly(true); 
+
+            auto b = new QDialogButtonBox(QDialogButtonBox::Ok);
+            connect(b, SIGNAL(accepted()), this, SLOT(accept()));
+
+            layout->addWidget(l);
+            layout->addWidget(m);
+            layout->addWidget(b);
+        }
+
         QByteArray get_resource_as_qbytearray(const std::string& path)
         {
             QFile r{path.c_str()};
