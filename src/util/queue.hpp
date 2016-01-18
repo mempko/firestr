@@ -175,6 +175,7 @@ namespace fire
                     std::lock_guard<std::mutex> lock(_m);
                     return _q.size();
                 }
+                
                 virtual bool empty() const 
                 { 
                     std::lock_guard<std::mutex> lock(_m);
