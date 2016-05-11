@@ -29,6 +29,7 @@
  * also delete it here.
  */
 #include "network/util.hpp"
+#include <map>
 
 #ifdef _WIN64
 #include <WinSock.h>  
@@ -72,15 +73,17 @@ namespace fire
 #else
         std::string get_lan_ip()
         {
-            std::string ip;
+            std::map<std::string, std::string> ip_map;
+            std::string last_ip;
             ifaddrs *iflist, *iface;
 
-            if (getifaddrs(&iflist) < 0) return ip;
+            if (getifaddrs(&iflist) < 0) return last_ip;
 
             for (iface = iflist; iface; iface = iface->ifa_next) 
             {
                 const void *addr;
                 if(!iface->ifa_addr) continue;
+                if(!iface->ifa_name) continue;
 
                 int af = iface->ifa_addr->sa_family;
                 switch (af) 
@@ -98,12 +101,15 @@ namespace fire
                     if (inet_ntop(af, addr, addrp, sizeof(addrp)) == 0) 
                         continue;
 
-                    ip = addrp;
+                    ip_map[iface->ifa_name] = addrp;
+                    last_ip = addrp;
                 }
             }
 
             freeifaddrs(iflist);
-            return ip;
+            if(ip_map.count("eth0")) return ip_map["eth0"];
+            if(ip_map.count("wlan0")) return ip_map["wlan0"];
+            return last_ip;
         }
 #endif
         std::string get_lan_ip(const std::string& override)
