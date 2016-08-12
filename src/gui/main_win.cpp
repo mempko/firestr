@@ -300,35 +300,26 @@ namespace fire
             auto step1 = new QLabel(
                     tr(
                         "<h2>1. <font color='green'>Share Your Identity</font></h2>"
-                        "Use the <font color='darkgreen'>buttons</font> on the right to share your identity.<br>"
-                        "There is no central authority managing your contacts.<br>"
-                        "Give your identity to others and get theirs to connect.<br>"
+                        "Give your identity to others any way you want.<br>"
                       ));
-            auto step1ba = new QPushButton;
-            make_big_email(*step1ba);
-            step1ba->setToolTip(tr("Email Identity"));
-            auto step1bb = new QPushButton(tr("Show Identity"));
-            make_big_identity(*step1bb);
-            step1bb->setToolTip(tr("Show Identity"));
+            auto step1b = new QPushButton(tr("Show Identity"));
+            make_big_identity(*step1b);
+            step1b->setToolTip(tr("Show Identity"));
 
             auto step2 = new QLabel(
                     tr(
-                        "<h2>2. <font color='green'>Add a Contact</font></h2>"
-                        "Use the <font color='darkgreen'>button</font> on the right to add contacts.<br>"
-                        "Once you have someone's identity, you can add them as <br>" 
-                        "a contact by copy and pasting it.<br>"
+                        "<h2>2. <font color='green'>Add People</font></h2>"
+                        "Copy their identity and paste it.<br>"
                       ));
 
-            auto step2b = new QPushButton(tr("Add Contact"));
+            auto step2b = new QPushButton(tr("Add People"));
             make_big_add_contact(*step2b);
-            step2b->setToolTip(tr("Add Contact"));
+            step2b->setToolTip(tr("Add People"));
 
             auto step3 = new QLabel(
                     tr(
                         "<h2>3. <font color='green'>Start a Conversation</font></h2>"
-                        "Use the <font color='darkgreen'>button</font> on the right to start a conversation.<br>"
-                        "When you are connected with someone you can start a <br>"
-                        "conversation with them.<br>"
+                        "Start a conversation when you are connected.<br>"
                       ));
 
             auto step3b = new QPushButton(tr("Start Conversation"));
@@ -337,19 +328,17 @@ namespace fire
 
             //step 1
             l->addWidget(step1, 0, 0);
-            l->addWidget(step1ba, 0, 1);
-            l->addWidget(step1bb, 0, 2);
+            l->addWidget(step1b, 0, 1);
 
             //step3
             l->addWidget(step2, 1, 0);
-            l->addWidget(step2b, 1, 1, 1, 2);
+            l->addWidget(step2b, 1, 1);
 
             //step 4
             l->addWidget(step3, 2, 0);
-            l->addWidget(step3b, 2, 1, 1, 2);
+            l->addWidget(step3b, 2, 1);
 
-            connect(step1ba, SIGNAL(clicked()), this, SLOT(email_invite()));
-            connect(step1bb, SIGNAL(clicked()), this, SLOT(show_identity()));
+            connect(step1b, SIGNAL(clicked()), this, SLOT(show_identity()));
             connect(step2b, SIGNAL(clicked()), this, SLOT(add_contact()));
             connect(step3b, SIGNAL(clicked()), this, SLOT(create_conversation()));
 
@@ -398,7 +387,7 @@ namespace fire
 
             l->setContentsMargins(20,10,20,10);
 
-            _contacts_tab_index = _conversations->addTab(_contacts_screen, "Contacts");
+            _contacts_tab_index = _conversations->addTab(_contacts_screen, "People");
             ENSURE(_contacts_screen);
         }
 
@@ -449,10 +438,12 @@ namespace fire
             _main_menu->addSeparator();
             _main_menu->addAction(_close_action);
 
-            _contact_menu = new QMenu{tr("&Contacts"), this};
-            _contact_menu->addAction(_email_invite_action);
-            _contact_menu->addAction(_show_identity_action);
+            _contact_menu = new QMenu{tr("&People"), this};
             _contact_menu->addAction(_add_contact_action);
+            _contact_menu->addSeparator();
+            _contact_menu->addAction(_show_identity_action);
+            _contact_menu->addAction(_email_invite_action);
+            _contact_menu->addSeparator();
             _contact_menu->addAction(_contact_list_action);
 
             _conversation_menu = new QMenu{tr("C&onversation"), this};
@@ -582,10 +573,10 @@ namespace fire
             _show_identity_action = new QAction{tr("&Show Identity"), this};
             connect(_show_identity_action, SIGNAL(triggered()), this, SLOT(show_identity()));
 
-            _add_contact_action = new QAction{tr("&Add Contact"), this};
+            _add_contact_action = new QAction{tr("&Add People"), this};
             connect(_add_contact_action, SIGNAL(triggered()), this, SLOT(add_contact()));
 
-            _contact_list_action = new QAction{tr("&Manage Contacts..."), this};
+            _contact_list_action = new QAction{tr("&Manage..."), this};
             connect(_contact_list_action, SIGNAL(triggered()), this, SLOT(show_contact_list()));
 
             _chat_app_action = new QAction{tr("&Chat"), this};
@@ -709,7 +700,7 @@ namespace fire
         {
             INVARIANT(_user_service);
 
-            contact_list_dialog cl{"contacts", _user_service, this};
+            contact_list_dialog cl{"people", _user_service, this};
             cl.exec();
             cl.save_state();
         }
