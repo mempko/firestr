@@ -60,7 +60,7 @@ namespace fire
         namespace
         {
             const size_t TIMER_SLEEP = 5000;//in milliseconds
-            const char* GREETER_TIP = "A locator helps connect you with your contacts.\nTry adding 'mempko.com:8080' and ask them to do the same.";
+            const char* GREETER_TIP = "A locator helps connect you to people.\nTry adding 'mempko.com:8080' and ask them to do the same.";
             const std::string DEFAULT_GREETER = "mempko.com:8080";
             const std::string PASTE_IDENTITY = "Paste Identity Here";
             const std::string BAD_IDENTITY = "Try to Copy/Paste Again";
@@ -317,11 +317,11 @@ namespace fire
             if(_service->user().greeters().empty())
             {
                 tabs->addTab(greeters_tab, tr("locators"));
-                tabs->addTab(contacts_tab, tr("contacts"));
+                tabs->addTab(contacts_tab, tr("people"));
             }
             else
             {
-                tabs->addTab(contacts_tab, tr("contacts"));
+                tabs->addTab(contacts_tab, tr("people"));
                 tabs->addTab(greeters_tab, tr("locators"));
             }
 
@@ -374,7 +374,7 @@ namespace fire
             layout->addWidget(il, 0,0);
             auto introduce = new QPushButton;
             make_introduce(*introduce);
-            introduce->setToolTip(tr("Introduce one of your contacts to another.\nThey won't need to exchange invite files."));
+            introduce->setToolTip(tr("Introduce people to each other.\nThey won't need to exchange identities."));
             layout->addWidget(introduce, 1,0); 
             connect(introduce, SIGNAL(clicked()), il, SLOT(introduce()));
         }
