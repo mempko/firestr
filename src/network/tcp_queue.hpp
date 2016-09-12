@@ -143,6 +143,7 @@ namespace fire
                 void connect();
                 void delayed_connect();
                 void accept();
+                void cleanup_dead_connections();
 
             private:
                 void handle_accept(tcp_connection_ptr nc, const boost::system::error_code& error);
