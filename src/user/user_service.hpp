@@ -163,7 +163,7 @@ namespace fire
 
                 void send_ping_requests();
                 void send_ping_request(user::user_info_ptr, bool send_back = true);
-                void send_ping_request(const std::string& address, bool send_back = true);
+                void send_ping_request(const std::string& address, const fire::security::public_key& key, bool send_back = true);
                 void send_ping(char t);
                 void send_ping_to(char t, const std::string& id, bool force = false);
                 void add_contact_data(user::user_info_ptr);
