@@ -47,12 +47,12 @@ if(APPLE)
     set(MACOSX_BUNDLE_NAME "Firestr")
     set(MACOSX_BUNDLE_GUI_IDENTIFIER "com.mempko.firestr")
     set(MACOSX_BUNDLE_ICON_FILE firestr.icns)
-    set(MACOSX_BUNDLE_SHORT_VERSION_STRING 0.11)
-    set(MACOSX_BUNDLE_VERSION 0.11)
-    set(MACOSX_BUNDLE_LONG_VERSION Version 0.11)
+    set(MACOSX_BUNDLE_SHORT_VERSION_STRING 0.11.1)
+    set(MACOSX_BUNDLE_VERSION 0.11.1)
+    set(MACOSX_BUNDLE_LONG_VERSION Version 0.11.1)
     set(MACOSX_BUNDLE_NAME firestr)
     set(MACOSX_BUNDLE_INFO_STRING firestr)
-    set(MACOSX_BUNDLE_COPYRIGHT "(C) 2013 Maxim Noah Khailo")
+    set(MACOSX_BUNDLE_COPYRIGHT "(C) 2016 Maxim Noah Khailo")
 
     add_custom_command(TARGET firestr POST_BUILD
         command mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/firestr.app/Contents/Resources
