@@ -515,19 +515,16 @@ namespace fire
                 auto external = n::make_udp_address(rs.external().ip, rs.external().port);
 
                 LOG << "got greet response for: " << c->name() << " (" << c->id() << " ) local: " << local << " external: " << external <<  " sending requests..." << std::endl;
-                //create security conversations for local 
-                _encrypted_channels->create_channel(local, c->key());
 
                 //send ping request via local network 
-                send_ping_request(local);
+                send_ping_request(local, c->key());
 
                 //if external is different from local, create a security
                 //conversation and send a ping request. First one to make it
                 //wins the race.
                 if(external != local)
                 {
-                    _encrypted_channels->create_channel(external, c->key());
-                    send_ping_request(external);
+                    send_ping_request(external, c->key());
                 }
             }
         }
@@ -603,13 +600,13 @@ namespace fire
             INVARIANT(_encrypted_channels);
             auto c = by_id(id);
             if(!c) return;
-            
-            //remove security conversation
-            for(const auto& a : c->addresses())
-                _encrypted_channels->remove_channel(a);
 
-            //remove contact
-            fire_contact_disconnected_event(id);
+            {
+                u::mutex_scoped_lock l(_ping_mutex);
+
+                //remove contact
+                fire_contact_disconnected_event(id);
+            }
             _user->contacts().remove(c);
 
             save_user(_home, *_user);
@@ -805,7 +802,10 @@ namespace fire
             }
 
             ping r = {c->address(), _user->info().id(), s};
-            mail()->push_outbox(convert(r));
+            auto m = convert(r);
+            //ping should always be DH
+            m.meta.encryption = m::metadata::encryption_type::symmetric;
+            mail()->push_outbox(m);
         }
 
         void user_service::send_ping(char s)
@@ -829,18 +829,24 @@ namespace fire
             }
         }
 
-        void user_service::send_ping_request(const std::string& address, bool send_back)
+        void user_service::send_ping_request(const std::string& address, const sc::public_key& key, bool send_back)
         {
             INVARIANT(_user);
             INVARIANT(mail());
 
-            const auto& s = _encrypted_channels->get_channel(address);
+
             ping_request a;
             a.from_id =_user->info().id(); 
-            a.public_secret = s.shared_secret.public_value(),
             a.send_back = send_back;
             a.pv = u::PROTOCOL_VERSION;
             a.cv = u::CLIENT_VERSION;
+
+            {
+                u::mutex_scoped_lock l(_ping_mutex);
+                _encrypted_channels->create_channel(address, key);
+                const auto& s = _encrypted_channels->get_channel(address);
+                a.public_secret = s.shared_secret.public_value();
+            }
 
             //we need to force using PK encryption here because of DH timing
             //to setup the shared key
@@ -864,9 +870,7 @@ namespace fire
 				{
 					if (address == LOCAL) continue;
 					LOG << "sending connection request to " << c->name() << " (" << c->id() << ", " << address << ")" << std::endl;
-
-					_encrypted_channels->create_channel(address, c->key());
-					send_ping_request(address, send_back);
+					send_ping_request(address, c->key(), send_back);
 				}
 				catch (std::exception& e)
 				{
