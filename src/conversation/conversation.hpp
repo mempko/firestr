@@ -86,6 +86,8 @@ namespace fire
         };
 
         using pending_contact_adds = std::unordered_map<std::string, pending_contact_add>;
+        using removed_contact_id = std::string;
+        using removed_contacts = std::set<removed_contact_id>;
 
         class conversation 
         {
@@ -96,7 +98,6 @@ namespace fire
 
             public:
                 const user::contact_list& contacts() const;
-                user::contact_list& contacts(); 
 
             public:
                 bool send(const std::string& to, const message::message& m);
@@ -115,6 +116,8 @@ namespace fire
 
                 clique_status part_of_clique(std::string& id);
                 void remove_contact(std::string& id);
+                void add_contact(const user::user_info_ptr c);
+
 
             public:
                 const std::string& id() const;
@@ -142,6 +145,7 @@ namespace fire
                 user::user_service_ptr _user_service;
                 messages::sender_ptr _sender;
                 user::contact_list _contacts;
+                removed_contacts _removed;
                 app_metadata _app_metadata;
                 pending_contact_adds _pending_adds;
                 bool _initiated_by_user;

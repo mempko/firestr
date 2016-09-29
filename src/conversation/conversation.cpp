@@ -99,11 +99,6 @@ namespace fire
             return _contacts;
         }
 
-        user::contact_list& conversation::contacts() 
-        {
-            return _contacts;
-        }
-
         const pending_contact_adds& conversation::pending() const
         {
             return _pending_adds;
@@ -198,10 +193,21 @@ namespace fire
         void conversation::remove_contact(std::string& id)
         {
             auto c = _contacts.by_id(id);
-            if(c) _contacts.remove(c);
+            if(c) 
+            {
+                _contacts.remove(c);
+                _removed.insert(id);
+            }
 
             auto pi = _pending_adds.find(id);
             if(pi != _pending_adds.end()) _pending_adds.erase(pi);
+        }
+
+        void conversation::add_contact(const us::user_info_ptr c)
+        {
+            REQUIRE(c);
+            _contacts.add(c);
+            _removed.erase(c->id());
         }
 
         const std::string& conversation::id() const

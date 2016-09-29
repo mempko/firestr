@@ -504,7 +504,7 @@ namespace fire
             if(s->contacts().by_id(c->id())) return;
 
             //add contact to conversation
-            s->contacts().add(c);
+            s->add_contact(c);
 
             sync_existing_conversation(s);
             fire_conversation_synced_event(s->id());
