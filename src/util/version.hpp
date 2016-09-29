@@ -39,6 +39,7 @@ namespace fire
     {
         extern const int PROTOCOL_VERSION;
         extern const int CLIENT_VERSION;
+        extern const int MINOR_VERSION;
 
         std::string version_string();
     }

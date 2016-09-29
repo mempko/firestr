@@ -39,11 +39,12 @@ namespace fire
     {
         const int PROTOCOL_VERSION = 0;
         const int CLIENT_VERSION = 11;
+        const int MINOR_VERSION = 1;
 
         std::string version_string()
         {
             std::stringstream ss;
-            ss << PROTOCOL_VERSION << "." << CLIENT_VERSION;
+            ss << PROTOCOL_VERSION << '.' << CLIENT_VERSION << '.' << MINOR_VERSION;
             return ss.str();
         }
     }
