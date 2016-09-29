@@ -354,8 +354,6 @@ namespace fire
             REQUIRE_FALSE(_contacts_screen);
 
             _contacts_screen = new QWidget;
-            auto l = new QVBoxLayout;
-            _contacts_screen->setLayout(l);
 
             _start_contacts = new contact_list{_user_service, _user_service->user().contacts(), 
                 [&](us::user_info_ptr u) {
@@ -378,14 +376,36 @@ namespace fire
 
             _start_contacts->update_status(true);
 
-            auto add_conversation = new QPushButton;
-            make_new_conversation(*add_conversation);
-            add_conversation->setToolTip(tr("Create a new conversation"));
-            l->addWidget(_start_contacts);
-            l->addWidget(add_conversation);
-            connect(add_conversation, SIGNAL(clicked()), this, SLOT(create_conversation()));
 
-            l->setContentsMargins(20,10,20,10);
+            auto right = new QWidget;
+            auto rl = new QVBoxLayout;
+            right->setLayout(rl);
+
+            auto iden = new QPushButton(tr("Show Identity"));
+            make_big_identity(*iden);
+            iden->setToolTip(tr("Show Identity"));
+
+            auto add = new QPushButton(tr("Add People"));
+            make_big_add_contact(*add);
+            add->setToolTip(tr("Add People"));
+
+            auto convo = new QPushButton(tr("Start Conversation"));
+            make_big_new_conversation(*convo);
+            convo->setToolTip(tr("Start Conversation"));
+
+            rl->addWidget(iden);
+            rl->addWidget(add);
+            rl->addWidget(convo);
+
+            connect(iden, SIGNAL(clicked()), this, SLOT(show_identity()));
+            connect(add, SIGNAL(clicked()), this, SLOT(add_contact()));
+            connect(convo, SIGNAL(clicked()), this, SLOT(create_conversation()));
+
+            auto l = new QHBoxLayout;
+            l->addWidget(_start_contacts);
+            l->addWidget(right);
+
+            _contacts_screen->setLayout(l);
 
             _contacts_tab_index = _conversations->addTab(_contacts_screen, "People");
             ENSURE(_contacts_screen);

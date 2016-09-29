@@ -30,6 +30,7 @@
  */
 
 #include <QApplication>
+#include <QStyleFactory>
 
 #include "user/user.hpp"
 #include "gui/setup.hpp"
@@ -135,6 +136,28 @@ class firestr_app : public QApplication
         }
 };
 
+void set_fusion_theme(QApplication& app) 
+{
+    //make sure fusion is found
+    bool has_fusion = false;
+    for(auto k : QStyleFactory::keys()) 
+        if(k == "Fusion") has_fusion = true;
+
+    if(!has_fusion) return;
+
+    QApplication::setStyle(QStyleFactory::create("Fusion"));
+
+    QPalette palette;
+    palette.setColor(QPalette::Window, QColor(190,190,190));
+    palette.setColor(QPalette::Base, QColor(220,220,220));
+    palette.setColor(QPalette::AlternateBase, QColor(190,190,190));
+    palette.setColor(QPalette::Button, QColor(190,190,190));
+
+    palette.setColor(QPalette::Highlight, QColor(0,128,0));
+    palette.setColor(QPalette::HighlightedText, Qt::white);
+    app.setPalette(palette);
+}
+
 int main(int argc, char *argv[])
 try
 {
@@ -150,6 +173,7 @@ try
     fu::set_assert_dialog_callback(assert_dialog);
 
     firestr_app a{argc, argv};
+    set_fusion_theme(a);
 
     fg::main_window_context c;
     c.home = vm["home"].as<std::string>();
