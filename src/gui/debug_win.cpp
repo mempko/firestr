@@ -189,6 +189,7 @@ namespace fire
             auto* layout = new QVBoxLayout{this};
             setLayout(layout);
             auto* tabs = new QTabWidget{this};
+            tabs->setTabPosition(QTabWidget::West);
             layout->addWidget(tabs);
 
             //create log tab
