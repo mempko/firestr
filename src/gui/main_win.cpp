@@ -93,8 +93,14 @@ namespace fire
             const int MAIN_H = 640;
             const int ALERT_DURATION = 3000; //3 sec
         }
+        
+        main_tabs::main_tabs(QWidget* parent): QTabWidget{parent}
+        {
+            setDocumentMode(true);
+            setTabPosition(QTabWidget::West);
+        }
 
-        void MainTabs::alert_tab(int i)
+        void main_tabs::alert_tab(int i)
         {
             REQUIRE_GREATER_EQUAL(i, 0);
 
@@ -119,7 +125,7 @@ namespace fire
             _as[i]->start();
         }
 
-        void MainTabs::clear_alert(int i)
+        void main_tabs::clear_alert(int i)
         {
             INVARIANT(tabBar());
 
@@ -129,12 +135,12 @@ namespace fire
             tabBar()->setTabTextColor(i, QColor{"black"});
         }
 
-        QColor MainTabs::tab_color() 
+        QColor main_tabs::tab_color() 
         {
             return QColor{"black"};
         }
 
-        void MainTabs::set_tab_color(const QColor& c) 
+        void main_tabs::set_tab_color(const QColor& c) 
         { 
             INVARIANT(tabBar());
 
@@ -265,7 +271,7 @@ namespace fire
             _layout = new QVBoxLayout{_root};
 
             //create the conversations widget
-            _conversations = new MainTabs;
+            _conversations = new main_tabs;
             _layout->addWidget(_conversations);
             connect(_conversations, SIGNAL(currentChanged(int)), this, SLOT(tab_changed(int)));
             connect(qApp, SIGNAL(focusChanged(QWidget*,QWidget*)), this, SLOT(focus_changed(QWidget*,QWidget*)));

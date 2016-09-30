@@ -148,10 +148,10 @@ void set_fusion_theme(QApplication& app)
     QApplication::setStyle(QStyleFactory::create("Fusion"));
 
     QPalette palette;
-    palette.setColor(QPalette::Window, QColor(200,210,210));
-    palette.setColor(QPalette::Base, QColor(230,240,240));
-    palette.setColor(QPalette::AlternateBase, QColor(200,210,210));
-    palette.setColor(QPalette::Button, QColor(200,210,210));
+    palette.setColor(QPalette::Window, QColor(210,210,210));
+    palette.setColor(QPalette::Base, QColor(250,250,250));
+    palette.setColor(QPalette::AlternateBase, QColor(210,210,210));
+    palette.setColor(QPalette::Button, QColor(210,210,210));
 
     palette.setColor(QPalette::Highlight, QColor(0,128,0));
     palette.setColor(QPalette::HighlightedText, Qt::white);

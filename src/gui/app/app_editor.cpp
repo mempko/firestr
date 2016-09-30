@@ -409,6 +409,8 @@ namespace fire
 
                 //create gui
                 auto tabs = new QTabWidget{this};
+                tabs->setTabPosition(QTabWidget::West);
+                tabs->setDocumentMode(true);
                 layout()->addWidget(tabs, 1,0,2,3);
 
                 set_main(tabs);

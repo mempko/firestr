@@ -42,6 +42,8 @@
 #include <algorithm>
 
 #include <QtWidgets>
+#include <QBrush>
+#include <QGradient>
 
 namespace m = fire::message;
 namespace ms = fire::messages;
@@ -72,6 +74,10 @@ namespace fire
             REQUIRE(conversation_s);
             REQUIRE(conversation);
 
+            QLinearGradient background{QPointF{0,0}, QPointF{1920,0}};
+            background.setColorAt(0, QColor{140,145,140});
+            background.setColorAt(1, QColor{30,35,30});
+            setBackground(QBrush{background});
             setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
             setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
 

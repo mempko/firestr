@@ -301,9 +301,10 @@ namespace fire
             REQUIRE(service);
 
             //create tabs
-            auto* layout = new QVBoxLayout{this};
+            auto layout = new QVBoxLayout{this};
             setLayout(layout);
-            auto* tabs = new QTabWidget{this};
+            auto tabs = new QTabWidget{this};
+            tabs->setDocumentMode(true);
             layout->addWidget(tabs);
 
             auto* contacts_tab = new QWidget;

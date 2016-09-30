@@ -53,12 +53,13 @@ namespace fire
     {
         using tab_animation_list = std::vector<QPropertyAnimation*>;
 
-        class MainTabs : public QTabWidget
+        class main_tabs : public QTabWidget
         {
             Q_OBJECT
             Q_PROPERTY(QColor tab_color READ tab_color WRITE set_tab_color);
 
             public:
+                main_tabs(QWidget* parent = nullptr);
 
                 void alert_tab(int i);
                 void clear_alert(int i);
@@ -202,7 +203,7 @@ namespace fire
                 QMenu *_debug_menu = nullptr;
                 QAction *_debug_window_action = nullptr;
 
-                MainTabs* _conversations = nullptr;
+                main_tabs* _conversations = nullptr;
                 QWidget* _contacts_screen = nullptr;
 
                 QWidget* _welcome_screen = nullptr;
