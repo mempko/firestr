@@ -1459,7 +1459,7 @@ namespace fire
                 script_init i;
                 i.from_message(m);
 
-                if(!_conversation->contacts().has(i.from_id));
+                if(!_conversation->contacts().has(i.from_id)) return;
 
                 send_script_to(i.from_id);
             }
