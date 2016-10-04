@@ -652,18 +652,6 @@ namespace fire
             ENSURE(_acceptor);
         }
 
-        void tcp_queue::cleanup_dead_connections()
-        {
-            _in_connections.erase(
-                    std::remove_if(
-                        std::begin(_in_connections), std::end(_in_connections), 
-                        [](tcp_connection_ptr p) 
-                        { 
-                            return p->is_disconnected();
-                        }), 
-                    std::end(_in_connections));
-        }
-
         void tcp_queue::handle_accept(tcp_connection_ptr nc, const boost::system::error_code& error)
         {
             REQUIRE(nc);
@@ -677,7 +665,6 @@ namespace fire
             }
             LOG << "new in tcp_connection " << nc->socket().remote_endpoint() << " " << error.message() << std::endl;
 
-            cleanup_dead_connections();
             _in_connections.push_back(nc);
             nc->update_endpoint();
             nc->start_read();
