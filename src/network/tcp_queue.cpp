@@ -173,7 +173,10 @@ namespace fire
 
             {
                 u::mutex_scoped_lock l(_mutex);
-                if(_state != disconnected || !_socket->is_open()) return;
+                if(_state != disconnected) return;
+                if(!_socket->is_open())
+                    _socket.reset(new tcp::socket{_io}),
+
                 _state = connecting;
             }
 
@@ -516,6 +519,7 @@ namespace fire
             CHECK(_out);
 
             if(_out->is_disconnected() && _p.mode == asio_params::connect) 
+
                 connect();
 
             return _out->send(b, _p.block);
