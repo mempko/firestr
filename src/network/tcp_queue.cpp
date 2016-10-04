@@ -524,7 +524,6 @@ namespace fire
             CHECK(_out);
 
             if(_out->is_disconnected() && _p.mode == asio_params::connect) 
-
                 connect();
 
             return _out->send(b, _p.block);
@@ -703,6 +702,8 @@ namespace fire
             {
                 q->_io->run();
                 u::sleep_thread(THREAD_SLEEP);
+                if(q->_out && q->_out->is_disconnected())
+                    break;
             }
             catch(std::exception& e)
             {
