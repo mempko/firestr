@@ -175,7 +175,7 @@ namespace fire
                 u::mutex_scoped_lock l(_mutex);
                 if(_state != disconnected) return;
                 if(!_socket->is_open())
-                    _socket.reset(new tcp::socket{_io}),
+                    _socket.reset(new tcp::socket{_io});
 
                 _state = connecting;
             }
