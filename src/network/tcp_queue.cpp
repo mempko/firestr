@@ -190,6 +190,7 @@ namespace fire
         void tcp_connection::start_read()
         {
             INVARIANT(_socket);
+            if(!_socket->is_open()) { close(); return; }
 
             //read message header
             ba::async_read_until(*_socket, _in_buffer, ':',
@@ -204,6 +205,7 @@ namespace fire
         {
             INVARIANT(_socket);
             if(_state != connecting) return;
+            if(!_socket->is_open()) { close(); return; }
 
             //if no error then we are connected
             if (!error) 
@@ -319,6 +321,7 @@ namespace fire
         {
             if(_state == disconnected) { CHECK_FALSE(_writing); return;}
             if(error) { _error = error; close(); return; }
+            if(!_socket->is_open()) { close(); return; }
 
             INVARIANT(_socket);
             REQUIRE_FALSE(_out_queue.empty());
@@ -343,6 +346,7 @@ namespace fire
             INVARIANT(_socket);
             if(_state == disconnected) return;
             if(error) { _error = error; close(); return; }
+            if(!_socket->is_open()) { close(); return; }
 
             //read header 
             size_t o_size = _in_buffer.size();
@@ -404,6 +408,7 @@ namespace fire
             REQUIRE_GREATER(size, 0);
             if(_state == disconnected) return;
             if(error) { _error = error; close(); return; }
+            if(!_socket->is_open()) { close(); return; }
 
             if(_in_buffer.size() < size) 
             {
@@ -715,10 +720,12 @@ namespace fire
             catch(std::exception& e)
             {
                 LOG << "error in tcp thread. " << e.what() << std::endl;
+                if(q->_out) q->_out->close();
             }
             catch(...)
             {
                 LOG << "unknown error in tcp thread." << std::endl;
+                if(q->_out) q->_out->close();
             }
         }
 
