@@ -1310,7 +1310,6 @@ namespace SLB {
   {
     SLB_DEBUG_CALL;
     ActiveWaitCriticalSection lock(&managerMutex);
-    assert("Invalid type_info" && (&ti) );
     ClassMap::const_iterator i = _classes.find(ti);
     if ( i != _classes.end() ) return i->second.get();
     return 0;
@@ -1426,7 +1425,6 @@ namespace SLB {
   ClassInfo *Manager::getOrCreateClass(const TypeInfoWrapper &ti)
   {
     SLB_DEBUG_CALL;
-    assert("Invalid type_info" && (&ti) );
     ClassInfo *c = 0;
     {
       CriticalSection lock(&managerMutex);

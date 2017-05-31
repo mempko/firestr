@@ -107,7 +107,6 @@ namespace fire
                     if(from_port != 0) m.meta.extra["from_port"] = from_port;
 
                     //serialize structure
-                    CHECK(this);
                     const C& self = reinterpret_cast<const C&>(*this);
                     util::serialize(m.data, self);
 
@@ -126,7 +125,6 @@ namespace fire
                     if(m.meta.extra.has("from_port")) 
                         from_port = m.meta.extra["from_port"];
 
-                    CHECK(this);
                     C& self = reinterpret_cast<C&>(*this);
                     util::deserialize(m.data, self);
                 }
