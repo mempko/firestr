@@ -1,0 +1,47 @@
+name: firestr # you probably want to 'snapcraft register <name>'
+version: '0.11' # just for humans, typically '1.2+git' or '1.3.2'
+summary: The Grass Computing Platform # 79 char long summary
+description: |
+    Communicate with your friends and family over a secure P2P connection.
+    Run and create P2P applications easily using the Lua programming language.
+
+grade: stable # must be 'stable' to release into candidate/stable channels
+confinement: devmode # use 'strict' once you have the right plugs and slots
+
+parts:
+  firestr:
+    source: .
+    plugin: cmake
+    build-packages:
+        - qtbase5-dev  
+        - qtmultimedia5-dev
+        - libqt5svg5-dev
+        - libboost-system-dev
+        - libboost-program-options-dev
+        - libboost-filesystem-dev
+        - libboost-regex-dev
+        - libboost-thread-dev
+        - uuid-dev
+        - libgmp-dev
+        - libssl-dev
+        - libxss-dev
+        - libbotan1.10-dev
+        - libopus-dev
+        - libsnappy-dev
+    stage-packages:
+        - libpulse0
+        - libasound2
+        - locales-all
+        - libqt5core5a
+        - libqt5svg5
+        - libqt5widgets5
+        - libqt5network5
+        - libqt5multimedia5
+        - libqt5multimedia5-plugins
+        - libqt5multimediawidgets5
+    after: [qt5conf]
+
+apps:
+    firestr:
+        command: qt5-launch firestr
+        plugs: [unity7, home, opengl, alsa, pulseaudio, network, network-bind]
