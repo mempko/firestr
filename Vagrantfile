@@ -36,7 +36,7 @@ vagrant_dir = File.expand_path(File.dirname(__FILE__))
 VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-    config.vm.box = "ubuntu/vivid64"
+    config.vm.box = "boxcutter/ubuntu1604"
 
     config.vm.provider :virtualbox do |vb|
         vb.gui = true
