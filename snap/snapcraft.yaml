@@ -6,7 +6,7 @@ description: |
     Run and create P2P applications easily using the Lua programming language.
 
 grade: stable # must be 'stable' to release into candidate/stable channels
-confinement: devmode # use 'strict' once you have the right plugs and slots
+confinement: strict # use 'strict' once you have the right plugs and slots
 
 parts:
   firestr:
@@ -44,4 +44,6 @@ parts:
 apps:
     firestr:
         command: qt5-launch firestr
+        desktop: usr/share/applications/firestr.desktop
+        icon: usr/share/icons/hicolor/scalable/apps/firestr.svg
         plugs: [unity7, home, opengl, alsa, pulseaudio, network, network-bind]
