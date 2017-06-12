@@ -7,6 +7,7 @@ description: |
 
 grade: stable # must be 'stable' to release into candidate/stable channels
 confinement: strict # use 'strict' once you have the right plugs and slots
+icon: usr/share/icons/hicolor/scalable/apps/firestr.svg
 
 parts:
   firestr:
@@ -45,5 +46,4 @@ apps:
     firestr:
         command: qt5-launch firestr
         desktop: usr/share/applications/firestr.desktop
-        icon: usr/share/icons/hicolor/scalable/apps/firestr.svg
         plugs: [unity7, home, opengl, alsa, pulseaudio, network, network-bind]
