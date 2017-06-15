@@ -3,7 +3,7 @@ version: '0.11.1'
 summary: The Grass Computing Platform
 description: |
     Communicate with your friends and family over a secure P2P connection.
-    Run and create P2P applications easily using the Lua programming language.
+    Create and share P2P applications easily using the Lua programming language.
 
 grade: stable
 confinement: strict
