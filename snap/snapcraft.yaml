@@ -45,5 +45,5 @@ parts:
 apps:
     firestr:
         command: qt5-launch firestr
-        desktop: usr/share/applications/firestr.desktop
+        desktop: share/applications/firestr.desktop
         plugs: [unity7, home, opengl, alsa, pulseaudio, network, network-bind]
