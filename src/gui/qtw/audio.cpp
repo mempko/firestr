@@ -176,10 +176,8 @@ namespace fire
 
             u::bytes microphone::encode(const u::bytes& b)
             {
-                REQUIRE(_opus);
-                REQUIRE_FALSE(b.empty());
-
-                return _opus->encode(b);
+                if(_opus) return _opus->encode(b);
+                return b;
             }
 
             u::bytes microphone::read_data()
@@ -302,8 +300,8 @@ namespace fire
             
             u::bytes speaker::decode(const u::bytes& b)
             {
-                REQUIRE(_opus);
-                return _opus->decode(b);
+                if(_opus) return _opus->decode(b);
+                return b;
             }
 
             codec_type speaker::codec() const
