@@ -9,6 +9,10 @@ grade: stable
 confinement: strict
 icon: src/gui/resources/firestr.svg
 
+environment:
+    PULSE_RUNTIME_PATH: /var/run/pulse
+    PULSE_SYSTEM: 1
+
 parts:
   firestr:
     source: .
@@ -46,4 +50,11 @@ apps:
     firestr:
         command: qt5-launch firestr
         desktop: share/applications/firestr.desktop
-        plugs: [unity7, home, opengl, alsa, pulseaudio, network, network-bind]
+        plugs:
+            - x11
+            - unity7
+            - home
+            - opengl
+            - pulseaudio
+            - network
+            - network-bind
