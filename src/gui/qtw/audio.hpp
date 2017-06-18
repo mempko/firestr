@@ -66,7 +66,7 @@ namespace fire
                 private:
                     QAudioFormat _f;
                     QAudioDeviceInfo _inf;
-                    QAudioInput* _i;
+                    QAudioInput* _i = nullptr;
                     codec_type _t;
                     api::ref_id _id;
                     QIODevice* _d = nullptr;
