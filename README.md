@@ -1,7 +1,7 @@
 [Fire★](http://www.firestr.com) (Fire Star) 0.11.1
 ===================================================================
 
-[![Documentation Status](https://readthedocs.org/projects/fire/badge/?version=latest)](https://readthedocs.org/projects/fire/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/fire/badge/?version=latest)](https://readthedocs.org/projects/fire/?badge=latest) [![Snap Status](https://build.snapcraft.io/badge/mempko/firestr.svg)](https://build.snapcraft.io/user/mempko/firestr)
 
 **The Grass Computing Platform**
 
