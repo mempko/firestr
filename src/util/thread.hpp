@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Maxim Noah Khailo
+ * Copyright (C) 2017  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,24 +28,17 @@
  * this exception statement from all source files in the program, then 
  * also delete it here.
  */
-#ifndef FIRESTR_UTIL_THREAD_H
-#define FIRESTR_UTIL_THREAD_H
+#pragma once
 
 #include <thread>
 #include <mutex>
 #include <memory>
 
-namespace fire
+namespace fire::util
 {
-    namespace util
-    {
-        using thread_uptr = std::unique_ptr<std::thread>;
-        using mutex_scoped_lock = std::lock_guard<std::mutex>;
-        using mutex_ptr = std::shared_ptr<std::mutex>;
+    using thread_uptr = std::unique_ptr<std::thread>;
+    using mutex_scoped_lock = std::lock_guard<std::mutex>;
+    using mutex_ptr = std::shared_ptr<std::mutex>;
 
-        void sleep_thread(size_t milliseconds);
-
-    }
+    void sleep_thread(size_t milliseconds);
 }
-
-#endif

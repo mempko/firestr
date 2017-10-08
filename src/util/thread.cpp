@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Maxim Noah Khailo
+ * Copyright (C) 2017  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,16 +33,13 @@
 
 #include <chrono>
 
-namespace fire
+namespace fire::util
 {
-    namespace util
+    void sleep_thread(size_t ms)
     {
-        void sleep_thread(size_t ms)
-        {
-            REQUIRE_GREATER(ms, 0);
+        REQUIRE_GREATER(ms, 0);
 
-            std::chrono::milliseconds s(ms);
-            std::this_thread::sleep_for(s);
-        }
+        std::chrono::milliseconds s(ms);
+        std::this_thread::sleep_for(s);
     }
 }

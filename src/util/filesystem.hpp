@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Maxim Noah Khailo
+ * Copyright (C) 2017  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,19 +29,13 @@
  * also delete it here.
  */
 
-#ifndef FIRESTR_UIL_FILESYSTEM_H
-#define FIRESTR_UIL_FILESYSTEM_H
+#pragma once
 
 #include <string>
 
-namespace fire
+namespace fire::util
 {
-    namespace util
-    {
-        bool create_directory(const std::string& dir);
-        bool delete_directory(const std::string& dir);
-        bool delete_file(const std::string& file);
-    }
+    bool create_directory(const std::string& dir);
+    bool delete_directory(const std::string& dir);
+    bool delete_file(const std::string& file);
 }
-
-#endif

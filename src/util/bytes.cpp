@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Maxim Noah Khailo
+ * Copyright (C) 2017  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,19 +30,16 @@
  */
 #include "util/bytes.hpp"
 
-namespace fire 
+namespace fire::util
 {
-    namespace util 
+    bytes to_bytes(const std::string& s)
     {
-        bytes to_bytes(const std::string& s)
-        {
-            return bytes(s.begin(), s.end());
-        }
+        return bytes(s.begin(), s.end());
+    }
 
-        std::string to_str(const bytes& b)
-        {
-            return std::string(&b[0], b.size());
-        }
+    std::string to_str(const bytes& b)
+    {
+        return std::string(&b[0], b.size());
     }
 }
 

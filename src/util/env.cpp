@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Maxim Noah Khailo
+ * Copyright (C) 2017  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,62 +47,59 @@
 
 namespace bf = boost::filesystem;
 
-namespace fire
+namespace fire::util
 {
-    namespace util
+    std::string get_home_dir()
     {
-        std::string get_home_dir()
-        {
 #ifdef _WIN64
-            const char* home = std::getenv("USERPROFILE");
+        const char* home = std::getenv("USERPROFILE");
 #else
-            const char* home = std::getenv("HOME");
+        const char* home = std::getenv("HOME");
 #endif
-            return home != nullptr ? home : ".";
-        }
+        return home != nullptr ? home : ".";
+    }
 
-        std::string get_default_firestr_home()
-        {
+    std::string get_default_firestr_home()
+    {
 #ifdef _WIN64
-            //root in /Users/<user>/Application Data/
-            const char* app_data = std::getenv("APPDATA");
-            bf::path root = app_data != nullptr ? app_data : "./";
+        //root in /Users/<user>/Application Data/
+        const char* app_data = std::getenv("APPDATA");
+        const bf::path root = app_data != nullptr ? app_data : "./";
 #elif __APPLE__
-            const size_t MAX_SIZE = 1024;
-            //something like ~/Library/Application Support/
-            FSRef ref;
-            OSType type = kApplicationSupportFolderType;
-            char found_path[MAX_SIZE];
+        const size_t MAX_SIZE = 1024;
+        //something like ~/Library/Application Support/
+        FSRef ref;
+        OSType type = kApplicationSupportFolderType;
+        char found_path[MAX_SIZE];
 
-            FSFindFolder( kUserDomain, type, kCreateFolder, &ref );
-            FSRefMakePath( &ref, (UInt8*)&found_path, MAX_SIZE );
+        FSFindFolder( kUserDomain, type, kCreateFolder, &ref );
+        FSRefMakePath( &ref, (UInt8*)&found_path, MAX_SIZE );
 
-            bf::path root = found_path;
+        const bf::path root = found_path;
 #else
-            //~/.config/firestr
-            const char* home = std::getenv("HOME");
-            bf::path root = home != nullptr ? home : "./";
-            root /= ".config";
+        //~/.config/firestr
+        const char* home = std::getenv("HOME");
+        bf::path root = home != nullptr ? home : "./";
+        root /= ".config";
 #endif
 
-            bf::path r = root / "firestr";
-            return r.string();
-        }
+        const bf::path r = root / "firestr";
+        return r.string();
+    }
 
-        void setup_env()
-        {
-            Botan::LibraryInitializer init;
-            init_rand();
+    void setup_env()
+    {
+        Botan::LibraryInitializer init;
+        init_rand();
 
 #ifdef __APPLE__
-            QString p = "defaults";
-            QStringList a;
-            a << "write" << "com.mempko.firestr" << "NSAppSleepDisabled" << "-bool" << "YES";
+        QString p = "defaults";
+        QStringList a;
+        a << "write" << "com.mempko.firestr" << "NSAppSleepDisabled" << "-bool" << "YES";
 
-            QProcess m;
-            m.start(p, a);
-            m.waitForFinished();
+        QProcess m;
+        m.start(p, a);
+        m.waitForFinished();
 #endif
-        }
     }
 }

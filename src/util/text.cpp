@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Maxim Noah Khailo
+ * Copyright (C) 2017  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,25 +33,21 @@
 #include "dtl/dtl.hpp"
 #include "util/log.hpp"
 
-namespace fire 
+namespace fire::util
 {
-    namespace util 
+    using string_diff = dtl::Diff3<char, std::string>;
+    bool merge(
+            const std::string& a, 
+            const std::string& b, 
+            const std::string& c,
+            std::string& out)
     {
-        using string_diff = dtl::Diff3<char, std::string>;
-        bool merge(
-                const std::string& a, 
-                const std::string& b, 
-                const std::string& c,
-                std::string& out)
-        {
-            string_diff d(a, b, c);
-            d.compose();
+        string_diff d(a, b, c);
+        d.compose();
 
-            if(!d.merge()) return false;
+        if(!d.merge()) return false;
 
-            out = d.getMergedSequence();
-            return true;
-        } 
-
-    }
+        out = d.getMergedSequence();
+        return true;
+    } 
 }

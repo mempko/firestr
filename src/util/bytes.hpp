@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Maxim Noah Khailo
+ * Copyright (C) 2017  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,26 +28,20 @@
  * this exception statement from all source files in the program, then 
  * also delete it here.
  */
-#ifndef FIRESTR_BYTES_H
-#define FIRESTR_BYTES_H
+#pragma once
 
 #include <vector>
 #include <string>
 #include <memory>
 
-namespace fire 
+namespace fire::util
 {
-    namespace util 
-    {
-        using byte = char;
-        using ubyte = unsigned char;
-        using bytes = std::vector<byte>;
-        using ubytes = std::vector<ubyte>;
-        using bytes_ptr = std::shared_ptr<bytes>;
+    using byte = char;
+    using ubyte = unsigned char;
+    using bytes = std::vector<byte>;
+    using ubytes = std::vector<ubyte>;
+    using bytes_ptr = std::shared_ptr<bytes>;
 
-        bytes to_bytes(const std::string&);
-        std::string to_str(const bytes&);
-    }
+    bytes to_bytes(const std::string&);
+    std::string to_str(const bytes&);
 }
-
-#endif

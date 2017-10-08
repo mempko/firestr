@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Maxim Noah Khailo
+ * Copyright (C) 2017  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,8 +29,7 @@
  * also delete it here.
  */
 
-#ifndef FIRESTR_APP_QTW_AUDIO_H
-#define FIRESTR_APP_QTW_AUDIO_H
+#pragma once
 
 #include "util/bytes.hpp"
 
@@ -38,45 +37,40 @@
 #include <unordered_map>
 #include <opus/opus.h>
 
-namespace fire
+namespace fire::util
 {
-    namespace util
+    class opus_encoder
     {
-        class opus_encoder
-        {
-            public:
-                opus_encoder();
-                ~opus_encoder();
+        public:
+            opus_encoder();
+            ~opus_encoder();
 
-            public:
-                bytes encode(const bytes&);
+        public:
+            bytes encode(const bytes&);
 
-            private:
-                OpusEncoder* _opus = nullptr;
-        };
-        using opus_encoder_ptr = std::shared_ptr<opus_encoder>;
+        private:
+            OpusEncoder* _opus = nullptr;
+    };
+    using opus_encoder_ptr = std::shared_ptr<opus_encoder>;
 
-        class opus_decoder
-        {
-            public:
-                opus_decoder();
-                ~opus_decoder();
+    class opus_decoder
+    {
+        public:
+            opus_decoder();
+            ~opus_decoder();
 
-            public:
-                bytes decode(const bytes&);
+        public:
+            bytes decode(const bytes&);
 
-            private:
-                OpusDecoder* _opus = nullptr;
-        };
-        using opus_decoder_ptr = std::shared_ptr<opus_decoder>;
+        private:
+            OpusDecoder* _opus = nullptr;
+    };
+    using opus_decoder_ptr = std::shared_ptr<opus_decoder>;
 
-        extern const size_t FRAMES; //40ms of PCM frames. Opus can handles 2.5, 5, 10, 20, 40 or 60ms of audio per frame.
-        extern const size_t MAX_FRAMES;
-        extern const size_t MAX_OPUS_DECODE_SIZE;
-        extern const size_t SAMPLE_RATE;
-        extern const size_t CHANNELS;
-        extern const size_t MIN_BUF_SIZE;
-    }
+    extern const size_t FRAMES; //40ms of PCM frames. Opus can handles 2.5, 5, 10, 20, 40 or 60ms of audio per frame.
+    extern const size_t MAX_FRAMES;
+    extern const size_t MAX_OPUS_DECODE_SIZE;
+    extern const size_t SAMPLE_RATE;
+    extern const size_t CHANNELS;
+    extern const size_t MIN_BUF_SIZE;
 }
-
-#endif

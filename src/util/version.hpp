@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Maxim Noah Khailo
+ * Copyright (C) 2017  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,20 +28,14 @@
  * this exception statement from all source files in the program, then 
  * also delete it here.
  */
-#ifndef FIRESTR_UTIL_VERS_H
-#define FIRESTR_UTIL_VERS_H
-
+#pragma once
 #include <string>
 
-namespace fire
+namespace fire::util
 {
-    namespace util
-    {
-        extern const int PROTOCOL_VERSION;
-        extern const int CLIENT_VERSION;
-        extern const int MINOR_VERSION;
+    extern const int PROTOCOL_VERSION;
+    extern const int CLIENT_VERSION;
+    extern const int MINOR_VERSION;
 
-        std::string version_string();
-    }
+    std::string version_string();
 }
-#endif

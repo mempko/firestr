@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Maxim Noah Khailo
+ * Copyright (C) 2017  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,48 +28,40 @@
  * this exception statement from all source files in the program, then 
  * also delete it here.
  */
-#ifndef FIRESTR_LOG_H
-#define FIRESTR_LOG_H
+
+#pragma once
 
 #include <string>
 #include <iostream>
 #include <memory>
 
-namespace fire 
+namespace fire::util
 {
-    namespace util 
+    typedef std::unique_ptr<std::ostream> ostream_ptr;
+
+    class log;
+    typedef std::unique_ptr<log> log_ptr;
+
+    class log
     {
-        typedef std::unique_ptr<std::ostream> ostream_ptr;
+        public:
+            std::ostream& stream();
+            const std::string& path();
 
-        class log;
-        typedef std::unique_ptr<log> log_ptr;
+            static void create_log(const std::string& home);
+            static log* inst();
 
-        class log
-        {
-            private:
-                log(std::string home);
+        private:
+            log(std::string home);
 
-            public:
-                std::ostream& stream();
-                const std::string& path();
+        private:
+            std::string _log_file;
+            ostream_ptr _stream;
 
-            private:
-                std::string _log_file;
-                ostream_ptr _stream;
-
-            public:
-                static void create_log(const std::string& home);
-                static log* inst();
-
-
-            private:
-                static log_ptr _log;
-        };
-    }
+            static log_ptr _log;
+    };
 }
 
 #define LOG if(fire::util::log::inst()) fire::util::log::inst()->stream() 
 #define CREATE_LOG(PATH) fire::util::log::create_log((PATH))
 #define LOG_PATH fire::util::log::inst()->path()
-
-#endif

@@ -1781,7 +1781,7 @@ namespace SLB {
     }
     return result;
   }
-  void Script::doFile(const char *filename) SLB_THROW((std::exception))
+  void Script::doFile(const char *filename)
   {
     if (!safeDoFile(filename)) {
       SLB_THROW(std::runtime_error( getLastError() ));
@@ -1816,7 +1816,7 @@ namespace SLB {
     lua_settop(L,top);
     return result;
   }
-  void Script::doString(const char *o_code, const char *hint) SLB_THROW((std::exception))
+  void Script::doString(const char *o_code, const char *hint)
   {
     if (!safeDoString(o_code, hint)) {
       SLB_THROW(std::runtime_error( getLastError() ));

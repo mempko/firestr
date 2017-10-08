@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013  Maxim Noah Khailo
+# Copyright (C) 2017  Maxim Noah Khailo
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,8 +28,8 @@
 # this exception statement from all source files in the program, then 
 # also delete it here.
 
-#use C++11
-ADD_DEFINITIONS(-std=c++11)
+#use C++17
+ADD_DEFINITIONS(-std=c++1z)
 
 include_directories(.)
 include_directories(..)
@@ -37,16 +37,13 @@ include_directories(..)
 file(GLOB src *.cpp app/*.cpp lua/*.cpp qtw/*.cpp) 
 file(GLOB headers *.hpp app/*.hpp lua/*.hpp qtw/*.hpp)
 file(GLOB forms *.ui app/*.ui lua/*.ui qtw/*.ui)
-file(GLOB resources *.qrc app/*.qrc lua/*.qrc qtw/*.qrc)
+file(GLOB resources *.qrc resources/*.qrc app/*.qrc lua/*.qrc qtw/*.qrc)
 
 #qt specific
-QT5_WRAP_CPP(moc_headers ${headers})
-QT5_WRAP_UI(moc_forms ${forms})
-QT5_ADD_RESOURCES(moc_resources ${resources})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 add_library(fire_gui STATIC
     ${src}
-    ${moc_headers}
-    ${moc_forms}
-    ${moc_resources})
+    ${headers}
+    ${forms}
+    ${resources})

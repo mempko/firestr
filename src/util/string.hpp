@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Maxim Noah Khailo
+ * Copyright (C) 2017  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,8 +29,7 @@
  * also delete it here.
  */
 
-#ifndef FIRESTR_UTIL_STRING_H
-#define FIRESTR_UTIL_STRING_H
+#pragma once
 
 #include <string>
 #include <vector>
@@ -41,36 +40,31 @@
 
 #include "util/dbc.hpp"
 
-namespace fire
+namespace fire::util
 {
-    namespace util
-    {
-        inline void trim(std::string& t) { boost::algorithm::trim(t);}
+    void trim(std::string& t);
 
-        template <class container>
-            container split(
-                    const std::string& s, 
-                    const std::string& delimiters)
+    template <class container>
+        container split(
+                const std::string& s, 
+                const std::string& delimiters)
+        {
+            container result;
+            boost::char_separator<char> d{delimiters.c_str()};
+            boost::tokenizer<boost::char_separator<char>> tokens{s, d};
+            for(auto t : tokens)
             {
-                container result;
-                boost::char_separator<char> d{delimiters.c_str()};
-                boost::tokenizer<boost::char_separator<char>> tokens{s, d};
-                for(auto t : tokens)
-                {
-                    trim(t);
-                    if(!t.empty()) result.insert(result.end(), t);
-                }
-                ENSURE_FALSE(result.empty());
-                return result;
+                trim(t);
+                if(!t.empty()) result.insert(result.end(), t);
             }
 
-        using string_vect = std::vector<std::string>;
-        using string_set = std::set<std::string>;
+            ENSURE_FALSE(result.empty());
+            return result;
+        }
 
-        std::string to_base_64(const std::string& s);
-        std::string from_base_64(const std::string& s);
-    }
+    using string_vect = std::vector<std::string>;
+    using string_set = std::set<std::string>;
 
+    std::string to_base_64(const std::string& s);
+    std::string from_base_64(const std::string& s);
 }
-
-#endif

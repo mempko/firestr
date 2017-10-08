@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Maxim Noah Khailo
+ * Copyright (C) 2017  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,42 +31,39 @@
 
 #include "util/vclock.hpp"
 
-namespace fire 
+namespace fire::util
 {
-    namespace util 
+    dict to_dict(const sclock& cs)
     {
-        dict to_dict(const sclock& cs)
-        {
-            dict d;
-            for(const auto& c : cs)
-                d[c.first] = c.second;
-            return d;
-        }
+        dict d;
+        for(const auto& c : cs)
+            d[c.first] = c.second;
+        return d;
+    }
 
-        sclock to_sclock(const dict& d)
-        {
-            sclock c;
-            for(const auto& v : d)
-                c[v.first] = v.second.as_size();
-            return c;
-        }
+    sclock to_sclock(const dict& d)
+    {
+        sclock c;
+        for(const auto& v : d)
+            c[v.first] = v.second.as_size();
+        return c;
+    }
 
-        dict to_dict(const tracked_sclock& c)
-        {
-            dict d;
-            d["i"] = c.id();
-            d["v"] = to_dict(c.clock());
-            return d;
-        }
+    dict to_dict(const tracked_sclock& c)
+    {
+        dict d;
+        d["i"] = c.id();
+        d["v"] = to_dict(c.clock());
+        return d;
+    }
 
-        tracked_sclock to_tracked_sclock(const dict& d)
-        {
-            auto id = d["i"].as_string();
-            tracked_sclock c{
-                d["i"].as_string(), 
-                to_sclock(d["v"].as_dict())
-            };
-            return c;
-        }
+    tracked_sclock to_tracked_sclock(const dict& d)
+    {
+        auto id = d["i"].as_string();
+        tracked_sclock c{
+            d["i"].as_string(), 
+            to_sclock(d["v"].as_dict())
+        };
+        return c;
     }
 }

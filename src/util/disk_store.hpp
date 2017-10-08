@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Maxim Noah Khailo
+ * Copyright (C) 2017  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,58 +29,49 @@
  * also delete it here.
  */
 
-#ifndef FIRESTR_UIL_DISK_STORE_H
-#define FIRESTR_UIL_DISK_STORE_H
+#pragma once
 
 #include "util/mencode.hpp"
 #include "util/thread.hpp"
 
-namespace fire
+namespace fire::util
 {
-    namespace util
+    class disk_store
     {
-        class disk_store
-        {
-            public:
-                disk_store();
-                disk_store(const std::string& path);
-                disk_store(const disk_store&);
-                disk_store& operator=(const disk_store&);
+        public:
+            disk_store();
+            disk_store(const std::string& path);
+            disk_store(const disk_store&);
+            disk_store& operator=(const disk_store&);
 
-            public:
-                void load(const std::string& path);
-                bool loaded() const;
+        public:
+            void load(const std::string& path);
+            bool loaded() const;
 
-            public:
-                void import_from(const dict&);
-                void export_to(dict&) const;
+            void import_from(const dict&);
+            void export_to(dict&) const;
 
-            public:
-                value get(const std::string& key) const;
-                bool has(const std::string& key) const;
-                void set(const std::string& key, const value&);
-                bool remove(const std::string& key);
-                void clear();
+            value get(const std::string& key) const;
+            bool has(const std::string& key) const;
+            void set(const std::string& key, const value&);
+            bool remove(const std::string& key);
+            void clear();
 
-            public:
-                using const_iterator = dict::const_iterator;
-                const_iterator begin() const;
-                const_iterator end() const;
-                size_t size() const;
+            using const_iterator = dict::const_iterator;
+            const_iterator begin() const;
+            const_iterator end() const;
+            size_t size() const;
 
-            private:
-                void save_index();
-                void set_intern(const std::string& key, const value&);
-                void get_value(const std::string& key, value&) const;
-                bool remove_intern(const std::string& key);
+        private:
+            void save_index();
+            void set_intern(const std::string& key, const value&);
+            void get_value(const std::string& key, value&) const;
+            bool remove_intern(const std::string& key);
 
-            private:
-                std::string _path;
-                dict_ptr _index;
-                mutable mutex_ptr _mutex;
-        };
+        private:
+            std::string _path;
+            dict_ptr _index;
+            mutable mutex_ptr _mutex;
+    };
 
-    }
 }
-
-#endif

@@ -28,8 +28,8 @@
 # this exception statement from all source files in the program, then 
 # also delete it here.
 
-#use C++11
-ADD_DEFINITIONS(-std=c++11)
+#use C++17
+ADD_DEFINITIONS(-std=c++1z)
 
 include_directories(.)
 include_directories(..)

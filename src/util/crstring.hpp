@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Maxim Noah Khailo
+ * Copyright (C) 2017  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,52 +29,45 @@
  * also delete it here.
  */
 
-#ifndef FIRESTR_CRSTRING_H
-#define FIRESTR_CRSTRING_H
+#pragma once
 
 #include "util/text.hpp"
 #include "util/vclock.hpp"
 #include <map>
 
-namespace fire 
+namespace fire::util
 {
-    namespace util 
+    enum merge_result { NO_CHANGE, UPDATED, MERGED, CONFLICT};
+
+    /**
+     * Implements a concurrent string which uses a version vector and three way merge
+     * for attaining eventual consistency.
+     */
+    class cr_string
     {
-        enum merge_result { NO_CHANGE, UPDATED, MERGED, CONFLICT};
+        public:
+            cr_string();
+            cr_string(const std::string& id);
+            cr_string(const tracked_sclock& c, const std::string& s);
 
-        /**
-         * Implements a concurrent string which uses a version vector and three way merge
-         * for attaining eventual consistency.
-         */
-        class cr_string
-        {
-            public:
-                cr_string();
-                cr_string(const std::string& id);
-                cr_string(const tracked_sclock& c, const std::string& s);
+        public:
+            const std::string& str() const;
+            const tracked_sclock& clock() const;
+            tracked_sclock& clock();
 
-            public:
-                const std::string& str() const;
-                const tracked_sclock& clock() const;
-                tracked_sclock& clock();
+            /**
+             * First version of string is set using init_set
+             */
+            void init_set(const std::string&);
 
-            public:
-                /**
-                 * First version of string is set using init_set
-                 */
-                void init_set(const std::string&);
+            /**
+             * All consecutive changes are made using set
+             */
+            void set(const std::string&);
+            merge_result merge(const cr_string&);
 
-                /**
-                 * All consecutive changes are made using set
-                 */
-                void set(const std::string&);
-                merge_result merge(const cr_string&);
-
-            private:
-                tracked_sclock _c;
-                std::string _s;
-        };
-
-    }
+        private:
+            tracked_sclock _c;
+            std::string _s;
+    };
 }
-#endif

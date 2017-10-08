@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Maxim Noah Khailo
+ * Copyright (C) 2017  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,27 +35,23 @@
 #include <chrono>
 #include <ctime>
 
-namespace fire 
+namespace fire::util
 {
-    namespace util 
+    std::string timestamp()
     {
-        std::string timestamp()
-        {
-            auto t = std::chrono::system_clock::now();
-            auto nt = std::chrono::system_clock::to_time_t(t);
-            std::stringstream s;
-            s << std::ctime(&nt);
-            return s.str();
-        }
+        const auto t = std::chrono::system_clock::now();
+        const auto nt = std::chrono::system_clock::to_time_t(t);
+        std::stringstream s;
+        s << std::ctime(&nt);
+        return s.str();
+    }
 
-        std::string hour_min_sec()
-        {
-            auto t = std::time(0);
-            char str[20];
-            if(std::strftime(str, sizeof(str), "%I:%M:%S", std::localtime(&t))) 
-                return std::string(str);
-            else return "";
-        }
+    std::string hour_min_sec()
+    {
+        const auto t = std::time(0);
+        char str[20];
+        return std::strftime(str, sizeof(str), "%I:%M:%S", std::localtime(&t)) ? 
+            str : "";
     }
 }
 

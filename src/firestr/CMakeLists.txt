@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013  Maxim Noah Khailo
+# Copyright (C) 2017  Maxim Noah Khailo
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,19 +28,18 @@
 # this exception statement from all source files in the program, then 
 # also delete it here.
 
-#use C++11
-ADD_DEFINITIONS(-std=c++11)
-
 include_directories(.)
 include_directories(..)
 
 file(GLOB src *.cpp)
 file(GLOB headers *.hpp)
 file(GLOB forms *.ui)
+file(GLOB resources *.qrc ../gui/resources/*.qrc)
 
 #qt specific
-qt5_add_resources(moc_resources ../gui/resources/examples.qrc)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
+
+ADD_DEFINITIONS(-std=c++17)
 
 if(APPLE)
     set(PROGNAME firestr)
@@ -63,7 +62,7 @@ if(APPLE)
         firestr
         MACOSX_BUNDLE
         ${src}
-        ${moc_resources})
+        ${resources})
 
     #set_target_properties(firestr PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/cmake/mac_bundle.plist.in)
 
@@ -75,12 +74,12 @@ elseif(CMAKE_HOST_WIN32)
     add_executable(
         firestr
         ${src}
-        ${moc_resources})
+        ${resources})
 else()
     add_executable(
         firestr
         ${src}
-        ${moc_resources})
+        ${resources})
 endif()
 
 target_link_libraries(
@@ -95,6 +94,7 @@ target_link_libraries(
     fire_security
     fire_util
     fire_slb
+    fire_lua
     Qt5::Widgets
     Qt5::Network
     Qt5::Multimedia
@@ -112,7 +112,8 @@ add_dependencies(
     fire_network
     fire_security
     fire_util
-    fire_slb)
+    fire_slb
+    fire_lua)
 
 install(TARGETS firestr DESTINATION bin)
 

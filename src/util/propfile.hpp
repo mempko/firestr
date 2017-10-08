@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Maxim Noah Khailo
+ * Copyright (C) 2017  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,8 +29,7 @@
  * also delete it here.
  */
 
-#ifndef FIRESTR_UTIL_PROPFILE_H
-#define FIRESTR_UTIL_PROPFILE_H
+#pragma once
 
 #include "util/string.hpp"
 
@@ -42,6 +41,5 @@ namespace fire
     namespace util
     {
         using properties = std::map<std::string, std::string>;
-        
     }
 }
