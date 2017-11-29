@@ -39,7 +39,7 @@ Organization
 ===================================================================
 
 Fire★ is written using C++11 and requires a fairly modern compiler.
-It should with the latest gcc, clang, and visual studio. 
+It should work with the latest gcc, clang, and visual studio. 
 
 The main directory is src. Each subdirectory is a library and
 the main application is in src/firestr
