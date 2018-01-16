@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Maxim Noah Khailo
+ * Copyright (C) 2017  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,8 +29,7 @@
  * also delete it here.
  */
 
-#ifndef FIRESTR_USER_USER_H
-#define FIRESTR_USER_USER_H
+#pragma once
 
 #include <string>
 #include <memory>
@@ -45,198 +44,193 @@
 #include "util/mencode.hpp"
 #include "util/thread.hpp"
 
-namespace fire
+namespace fire::user
 {
-    namespace user
+    using known_addresses = std::deque<std::string>;
+
+    class user_info
     {
-        using known_addresses = std::deque<std::string>;
+        public:
+            user_info() :
+                _addresses{}, _name{}, _id{}, _pkey{} {}
 
-        class user_info
+            user_info(
+                    const known_addresses& addresses, 
+                    const std::string& name, 
+                    const std::string& id,
+                    const security::public_key& pub_key) :
+                _addresses(addresses), _name(name), _id(id), _pkey(pub_key) 
         {
-            public:
-                user_info() :
-                    _addresses{}, _name{}, _id{}, _pkey{} {}
+            REQUIRE_FALSE(addresses.empty());
+            REQUIRE_FALSE(name.empty());
+            REQUIRE_FALSE(id.empty());
+            REQUIRE_FALSE(pub_key.key().empty());
+        }
 
-                user_info(
-                        const known_addresses& addresses, 
-                        const std::string& name, 
-                        const std::string& id,
-                        const security::public_key& pub_key) :
-                    _addresses(addresses), _name(name), _id(id), _pkey(pub_key) 
-                {
-                    REQUIRE_FALSE(addresses.empty());
-                    REQUIRE_FALSE(name.empty());
-                    REQUIRE_FALSE(id.empty());
-                    REQUIRE_FALSE(pub_key.key().empty());
-                }
+            user_info(const user_info& o) :
+                _addresses(o._addresses), _name(o._name), _id(o._id), _pkey(o._pkey) {}
 
-                user_info(const user_info& o) :
-                    _addresses(o._addresses), _name(o._name), _id(o._id), _pkey(o._pkey) {}
+            user_info& operator=(const user_info& o)
+            {
+                fire::util::mutex_scoped_lock l(_mutex);
+                if(&o == this) return *this;
 
-                user_info& operator=(const user_info& o)
-                {
-                    fire::util::mutex_scoped_lock l(_mutex);
-                    if(&o == this) return *this;
+                fire::util::mutex_scoped_lock lo(o._mutex);
+                _name = o._name;
+                _id = o._id;
+                _addresses = o._addresses;
+                _pkey = o._pkey;
+                return *this;
+            }
 
-                    fire::util::mutex_scoped_lock lo(o._mutex);
-                    _name = o._name;
-                    _id = o._id;
-                    _addresses = o._addresses;
-                    _pkey = o._pkey;
-                    return *this;
-                }
+        public:
+            std::string name() const;
+            std::string id() const;
+            std::string address() const;
+            const known_addresses& addresses() const;
 
-            public:
-                std::string name() const;
-                std::string id() const;
-                std::string address() const;
-                const known_addresses& addresses() const;
-
-                const security::public_key& key() const;
+            const security::public_key& key() const;
 
 
-                void name(const std::string& v);
-                void add_known_address(const std::string& v);
-                void id(const std::string& v);
-                void key(const security::public_key& v);
+            void name(const std::string& v);
+            void add_known_address(const std::string& v);
+            void id(const std::string& v);
+            void key(const security::public_key& v);
 
-            private:
-                known_addresses _addresses;
-                std::string _name;
-                std::string _id;
-                security::public_key _pkey;
-                mutable std::mutex _mutex;
-        };
+        private:
+            known_addresses _addresses;
+            std::string _name;
+            std::string _id;
+            security::public_key _pkey;
+            mutable std::mutex _mutex;
+    };
 
-        using user_info_ptr = std::shared_ptr<user_info>;
-        using user_info_wptr = std::weak_ptr<user_info>;
-        using users = std::vector<user_info_ptr>;
-        using user_map = std::unordered_map<std::string, size_t>;
+    using user_info_ptr = std::shared_ptr<user_info>;
+    using user_info_wptr = std::weak_ptr<user_info>;
+    using users = std::vector<user_info_ptr>;
+    using user_map = std::unordered_map<std::string, size_t>;
 
-        class contact_list
-        {
-            public:
-                contact_list(const users&);
-                contact_list(const contact_list&);
-                contact_list();
+    class contact_list
+    {
+        public:
+            contact_list(const users&);
+            contact_list(const contact_list&);
+            contact_list();
 
-            public:
-                users list() const;
-                bool add(user_info_ptr);
-                bool remove(user_info_ptr);
-                bool has(const std::string& id) const;
-                user_info_ptr by_id(const std::string& id) const;
-                user_info_ptr get(size_t) const;
-                
-            public:
-                bool empty() const;
-                size_t size() const;
-                void clear();
+        public:
+            users list() const;
+            bool add(user_info_ptr);
+            bool remove(user_info_ptr);
+            bool has(const std::string& id) const;
+            user_info_ptr by_id(const std::string& id) const;
+            user_info_ptr get(size_t) const;
 
-            private:
-                users _list;
-                user_map _map;
-                mutable std::mutex _mutex;
-        };
+        public:
+            bool empty() const;
+            size_t size() const;
+            void clear();
 
-        class greet_server
-        {
-            public:
-                greet_server() : _host(), _port(), _key(){}
+        private:
+            users _list;
+            user_map _map;
+            mutable std::mutex _mutex;
+    };
 
-                greet_server(const greet_server& o) : 
-                    _host(o._host), _port(o._port), _key(o._key){}
+    class greet_server
+    {
+        public:
+            greet_server() : _host(), _port(), _key(){}
 
-                greet_server(const std::string& host, network::port_type port, const std::string& key) : 
-                    _host(host), _port(port), _key(key){}
+            greet_server(const greet_server& o) : 
+                _host(o._host), _port(o._port), _key(o._key){}
 
-                greet_server& operator=(const greet_server& o);
+            greet_server(const std::string& host, network::port_type port, const std::string& key) : 
+                _host(host), _port(port), _key(key){}
 
-            public:
-                std::string host() const; 
-                network::port_type port() const;
-                std::string public_key() const;
-                void host(const std::string& host); 
-                void port(network::port_type port);
-                void public_key(const std::string& key);
+            greet_server& operator=(const greet_server& o);
 
-            private:
-                std::string _host;
-                network::port_type _port;
-                std::string _key;
-                mutable std::mutex _mutex;
-        };
+        public:
+            std::string host() const; 
+            network::port_type port() const;
+            std::string public_key() const;
+            void host(const std::string& host); 
+            void port(network::port_type port);
+            void public_key(const std::string& key);
 
-        using greet_servers = std::vector<greet_server>;
+        private:
+            std::string _host;
+            network::port_type _port;
+            std::string _key;
+            mutable std::mutex _mutex;
+    };
 
-        struct contact_introduction
-        {
-            std::string from_id;
-            std::string greeter;
-            std::string message;
-            user_info contact;
-            bool operator==(const contact_introduction&) const;
-        };
-        using contact_introductions = std::vector<contact_introduction>;
-        contact_introduction to_introduction(const util::value&);
-        util::dict from_introduction(const contact_introduction&);
+    using greet_servers = std::vector<greet_server>;
 
-        class local_user
-        {
-            public:
-                local_user(
-                        const user_info& i, 
-                        const contact_list& c,
-                        const greet_servers& g,
-                        const contact_introductions& is,
-                        security::private_key_ptr);
+    struct contact_introduction
+    {
+        std::string from_id;
+        std::string greeter;
+        std::string message;
+        user_info contact;
+        bool operator==(const contact_introduction&) const;
+    };
+    using contact_introductions = std::vector<contact_introduction>;
+    contact_introduction to_introduction(const util::value&);
+    util::dict from_introduction(const contact_introduction&);
 
-                local_user(const std::string& name, security::private_key_ptr); 
+    class local_user
+    {
+        public:
+            local_user(
+                    const user_info& i, 
+                    const contact_list& c,
+                    const greet_servers& g,
+                    const contact_introductions& is,
+                    security::private_key_ptr);
 
-            public:
-                const user_info& info() const { return _info;}
-                user_info& info() { return _info;}
+            local_user(const std::string& name, security::private_key_ptr); 
 
-                const contact_list& contacts() const { return _contacts;}
-                contact_list& contacts() { return _contacts;}
+        public:
+            const user_info& info() const { return _info;}
+            user_info& info() { return _info;}
 
-                const greet_servers& greeters() const { return _greet_servers;}
-                greet_servers& greeters() { return _greet_servers;}
+            const contact_list& contacts() const { return _contacts;}
+            contact_list& contacts() { return _contacts;}
 
-                const contact_introductions& introductions() const { return _introductions;}
-                contact_introductions& introductions() { return _introductions;}
+            const greet_servers& greeters() const { return _greet_servers;}
+            greet_servers& greeters() { return _greet_servers;}
 
-                const security::private_key& private_key() const { return *_prv_key;}
+            const contact_introductions& introductions() const { return _introductions;}
+            contact_introductions& introductions() { return _introductions;}
 
-            private:
-                user_info _info;
-                contact_list _contacts;
-                greet_servers _greet_servers;
-                contact_introductions _introductions;
-                security::private_key_ptr _prv_key;
-        };
+            const security::private_key& private_key() const { return *_prv_key;}
 
-        using local_user_ptr = std::shared_ptr<local_user>;
-        using local_user_wptr = std::weak_ptr<local_user>;
+        private:
+            user_info _info;
+            contact_list _contacts;
+            greet_servers _greet_servers;
+            contact_introductions _introductions;
+            security::private_key_ptr _prv_key;
+    };
+
+    using local_user_ptr = std::shared_ptr<local_user>;
+    using local_user_wptr = std::weak_ptr<local_user>;
 
 
-        //load and save local user info to disk
-        bool user_created(const std::string& home_dir);
-        local_user_ptr load_user(const std::string& home_dir, const std::string& passphrase);
-        void save_user(const std::string& home_dir, const local_user&);
+    //load and save local user info to disk
+    bool user_created(const std::string& home_dir);
+    local_user_ptr load_user(const std::string& home_dir, const std::string& passphrase);
+    void save_user(const std::string& home_dir, const local_user&);
 
-        //loads and saves a contact
-        user_info_ptr load_contact(const std::string& file);
-        void save_contact(const std::string& file, const user_info&);
+    //loads and saves a contact
+    user_info_ptr load_contact(const std::string& file);
+    void save_contact(const std::string& file, const user_info&);
 
-        //load and save cached port
-        network::port_type load_port(const std::string& home_dir);
-        void save_port(const std::string& home_dir, network::port_type);
+    //load and save cached port
+    network::port_type load_port(const std::string& home_dir);
+    void save_port(const std::string& home_dir, network::port_type);
 
-        //serialization functions
-        std::ostream& operator<<(std::ostream& out, const user_info& u);
-        std::istream& operator>>(std::istream& in, user_info& u);
-    }
+    //serialization functions
+    std::ostream& operator<<(std::ostream& out, const user_info& u);
+    std::istream& operator>>(std::istream& in, user_info& u);
 }
-
-#endif

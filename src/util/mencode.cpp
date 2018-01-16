@@ -266,6 +266,7 @@ namespace fire::util
 
     void array::add(const value& v) { _a.push_back(v); }
     void array::resize(size_t size) { _a.resize(size); }
+    void array::reserve(size_t size) { _a.reserve(size); }
 
     template <typename t>
         void enc(std::ostream& o, char s, char e, const t& v)

@@ -166,6 +166,7 @@ namespace fire::util
         public:
             void add(const value&);
             void resize(size_t size);
+            void reserve(size_t size);
 
         public:
             value& operator[](size_t);
