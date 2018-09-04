@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Maxim Noah Khailo
+ * Copyright (C) 2017  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -43,259 +43,269 @@
 
 namespace bf = boost::filesystem;
 
-namespace fire
+namespace fire::util
 {
-    namespace util
+    namespace 
     {
-        namespace 
+        const std::string INDEX = "index";
+    }
+
+    std::string get_index_file(const std::string& dir)
+    {
+        bf::path p = dir;
+
+        p /= INDEX;
+        return p.string();
+    }
+
+    std::string get_value_file(const std::string& dir, const std::string& id)
+    {
+        bf::path p = dir;
+
+        p /= id;
+        return p.string();
+    }
+
+    disk_store::disk_store() 
+    {
+        _mutex = std::make_shared<std::mutex>();
+        _index = std::make_shared<dict>();
+
+        ENSURE(_path.empty());
+        ENSURE(_mutex);
+        ENSURE(_index);
+    }
+
+    disk_store::disk_store(const std::string& path) 
+    {
+        _mutex = std::make_shared<std::mutex>();
+        _index = std::make_shared<dict>();
+
+        REQUIRE_FALSE(path.empty());
+        CHECK(_path.empty());
+
+        load(path);
+
+        ENSURE_FALSE(_path.empty());
+        ENSURE(_mutex);
+        ENSURE(_index);
+    }
+
+    disk_store::disk_store(const disk_store& o) 
+    {
+        REQUIRE(o._mutex);
+        REQUIRE(o._index);
+
+        mutex_scoped_lock l(*o._mutex);
+
+        _path = o._path;
+        _index = o._index;
+        _mutex = o._mutex;
+
+        ENSURE(_mutex);
+        ENSURE(_index);
+    }
+
+    disk_store& disk_store::operator=(const disk_store& o)
+    {
+        INVARIANT(_mutex);
+        INVARIANT(_index);
+        REQUIRE(o._mutex);
+        REQUIRE(o._index);
+
+        if(this == &o) return *this;
+        if(_mutex == o._mutex) return *this;
+
+        CHECK(_index != _index);
+        mutex_scoped_lock l(*o._mutex);
         {
-            const std::string INDEX = "index";
-        }
-
-        std::string get_index_file(const std::string& dir)
-        {
-            bf::path p = dir;
-
-            p /= INDEX;
-            return p.string();
-        }
-
-        std::string get_value_file(const std::string& dir, const std::string& id)
-        {
-            bf::path p = dir;
-
-            p /= id;
-            return p.string();
-        }
-
-        disk_store::disk_store() 
-        {
-            _mutex = std::make_shared<std::mutex>();
-            _index = std::make_shared<dict>();
-            ENSURE(_path.empty());
-            ENSURE(_mutex);
-            ENSURE(_index);
-        }
-
-        disk_store::disk_store(const std::string& path) 
-        {
-            _mutex = std::make_shared<std::mutex>();
-            _index = std::make_shared<dict>();
-
-            REQUIRE_FALSE(path.empty());
-            CHECK(_path.empty());
-
-            load(path);
-
-            ENSURE_FALSE(_path.empty());
-            ENSURE(_mutex);
-            ENSURE(_index);
-        }
-
-        disk_store::disk_store(const disk_store& o) 
-        {
-            REQUIRE(o._mutex);
-            REQUIRE(o._index);
-            mutex_scoped_lock l(*o._mutex);
-
+            mutex_scoped_lock l(*_mutex);
             _path = o._path;
             _index = o._index;
-            _mutex = o._mutex;
+        }
+        _mutex = o._mutex;
 
-            ENSURE(_mutex);
-            ENSURE(_index);
+        ENSURE(_mutex);
+        ENSURE(_index);
+        return *this;
+    }
+
+    void disk_store::load(const std::string& path) 
+    {
+        INVARIANT(_index);
+        INVARIANT(_mutex);
+        REQUIRE_FALSE(path.empty());
+
+        mutex_scoped_lock l(*_mutex);
+
+        if(!bf::exists(path)) 
+            throw std::runtime_error{"path `" + path + "' does not exist."};
+
+        LOG << "loading store `" << path << "'" << std::endl;
+        _path = path;
+        load_from_file(get_index_file(path), *_index);
+
+        ENSURE_FALSE(_path.empty());
+    }
+
+    bool disk_store::loaded() const
+    {
+        INVARIANT(_mutex);
+
+        mutex_scoped_lock l(*_mutex);
+        return !_path.empty();
+    }
+
+    value disk_store::get(const std::string& key) const
+    {
+        INVARIANT(_index);
+        INVARIANT(_mutex);
+
+        mutex_scoped_lock l(*_mutex);
+        INVARIANT_FALSE(_path.empty());
+
+        value v;
+        get_value(key, v);
+
+        return v;
+    }
+
+    void disk_store::get_value(const std::string& key, value& v) const
+    {
+        INVARIANT(_index);
+        auto id = (*_index)[key].as_string();
+        load_from_file(get_value_file(_path, id), v);
+    }
+
+    bool disk_store::has(const std::string& key) const
+    {
+        INVARIANT(_index);
+        INVARIANT(_mutex);
+        mutex_scoped_lock l(*_mutex);
+
+        return _index->has(key);
+    }
+    void disk_store::set(const std::string& key, const value& v)
+    {
+        INVARIANT(_index);
+        INVARIANT(_mutex);
+        mutex_scoped_lock l(*_mutex);
+
+        set_intern(key, v);
+        save_index();
+    }
+
+    void disk_store::set_intern(const std::string& key, const value& v)
+    {
+        INVARIANT(_index);
+
+        std::string id;
+        if(_index->has(key)) id = (*_index)[key].as_string();
+        else 
+        {
+            id = uuid();
+            (*_index)[key] = id;
         }
 
-        disk_store& disk_store::operator=(const disk_store& o)
+        CHECK_FALSE(id.empty());
+
+        save_to_file(get_value_file(_path, id), v);
+    }
+
+    bool disk_store::remove(const std::string& key)
+    {
+        INVARIANT(_index);
+        INVARIANT(_mutex);
+        mutex_scoped_lock l(*_mutex);
+
+        return remove_intern(key);
+    }
+
+    bool disk_store::remove_intern(const std::string& key)
+    {
+        INVARIANT(_index);
+
+        if(!_index->has(key)) return false;
+
+        //remove data
+        const auto id = (*_index)[key].as_string();
+        delete_file(get_value_file(_path, id));
+
+        //remove from index
+        _index->remove(key);
+
+        save_index();
+        return true;
+    }
+
+    using key_set = std::set<std::string>;
+
+    void disk_store::clear()
+    {
+        INVARIANT(_index);
+        INVARIANT(_mutex);
+        mutex_scoped_lock l(*_mutex);
+
+        key_set keys;
+        std::transform(
+                _index->begin(), _index->end(),
+                std::inserter(keys, keys.end()),
+                [](const auto& p ) 
+                { 
+                    return p.first;
+                });
+
+        for(const auto& k : keys)
+            remove_intern(k);
+    }
+
+    disk_store::const_iterator disk_store::begin() const
+    {
+        INVARIANT(_index);
+        return _index->begin();
+    }
+
+    disk_store::const_iterator disk_store::end() const
+    {
+        INVARIANT(_index);
+        return _index->end();
+    }
+
+    size_t disk_store::size() const
+    {
+        INVARIANT(_index);
+        return _index->size();
+    }
+
+    void disk_store::save_index()
+    {
+        INVARIANT_FALSE(_path.empty());
+        save_to_file(get_index_file(_path), *_index);
+    }
+
+    void disk_store::import_from(const dict& d)
+    {
+        INVARIANT(_index);
+        INVARIANT(_mutex);
+        mutex_scoped_lock l(*_mutex);
+
+        for(const auto& p : d)
+            set_intern(p.first, p.second);
+
+        save_index();
+    }
+
+    void disk_store::export_to(dict& d) const
+    {
+        INVARIANT(_index);
+        INVARIANT(_mutex);
+        mutex_scoped_lock l(*_mutex);
+
+        for(const auto& p : *_index)
         {
-            INVARIANT(_mutex);
-            INVARIANT(_index);
-            REQUIRE(o._mutex);
-            REQUIRE(o._index);
-
-            if(this == &o) return *this;
-            if(_mutex == o._mutex) return *this;
-
-            CHECK(_index != _index);
-            mutex_scoped_lock l(*o._mutex);
-            {
-                mutex_scoped_lock l(*_mutex);
-                _path = o._path;
-                _index = o._index;
-            }
-            _mutex = o._mutex;
-
-            ENSURE(_mutex);
-            ENSURE(_index);
-            return *this;
-        }
-
-        void disk_store::load(const std::string& path) 
-        {
-            INVARIANT(_index);
-            INVARIANT(_mutex);
-            mutex_scoped_lock l(*_mutex);
-            REQUIRE_FALSE(path.empty());
-
-            if(!bf::exists(path)) 
-                throw std::runtime_error{"path `" + path + "' does not exist."};
-
-            LOG << "loading store `" << path << "'" << std::endl;
-            _path = path;
-            load_from_file(get_index_file(path), *_index);
-
-            ENSURE_FALSE(_path.empty());
-        }
-
-        bool disk_store::loaded() const
-        {
-            INVARIANT(_mutex);
-            mutex_scoped_lock l(*_mutex);
-            return !_path.empty();
-        }
-
-        value disk_store::get(const std::string& key) const
-        {
-            INVARIANT(_index);
-            INVARIANT(_mutex);
-            mutex_scoped_lock l(*_mutex);
-            INVARIANT_FALSE(_path.empty());
-
             value v;
-            get_value(key, v);
-            return v;
-        }
-
-        void disk_store::get_value(const std::string& key, value& v) const
-        {
-            INVARIANT(_index);
-            auto id = (*_index)[key].as_string();
-            load_from_file(get_value_file(_path, id), v);
-        }
-
-        bool disk_store::has(const std::string& key) const
-        {
-            INVARIANT(_index);
-            INVARIANT(_mutex);
-            mutex_scoped_lock l(*_mutex);
-            return _index->has(key);
-        }
-        void disk_store::set(const std::string& key, const value& v)
-        {
-            INVARIANT(_index);
-            INVARIANT(_mutex);
-            mutex_scoped_lock l(*_mutex);
-
-            set_intern(key, v);
-            save_index();
-        }
-
-        void disk_store::set_intern(const std::string& key, const value& v)
-        {
-            INVARIANT(_index);
-
-            std::string id;
-            if(_index->has(key)) id = (*_index)[key].as_string();
-            else 
-            {
-                id = uuid();
-                (*_index)[key] = id;
-            }
-
-            CHECK_FALSE(id.empty());
-            save_to_file(get_value_file(_path, id), v);
-        }
-
-        bool disk_store::remove(const std::string& key)
-        {
-            INVARIANT(_index);
-            INVARIANT(_mutex);
-            mutex_scoped_lock l(*_mutex);
-
-            return remove_intern(key);
-        }
-
-        bool disk_store::remove_intern(const std::string& key)
-        {
-            INVARIANT(_index);
-            if(!_index->has(key)) return false;
-
-            //remove data
-            auto id = (*_index)[key].as_string();
-            delete_file(get_value_file(_path, id));
-
-            //remove from index
-            _index->remove(key);
-
-            save_index();
-            return true;
-        }
-        
-        using key_set = std::set<std::string>;
-
-        void disk_store::clear()
-        {
-            INVARIANT(_index);
-            INVARIANT(_mutex);
-            mutex_scoped_lock l(*_mutex);
-
-            key_set keys;
-            std::transform(_index->begin(), _index->end(),
-                    std::inserter(keys, keys.end()),
-                    [](const dict::value_type& p ) { return p.first;});
-
-            for(const auto& k : keys)
-                remove_intern(k);
-        }
-
-        disk_store::const_iterator disk_store::begin() const
-        {
-            INVARIANT(_index);
-            return _index->begin();
-        }
-
-        disk_store::const_iterator disk_store::end() const
-        {
-            INVARIANT(_index);
-            return _index->end();
-        }
-
-        size_t disk_store::size() const
-        {
-            INVARIANT(_index);
-            return _index->size();
-        }
-
-        void disk_store::save_index()
-        {
-            INVARIANT_FALSE(_path.empty());
-            save_to_file(get_index_file(_path), *_index);
-        }
-
-        void disk_store::import_from(const dict& d)
-        {
-            INVARIANT(_index);
-            INVARIANT(_mutex);
-            mutex_scoped_lock l(*_mutex);
-
-            for(const auto& p : d)
-                set_intern(p.first, p.second);
-
-            save_index();
-        }
-
-        void disk_store::export_to(dict& d) const
-        {
-            INVARIANT(_index);
-            INVARIANT(_mutex);
-            mutex_scoped_lock l(*_mutex);
-
-            for(const auto& p : *_index)
-            {
-                value v;
-                get_value(p.first, v);
-                d[p.first]  = v;
-            }
+            get_value(p.first, v);
+            d[p.first]  = v;
         }
     }
 }

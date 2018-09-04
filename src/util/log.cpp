@@ -40,64 +40,61 @@
 
 namespace bf = boost::filesystem;
 
-namespace fire 
+namespace fire::util
 {
-    namespace util 
+    namespace
     {
-        namespace
-        {
-            std::string LOG_HOME = "log";
-            std::string LOG_FILE = "out.log";
-        }
+        std::string LOG_HOME = "log";
+        std::string LOG_FILE = "out.log";
+    }
 
-        log_ptr log::_log;
+    log_ptr log::_log;
 
-        std::string get_log_path(bf::path home)
-        {
-            bf::path log_home = home / LOG_HOME;
-            return log_home.string();
-        }
+    std::string get_log_path(bf::path home)
+    {
+        bf::path log_home = home / LOG_HOME;
+        return log_home.string();
+    }
 
-        std::string get_log_file(bf::path path)
-        {
-            bf::path log_file = path / LOG_FILE;
-            return log_file.string();
-        }
+    std::string get_log_file(bf::path path)
+    {
+        bf::path log_file = path / LOG_FILE;
+        return log_file.string();
+    }
 
-        log::log(std::string home)
-        {
-            auto log_path = get_log_path(home);
-            if(!create_directory(log_path))
-                throw std::runtime_error{"unable to create log directory `" + log_path + "'"};
+    log::log(std::string home)
+    {
+        auto log_path = get_log_path(home);
+        if(!create_directory(log_path))
+            throw std::runtime_error{"unable to create log directory `" + log_path + "'"};
 
-            _log_file = get_log_file(log_path);
-            ostream_ptr s{new std::ofstream(_log_file.c_str())};
-            if(!s->good())
-                throw std::runtime_error{"unable to create log file `" + _log_file + "'"};
+        _log_file = get_log_file(log_path);
+        ostream_ptr s{new std::ofstream(_log_file.c_str())};
+        if(!s->good())
+            throw std::runtime_error{"unable to create log file `" + _log_file + "'"};
 
-            _stream = std::move(s);
-        }
+        _stream = std::move(s);
+    }
 
-        std::ostream& log::stream()
-        {
-            INVARIANT(_stream);
-            return *_stream;
-        }
+    std::ostream& log::stream()
+    {
+        INVARIANT(_stream);
+        return *_stream;
+    }
 
-        const std::string& log::path()
-        {
-            return _log_file;
-        }
+    const std::string& log::path()
+    {
+        return _log_file;
+    }
 
-        void log::create_log(const std::string& home)
-        {
-            REQUIRE_FALSE(_log);
-            _log.reset(new log(home));
-        }
+    void log::create_log(const std::string& home)
+    {
+        REQUIRE_FALSE(_log);
+        _log.reset(new log(home));
+    }
 
-        log* log::inst()
-        {
-            return _log.get();
-        }
+    log* log::inst()
+    {
+        return _log.get();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Maxim Noah Khailo
+ * Copyright (C) 2017  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,48 +34,48 @@
 #include "util/dbc.hpp"
 #include "util/log.hpp"
 
-namespace fire 
+namespace fire::util
 {
-    namespace util 
+    cr_string::cr_string() : _c{""} {}
+    cr_string::cr_string(const std::string& id) : _c{id} {}
+    cr_string::cr_string(const tracked_sclock& c, const std::string& s) : _c{c}, _s(s) {}
+
+    const std::string& cr_string::str() const { return _s; }
+    const tracked_sclock& cr_string::clock() const { return _c; }
+    tracked_sclock& cr_string::clock() { return _c; }
+
+    void cr_string::init_set(const std::string& s) { _s = s;}
+    void cr_string::set(const std::string& s) { _s = s; _c++;}
+
+    merge_result cr_string::merge(const cr_string& o)
     {
-        cr_string::cr_string() : _c{""} {}
-        cr_string::cr_string(const std::string& id) : _c{id} {}
-        cr_string::cr_string(const tracked_sclock& c, const std::string& s) : _c{c}, _s(s) {}
 
-        const std::string& cr_string::str() const { return _s; }
-        const tracked_sclock& cr_string::clock() const { return _c; }
-        tracked_sclock& cr_string::clock() { return _c; }
+        merge_result r = merge_result::NO_CHANGE;
 
-        void cr_string::init_set(const std::string& s) { _s = s;}
-        void cr_string::set(const std::string& s) { _s = s; _c++;}
-
-        merge_result cr_string::merge(const cr_string& o)
+        //merge strings
+        switch(o._c.compare(_c))
         {
-            auto cmp = o._c.compare(_c);
+            case -1: /*do nothing */ break;
 
-            merge_result r = merge_result::NO_CHANGE;
+            //string is newer then set current to new
+            case 1: _s = o._s; r = merge_result::UPDATED; break;
 
-            //merge strings
-            switch(cmp)
-            {
-                case -1: /*do nothing */ break;
-
-                //string is newer then set current to new
-                case 1: _s = o._s; r = merge_result::UPDATED; break;
-
-                //string is concurrent, do 3 way merge
-                case 0: 
+            //string is concurrent, do 3 way merge
+            case 0: 
                     {
                         if(_c.identical(o._c)) break;
 
                         //check to see if we have last seen string from other node
                         //and use it as base string, otherwise use other nodes string
-                        auto a = o._s;
-                        auto b = _s;
-                        auto c = o._s;
+                        const auto a = o._s;
+                        const auto b = _s;
+                        const auto c = o._s;
 
-                        auto merged = util::merge(a, b, c, _s);
-                        if(!merged) r = merge_result::CONFLICT;
+                        const auto merged = util::merge(a, b, c, _s);
+                        if(!merged) 
+                        {
+                            r = merge_result::CONFLICT;
+                        }
                         else
                         {
                             r = merge_result::MERGED;
@@ -83,15 +83,13 @@ namespace fire
                         }
                     }
                     break;
-                default:
+            default:
                     CHECK(false && "missed case");
-            }
-
-            //merge clocks
-            _c += o._c;
-
-            return r;
         }
 
+        //merge clocks
+        _c += o._c;
+
+        return r;
     }
 }

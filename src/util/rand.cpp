@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Maxim Noah Khailo
+ * Copyright (C) 2017  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,37 +37,36 @@
 #include <random>
 #include <mutex>
 
-namespace fire
+namespace fire::util
 {
-    namespace util
+    namespace
     {
-        namespace
-        {
-            std::mutex RAND_MUTEX;
-            std::mt19937 RNG;
-            bool SEEDED = false;
-        }
+        std::mutex RAND_MUTEX;
+        std::mt19937 RNG;
+        bool SEEDED = false;
+    }
 
-        void init_rand()
-        {
-            REQUIRE_FALSE(SEEDED);
-            RNG.seed(std::time(0));
-            SEEDED = true;
+    void init_rand()
+    {
+        REQUIRE_FALSE(SEEDED);
 
-            ENSURE(SEEDED);
-        }
+        RNG.seed(std::time(0));
+        SEEDED = true;
 
-        uint32_t rand(uint32_t min, uint32_t max)
-        {
-            REQUIRE_LESS(min, max);
-            REQUIRE(SEEDED);
+        ENSURE(SEEDED);
+    }
 
-            std::lock_guard<std::mutex> lock(RAND_MUTEX);
-            std::uniform_int_distribution<uint32_t> dist(min,max); 
+    uint32_t rand(uint32_t min, uint32_t max)
+    {
+        REQUIRE_LESS(min, max);
+        REQUIRE(SEEDED);
 
-            auto v = dist(RNG);
-            ENSURE_BETWEEN(v, min, max);
-            return v;
-        }
+        std::lock_guard<std::mutex> lock(RAND_MUTEX);
+        std::uniform_int_distribution<uint32_t> dist(min,max); 
+
+        const auto v = dist(RNG);
+
+        ENSURE_BETWEEN(v, min, max);
+        return v;
     }
 }

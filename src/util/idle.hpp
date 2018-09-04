@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Maxim Noah Khailo
+ * Copyright (C) 2017  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,24 +29,19 @@
  * also delete it here.
  */
 
-#ifndef FIRESTR_UTIL_IDLE_H
-#define FIRESTR_UTIL_IDLE_H
+#pragma once
 
 #include "util/dbc.hpp"
 
-namespace fire
+namespace fire::util
 {
-    namespace util
-    {
-        /**
-         * Returns how long the user is idle for in miliseconds.
-         */
-        size_t user_idle();
+    /**
+     * Returns how long the user is idle for in miliseconds.
+     */
+    size_t user_idle();
 
-        /**
-         * Returns true if the user is away from his computer.
-         */
-        bool user_is_idle();
-    }
+    /**
+     * Returns true if the user is away from his computer.
+     */
+    bool user_is_idle();
 }
-#endif

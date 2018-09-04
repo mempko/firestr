@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Maxim Noah Khailo
+ * Copyright (C) 2017  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,17 +35,15 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/lexical_cast.hpp>
-namespace fire
-{
-    namespace util
-    {
-        std::string uuid()
-        {
-            boost::uuids::uuid id = boost::uuids::random_generator()();
-            const std::string r = boost::lexical_cast<std::string>(id);
 
-            ENSURE_FALSE(r.empty());
-            return r;
-        }
+namespace fire::util
+{
+    std::string uuid()
+    {
+        const auto id = boost::uuids::random_generator()();
+        const auto r = boost::lexical_cast<std::string>(id);
+
+        ENSURE_FALSE(r.empty());
+        return r;
     }
 }

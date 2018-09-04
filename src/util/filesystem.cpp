@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Maxim Noah Khailo
+ * Copyright (C) 2017  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,38 +37,35 @@
 
 namespace bf = boost::filesystem;
 
-namespace fire
+namespace fire::util
 {
-    namespace util
+    bool create_directory(const std::string& dir)
     {
-            bool create_directory(const std::string& dir)
-            {
-                REQUIRE_FALSE(dir.empty());
+        REQUIRE_FALSE(dir.empty());
 
-                if(bf::exists(dir)) return true;
+        if(bf::exists(dir)) return true;
 
-                bf::create_directories(dir);
-                return bf::exists(dir);
-            }
+        bf::create_directories(dir);
+        return bf::exists(dir);
+    }
 
-            bool delete_directory(const std::string& dir)
-            {
-                REQUIRE_FALSE(dir.empty());
+    bool delete_directory(const std::string& dir)
+    {
+        REQUIRE_FALSE(dir.empty());
 
-                if(!bf::exists(dir)) return false;
+        if(!bf::exists(dir)) return false;
 
-                bf::remove_all(dir);
-                return !bf::exists(dir);
-            }
+        bf::remove_all(dir);
+        return !bf::exists(dir);
+    }
 
-            bool delete_file(const std::string& file)
-            {
-                REQUIRE_FALSE(file.empty());
-                if(!bf::exists(file)) return false;
+    bool delete_file(const std::string& file)
+    {
+        REQUIRE_FALSE(file.empty());
+        if(!bf::exists(file)) return false;
 
-                bf::remove(file);
-                return !bf::exists(file);
-            }
+        bf::remove(file);
+        return !bf::exists(file);
     }
 }
 

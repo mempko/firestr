@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Maxim Noah Khailo
+ * Copyright (C) 2017  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,23 +33,19 @@
 
 namespace sn = snappy;
 
-namespace fire 
+namespace fire::util
 {
-    namespace util 
+    bytes compress(const bytes& i)
     {
-        bytes compress(const bytes& i)
-        {
-            std::string o;
-            sn::Compress(i.data(), i.size(), &o);
-            return to_bytes(o);
-        }
+        std::string o;
+        sn::Compress(i.data(), i.size(), &o);
+        return to_bytes(o);
+    }
 
-        bytes uncompress(const bytes& i)
-        {
-            std::string o;
-            if(!sn::Uncompress(i.data(), i.size(), &o)) return bytes{};
-            return to_bytes(o);
-        }
+    bytes uncompress(const bytes& i)
+    {
+        std::string o;
+        return sn::Uncompress(i.data(), i.size(), &o) ? to_bytes(o) : bytes{};
     }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Maxim Noah Khailo
+ * Copyright (C) 2017  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,19 +28,17 @@
  * this exception statement from all source files in the program, then 
  * also delete it here.
  */
-#ifndef FIRESTR_UTIL_MAILBOX_H
-#define FIRESTR_UTIL_MAILBOX_H
+
+#pragma once
 
 #include <string>
 #include <memory>
 
 #include "util/queue.hpp"
 
-namespace fire
+namespace fire::util
 {
-    namespace util
-    {
-        template<class letter>
+    template<class letter>
         class mailbox
         {
             public:
@@ -52,19 +50,15 @@ namespace fire
                 const std::string& address() const { return _address; }
                 void address(const std::string& a) { _address = a; }
 
-            public:
                 void push_inbox(const letter& l) { _in.push(l); }
                 bool pop_inbox(letter& l, bool wait = false) { return _in.pop(l, wait); }
 
-            public:
                 void push_outbox(const letter& l) { _out.push(l); }
                 bool pop_outbox(letter& l, bool wait = false) { return _out.pop(l, wait); }
 
-            public:
                 size_t in_size() const { return _in.size(); }
                 size_t out_size() const { return _out.size(); }
 
-            public:
                 void done() { _in.done(); _out.done(); }
 
             private:
@@ -72,6 +66,4 @@ namespace fire
                 queue<letter> _in;
                 queue<letter> _out;
         };
-    }
 }
-#endif

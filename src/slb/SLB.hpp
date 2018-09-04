@@ -4441,7 +4441,7 @@ namespace SLB {
     // Tries to load-and-execute the given file, it can throw an exception
     // If SLB was compiled with Exception support or can exit the program
     // with an error code. See safeDoFile for a safe call that doesn't fail.
-    void doFile(const char *filename) SLB_THROW((std::exception));
+    void doFile(const char *filename);
 
     // Executes the content of the given file, returns true if the call
     // was successful, false otherwise. It never throws, or exits the program,
@@ -4454,7 +4454,7 @@ namespace SLB {
     // method instead.
     void doString(
       const char *codeChunk,
-      const char *where_hint ="[SLB]") SLB_THROW((std::exception));
+      const char *where_hint ="[SLB]");
 
     // Executs the given code chunk and returns true if successful, false
     // otherwise. It never throws, or exits the program, if you need error

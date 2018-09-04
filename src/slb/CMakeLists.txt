@@ -34,8 +34,15 @@ include_directories(lua)
 
 add_definitions(-DMAKE_LIB=1)
 
-file(GLOB src *.cpp lua/*.c)
+file(GLOB lua_src lua/*.c)
+
+add_library(fire_lua STATIC
+    ${lua_src})
+
+file(GLOB src *.cpp)
 
 add_library(fire_slb STATIC
     ${src})
+
+set_target_properties(fire_slb PROPERTIES COMPILE_OPTIONS "-std=c++1z")
 

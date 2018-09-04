@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Maxim Noah Khailo
+ * Copyright (C) 2017  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,48 +33,50 @@
 
 #include <QByteArray>
 
-namespace fire
+namespace fire::util
 {
-    namespace util
+    void trim(std::string& t) 
+    { 
+        boost::algorithm::trim(t);
+    }
+
+    /**
+     * Creates a base 64 string with width of 64 characters
+     */
+    std::string to_base_64(const std::string& s)
     {
-        /**
-         * Creates a base 64 string with width of 64 characters
-         */
-        std::string to_base_64(const std::string& s)
+        QByteArray b{s.c_str()};
+        const std::string bs = b.toBase64().data();
+
+        size_t stride = 64;
+        size_t st = 0;
+        std::stringstream r;
+        while(st < bs.size())
         {
-            QByteArray b{s.c_str()};
-            std::string bs = b.toBase64().data();
-
-            size_t stride = 64;
-            size_t st = 0;
-            std::stringstream r;
-            while(st < bs.size())
-            {
-                r << bs.substr(st, std::min(stride, bs.size() - st)) << std::endl;
-                st += stride;
-            }
-
-            return r.str();
+            r << bs.substr(st, std::min(stride, bs.size() - st)) << std::endl;
+            st += stride;
         }
 
-        bool good_char(char c)
-        {
-            return c != '\n' && c != '\r' && c !=' ' && c != '\t'; 
-        }
+        return r.str();
+    }
 
-        /**
-         * Parses a base 64 string ignoring new line and space characters
-         */
-        std::string from_base_64(const std::string& s)
-        {
-            std::stringstream ss;
-            for(auto c : s)
-                if(good_char(c)) 
-                    ss << c;
+    bool good_char(char c)
+    {
+        return c != '\n' && c != '\r' && c !=' ' && c != '\t'; 
+    }
 
-            QByteArray bs{ss.str().c_str()};
-            auto ra = QByteArray::fromBase64(bs); 
-            return ra.data();
-        }
+    /**
+     * Parses a base 64 string ignoring new line and space characters
+     */
+    std::string from_base_64(const std::string& s)
+    {
+        std::stringstream ss;
+        for(auto c : s)
+            if(good_char(c)) 
+                ss << c;
+
+        QByteArray bs{ss.str().c_str()};
+        const auto ra = QByteArray::fromBase64(bs); 
+        return ra.data();
     }
 }

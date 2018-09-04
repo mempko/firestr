@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Maxim Noah Khailo
+ * Copyright (C) 2017  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,25 +28,20 @@
  * this exception statement from all source files in the program, then 
  * also delete it here.
  */
-#ifndef FIRESTR_COMPRESS_H
-#define FIRESTR_COMPRESS_H
+
+#pragma once
 
 #include "util/bytes.hpp"
 
-namespace fire 
+namespace fire::util
 {
-    namespace util 
-    {
-        /**
-         * compresses a byte array using snappy
-         */
-        bytes compress(const bytes&);
+    /**
+     * compresses a byte array using snappy
+     */
+    bytes compress(const bytes&);
 
-        /**
-         * uncompresses a byte array using snappy
-         */
-        bytes uncompress(const bytes&);
-    }
+    /**
+     * uncompresses a byte array using snappy
+     */
+    bytes uncompress(const bytes&);
 }
-
-#endif

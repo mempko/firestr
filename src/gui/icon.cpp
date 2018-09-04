@@ -45,7 +45,7 @@ namespace fire
 
         QIcon logo()
         {
-            return QIcon{":firestr.svg"};
+            return QIcon{":/firestr.svg"};
         }
 
         QPixmap login_logo()

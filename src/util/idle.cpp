@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Maxim Noah Khailo
+ * Copyright (C) 2017  Maxim Noah Khailo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,93 +41,91 @@
 #include <X11/extensions/scrnsaver.h>
 #endif
 
-namespace fire
+namespace fire::util
 {
-    namespace util
+    namespace
     {
-        namespace
-        {
-            //1 minute until idle
-            const size_t IDLE_TIME = 1 * 60 * 1000; 
-        }
+        //1 minute until idle
+        const size_t IDLE_TIME = 1 * 60 * 1000; 
+    }
 
-        bool user_is_idle()
-        {
-            return user_idle() >= IDLE_TIME;
-        }
+    bool user_is_idle()
+    {
+        return user_idle() >= IDLE_TIME;
+    }
 
 #ifdef _WIN64
-        size_t user_idle()
-        {
-            auto uptime = GetTickCount();
-            LASTINPUTINFO inf;
-            inf.cbSize = sizeof(inf);
-            inf.dwTime = 0;
+    size_t user_idle()
+    {
+        const auto uptime = GetTickCount();
+        LASTINPUTINFO inf;
+        inf.cbSize = sizeof(inf);
+        inf.dwTime = 0;
 
-            if (!GetLastInputInfo(&inf)) return 0;
-            auto idle = uptime - inf.dwTime;
-            return idle >= 0 ? idle : 0;
-        }
+        if (!GetLastInputInfo(&inf)) return 0;
+        const auto idle = uptime - inf.dwTime;
+        return idle >= 0 ? idle : 0;
+    }
 #elif __APPLE__
-        size_t user_idle()
+    size_t user_idle()
+    {
+        io_iterator_t iter = 0;
+        if (IOServiceGetMatchingServices(kIOMasterPortDefault, IOServiceMatching("IOHIDSystem"), &iter) != KERN_SUCCESS) 
+            return 0;
+
+        io_registry_entry_t entry = IOIteratorNext(iter);
+        if(!entry)
         {
-            io_iterator_t iter = 0;
-            if (IOServiceGetMatchingServices(kIOMasterPortDefault, IOServiceMatching("IOHIDSystem"), &iter) != KERN_SUCCESS) 
-                return 0;
+            IOObjectRelease(iter);
+            return 0;
+        }
 
-            io_registry_entry_t entry = IOIteratorNext(iter);
-            if(!entry)
-            {
-                IOObjectRelease(iter);
-                return 0;
-            }
+        CFMutableDictionaryRef dict = nullptr;
+        if (IORegistryEntryCreateCFProperties(entry, &dict, kCFAllocatorDefault, 0) != KERN_SUCCESS) 
+        {
+            IOObjectRelease(entry);
+            IOObjectRelease(iter);
+            return 0;
+        }
 
-            CFMutableDictionaryRef dict = nullptr;
-            if (IORegistryEntryCreateCFProperties(entry, &dict, kCFAllocatorDefault, 0) != KERN_SUCCESS) 
-            {
-                IOObjectRelease(entry);
-                IOObjectRelease(iter);
-                return 0;
-            }
-
-            CFNumberRef obj = static_cast<CFNumberRef>(CFDictionaryGetValue(dict, CFSTR("HIDIdleTime")));
-            if(!obj)
-            {
-                CFRelease(dict);
-                IOObjectRelease(entry);
-                IOObjectRelease(iter);
-                return 0;
-            }
-                
-            int64_t mill = 0;
-            int64_t nano = 0;
-            if (CFNumberGetValue(obj, kCFNumberSInt64Type, &nano)) 
-                mill = (nano / 1000000); 
-
+        CFNumberRef obj = static_cast<CFNumberRef>(CFDictionaryGetValue(dict, CFSTR("HIDIdleTime")));
+        if(!obj)
+        {
             CFRelease(dict);
             IOObjectRelease(entry);
             IOObjectRelease(iter);
-            return mill;
+            return 0;
         }
-#else
-        size_t user_idle()
-        {
-            static Display* d = nullptr;
-            static XScreenSaverInfo* n = nullptr;
-            if(!d) d = XOpenDisplay(0);
-            if(!n) n = XScreenSaverAllocInfo();
 
-            if(!d) 
-            {
-                LOG << "unable to open the x display" << std::endl; 
-                return 0.0;
-            }
+        int64_t mill = 0;
+        int64_t nano = 0;
+        if (CFNumberGetValue(obj, kCFNumberSInt64Type, &nano)) 
+            mill = (nano / 1000000); 
 
-            CHECK(n)
-            XScreenSaverQueryInfo(d, DefaultRootWindow(d), n);
-
-            return n->idle;
-        }
-#endif
+        CFRelease(dict);
+        IOObjectRelease(entry);
+        IOObjectRelease(iter);
+        return mill;
     }
+#else
+    size_t user_idle()
+    {
+        static Display* d = nullptr;
+        static XScreenSaverInfo* n = nullptr;
+
+        if(!d) d = XOpenDisplay(0);
+        if(!n) n = XScreenSaverAllocInfo();
+
+        if(!d) 
+        {
+            LOG << "unable to open the x display" << std::endl; 
+            return 0.0;
+        }
+
+        CHECK(n);
+        XScreenSaverQueryInfo(d, DefaultRootWindow(d), n);
+
+        return n->idle;
+    }
+#endif
 }
