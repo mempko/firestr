@@ -1212,7 +1212,7 @@ namespace fire
                 _dirty = false;
                 update_save_button();
             }
-            catch(std::runtime_error e)
+            catch(std::runtime_error& e)
             {
                 std::stringstream ss;
                 ss << "There was an error saving the app. " << e.what();
@@ -1245,7 +1245,7 @@ namespace fire
 
                 _app_service->export_app(*_app, gui::convert(file));
             }
-            catch(std::runtime_error e)
+            catch(std::runtime_error& e)
             {
                 std::stringstream ss;
                 ss << "There was an error exporting the app. " << e.what();
