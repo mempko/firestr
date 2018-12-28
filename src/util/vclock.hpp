@@ -90,7 +90,7 @@ namespace fire::util
                 /**
                  * The id is expected to be there if you don't want to change it.
                  */
-                const size_t operator[](id_t i) const 
+                size_t operator[](id_t i) const 
                 { 
                     REQUIRE_GREATER(i, 0);
 
