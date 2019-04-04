@@ -2,6 +2,7 @@
 ===================================================================
 
 [![Documentation Status](https://readthedocs.org/projects/fire/badge/?version=latest)](https://readthedocs.org/projects/fire/?badge=latest)
+[![firestr](https://snapcraft.io/firestr/badge.svg)](https://snapcraft.io/firestr)
 
 **The Grass Computing Platform**
 
