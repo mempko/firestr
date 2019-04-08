@@ -56,7 +56,7 @@ namespace fire
 
         metadata::encryption_type to_message_encryption_type(sc::encryption_type s)
         {
-            metadata::encryption_type r;
+            metadata::encryption_type r = metadata::encryption_type::asymmetric;
             switch(s)
             {
                 case sc::encryption_type::plaintext: r = metadata::encryption_type::plaintext; break;
