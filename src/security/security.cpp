@@ -36,12 +36,18 @@
 #include <sstream>
 #include <exception>
 
-#include <botan/botan.h>
+#include <botan/init.h>
 
-#include <botan/rsa.h>
-#include <botan/rng.h>
-#include <botan/look_pk.h>
+#include <botan/auto_rng.h>
+#include <botan/data_src.h>
 #include <botan/dh.h>
+#include <botan/key_filt.h>
+#include <botan/pipe.h>
+#include <botan/pkcs8.h>
+#include <botan/pubkey.h>
+#include <botan/rng.h>
+#include <botan/rsa.h>
+#include <botan/x509_key.h>
 
 namespace b = Botan;
 namespace u = fire::util;
@@ -241,7 +247,7 @@ namespace fire
             INVARIANT(_k);
             u::mutex_scoped_lock l(BOTAN_MUTEX);
 
-            b::PK_Decryptor_EME d{*_k, EME_SCHEME};
+            b::PK_Decryptor_EME d{*_k, *RNG, EME_SCHEME};
 
             u::bytes rs;
             std::stringstream s(u::to_str(b));
@@ -265,7 +271,7 @@ namespace fire
             init_rng();
             CHECK(RNG);
 
-            b::PK_Signer s{*_k, EMSA_SCHEME};
+            b::PK_Signer s{*_k, *RNG, EMSA_SCHEME};
             auto r = s.sign_message(reinterpret_cast<const unsigned char*>(b.data()), b.size(), *RNG); 
 
             ENSURE_EQUAL(r.size(), SIGNATURE_SIZE);
@@ -283,7 +289,7 @@ namespace fire
 
             std::stringstream rs;
 
-            b::PK_Encryptor_EME e{*_k, EME_SCHEME};
+            b::PK_Encryptor_EME e{*_k, *RNG, EME_SCHEME};
 
             size_t advance = 0;
             while(advance < b.size())
@@ -364,8 +370,10 @@ namespace fire
             u::mutex_scoped_lock bl(BOTAN_MUTEX);
             u::mutex_scoped_lock l(_mutex);
             INVARIANT(_pkey);
+            init_rng();
+            CHECK(RNG);
 
-            b::PK_Key_Agreement k{*_pkey, KEY_AGREEMENT_ALGO};
+            b::PK_Key_Agreement k{*_pkey, *RNG, KEY_AGREEMENT_ALGO};
             _skey = 
                 std::make_shared<b::SymmetricKey>(
                         k.derive_key(

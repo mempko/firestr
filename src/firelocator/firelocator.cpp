@@ -49,8 +49,6 @@
 #include "util/dbc.hpp"
 #include "util/log.hpp"
 
-#include <botan/botan.h>
-
 namespace po = boost::program_options;
 namespace ip = boost::asio::ip;
 namespace bf = boost::filesystem;
@@ -316,8 +314,6 @@ int main(int argc, char *argv[])
         std::cout << desc << std::endl;
         return 1;
     }
-
-    Botan::LibraryInitializer init;
 
     auto host = vm["host"].as<std::string>();
     auto port = vm["port"].as<int>();

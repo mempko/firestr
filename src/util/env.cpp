@@ -36,8 +36,6 @@
 #include <cstdlib>
 #include <boost/filesystem.hpp>
 
-#include <botan/botan.h>
-
 #ifdef __APPLE__
 #include <QProcess>
 #include <QString>
@@ -89,7 +87,6 @@ namespace fire::util
 
     void setup_env()
     {
-        Botan::LibraryInitializer init;
         init_rand();
 
 #ifdef __APPLE__

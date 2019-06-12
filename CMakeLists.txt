@@ -54,7 +54,7 @@ elseif(CMAKE_HOST_WIN32)
 else()
     #botan
     add_definitions(-Wall -Werror -fPIC)
-    include_directories(/usr/include/botan-1.10/)
+    include_directories(/usr/include/botan-2/)
 endif()
 
 #setup boost
@@ -91,11 +91,11 @@ if(APPLE)
     find_library(IOKIT NAMES IOKit)
     find_library(CORE NAMES CoreFoundation)
     find_library(CORE_SERVICES NAMES CoreServices)
-    set(MISC_LIBRARIES /usr/local/lib/libopus.a /usr/local/lib/libuuid.dylib libpthread.dylib /usr/local/lib/libbotan-1.10.a /usr/local/lib/libsnappy.a ${IOKIT} ${CORE} ${CORE_SERVICES})
+    set(MISC_LIBRARIES /usr/local/lib/libopus.a /usr/local/lib/libuuid.dylib libpthread.dylib /usr/local/lib/libbotan-2.a /usr/local/lib/libsnappy.a ${IOKIT} ${CORE} ${CORE_SERVICES})
 elseif(CMAKE_HOST_WIN32)
     set(MISC_LIBRARIES celt.lib silk_common.lib silk_float.lib opus.lib botan.lib snappy.lib)
 else()
-    set(MISC_LIBRARIES libopus.so libuuid.so libpthread.so librt.so libbotan-1.10.so libcrypto.so libgmp.so libsnappy.so libXss.so libX11.so)
+    set(MISC_LIBRARIES libopus.so libuuid.so libpthread.so librt.so libbotan-2.so libcrypto.so libgmp.so libsnappy.so libXss.so libX11.so)
 endif()
 
 add_subdirectory(src)
