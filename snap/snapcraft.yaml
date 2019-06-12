@@ -31,13 +31,14 @@ parts:
         - libgmp-dev
         - libssl-dev
         - libxss-dev
-        - libbotan1.10-dev
+        - libbotan-2-dev
         - libopus-dev
         - libsnappy-dev
     stage-packages:
         - libpulse0
         - libasound2
         - locales-all
+        - libqt5gui5
         - libqt5core5a
         - libqt5svg5
         - libqt5widgets5
@@ -45,7 +46,18 @@ parts:
         - libqt5multimedia5
         - libqt5multimedia5-plugins
         - libqt5multimediawidgets5
+        - libxss1
+        - libopus0
+        - libsnappy1v5
+        - libtspi1
+        - libbotan-2-4
     after: [qt5conf]
+
+  qt5conf:
+    build-packages:
+        - dpkg-dev
+    plugin: make
+    source: https://github.com/dplanella/qt5conf.git
 
 apps:
     firestr:
