@@ -36,12 +36,10 @@
 #include <sstream>
 #include <exception>
 
-#include <botan/init.h>
-
 #include <botan/auto_rng.h>
 #include <botan/data_src.h>
 #include <botan/dh.h>
-#include <botan/key_filt.h>
+#include <botan/filters.h>
 #include <botan/pipe.h>
 #include <botan/pkcs8.h>
 #include <botan/pubkey.h>

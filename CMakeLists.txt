@@ -37,7 +37,7 @@ if(APPLE)
     include_directories(/usr/local/include)
 
     #botan from macports
-    include_directories(/usr/local/include/botan-1.10/)
+    include_directories(/usr/local/include/botan-2/)
 elseif(CMAKE_HOST_WIN32)
     link_directories(C:/snappy)
     link_directories(C:/opus/lib)
@@ -50,7 +50,6 @@ elseif(CMAKE_HOST_WIN32)
     add_definitions(-DWIN32_LEAN_AND_MEAN)
     add_definitions(-DNOMINMAX)
     set(CMAKE_CXX_FLAGS "/EHsc")
-
 else()
     #botan
     add_definitions(-Wall -Werror -fPIC)
