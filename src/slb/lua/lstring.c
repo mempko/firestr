@@ -94,6 +94,7 @@ static TString *createstrobj (lua_State *L, const char *str, size_t l,
   TString *ts;
   GCObject *o;
   size_t totalsize;  /* total size of TString object */
+  char* ss;
   totalsize = sizelstring(l);
   o = luaC_newobj(L, tag, totalsize);
   ts = gco2ts(o);
@@ -101,7 +102,8 @@ static TString *createstrobj (lua_State *L, const char *str, size_t l,
   ts->hash = h;
   ts->extra = 0;
   memcpy(getaddrstr(ts), str, l * sizeof(char));
-  getaddrstr(ts)[l] = '\0';  /* ending 0 */
+  ss = getaddrstr(ts);
+  ss[l] = '\0';  /* ending 0 */
   return ts;
 }
 

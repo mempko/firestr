@@ -516,7 +516,7 @@ namespace fire
                 _script = new app_text_editor{_api.get()};
                 _script->setMinimumSize(QSize{MIN_EDIT_WIDTH, MIN_EDIT_HEIGHT});
                 _script->setWordWrapMode(QTextOption::NoWrap);
-                _script->setTabStopWidth(40);
+                _script->setTabStopDistance(40);
                 _highlighter = new lua_highlighter(_script->document());
 
                 _started = _app->code().empty() ? start_state::GET_CODE : start_state::DONE_START;
