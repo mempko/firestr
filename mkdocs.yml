@@ -1,12 +1,12 @@
 site_name: Fire★ Documentation
 theme: readthedocs
-pages:
-  - [index.md, Home]
-  - [quickstart.md, 'Quickstart Guide']
-  - [connecting.md, 'Connecting']
-  - [installing_apps.md, 'Installing Apps']
-  - [api/index.md, 'Creating Apps', 'Creating Apps']
-  - [api/hello_world.md, 'Creating Apps', 'Hello World Tutorial']
-  - [api/chat.md, 'Creating Apps', 'Simple Chat Tutorial']
-  - [api/reference.md, 'Creating Apps', 'API Reference']
-
+nav:
+  - Home: 'index.md'
+  - 'Quickstart Guid': quickstart.md
+  - Connecting: connecting.md
+  - 'Installing Apps': 'installing_apps.md'
+  - 'Creating Apps':
+    - 'Creating Apps': 'api/index.md'
+    - 'Hello World Tutorial': 'api/hello_world.md'
+    - 'Simple Chat Tutorial': 'api/chat.md'
+    - 'API Reference': 'api/reference.md'
