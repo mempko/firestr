@@ -50,7 +50,7 @@ parts:
         - libopus0
         - libsnappy1v5
         - libtspi1
-        - libbotan-2-4
+        - libbotan-2-13
     after: [qt5conf]
 
   qt5conf:
