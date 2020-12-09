@@ -51,8 +51,27 @@ parts:
         - libsnappy1v5
         - libtspi1
         - libbotan-2-12
-    after: [desktop/qt5]
+    after: [desktop-qt5]
 
+  desktop-qt5:
+    source: https://github.com/ubuntu/snapcraft-desktop-helpers.git
+    source-subdir: qt
+    plugin: make
+    make-parameters: ["FLAVOR=qt5"]
+    build-packages:
+      - build-essential
+      - qtbase5-dev
+      - dpkg-dev
+    stage-packages:
+      - libxkbcommon0
+      - ttf-ubuntu-font-family
+      - libqt5gui5
+      - libgdk-pixbuf2.0-0
+      - libqt5svg5
+      - try: [appmenu-qt5]
+      - locales-all
+      - xdg-user-dirs
+      - fcitx-frontend-qt5
 
 apps:
     firestr:
