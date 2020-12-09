@@ -61,7 +61,7 @@ parts:
 
 apps:
     firestr:
-        command: qt5-launch firestr
+        command: bin/desktop-launch firestr
         desktop: share/applications/firestr.desktop
         plugs:
             - x11
