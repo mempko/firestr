@@ -374,7 +374,7 @@ namespace fire
                     auto mapper = new QSignalMapper{this};
                     mapper->setMapping(con, QString(u->id().c_str()));
                     connect(con, SIGNAL(clicked()), mapper, SLOT(map()));
-                    connect(mapper, SIGNAL(mapped(QString)), this, SLOT(create_conversation(QString)));
+                    connect(mapper, SIGNAL(mappedString(QString)), this, SLOT(create_conversation(QString)));
 
                     return new user_info{u, _user_service, con, true};
                 }
@@ -535,7 +535,7 @@ namespace fire
                 auto action  = new QAction{name.c_str(), this};
                 mapper->setMapping(action, QString(id.c_str()));
                 connect(action, SIGNAL(triggered()), mapper, SLOT(map()));
-                connect(mapper, SIGNAL(mapped(QString)), this, SLOT(load_app_into_conversation(QString)));
+                connect(mapper, SIGNAL(mappedString(QString)), this, SLOT(load_app_into_conversation(QString)));
 
                 _app_menu->addAction(action);
             }
@@ -1229,7 +1229,7 @@ namespace fire
             auto mapper = new QSignalMapper{this};
             mapper->setMapping(x, w);
             connect(x, SIGNAL(clicked()), mapper, SLOT(map()));
-            connect(mapper, SIGNAL(mapped(QWidget*)), this, SLOT(remove_alert(QWidget*)));
+            connect(mapper, SIGNAL(mappedObject(QWidget*)), this, SLOT(remove_alert(QWidget*)));
 
             //add alert to list
             _alerts->add(w);

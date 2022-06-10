@@ -291,7 +291,7 @@ namespace fire
                 auto mapper = new QSignalMapper{canvas};
                 mapper->setMapping(b, id);
                 connect(b, SIGNAL(clicked()), mapper, SLOT(map()));
-                connect(mapper, SIGNAL(mapped(int)), this, SLOT(button_clicked(int)));
+                connect(mapper, SIGNAL(mappedInt(int)), this, SLOT(button_clicked(int)));
 
                 widgets[id] = b;
             }
@@ -366,12 +366,12 @@ namespace fire
                 auto edit_mapper = new QSignalMapper{canvas};
                 edit_mapper->setMapping(e, id);
                 connect(e, SIGNAL(textChanged(QString)), edit_mapper, SLOT(map()));
-                connect(edit_mapper, SIGNAL(mapped(int)), this, SLOT(edit_edited(int)));
+                connect(edit_mapper, SIGNAL(mappedInt(int)), this, SLOT(edit_edited(int)));
 
                 auto finished_mapper = new QSignalMapper{canvas};
                 finished_mapper->setMapping(e, id);
                 connect(e, SIGNAL(editingFinished()), finished_mapper, SLOT(map()));
-                connect(finished_mapper, SIGNAL(mapped(int)), this, SLOT(edit_finished(int)));
+                connect(finished_mapper, SIGNAL(mappedInt(int)), this, SLOT(edit_finished(int)));
 
                 widgets[id] = e;
             }
@@ -421,7 +421,7 @@ namespace fire
                 auto edit_mapper = new QSignalMapper{canvas};
                 edit_mapper->setMapping(e, id);
                 connect(e, SIGNAL(textChanged()), edit_mapper, SLOT(map()));
-                connect(edit_mapper, SIGNAL(mapped(int)), this, SLOT(text_edit_edited(int)));
+                connect(edit_mapper, SIGNAL(mappedInt(int)), this, SLOT(text_edit_edited(int)));
 
                 widgets[id] = e;
             }
@@ -537,7 +537,7 @@ namespace fire
                 auto mapper = new QSignalMapper{canvas};
                 mapper->setMapping(c, id);
                 connect(c, SIGNAL(activated(int)), mapper, SLOT(map()));
-                connect(mapper, SIGNAL(mapped(int)), this, SLOT(dropdown_selected(int)));
+                connect(mapper, SIGNAL(mappedInt(int)), this, SLOT(dropdown_selected(int)));
 
                 widgets[id] = c;
             }
@@ -800,7 +800,7 @@ namespace fire
                 timer_mapper->setMapping(t, id);
 
                 connect(t, SIGNAL(timeout()), timer_mapper, SLOT(map()));
-                connect(timer_mapper, SIGNAL(mapped(int)), this, SLOT(timer_triggered(int)));
+                connect(timer_mapper, SIGNAL(mappedInt(int)), this, SLOT(timer_triggered(int)));
 
                 //add ref and widget to maps
                 timers[id] = t;
@@ -964,7 +964,7 @@ namespace fire
                 auto mapper = new QSignalMapper{canvas};
                 mapper->setMapping(d, id);
                 connect(d, SIGNAL(readyRead()), mapper, SLOT(map()));
-                connect(mapper, SIGNAL(mapped(int)), this, SLOT(got_sound(int)));
+                connect(mapper, SIGNAL(mappedInt(int)), this, SLOT(got_sound(int)));
             }
 
             void qt_frontend::got_sound(int id)
