@@ -95,10 +95,8 @@ target_link_libraries(
     fire_util
     fire_slb
     fire_lua
-    Qt5::Widgets
-    Qt5::Network
-    Qt5::Multimedia
-    Qt5::MultimediaWidgets
+    Qt6::Widgets
+    Qt6::Network
     ${Boost_LIBRARIES}
     ${MISC_LIBRARIES})
 

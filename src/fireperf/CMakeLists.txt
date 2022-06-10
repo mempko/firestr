@@ -38,15 +38,13 @@ file(GLOB src *.cpp)
 file(GLOB headers *.hpp)
 
 #qt specific
-QT5_WRAP_CPP(moc_headers ${headers})
+QT6_WRAP_CPP(moc_headers ${headers})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 add_executable(
     fireperf
     ${src}
     ${moc_headers})
-
-qt5_use_modules(fireperf Widgets Network Multimedia)
 
 target_link_libraries(
     fireperf

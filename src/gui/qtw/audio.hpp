@@ -37,7 +37,9 @@
 
 #include <QAudioFormat>
 #include <QAudioInput>
+#include <QMediaRecorder>
 #include <QAudioOutput>
+#include <QAudioDevice>
 
 #include <string>
 #include <unordered_map>
@@ -65,8 +67,9 @@ namespace fire
 
                 private:
                     QAudioFormat _f;
-                    QAudioDeviceInfo _inf;
+                    QAudioDevice _inf;
                     QAudioInput* _i = nullptr;
+                    QMediaRecorder* _r = nullptr;
                     codec_type _t;
                     api::ref_id _id;
                     QIODevice* _d = nullptr;

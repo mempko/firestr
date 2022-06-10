@@ -30,14 +30,13 @@
  */
 
 #include <QtWidgets>
+#include <QMediaDevices>
 
 #include "gui/qtw/audio.hpp"
 #include "gui/qtw/frontend.hpp"
 #include "gui/util.hpp"
 #include "util/dbc.hpp"
 #include "util/log.hpp"
-
-#include <QAudioDeviceInfo>
 
 namespace u = fire::util;
 
@@ -75,13 +74,11 @@ namespace fire
 
                 _f.setSampleRate(SAMPLE_RATE); 
                 _f.setChannelCount(CHANNELS); 
-                _f.setSampleSize(SAMPLE_SIZE); 
-                _f.setSampleType(QAudioFormat::SignedInt); 
-                _f.setByteOrder(QAudioFormat::LittleEndian); 
-                _f.setCodec(Q_CODEC.c_str()); 
+                _f.setSampleFormat(QAudioFormat::Int16);
+                //_f.setCodec(Q_CODEC.c_str()); 
                 _t = parse_codec(codec);
 
-                _inf = QAudioDeviceInfo::defaultInputDevice();
+                _inf = QMediaDevices::defaultAudioInput();
                 if(_inf.isNull())
                 {
                     LOG << "No audio input found" << std::endl;
@@ -90,16 +87,15 @@ namespace fire
 
                 if (!_inf.isFormatSupported(_f)) 
                 {
-                    _f = _inf.nearestFormat(_f);
-                    LOG << "format not supported, using nearest." << std::endl;
+                    _f = _inf.preferredFormat();
+                    LOG << "format not supported, using prefered." << std::endl;
                     LOG << "sample rate: " << _f.sampleRate() << std::endl;
-                    LOG << "sample size: " << _f.sampleSize() << std::endl;
-                    LOG << "channels: " << _f.channelCount() << std::endl;
-                    LOG << "codec: " << convert(_f.codec()) << std::endl;
+                    LOG << "sample size: " << _f.bytesPerSample() << std::endl;
                 }
 
-                LOG << "using mic device: " << convert(_inf.deviceName()) << std::endl;
+                LOG << "using mic device: " << convert(_inf.description()) << std::endl;
                 _i = new QAudioInput{_inf, _f, _front->canvas};
+                TODO MAX _r = new QMediaRecorder{_front->canvas};
 
                 CHECK_GREATER_EQUAL(static_cast<size_t>(_f.sampleRate()), SAMPLE_RATE);
                 _skip = _f.sampleRate() / SAMPLE_RATE;
@@ -273,13 +269,12 @@ namespace fire
 
                 _f.setSampleRate(SAMPLE_RATE); 
                 _f.setChannelCount(CHANNELS); 
-                _f.setSampleSize(SAMPLE_SIZE); 
-                _f.setSampleType(QAudioFormat::SignedInt); 
+                _f.setSampleFormat(QAudioFormat::Int16);
                 _f.setByteOrder(QAudioFormat::LittleEndian); 
-                _f.setCodec(Q_CODEC.c_str()); 
+                //_f.setCodec(Q_CODEC.c_str()); 
                 _t = parse_codec(codec);
 
-                auto inf = QAudioDeviceInfo::defaultOutputDevice();
+                auto inf = QMediaDevices::defaultAudioOutput();
                 if(inf.isNull())
                 {
                     LOG << "No audio output device found" << std::endl;
