@@ -414,7 +414,7 @@ namespace fire
                 auto mapper = new QSignalMapper{this};
                 mapper->setMapping(rm, QString(u->id().c_str()));
                 connect(rm, SIGNAL(clicked()), mapper, SLOT(map()));
-                connect(mapper, SIGNAL(mapped(QString)), this, SLOT(remove(QString)));
+                connect(mapper, SIGNAL(mappedString(QString)), this, SLOT(remove(QString)));
 
                 auto ui = new user_info{u, _service, rm, false};
                 _list->add(ui);
