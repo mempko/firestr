@@ -236,7 +236,7 @@ namespace fire
                     void got_sound(int id);
 
                 public:
-                    void connect_sound(api::ref_id id, QAudioInput* i, QIODevice* d);
+                    void connect_sound(api::ref_id id, QIODevice* d);
 
                 private:
                     friend class microphone;

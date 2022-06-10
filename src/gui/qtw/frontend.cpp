@@ -955,10 +955,9 @@ namespace fire
                 s->second->play(b);
             }
 
-            void qt_frontend::connect_sound(api::ref_id id, QAudioInput* i, QIODevice* d)
+            void qt_frontend::connect_sound(api::ref_id id, QIODevice* d)
             {
                 REQUIRE_GREATER_EQUAL(id, 0);
-                REQUIRE(i);
                 REQUIRE(d);
                 INVARIANT(canvas);
 

@@ -97,6 +97,7 @@ target_link_libraries(
     fire_lua
     Qt6::Widgets
     Qt6::Network
+    Qt6::Multimedia
     ${Boost_LIBRARIES}
     ${MISC_LIBRARIES})
 
