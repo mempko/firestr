@@ -1,5 +1,5 @@
 name: firestr
-version: '0.11.1'
+version: '0.11.2'
 summary: The Grass Computing Platform
 description: |
     Communicate with your friends and family over a secure P2P connection.
@@ -19,9 +19,9 @@ parts:
     source: .
     plugin: cmake
     build-packages:
-        - qtbase5-dev  
-        - qtmultimedia5-dev
-        - libqt5svg5-dev
+        - qtbase6-dev  
+        - qtmultimedia6-dev
+        - libqt6svg6-dev
         - libboost-system-dev
         - libboost-program-options-dev
         - libboost-filesystem-dev
@@ -38,20 +38,20 @@ parts:
         - libpulse0
         - libasound2
         - locales-all
-        - libqt5gui5
-        - libqt5core5a
-        - libqt5svg5
-        - libqt5widgets5
-        - libqt5network5
-        - libqt5multimedia5
-        - libqt5multimedia5-plugins
-        - libqt5multimediawidgets5
+        - libqt6gui6
+        - libqt6core6a
+        - libqt6svg6
+        - libqt6widgets6
+        - libqt6network6
+        - libqt6multimedia6
+        - libqt6multimedia6-plugins
+        - libqt6multimediawidgets6
         - libxss1
         - libopus0
         - libsnappy1v5
         - libtspi1
         - libbotan-2-12
-    after: [qt5conf]
+    after: [qt6conf]
 
   qt5conf:
     build-packages:
