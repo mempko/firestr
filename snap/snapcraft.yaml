@@ -7,7 +7,7 @@ description: |
 
 grade: stable
 confinement: strict
-base: core20
+base: core22
 icon: src/gui/resources/firestr.svg
 
 environment:
@@ -19,8 +19,8 @@ parts:
     source: .
     plugin: cmake
     build-packages:
-        - qtbase6-dev  
-        - qtmultimedia6-dev
+        - qt6-base-dev  
+        - qt6-multimedia-dev
         - libqt6svg6-dev
         - libboost-system-dev
         - libboost-program-options-dev
@@ -39,19 +39,18 @@ parts:
         - libasound2
         - locales-all
         - libqt6gui6
-        - libqt6core6a
+        - libqt6core6
         - libqt6svg6
         - libqt6widgets6
         - libqt6network6
         - libqt6multimedia6
-        - libqt6multimedia6-plugins
         - libqt6multimediawidgets6
         - libxss1
         - libopus0
         - libsnappy1v5
         - libtspi1
         - libbotan-2-12
-    after: [qt6conf]
+    after: [qt5conf]
 
   qt5conf:
     build-packages:
