@@ -53,7 +53,7 @@ parts:
         - libbotan-2-12
 apps:
     firestr:
-        command: bin/desktop-launch $SNAP/usr/local/bin/firestr
+        command: usr/local/bin/firestr
         desktop: usr/local/share/applications/firestr.desktop
         extensions: [kde-neon]
         plugs:
