@@ -305,8 +305,6 @@ std::string prompt_pass()
 
 int main(int argc, char *argv[])
 {
-    CREATE_LOG("./");
-
     auto desc = create_descriptions();
     auto vm = parse_options(argc, argv, desc);
     if(vm.count("help"))

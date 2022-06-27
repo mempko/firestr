@@ -16,7 +16,7 @@ environment:
 
 parts:
   firestr:
-    source: .
+    source: https://github.com/mempko/firestr.git
     plugin: cmake
     build-packages:
         - qt6-base-dev  
@@ -50,18 +50,11 @@ parts:
         - libsnappy1v5
         - libtspi1
         - libbotan-2-12
-    after: [qt5conf]
-
-  qt5conf:
-    build-packages:
-        - dpkg-dev
-    plugin: make
-    source: https://github.com/dplanella/qt5conf.git
-
 apps:
     firestr:
-        command: qt5-launch firestr
-        desktop: share/applications/firestr.desktop
+        command: usr/local/bin/firestr
+        desktop: usr/local/share/applications/firestr.desktop
+        extensions: [kde-neon]
         plugs:
             - x11
             - unity7
@@ -70,3 +63,4 @@ apps:
             - pulseaudio
             - network
             - network-bind
+            - gsettings
