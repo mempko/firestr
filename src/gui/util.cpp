@@ -182,7 +182,7 @@ namespace fire
         //In the future, we may want to adjust button size as some multiple of points.
         int button_size_from_point(int points)
         {
-            return points;
+            return points*1.5;
         }
 
         void make_small(QWidget& b)

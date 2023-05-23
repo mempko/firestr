@@ -38,6 +38,9 @@
 #include <QAudioFormat>
 #include <QAudioInput>
 #include <QAudioOutput>
+#include <QAudioDevice>
+#include <QAudioSink>
+#include <QAudioSource>
 
 #include <string>
 #include <unordered_map>
@@ -65,8 +68,9 @@ namespace fire
 
                 private:
                     QAudioFormat _f;
-                    QAudioDeviceInfo _inf;
+                    QAudioDevice _inf;
                     QAudioInput* _i = nullptr;
+                    QAudioSource* _s = nullptr;
                     codec_type _t;
                     api::ref_id _id;
                     QIODevice* _d = nullptr;
@@ -94,8 +98,10 @@ namespace fire
                 private:
                     bool _mute = false;
                     QAudioFormat _f;
+                    QAudioDevice _inf;
                     codec_type _t;
                     QAudioOutput* _o;
+                    QAudioSink* _s = nullptr;
                     QIODevice* _d = nullptr;
                     api::backend* _back;
                     qt_frontend* _front;
