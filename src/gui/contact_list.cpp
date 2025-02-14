@@ -335,6 +335,7 @@ namespace fire
             init_intro_tab(intro_tab, intro_layout);
 
             setWindowTitle(tr(title.c_str()));
+            setMinimumSize(400, 400);
             restore_state();
 
             INVARIANT(_list);
