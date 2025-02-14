@@ -142,6 +142,7 @@ namespace fire
          * Randomizes the byte array with the size specified
          */
         void randomize(util::bytes&);
+        void shutdown_security_library();
     }
 }
 
