@@ -31,6 +31,8 @@
 cmake_minimum_required(VERSION 3.22.1)
 project(firestr)
 
+add_compile_options(-Wno-error=template-id-cdtor)
+
 if(APPLE)
     add_definitions(-D_GLIBCXX_USE_NANOSLEEP)
     link_directories(/usr/local/lib)
