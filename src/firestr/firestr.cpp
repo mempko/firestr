@@ -157,7 +157,7 @@ void set_fusion_theme(QApplication& app)
     palette.setColor(QPalette::Base, QColor(250,250,250));
     palette.setColor(QPalette::AlternateBase, background);
     palette.setColor(QPalette::Button, background);
-    palette.setColor(QPalette::ButtonText, Qt::gray);
+    palette.setColor(QPalette::ButtonText, Qt::black);
     palette.setColor(QPalette::BrightText, Qt::white);
 
     palette.setColor(QPalette::Highlight, QColor(0,128,0));
