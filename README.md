@@ -52,7 +52,7 @@ Build Dependencies
 
 * gcc 6.3+
 * CMake
-* Qt 5 
+* Qt 6 
 * Boost 1.54+
 * Botan 1.10+
 * libopus
