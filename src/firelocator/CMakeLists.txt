@@ -53,9 +53,8 @@ target_link_libraries(
     fire_network
     fire_security
     fire_util
-    Qt5::Widgets
-    Qt5::Network
-    Qt5::Multimedia
+    Qt6::Widgets
+    Qt6::Network
     ${Boost_LIBRARIES}
     ${MISC_LIBRARIES})
 

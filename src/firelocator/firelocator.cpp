@@ -374,4 +374,6 @@ int main(int argc, char *argv[])
     {
         LOG << "unknown error parsing message: " << std::endl;
     }
+
+    sc::shutdown_security_library();
 }

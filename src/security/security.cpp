@@ -76,6 +76,12 @@ namespace fire
             }
         }
 
+        void shutdown_security_library()
+        {
+            u::mutex_scoped_lock l(BOTAN_MUTEX);
+            RNG.reset();
+        }
+
         void validate_passphrase(const std::string& passphrase)
         {
             if(passphrase.size() > 50)

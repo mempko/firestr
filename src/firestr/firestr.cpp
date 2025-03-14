@@ -55,6 +55,7 @@ namespace fg = fire::gui;
 namespace fg = fire::gui;
 namespace fn = fire::network;
 namespace fu = fire::util;
+namespace fs = fire::security;
 namespace fus = fire::user;
 
 namespace
@@ -148,10 +149,16 @@ void set_fusion_theme(QApplication& app)
     QApplication::setStyle(QStyleFactory::create("Fusion"));
 
     QPalette palette;
-    palette.setColor(QPalette::Window, QColor(210,210,210));
+    auto background = QColor(210,210,210);
+    palette.setColor(QPalette::Window, background);
+    palette.setColor(QPalette::WindowText, Qt::black);
+    palette.setColor(QPalette::Text, Qt::black);
+    palette.setColor(QPalette::PlaceholderText, Qt::gray);
     palette.setColor(QPalette::Base, QColor(250,250,250));
-    palette.setColor(QPalette::AlternateBase, QColor(210,210,210));
-    palette.setColor(QPalette::Button, QColor(210,210,210));
+    palette.setColor(QPalette::AlternateBase, background);
+    palette.setColor(QPalette::Button, background);
+    palette.setColor(QPalette::ButtonText, Qt::black);
+    palette.setColor(QPalette::BrightText, Qt::white);
 
     palette.setColor(QPalette::Highlight, QColor(0,128,0));
     palette.setColor(QPalette::HighlightedText, Qt::white);
@@ -197,6 +204,7 @@ try
 
     auto rc = a.exec();
     LOG << "firestr shutting down..." << std::endl;
+    fs::shutdown_security_library();
     return rc;
 }
 catch(std::exception& e)

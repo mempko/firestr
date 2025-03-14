@@ -37,8 +37,6 @@
 #include "util/dbc.hpp"
 #include "util/log.hpp"
 
-#include <QAudioDeviceInfo>
-
 namespace u = fire::util;
 
 namespace fire

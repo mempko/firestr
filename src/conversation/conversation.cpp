@@ -31,6 +31,7 @@
 
 #include "conversation/conversation.hpp"
 
+#include <algorithm>
 #include "util/dbc.hpp"
 #include "util/log.hpp"
 #include "util/uuid.hpp"

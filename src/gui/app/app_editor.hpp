@@ -54,6 +54,7 @@
 #include <QComboBox>
 #include <QSignalMapper>
 #include <QSyntaxHighlighter>
+#include <QRegularExpression>
 
 
 #include "slb/SLB.hpp"
@@ -69,7 +70,7 @@ namespace fire
             struct highlight_rule
             {
                 QTextCharFormat format;
-                QRegExp regex;
+                QRegularExpression regex;
             };
 
             using highlight_rules = std::vector<highlight_rule>;

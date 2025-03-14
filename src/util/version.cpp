@@ -37,7 +37,7 @@ namespace fire::util
 {
     const int PROTOCOL_VERSION = 0;
     const int CLIENT_VERSION = 11;
-    const int MINOR_VERSION = 1;
+    const int MINOR_VERSION = 2;
 
     std::string version_string()
     {

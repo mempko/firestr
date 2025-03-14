@@ -36,8 +36,9 @@
 #include "util/uuid.hpp"
 #include "util/filesystem.hpp"
 
-#include <stdexcept>
+#include <algorithm>
 #include <set>
+#include <stdexcept>
 
 #include <boost/filesystem.hpp>
 

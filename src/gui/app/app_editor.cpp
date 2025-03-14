@@ -41,6 +41,7 @@
 
 #include <QTimer>
 #include <QSplitter>
+#include <QRegularExpressionMatch>
 
 #include <functional>
 #include <sstream>
@@ -1534,7 +1535,7 @@ namespace fire
                     highlight_rule r;
                     r.format.setForeground(Qt::darkBlue);
                     r.format.setFontWeight(QFont::Bold);
-                    r.regex = QRegExp{LUA_KEYWORDS.c_str()};
+                    r.regex = QRegularExpression{LUA_KEYWORDS.c_str()};
                     _rules.emplace_back(r);
                 }
 
@@ -1543,7 +1544,7 @@ namespace fire
                     highlight_rule r;
                     r.format.setForeground(Qt::darkMagenta);
                     r.format.setFontWeight(QFont::Bold);
-                    r.regex = QRegExp{api_keywords.c_str()};
+                    r.regex = QRegularExpression{api_keywords.c_str()};
                     _rules.emplace_back(r);
                 }
 
@@ -1552,7 +1553,7 @@ namespace fire
                     highlight_rule r;
                     r.format.setForeground(Qt::darkRed);
                     r.format.setFontWeight(QFont::Bold);
-                    r.regex = QRegExp{LUA_NUMBERS.c_str()};
+                    r.regex = QRegularExpression{LUA_NUMBERS.c_str()};
                     _rules.emplace_back(r);
                 }
 
@@ -1560,7 +1561,7 @@ namespace fire
                 {
                     highlight_rule r;
                     r.format.setFontWeight(QFont::Bold);
-                    r.regex = QRegExp{LUA_OPERATORS.c_str()};
+                    r.regex = QRegularExpression{LUA_OPERATORS.c_str()};
                     _rules.emplace_back(r);
                 }
 
@@ -1569,7 +1570,7 @@ namespace fire
                     highlight_rule r;
                     r.format.setForeground(Qt::darkGreen);
                     r.format.setFontWeight(QFont::Bold);
-                    r.regex = QRegExp{LUA_QUOTE.c_str()};
+                    r.regex = QRegularExpression{LUA_QUOTE.c_str()};
                     _rules.emplace_back(r);
                 }
 
@@ -1578,7 +1579,7 @@ namespace fire
                     highlight_rule r;
                     r.format.setForeground(Qt::darkGray);
                     r.format.setFontWeight(QFont::Bold);
-                    r.regex = QRegExp{LUA_COMMENT.c_str()};
+                    r.regex = QRegularExpression{LUA_COMMENT.c_str()};
                     _rules.emplace_back(r);
                 }
             }
@@ -1587,12 +1588,13 @@ namespace fire
             {
                 for(auto& r : _rules)
                 {
-                    int i = t.indexOf(r.regex);
+                    QRegularExpressionMatch match;
+                    int i = t.indexOf(r.regex, 0, &match);
                     while (i >= 0)  
                     {
-                        auto size = r.regex.matchedLength();
+                        auto size = match.capturedLength();
                         setFormat(i, size, r.format);
-                        i = t.indexOf(r.regex, i + size);
+                        i = t.indexOf(r.regex, i + size, &match);
                     }
                 }
             }

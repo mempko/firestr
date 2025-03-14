@@ -34,6 +34,7 @@
 #include "util/uuid.hpp"
 #include "util/dbc.hpp"
 
+#include <algorithm>
 #include <fstream>
 #include <exception>
 
