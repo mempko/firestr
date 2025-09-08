@@ -32,6 +32,7 @@ include_directories(.)
 include_directories(..)
 
 file(GLOB src *.cpp)
+list(REMOVE_ITEM src ${CMAKE_CURRENT_SOURCE_DIR}/test_qml_login.cpp)
 file(GLOB headers *.hpp)
 file(GLOB forms *.ui)
 file(GLOB resources *.qrc ../gui/resources/*.qrc)

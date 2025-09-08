@@ -8,7 +8,7 @@ ApplicationWindow {
     width: 500
     height: 600
     title: qsTr("Fire★ - Identity Setup")
-    color: "#f0f0f0"
+    color: "#2b2b2b"  // Dark grey background
     
     property bool isNewUser: loginController.isNewUser
     property bool isRetry: loginController.isRetry
@@ -38,18 +38,18 @@ ApplicationWindow {
         
         // Welcome text
         Text {
-            text: qsTr("The Grass Computing Platform")
+            text: qsTr("Fire★")
             Layout.alignment: Qt.AlignHCenter
-            font.pixelSize: 24
+            font.pixelSize: 32
             font.bold: true
-            color: "#333333"
+            color: "#4CAF50"
         }
         
         Text {
-            text: qsTr("Fire★")
+            text: qsTr("The Grass Computing Platform")
             Layout.alignment: Qt.AlignHCenter
-            font.pixelSize: 18
-            color: "#4CAF50"
+            font.pixelSize: 20
+            color: "#999999"  // Lighter grey for dark background
         }
         
         // Dynamic title based on mode
@@ -64,9 +64,9 @@ ApplicationWindow {
                 }
             }
             Layout.alignment: Qt.AlignHCenter
-            font.pixelSize: 16
+            font.pixelSize: 18
             font.bold: true
-            color: isRetry ? "#f44336" : "#2196F3"
+            color: isRetry ? "#f44336" : "#e0e0e0"  // Light grey for dark background
         }
         
         // Info points for new user
@@ -78,18 +78,18 @@ ApplicationWindow {
             
             Text {
                 text: "• The identity is stored on this computer"
-                color: "#666666"
-                font.pixelSize: 12
+                color: "#b0b0b0"  // Light grey for dark background
+                font.pixelSize: 13
             }
             Text {
                 text: "• Your data is not stored anywhere else"
-                color: "#666666"
-                font.pixelSize: 12
+                color: "#b0b0b0"
+                font.pixelSize: 13
             }
             Text {
                 text: "• The password protects your identity"
-                color: "#666666"
-                font.pixelSize: 12
+                color: "#b0b0b0"
+                font.pixelSize: 13
             }
         }
         
@@ -107,8 +107,9 @@ ApplicationWindow {
                 
                 Text {
                     text: qsTr("Name")
-                    color: "#666666"
-                    font.pixelSize: 12
+                    color: "#e0e0e0"  // Light text for dark background
+                    font.pixelSize: 13
+                    font.bold: true
                 }
                 
                 TextField {
@@ -118,19 +119,11 @@ ApplicationWindow {
                     placeholderText: qsTr("Enter your name")
                     selectByMouse: true
                     font.pixelSize: 14
-                    color: "#333333"
+                    color: "#e0e0e0"  // Light text
                     
                     background: Rectangle {
-                        color: "white"
-                        border.color: {
-                            if (nameField.activeFocus) {
-                                return "#2196F3"
-                            } else if (nameField.text.length > 0) {
-                                return "#4CAF50"
-                            } else {
-                                return "#dddddd"
-                            }
-                        }
+                        color: "#3c3c3c"  // Dark input background
+                        border.color: nameField.activeFocus ? "#4CAF50" : "#555555"
                         border.width: nameField.activeFocus ? 2 : 1
                         radius: 4
                     }
@@ -149,8 +142,9 @@ ApplicationWindow {
                 
                 Text {
                     text: qsTr("Password")
-                    color: "#666666"
-                    font.pixelSize: 12
+                    color: "#e0e0e0"  // Light text for dark background
+                    font.pixelSize: 13
+                    font.bold: true
                 }
                 
                 TextField {
@@ -161,19 +155,11 @@ ApplicationWindow {
                     placeholderText: qsTr("Enter password")
                     selectByMouse: true
                     font.pixelSize: 14
-                    color: "#333333"
+                    color: "#e0e0e0"  // Light text
                     
                     background: Rectangle {
-                        color: "white"
-                        border.color: {
-                            if (passwordField.activeFocus) {
-                                return "#2196F3"
-                            } else if (passwordField.text.length > 0) {
-                                return "#4CAF50"
-                            } else {
-                                return "#dddddd"
-                            }
-                        }
+                        color: "#3c3c3c"  // Dark input background
+                        border.color: passwordField.activeFocus ? "#4CAF50" : "#555555"
                         border.width: passwordField.activeFocus ? 2 : 1
                         radius: 4
                     }
@@ -202,8 +188,9 @@ ApplicationWindow {
                 
                 Text {
                     text: qsTr("Confirm Password")
-                    color: "#666666"
-                    font.pixelSize: 12
+                    color: "#e0e0e0"  // Light text for dark background
+                    font.pixelSize: 13
+                    font.bold: true
                 }
                 
                 TextField {
@@ -214,20 +201,17 @@ ApplicationWindow {
                     placeholderText: qsTr("Confirm password")
                     selectByMouse: true
                     font.pixelSize: 14
-                    color: "#333333"
+                    color: "#e0e0e0"  // Light text
                     
                     background: Rectangle {
-                        color: "white"
+                        color: "#3c3c3c"  // Dark input background
                         border.color: {
                             if (passwordConfirmField.activeFocus) {
-                                return "#2196F3"
-                            } else if (passwordConfirmField.text === passwordField.text && 
-                                passwordConfirmField.text.length > 0) {
                                 return "#4CAF50"
                             } else if (passwordConfirmField.text.length > 0) {
-                                return "#f44336"
+                                return passwordConfirmField.text === passwordField.text ? "#66BB6A" : "#f44336"
                             } else {
-                                return "#dddddd"
+                                return "#555555"
                             }
                         }
                         border.width: passwordConfirmField.activeFocus ? 2 : 1
@@ -274,11 +258,11 @@ ApplicationWindow {
                         if (!actionButton.enabled) {
                             return "#cccccc"
                         } else if (actionButton.pressed) {
-                            return "#1976D2"
+                            return "#388E3C"
                         } else if (actionButton.hovered) {
-                            return "#42A5F5"
+                            return "#66BB6A"
                         } else {
-                            return "#2196F3"
+                            return "#4CAF50"
                         }
                     }
                     radius: 4

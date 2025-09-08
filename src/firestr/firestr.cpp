@@ -36,6 +36,7 @@
 #include "gui/setup.hpp"
 #include "gui/qml_setup.hpp"
 #include "gui/main_win.hpp"
+#include "gui/qml_main_window.hpp"
 #include "gui/util.hpp"
 #include "network/util.hpp"
 
@@ -201,10 +202,9 @@ try
 
     if(!c.user) return 0;
 
-    fg::main_window w{c};
-    w.show();
-
-    auto rc = a.exec();
+    // Use QML main window instead of Qt Widgets
+    fg::qml_main_window w{c};
+    auto rc = w.exec();
     LOG << "firestr shutting down..." << std::endl;
     fs::shutdown_security_library();
     return rc;

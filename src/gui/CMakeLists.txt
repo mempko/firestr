@@ -35,7 +35,7 @@ include_directories(.)
 include_directories(..)
 
 file(GLOB src *.cpp app/*.cpp lua/*.cpp qtw/*.cpp)
-list(APPEND src qml_login_controller.cpp qml_setup.cpp) 
+list(APPEND src qml_login_controller.cpp qml_setup.cpp qml_main_controller.cpp qml_main_window.cpp) 
 file(GLOB headers *.hpp app/*.hpp lua/*.hpp qtw/*.hpp)
 file(GLOB forms *.ui app/*.ui lua/*.ui qtw/*.ui)
 file(GLOB resources *.qrc resources/*.qrc app/*.qrc lua/*.qrc qtw/*.qrc)
