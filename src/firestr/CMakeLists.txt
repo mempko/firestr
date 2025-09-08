@@ -98,6 +98,9 @@ target_link_libraries(
     Qt6::Widgets
     Qt6::Network
     Qt6::Multimedia
+    Qt6::Quick
+    Qt6::Qml
+    Qt6::QuickControls2
     ${Boost_LIBRARIES}
     ${MISC_LIBRARIES})
 

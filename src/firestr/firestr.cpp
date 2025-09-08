@@ -34,6 +34,7 @@
 
 #include "user/user.hpp"
 #include "gui/setup.hpp"
+#include "gui/qml_setup.hpp"
 #include "gui/main_win.hpp"
 #include "gui/util.hpp"
 #include "network/util.hpp"
@@ -192,7 +193,8 @@ try
 
     fg::setup_gui();
 
-    auto setup = fg::setup_user(c.home);
+    // Use QML login screen instead of Qt Widgets
+    auto setup = fg::qml_setup_user(c.home);
 
     c.user = setup.first;
     c.user_just_created = setup.second;

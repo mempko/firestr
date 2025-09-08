@@ -34,10 +34,12 @@ ADD_DEFINITIONS(-std=c++1z)
 include_directories(.)
 include_directories(..)
 
-file(GLOB src *.cpp app/*.cpp lua/*.cpp qtw/*.cpp) 
+file(GLOB src *.cpp app/*.cpp lua/*.cpp qtw/*.cpp)
+list(APPEND src qml_login_controller.cpp qml_setup.cpp) 
 file(GLOB headers *.hpp app/*.hpp lua/*.hpp qtw/*.hpp)
 file(GLOB forms *.ui app/*.ui lua/*.ui qtw/*.ui)
 file(GLOB resources *.qrc resources/*.qrc app/*.qrc lua/*.qrc qtw/*.qrc)
+file(GLOB qml_files qml/*.qml)
 
 #qt specific
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
@@ -46,4 +48,5 @@ add_library(fire_gui STATIC
     ${src}
     ${headers}
     ${forms}
-    ${resources})
+    ${resources}
+    ${qml_files})
