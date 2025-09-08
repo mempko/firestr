@@ -51,7 +51,6 @@
 #include <QTextEdit>
 #include <QPushButton>
 #include <QComboBox>
-#include <QSignalMapper>
 
 #include <string>
 

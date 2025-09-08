@@ -59,7 +59,6 @@
 #include <stdexcept>
 
 #include <QtWidgets>
-#include <QSignalMapper>
 #include <QDesktopServices>
 #include <QDir>
 
@@ -371,10 +370,10 @@ namespace fire
                     con->setToolTip(ss.str().c_str());
                     make_new_conversation_small(*con);
 
-                    auto mapper = new QSignalMapper{this};
-                    mapper->setMapping(con, QString(u->id().c_str()));
-                    connect(con, SIGNAL(clicked()), mapper, SLOT(map()));
-                    connect(mapper, SIGNAL(mappedString(QString)), this, SLOT(create_conversation(QString)));
+                    auto user_id = QString(u->id().c_str());
+                    connect(con, &QPushButton::clicked, this, [this, user_id]() {
+                        create_conversation(user_id);
+                    });
 
                     return new user_info{u, _user_service, con, true};
                 }
@@ -531,11 +530,11 @@ namespace fire
                 auto name = p.second.name;
                 auto id = p.second.id;
 
-                auto mapper = new QSignalMapper{this};
                 auto action  = new QAction{name.c_str(), this};
-                mapper->setMapping(action, QString(id.c_str()));
-                connect(action, SIGNAL(triggered()), mapper, SLOT(map()));
-                connect(mapper, SIGNAL(mappedString(QString)), this, SLOT(load_app_into_conversation(QString)));
+                auto app_id = QString(id.c_str());
+                connect(action, &QAction::triggered, this, [this, app_id]() {
+                    load_app_into_conversation(app_id);
+                });
 
                 _app_menu->addAction(action);
             }
@@ -1226,10 +1225,9 @@ namespace fire
             l->addWidget(a);
             l->addWidget(x);
 
-            auto mapper = new QSignalMapper{this};
-            mapper->setMapping(x, w);
-            connect(x, SIGNAL(clicked()), mapper, SLOT(map()));
-            connect(mapper, SIGNAL(mappedObject(QWidget*)), this, SLOT(remove_alert(QWidget*)));
+            connect(x, &QPushButton::clicked, this, [this, w]() {
+                remove_alert(w);
+            });
 
             //add alert to list
             _alerts->add(w);

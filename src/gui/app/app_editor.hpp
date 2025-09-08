@@ -52,7 +52,6 @@
 #include <QPushButton>
 #include <QCompleter>
 #include <QComboBox>
-#include <QSignalMapper>
 #include <QSyntaxHighlighter>
 #include <QRegularExpression>
 

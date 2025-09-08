@@ -288,10 +288,9 @@ namespace fire
                 auto b = new QPushButton(text.c_str(), canvas);
 
                 //map button to C++ callback
-                auto mapper = new QSignalMapper{canvas};
-                mapper->setMapping(b, id);
-                connect(b, SIGNAL(clicked()), mapper, SLOT(map()));
-                connect(mapper, SIGNAL(mappedInt(int)), this, SLOT(button_clicked(int)));
+                connect(b, &QPushButton::clicked, this, [this, id]() {
+                    button_clicked(id);
+                });
 
                 widgets[id] = b;
             }
@@ -363,15 +362,13 @@ namespace fire
                 auto e = new QLineEdit{text.c_str(), canvas};
 
                 //map edit to C++ callback
-                auto edit_mapper = new QSignalMapper{canvas};
-                edit_mapper->setMapping(e, id);
-                connect(e, SIGNAL(textChanged(QString)), edit_mapper, SLOT(map()));
-                connect(edit_mapper, SIGNAL(mappedInt(int)), this, SLOT(edit_edited(int)));
+                connect(e, &QLineEdit::textChanged, this, [this, id]() {
+                    edit_edited(id);
+                });
 
-                auto finished_mapper = new QSignalMapper{canvas};
-                finished_mapper->setMapping(e, id);
-                connect(e, SIGNAL(editingFinished()), finished_mapper, SLOT(map()));
-                connect(finished_mapper, SIGNAL(mappedInt(int)), this, SLOT(edit_finished(int)));
+                connect(e, &QLineEdit::editingFinished, this, [this, id]() {
+                    edit_finished(id);
+                });
 
                 widgets[id] = e;
             }
@@ -418,10 +415,9 @@ namespace fire
                 auto e = new QTextEdit{text.c_str(), canvas};
 
                 //map edit to C++ callback
-                auto edit_mapper = new QSignalMapper{canvas};
-                edit_mapper->setMapping(e, id);
-                connect(e, SIGNAL(textChanged()), edit_mapper, SLOT(map()));
-                connect(edit_mapper, SIGNAL(mappedInt(int)), this, SLOT(text_edit_edited(int)));
+                connect(e, &QTextEdit::textChanged, this, [this, id]() {
+                    text_edit_edited(id);
+                });
 
                 widgets[id] = e;
             }
@@ -534,10 +530,9 @@ namespace fire
                 auto c = new QComboBox{canvas};
 
                 //map dropdown to C++ callback
-                auto mapper = new QSignalMapper{canvas};
-                mapper->setMapping(c, id);
-                connect(c, SIGNAL(activated(int)), mapper, SLOT(map()));
-                connect(mapper, SIGNAL(mappedInt(int)), this, SLOT(dropdown_selected(int)));
+                connect(c, QOverload<int>::of(&QComboBox::activated), this, [this, id]() {
+                    dropdown_selected(id);
+                });
 
                 widgets[id] = c;
             }
@@ -796,11 +791,9 @@ namespace fire
                 auto t = new QTimer;
 
                 //map timer to C++ callback
-                auto timer_mapper = new QSignalMapper{canvas};
-                timer_mapper->setMapping(t, id);
-
-                connect(t, SIGNAL(timeout()), timer_mapper, SLOT(map()));
-                connect(timer_mapper, SIGNAL(mappedInt(int)), this, SLOT(timer_triggered(int)));
+                connect(t, &QTimer::timeout, this, [this, id]() {
+                    timer_triggered(id);
+                });
 
                 //add ref and widget to maps
                 timers[id] = t;
@@ -961,10 +954,9 @@ namespace fire
                 REQUIRE(d);
                 INVARIANT(canvas);
 
-                auto mapper = new QSignalMapper{canvas};
-                mapper->setMapping(d, id);
-                connect(d, SIGNAL(readyRead()), mapper, SLOT(map()));
-                connect(mapper, SIGNAL(mappedInt(int)), this, SLOT(got_sound(int)));
+                connect(d, &QIODevice::readyRead, this, [this, id]() {
+                    got_sound(id);
+                });
             }
 
             void qt_frontend::got_sound(int id)

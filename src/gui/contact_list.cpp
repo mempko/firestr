@@ -412,10 +412,10 @@ namespace fire
                 ss << "Remove `" << u->name() << "'";
                 rm->setToolTip(ss.str().c_str());
 
-                auto mapper = new QSignalMapper{this};
-                mapper->setMapping(rm, QString(u->id().c_str()));
-                connect(rm, SIGNAL(clicked()), mapper, SLOT(map()));
-                connect(mapper, SIGNAL(mappedString(QString)), this, SLOT(remove(QString)));
+                auto user_id = QString(u->id().c_str());
+                connect(rm, &QPushButton::clicked, this, [this, user_id]() {
+                    remove(user_id);
+                });
 
                 auto ui = new user_info{u, _service, rm, false};
                 _list->add(ui);
