@@ -51,7 +51,7 @@ namespace fire
         std::string get_lan_ip(const std::string& override);
 
         using byte_queue = util::queue<util::bytes>;
-        using asio_service_ptr = std::unique_ptr<boost::asio::io_service>;
+        using asio_service_ptr = std::unique_ptr<boost::asio::io_context>;
     }
 }
 

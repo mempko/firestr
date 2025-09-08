@@ -69,7 +69,7 @@ namespace fire
         }
 
         tcp_connection::tcp_connection(
-                ba::io_service& io, 
+                ba::io_context& io, 
                 byte_queue& in,
                 tcp_connection_ptr_queue& last_in,
                 std::mutex& in_mutex,
@@ -97,7 +97,7 @@ namespace fire
         {
             _state = disconnected;
             _writing = false;
-            _io.post(boost::bind(&tcp_connection::do_close, this));
+            boost::asio::post(_io, boost::bind(&tcp_connection::do_close, this));
         }
 
         void tcp_connection::do_close()
@@ -266,7 +266,7 @@ namespace fire
 
             //do send if we are connected
             if(is_connected())
-                _io.post(boost::bind(&tcp_connection::do_send, this, false));
+                boost::asio::post(_io, boost::bind(&tcp_connection::do_send, this, false));
 
             //if we are blocking, block until all messages are sent
             while(block && !_out_queue.empty()) u::sleep_thread(BLOCK_SLEEP);
@@ -483,7 +483,7 @@ namespace fire
         void keep_alive_thread(tcp_queue*);
         tcp_queue::tcp_queue(const asio_params& p) : 
             _p(p), 
-            _io{new ba::io_service},
+            _io{new ba::io_context},
             _done{false}
         {
             switch(_p.mode)
@@ -600,9 +600,8 @@ namespace fire
             //init resolver if it does not exist
             if(!_resolver) _resolver.reset(new tcp::resolver{*_io}); 
 
-            tcp::resolver::query query{_p.host, port_to_string(_p.port)}; 
-            auto ei = _resolver->resolve(query);
-            auto endpoint = *ei;
+            auto results = _resolver->resolve(_p.host, port_to_string(_p.port));
+            auto endpoint = results.begin()->endpoint();
 
             if(!_out) delayed_connect();
 

@@ -42,10 +42,9 @@ namespace fire
 
         u::bytes append_prefix(char p, const u::bytes& bs)
         {
-            u::bytes rs;
-            rs.reserve(bs.size() + 1);
-            rs.push_back(p);
-            rs.insert(rs.end(), bs.begin(), bs.end());
+            u::bytes rs(1 + bs.size());
+            rs[0] = p;
+            std::copy(bs.begin(), bs.end(), rs.begin() + 1);
             return rs;
         }
 

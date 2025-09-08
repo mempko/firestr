@@ -118,7 +118,7 @@ namespace fire
             public:
                 udp_connection(
                         endpoint_queue& in,
-                        boost::asio::io_service& io);
+                        boost::asio::io_context& io);
             public:
                 bool send(const endpoint_message& m, bool block = false);
 
@@ -165,7 +165,7 @@ namespace fire
                 chunk_queue _out_queue; //the queue loop adds next message to here to be sent
 
                 //other
-                boost::asio::io_service& _io;
+                boost::asio::io_context& _io;
                 udp_socket_ptr _socket;
                 sequence_type _sequence = 0;
                 bool _writing;

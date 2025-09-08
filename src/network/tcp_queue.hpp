@@ -55,7 +55,7 @@ namespace fire
                 enum con_state{connecting, connected, disconnected};
 
                 tcp_connection(
-                        boost::asio::io_service& io, 
+                        boost::asio::io_context& io, 
                         byte_queue& in,
                         tcp_connection_ptr_queue& last_in,
                         std::mutex& in_mutex,
@@ -99,7 +99,7 @@ namespace fire
             private:
 
                 con_state _state;
-                boost::asio::io_service& _io;
+                boost::asio::io_context& _io;
                 byte_queue& _in_queue;
                 std::mutex& _in_mutex;
                 byte_queue _out_queue;

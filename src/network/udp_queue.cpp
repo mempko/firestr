@@ -79,7 +79,7 @@ namespace fire
 
         udp_connection::udp_connection(
                 endpoint_queue& in,
-                boost::asio::io_service& io) :
+                boost::asio::io_context& io) :
             _in_buffer(MAX_UDP_BUFF_SIZE),
             _in_queue(in),
             _io(io),
@@ -94,7 +94,7 @@ namespace fire
 
         void udp_connection::close()
         {
-            _io.post(boost::bind(&udp_connection::do_close, this));
+            boost::asio::post(_io, boost::bind(&udp_connection::do_close, this));
         }
 
         void udp_connection::do_close()
@@ -312,7 +312,7 @@ namespace fire
 
         void udp_connection::post_send()
         {
-            _io.post(boost::bind(&udp_connection::do_send, this));
+            boost::asio::post(_io, boost::bind(&udp_connection::do_send, this));
         }
 
         void udp_connection::add_to_working_set(endpoint_message m)
@@ -336,8 +336,8 @@ namespace fire
                 return false;
             }
 
-            _io.post(boost::bind(&udp_connection::add_to_working_set, this, m));
-            _io.post(boost::bind(&udp_connection::do_send, this));
+            boost::asio::post(_io, boost::bind(&udp_connection::add_to_working_set, this, m));
+            boost::asio::post(_io, boost::bind(&udp_connection::do_send, this));
 
             //if we are blocking, block until all messages are sent
             while(block && !_out_queue.empty()) u::sleep_thread(BLOCK_SLEEP);
@@ -540,7 +540,7 @@ namespace fire
             _stats.bytes_sent += _out_buffer.size();
 
             //async send message_chunk
-            udp::endpoint ep(address::from_string(message_chunk.host), message_chunk.port);
+            udp::endpoint ep(boost::asio::ip::make_address(message_chunk.host), message_chunk.port);
             _socket->async_send_to(ba::buffer(_out_buffer.data(), _out_buffer.size()), ep,
                     boost::bind(&udp_connection::handle_write, this, ba::placeholders::error));
 
@@ -768,7 +768,7 @@ namespace fire
         void resend_thread(udp_queue*);
         udp_queue::udp_queue(const asio_params& p) :
             _p(p), 
-            _io{new ba::io_service},
+            _io{new ba::io_context},
             _done{false}
         {
             REQUIRE_GREATER(_p.local_port, 0);
@@ -829,9 +829,8 @@ namespace fire
             auto resolved = _rmap.find(ep.address);
             if(resolved != _rmap.end()) return resolved->second;
 
-            udp::resolver::query q{ep.address, port_to_string(ep.port)};
-            auto iter = _resolver->resolve(q);
-            udp::endpoint endp = *iter;
+            auto results = _resolver->resolve(ep.address, port_to_string(ep.port));
+            udp::endpoint endp = results.begin()->endpoint();
             auto resolved_address = endp.address().to_string();
             _rmap[ep.address] = resolved_address;
             _rmap[resolved_address] = resolved_address;
@@ -877,7 +876,7 @@ namespace fire
             while(!q->_done) 
             try
             {
-                q->_io->post(boost::bind(&udp_connection::resend, q->_con));
+                boost::asio::post(*q->_io, boost::bind(&udp_connection::resend, q->_con));
                 u::sleep_thread(RESEND_THREAD_SLEEP);
             }
             catch(std::exception& e)
