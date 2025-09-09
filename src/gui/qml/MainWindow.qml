@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Window
 import "." as Dialogs
+import "."
 
 ApplicationWindow {
     id: mainWindow
@@ -43,7 +44,7 @@ ApplicationWindow {
             Action {
                 text: qsTr("&Start Conversation...")
                 enabled: mainController.hasContacts
-                onTriggered: mainController.startConversation()
+                onTriggered: startConversationDialog.open()
             }
         }
         
@@ -345,134 +346,8 @@ ApplicationWindow {
             Repeater {
                 model: mainController.conversations
                 
-                Item {
-                    ColumnLayout {
-                        anchors.fill: parent
-                        anchors.margins: 10
-                        spacing: 10
-                        
-                        // Conversation toolbar
-                        RowLayout {
-                            Layout.fillWidth: true
-                            
-                            Text {
-                                text: modelData.title
-                                font.pixelSize: 18
-                                font.bold: true
-                                color: "#333333"
-                            }
-                            
-                            Item { Layout.fillWidth: true }
-                            
-                            Button {
-                                text: qsTr("Add App")
-                                
-                                background: Rectangle {
-                                    color: parent.pressed ? "#1976D2" : (parent.hovered ? "#42A5F5" : "#2196F3")
-                                    radius: 4
-                                }
-                                
-                                contentItem: Text {
-                                    text: parent.text
-                                    color: "white"
-                                    font.pixelSize: 12
-                                    horizontalAlignment: Text.AlignHCenter
-                                    verticalAlignment: Text.AlignVCenter
-                                }
-                                
-                                onClicked: mainController.addAppToConversation(index)
-                            }
-                            
-                            Button {
-                                text: qsTr("Add Contact")
-                                
-                                background: Rectangle {
-                                    color: parent.pressed ? "#388E3C" : (parent.hovered ? "#66BB6A" : "#4CAF50")
-                                    radius: 4
-                                }
-                                
-                                contentItem: Text {
-                                    text: parent.text
-                                    color: "white"
-                                    font.pixelSize: 12
-                                    horizontalAlignment: Text.AlignHCenter
-                                    verticalAlignment: Text.AlignVCenter
-                                }
-                                
-                                onClicked: mainController.addContactToConversation(index)
-                            }
-                        }
-                        
-                        // Split view for participants and apps
-                        SplitView {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            orientation: Qt.Horizontal
-                            
-                            // Participants list
-                            Rectangle {
-                                SplitView.preferredWidth: 200
-                                SplitView.minimumWidth: 150
-                                color: "white"
-                                border.color: "#dddddd"
-                                border.width: 1
-                                radius: 4
-                                
-                                ListView {
-                                    anchors.fill: parent
-                                    anchors.margins: 5
-                                    model: modelData.participants
-                                    spacing: 5
-                                    
-                                    header: Text {
-                                        text: qsTr("Participants")
-                                        font.pixelSize: 14
-                                        font.bold: true
-                                        color: "#666666"
-                                        bottomPadding: 10
-                                    }
-                                    
-                                    delegate: RowLayout {
-                                        width: parent.width
-                                        height: 30
-                                        
-                                        Rectangle {
-                                            width: 8
-                                            height: 8
-                                            radius: 4
-                                            color: modelData.online ? "#4CAF50" : "#9E9E9E"
-                                        }
-                                        
-                                        Text {
-                                            text: modelData.name
-                                            font.pixelSize: 12
-                                            color: "#333333"
-                                        }
-                                        
-                                        Item { Layout.fillWidth: true }
-                                    }
-                                }
-                            }
-                            
-                            // App area
-                            Rectangle {
-                                SplitView.fillWidth: true
-                                color: "#f5f5f5"
-                                border.color: "#dddddd"
-                                border.width: 1
-                                radius: 4
-                                
-                                // This is where apps would be displayed
-                                // For now, just a placeholder
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: qsTr("App area - drag apps here")
-                                    font.pixelSize: 14
-                                    color: "#999999"
-                                }
-                            }
-                        }
-                    }
+                ConversationCanvas {
+                    conversationId: modelData.conversationId
                 }
             }
         }
@@ -481,8 +356,6 @@ ApplicationWindow {
     // Dialogs
     Dialogs.AddContactDialog {
         id: addContactDialog
-        parent: mainWindow
-        anchors.centerIn: parent
         
         onAddContact: function(identity) {
             mainController.processAddContact(identity)
@@ -492,8 +365,6 @@ ApplicationWindow {
     
     Dialogs.ShowIdentityDialog {
         id: showIdentityDialog
-        parent: mainWindow
-        anchors.centerIn: parent
         
         greeters: mainController.getGreeters()
         
@@ -508,7 +379,13 @@ ApplicationWindow {
     
     Dialogs.AboutDialog {
         id: aboutDialog
-        parent: mainWindow
-        anchors.centerIn: parent
+    }
+    
+    Dialogs.StartConversationDialog {
+        id: startConversationDialog
+        
+        onStartConversation: function(contactIds) {
+            mainController.createConversation(contactIds)
+        }
     }
 }

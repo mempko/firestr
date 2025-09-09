@@ -17,12 +17,15 @@
 
 #include "gui/qml_main_window.hpp"
 #include "gui/qml_main_controller.hpp"
+#include "gui/qml_conversation_model.hpp"
+#include "gui/qml_engine_holder.hpp"
 #include "util/dbc.hpp"
 
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QGuiApplication>
 #include <QQuickWindow>
+#include <qqml.h>
 
 namespace fire
 {
@@ -44,6 +47,12 @@ namespace fire
             d->engine = std::make_unique<QQmlApplicationEngine>();
             d->controller = std::make_unique<QmlMainController>(context);
             
+            // Set the engine in the singleton holder
+            QmlEngineHolder::setInstance(d->engine.get());
+            
+            // Register QML types
+            qmlRegisterType<qml_conversation_model>("Fire", 1, 0, "ConversationModel");
+            
             // Expose controller to QML
             d->engine->rootContext()->setContextProperty("mainController", d->controller.get());
             
@@ -56,7 +65,7 @@ namespace fire
             if (d->engine->rootObjects().isEmpty())
             {
                 // Try alternative path from build directory
-                qmlPath = "../../src/gui/qml/MainWindow.qml";
+                qmlPath = "../../firestr/src/gui/qml/MainWindow.qml";
                 d->engine->load(QUrl::fromLocalFile(qmlPath));
                 
                 if (d->engine->rootObjects().isEmpty())

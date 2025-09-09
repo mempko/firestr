@@ -223,7 +223,7 @@ namespace fire::util
                 /**
                  * Increment clock
                  */
-                tracked_vclock& operator ++ () {_c[_i]++;};
+                tracked_vclock& operator ++ () {_c[_i]++; return *this;}
                 tracked_vclock operator ++ (int) { tracked_vclock o{*this}; _c[_i]++; return o;}
 
                 /**

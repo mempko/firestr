@@ -25,6 +25,7 @@
 
 #include "user/user_service.hpp"
 #include "conversation/conversation_service.hpp"
+#include "gui/qml_conversation_model.hpp"
 #include "gui/app/app_service.hpp"
 #include "gui/app/app_reaper.hpp"
 #include "message/post_office.hpp"
@@ -46,6 +47,7 @@ namespace fire
             Q_PROPERTY(QVariantList tabs READ tabs NOTIFY tabsChanged)
             Q_PROPERTY(QVariantList contacts READ contacts NOTIFY contactsChanged)
             Q_PROPERTY(QVariantList conversations READ conversations NOTIFY conversationsChanged)
+            Q_PROPERTY(QVariantList installedApps READ installedApps NOTIFY installedAppsChanged)
             
         public:
             explicit QmlMainController(const main_window_context& context, QObject* parent = nullptr);
@@ -59,6 +61,7 @@ namespace fire
             QVariantList tabs() const;
             QVariantList contacts() const;
             QVariantList conversations() const;
+            QVariantList installedApps() const;
             
         public slots:
             // Menu actions
@@ -76,8 +79,10 @@ namespace fire
             void showAbout();
             
             // Conversation actions
+            void createConversation(const QVariantList& contactIds);
             void addAppToConversation(int conversationIndex);
             void addContactToConversation(int conversationIndex);
+            qml_conversation_model* getConversationModel(const QString& conversationId);
             
             // Tab management
             void switchToTab(int index);
@@ -89,6 +94,7 @@ namespace fire
             void conversationsChanged();
             void tabsChanged();
             void screensChanged();
+            void installedAppsChanged();
             
         private:
             void setupServices();

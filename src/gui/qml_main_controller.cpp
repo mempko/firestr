@@ -26,6 +26,8 @@
 #include "util/log.hpp"
 
 #include <QVariantMap>
+#include <QWidget>
+#include <unordered_map>
 
 namespace m = fire::message;
 namespace ms = fire::messages;
@@ -56,6 +58,10 @@ namespace fire
             QVariantList tabs;
             QVariantList contacts;
             QVariantList conversations;
+            
+            // Conversation tracking
+            std::vector<conversation::conversation_ptr> active_conversations;
+            std::unordered_map<std::string, qml_conversation_model*> conversation_models;
         };
         
         QmlMainController::QmlMainController(const main_window_context& context, QObject* parent)
@@ -126,9 +132,10 @@ namespace fire
                 d->user_service,
                 mail);
             
-            // TODO: app_reaper needs a QWidget parent which doesn't exist in QML
-            // For now, we skip creating app_reaper as it's used for cleaning up closed apps
-            // d->app_reaper = std::make_shared<app::app_reaper>(nullptr);
+            // Create a hidden QWidget to serve as parent for app_reaper
+            // This is needed because app_reaper requires a QWidget parent
+            static QWidget dummy_widget;
+            d->app_reaper = std::make_shared<app::app_reaper>(&dummy_widget);
         }
         
         QString QmlMainController::userName() const
@@ -173,6 +180,36 @@ namespace fire
         {
             REQUIRE(d);
             return d->conversations;
+        }
+        
+        QVariantList QmlMainController::installedApps() const
+        {
+            REQUIRE(d);
+            QVariantList apps;
+            
+            // Add built-in apps
+            QVariantMap chatApp;
+            chatApp["name"] = tr("Chat");
+            chatApp["appId"] = "builtin_chat";
+            chatApp["icon"] = "💬";
+            chatApp["builtin"] = true;
+            apps.append(chatApp);
+            
+            QVariantMap editorApp;
+            editorApp["name"] = tr("App Editor");
+            editorApp["appId"] = "builtin_editor";
+            editorApp["icon"] = "📝";
+            editorApp["builtin"] = true;
+            apps.append(editorApp);
+            
+            // TODO: Add user-installed apps from app_service
+            if (d->app_service)
+            {
+                // d->app_service would have methods to get installed apps
+                // For now, we just have the built-in apps
+            }
+            
+            return apps;
         }
         
         void QmlMainController::createWelcomeTab()
@@ -228,8 +265,40 @@ namespace fire
             
             d->conversations.clear();
             
-            // TODO: conversation_service doesn't expose conversations directly
-            // Need to implement proper conversation management
+            // Use our tracked active conversations
+            for (const auto& conv : d->active_conversations)
+            {
+                if (!conv) continue;
+                
+                QVariantMap conversation;
+                conversation["conversationId"] = QString::fromStdString(conv->id());
+                conversation["title"] = tr("Conversation %1").arg(d->conversations.size() + 1);
+                
+                // Get participants
+                QVariantList participants;
+                for (const auto& contact : conv->contacts().list())
+                {
+                    if (contact)
+                    {
+                        QVariantMap participant;
+                        participant["id"] = QString::fromStdString(contact->id());
+                        participant["name"] = QString::fromStdString(contact->name());
+                        participant["online"] = d->user_service->contact_available(contact->id());
+                        participants.append(participant);
+                    }
+                }
+                conversation["participants"] = participants;
+                
+                // TODO: Get messages from conversation
+                QVariantList messages;
+                conversation["messages"] = messages;
+                
+                // TODO: Get apps from conversation  
+                QVariantList apps;
+                conversation["apps"] = apps;
+                
+                d->conversations.append(conversation);
+            }
             
             emit conversationsChanged();
         }
@@ -328,8 +397,82 @@ namespace fire
         
         void QmlMainController::startConversation()
         {
-            // TODO: Implement start conversation dialog
-            LOG << "Start conversation not yet implemented in QML" << std::endl;
+            // This is now handled by the QML dialog
+            // The dialog will call createConversation with selected contact IDs
+        }
+        
+        void QmlMainController::createConversation(const QVariantList& contactIds)
+        {
+            REQUIRE(d);
+            if (!d->conversation_service || !d->user_service) return;
+            
+            conversation::conversation_ptr conv;
+            
+            if (contactIds.isEmpty())
+            {
+                // Create solo conversation
+                conv = d->conversation_service->create_conversation();
+                LOG << "Creating solo conversation" << std::endl;
+            }
+            else
+            {
+                // Build contact list from IDs
+                us::contact_list contacts;
+                for (const auto& id : contactIds)
+                {
+                    auto contact = d->user_service->user().contacts().by_id(id.toString().toStdString());
+                    if (contact)
+                    {
+                        contacts.add(contact);
+                    }
+                }
+                
+                if (contacts.empty())
+                {
+                    // If no valid contacts found, create solo conversation
+                    conv = d->conversation_service->create_conversation();
+                    LOG << "No valid contacts found, creating solo conversation" << std::endl;
+                }
+                else
+                {
+                    // Create conversation with contacts
+                    conv = d->conversation_service->create_conversation(contacts);
+                    LOG << "Creating conversation with " << contacts.size() << " contacts" << std::endl;
+                }
+            }
+            if (conv)
+            {
+                // Track the conversation
+                d->active_conversations.push_back(conv);
+                
+                // Create conversation model
+                auto model = new qml_conversation_model(
+                    d->conversation_service,
+                    conv,
+                    d->app_service,
+                    d->app_reaper,
+                    this);
+                d->conversation_models[conv->id()] = model;
+                
+                // Create conversation tab
+                QVariantMap tab;
+                tab["title"] = tr("Conversation %1").arg(d->active_conversations.size());
+                tab["type"] = "conversation";
+                tab["hasAlert"] = false;
+                tab["conversationId"] = QString::fromStdString(conv->id());
+                d->tabs.append(tab);
+                
+                // Update conversations list
+                updateConversations();
+                
+                emit tabsChanged();
+                emit conversationsChanged();
+                
+            }
+            else
+            {
+                LOG << "Failed to create conversation" << std::endl;
+            }
         }
         
         void QmlMainController::startConversationWith(int contactIndex)
@@ -401,6 +544,19 @@ namespace fire
             
             d->tabs.removeAt(index);
             emit tabsChanged();
+        }
+        
+        qml_conversation_model* QmlMainController::getConversationModel(const QString& conversationId)
+        {
+            REQUIRE(d);
+            
+            auto it = d->conversation_models.find(conversationId.toStdString());
+            if (it != d->conversation_models.end())
+            {
+                return it->second;
+            }
+            
+            return nullptr;
         }
     }
 }
